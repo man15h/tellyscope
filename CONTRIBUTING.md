@@ -24,6 +24,17 @@ The per-TV lists behind **Suggested for this TV** live in the [tellyscope-device
 - Say which TV models you tested on, and what changed after disabling it.
 - If disabling it broke anything (launcher, updates, remote, input, HDMI-CEC), put it in the list's keep entries, or propose it for the built-in protected list (`adb/src/main/kotlin/app/tellyscope/adb/Protected.kt`) here.
 
+## README screenshots
+
+They come from the screenshot tests, so they always show the current UI with sample data. To refresh them, render the tests, then put them in phone frames (needs Python 3 with Pillow):
+
+```sh
+./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest' -Proborazzi.test.record=true
+python3 docs/screenshots/frame.py
+```
+
+`frame.py` lists which test image becomes which README image. Keep the README at 8 images or fewer.
+
 ## Style
 
 - Kotlin official code style, as set up in `.editorconfig`.

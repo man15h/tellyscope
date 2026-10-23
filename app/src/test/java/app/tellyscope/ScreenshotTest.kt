@@ -36,6 +36,7 @@ import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.ScanProgress
 import app.tellyscope.data.Suggested
+import app.tellyscope.data.SuggestedGroup
 import app.tellyscope.data.Suggestions
 import app.tellyscope.ui.AdvancedScreen
 import app.tellyscope.ui.DebloatScreen
@@ -404,5 +405,66 @@ class ScreenshotTest {
             compose.onNodeWithText(a.label).assertExists()
             compose.onNodeWithText(a.pkg).assertExists()
         }
+    }
+    // README shots: the same screens with a fuller sample list and history than the tests above need.
+
+    /** A fuller sample list for the README: two groups, one optional app left unticked. */
+    private fun readmeLists(): Suggestions.Ready {
+        val r = deviceState().device.lists as Suggestions.Ready
+        return r.copy(
+            groups = listOf(
+                SuggestedGroup(
+                    "Google extras",
+                    listOf(
+                        Suggested("com.google.android.tvrecommendations", "TV Recommendations", "home screen suggestions", optional = false, ticked = true),
+                        Suggested("com.google.android.videos", "Google TV", "film and TV store", optional = false, ticked = true),
+                        Suggested("com.google.android.play.games", "Google Play Games", null, optional = false, ticked = true),
+                    ),
+                ),
+                SuggestedGroup(
+                    "Extras",
+                    listOf(
+                        Suggested("com.xgimi.assistant", "XGIMI Assistant", "voice assistant", optional = false, ticked = true),
+                        Suggested("com.netflix.ninja", "Netflix", null, optional = true, ticked = false),
+                    ),
+                ),
+            ),
+        )
+    }
+
+    @Test fun readme_debloat() {
+        val next = { compose.onNodeWithText("Next").performClick(); Unit }
+        shot("20_readme_debloat", before = next) { DebloatScreen(readmeLists(), {}, {}, {}) }
+        compose.onNodeWithText("Disable 4 apps").assertIsEnabled()
+    }
+
+    @Test fun readme_confirm() {
+        // Over the review step, as in the app.
+        val confirm = {
+            compose.onNodeWithText("Next").performClick()
+            compose.mainClock.advanceTimeBy(1_000)
+            compose.onNodeWithText("Disable 4 apps").performClick()
+            Unit
+        }
+        shot("21_readme_confirm", screen = true, before = confirm) { DebloatScreen(readmeLists(), {}, {}, {}) }
+        compose.onNodeWithText("Disable 4 apps?").assertExists()
+    }
+
+    // Tall, like device_history: frame.py shows it scrolled down to History under the top bar.
+    @Config(qualifiers = "w411dp-h2600dp-xxhdpi")
+    @Test fun readme_history() {
+        val history = listOf(
+            HistoryEntry(4, xgimi.ip, now - 40_000, Action.Disable, "com.google.android.tvrecommendations", "TV Recommendations", Action.Enable, null),
+            HistoryEntry(3, xgimi.ip, now - 45_000, Action.Disable, "com.xgimi.assistant", "XGIMI Assistant", Action.Enable, null),
+            HistoryEntry(2, xgimi.ip, now - 5 * 60_000, Action.Stop, "com.netflix.ninja", "Netflix", Action.Open, null),
+            HistoryEntry(1, xgimi.ip, now - 2 * 3_600_000, Action.Stop, "com.google.android.youtube.tv", "YouTube", Action.Open, now - 3_500_000),
+        )
+        val openHistory = {
+            compose.onNodeWithText("Apps").performClick() // fold the long list away
+            compose.onNodeWithText("History").performClick()
+            Unit
+        }
+        shot("22_readme_history", before = openHistory) { DeviceScreen(deviceState { copy(history = history) }, DeviceActions()) }
+        compose.onNodeWithText("Restore everything (2)").assertExists()
     }
 }

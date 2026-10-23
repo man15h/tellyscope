@@ -1,17 +1,52 @@
 # Tellyscope
 
-See inside your Android TV from your phone. Live stats, reversible debloat, app installs and file copies, all over Wi-Fi ADB. No root, no PC.
+See inside your Android TV from your phone. Check how it's doing, turn off the apps it doesn't need, install apps and send files, all over Wi-Fi. No root, no PC, and every change can be undone.
 
 > **Status: alpha.** Tellyscope connects to real TVs and makes real changes, but it has only been tried on a few models. Expect rough edges, and keep the TV's own remote nearby.
 
-<p>
-  <img src="docs/screenshots/scan.png" width="200" alt="Finding TVs on the Wi-Fi">
-  <img src="docs/screenshots/tv-page.png" width="200" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons">
-  <img src="docs/screenshots/debloat.png" width="200" alt="Debloat: reviewing the apps it will turn off">
-  <img src="docs/screenshots/install.png" width="200" alt="Installing an app on the TV">
-</p>
+<table>
+  <tr>
+    <td width="25%"><img src="docs/screenshots/tv-page.png" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons"></td>
+    <td width="25%"><img src="docs/screenshots/tv-page-dark.png" alt="The same TV page in dark theme"></td>
+    <td width="25%"><img src="docs/screenshots/debloat.png" alt="Debloat: reviewing the apps it will turn off, each with its package name"></td>
+    <td width="25%"><img src="docs/screenshots/debloat-confirm.png" alt="The confirm before disabling, naming every app"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Your TV at a glance</sub></td>
+    <td align="center"><sub>Dark theme too</sub></td>
+    <td align="center"><sub>Review every app Debloat turns off</sub></td>
+    <td align="center"><sub>It names each app before it acts</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/advanced.png" alt="Advanced: memory, storage, CPU and RAM by app"></td>
+    <td><img src="docs/screenshots/scan.png" alt="Finding TVs on the Wi-Fi"></td>
+    <td><img src="docs/screenshots/install.png" alt="Installing an app on the TV"></td>
+    <td><img src="docs/screenshots/history.png" alt="History: every change with an Undo, and Restore everything"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Every number, on Advanced</sub></td>
+    <td align="center"><sub>Finds TVs on your Wi-Fi</sub></td>
+    <td align="center"><sub>Install apps from your phone</sub></td>
+    <td align="center"><sub>Undo anything from History</sub></td>
+  </tr>
+</table>
 
 <sub>Rendered from the app's screenshot tests with sample data.</sub>
+
+## Get it
+
+- **GitHub Releases.** Download `Tellyscope-<version>.apk` from the [Releases](../../releases) page and open it on your phone. You may need to allow installs from your browser or file manager first. Pre-releases marked `-alpha` are test builds: they install as a separate app next to the regular one, with the same name and icon.
+- **Obtainium.** To get updates automatically, add this repository's GitHub address in [Obtainium](https://github.com/ImranR98/Obtainium). Turn on **Include prereleases** only if you want the alpha builds.
+
+Tellyscope needs a phone on Android 8.0 or newer, on the same Wi-Fi as the TV, and a TV with developer options turned on ([how](#setting-up-your-tv)).
+
+## Is it safe?
+
+- **Reversible.** Tellyscope disables apps; it never uninstalls them, so nothing is deleted. Every change goes into History with an Undo, and **Restore everything** turns back on all it turned off.
+- **Protected list.** Apps the TV needs to start, update, stay on Wi-Fi, show its home screen or take input can't be stopped or disabled. There is no override.
+- **You see it first.** Debloat shows every app it will turn off, and the confirm names each one before anything runs.
+
+The full rules are under [Safety rules](#safety-rules).
 
 ## What it does
 
