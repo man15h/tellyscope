@@ -299,6 +299,7 @@ object Copy {
     const val CANCELLED_SEND = "Cancelled. Nothing was left on the TV."
     const val CANCELLED_SAVE = "Cancelled. Nothing was saved."
     const val CANT_READ = "Couldn't read that file on your phone."
+    const val CANT_UNDO = "This version of Tellyscope can't undo that setting."
     const val FILES_LOST = "Couldn't read this folder. Check the TV is still connected."
 
     // Remote
