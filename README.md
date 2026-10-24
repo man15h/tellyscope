@@ -61,8 +61,16 @@ Or get updates automatically with [Obtainium](#get-it).
 
 ## Get it
 
-- **GitHub Releases.** Download `Tellyscope-<version>.apk` from the [Releases](../../releases) page and open it on your phone. You may need to allow installs from your browser or file manager first. Pre-releases marked `-alpha` are test builds: they install as a separate app next to the regular one, with the same name and icon.
-- **Obtainium.** To get updates automatically, add this repository's GitHub address in [Obtainium](https://github.com/ImranR98/Obtainium). Turn on **Include prereleases** only if you want the alpha builds.
+<p>
+  <a href="../../releases"><img src="docs/badges/get-it-on-github.png" alt="Get the APK on GitHub" height="80"></a>
+  <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/man15h/tellyscope"><img src="docs/badges/get-it-on-obtainium.png" alt="Get it on Obtainium" height="80"></a>
+</p>
+
+On GitHub, download `Tellyscope-<version>.apk` and open it on your phone; you may need to allow installs from your browser or file manager first. With Obtainium installed, the second badge adds Tellyscope to it, and it then keeps the app up to date.
+
+> [!NOTE]
+> - **Release:** stable, for everyday use.
+> - **Alpha:** test builds with the newest changes. On GitHub they're the pre-releases marked `-alpha`; in Obtainium, turn on **Include prereleases**. Alpha installs next to Release as a separate app, with the same name and icon.
 
 Tellyscope needs a phone on Android 8.0 or newer, on the same Wi-Fi as the TV, and a TV with developer options turned on ([how](#setting-up-your-tv)).
 
