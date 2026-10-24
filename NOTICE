@@ -29,6 +29,17 @@ Upload files button that of "upload", the empty Movies folder that of
 "movie", and the links in Settings that of "open_in_new".
 
 --------------------------------------------------------------------------------
+"Get it on GitHub" badge — https://github.com/Kunzisoft/Github-badge
+License: CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0/), by
+Kunzisoft after the F-Droid badge artwork by @flocke. Used unchanged as
+docs/badges/get-it-on-github.png in the README.
+
+--------------------------------------------------------------------------------
+"Get it on Obtainium" badge — https://github.com/ImranR98/Obtainium
+License: GNU General Public License v3.0. Used unchanged as
+docs/badges/get-it-on-obtainium.png in the README.
+
+--------------------------------------------------------------------------------
 cleanyourtv — https://github.com/Gathin23/cleanyourtv
 License: MIT, Copyright (c) 2026 Gathin
 Debloat package lists are adapted from this project.
