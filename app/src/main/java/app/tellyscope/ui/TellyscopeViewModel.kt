@@ -50,6 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.ConcurrentHashMap
 
 /** Per-row connect state on the scan screen. */
 sealed interface RowState {
@@ -189,7 +190,11 @@ class TellyscopeViewModel(
 
     private var scanJob: Job? = null
     private var sideloadJob: Job? = null
-    private var transferJob: Job? = null
+    /** File copies by TV: each dialog shows only on its own TV's page, and its Cancel stops only that copy. */
+    private val transferJobs = mutableMapOf<String, Job>()
+    private val transfers = ConcurrentHashMap<String, TransferUi>() // progress arrives off the main thread
+    /** History entries being undone, so a second tap can't run the same Undo again. */
+    private val undoInFlight = mutableSetOf<Long>()
     private var liveJob: Job? = null
     private var mediumJob: Job? = null
     private var listsJob: Job? = null
@@ -324,7 +329,8 @@ class TellyscopeViewModel(
                 scan = s.scan.copy(hits = s.scan.hits.filterNot { it.ip == device.hit.ip }),
             )
         }
-        select(device.id)
+        // A TV that comes online mid-copy joins the list; switching pages would hide the copy's dialog and its Cancel.
+        if (transferJobs[_state.value.selectedId]?.isActive != true) select(device.id)
     }
 
     fun select(id: String?) {
@@ -332,7 +338,9 @@ class TellyscopeViewModel(
         mediumJob?.cancel()
         listsJob?.cancel()
         requestJob?.cancel()
-        _state.update { it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get)), query = "") }
+        // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
+        val transfer = id?.let(transfers::get)
+        _state.update { it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), transfer = transfer), query = "") }
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
         viewModelScope.launch {
@@ -425,11 +433,22 @@ class TellyscopeViewModel(
      * have switched TVs since; History only lists the selected TV's entries.
      */
     fun undo(entry: HistoryEntry, deviceId: String? = _state.value.selectedId) {
-        val undo = entry.undo ?: return
-        if (entry.action == Action.Change) {
-            change(Tweak.valueOf(entry.packageName), entry.previous.orEmpty(), undoing = entry.id, id = deviceId)
-        } else {
-            run(entry.packageName, undo, undoing = entry.id, id = deviceId)
+        if (deviceId == null || entry.undo == null || !undoInFlight.add(entry.id)) return
+        viewModelScope.launch {
+            // Both the snackbar and History offer Undo: an entry already undone from one is done.
+            val now = source.history(deviceId).firstOrNull { it.id == entry.id } ?: entry
+            val undo = now.undo
+            val tweak = Tweak.entries.firstOrNull { it.name == now.packageName }
+            when {
+                now.undoneAt != null || undo == null -> undoInFlight -= entry.id
+                now.action != Action.Change -> run(now.packageName, undo, undoing = now.id, id = deviceId)
+                tweak != null -> change(tweak, now.previous.orEmpty(), undoing = now.id, id = deviceId)
+                else -> {
+                    // A setting this version doesn't know, from a newer one's History.
+                    undoInFlight -= entry.id
+                    _notice.value = Copy.CANT_UNDO
+                }
+            }
         }
     }
 
@@ -450,6 +469,7 @@ class TellyscopeViewModel(
                 // A change can fail after it was recorded (a rollback that didn't take), so History is reread.
                 val history = source.history(id)
                 updateDevice(id) { it.copy(busy = null, history = history) }
+                undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
                 return@launch
             }
@@ -513,6 +533,7 @@ class TellyscopeViewModel(
             } catch (e: Exception) {
                 // Anything else (a dropped socket) still must not crash the app.
                 updateDevice(id) { it.copy(busy = null) }
+                undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
                 return@launch
             }
@@ -609,20 +630,20 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         val storage = storage ?: return
         val folder = _state.value.device.files.folder
-        transferJob = viewModelScope.launch {
+        transferJobs[id] = viewModelScope.launch {
             val file = try {
                 storage.open(uri)
             } catch (_: Exception) {
                 _notice.value = Copy.CANT_READ
                 return@launch
             }
-            setTransfer(TransferUi(file.name, toTv = true, folder = folder))
+            setTransfer(id, TransferUi(file.name, toTv = true, folder = folder))
             try {
                 val saved = file.source.use { src ->
-                    source.push(id, folder, file.name, file.size, src) { p -> updateTransfer { it.copy(progress = p) } }
+                    source.push(id, folder, file.name, file.size, src) { p -> updateTransfer(id) { it.copy(progress = p) } }
                 }
                 // Close the dialog before the reload: a Cancel tapped now would report a sent file as cancelled.
-                setTransfer(null)
+                setTransfer(id, null)
                 _notice.value = Copy.sent(file.name, saved, folder)
                 loadFiles()
             } catch (e: CancellationException) {
@@ -631,7 +652,7 @@ class TellyscopeViewModel(
             } catch (_: Exception) {
                 _notice.value = Copy.sendFailed(file.name)
             } finally {
-                setTransfer(null)
+                setTransfer(id, null)
             }
         }
     }
@@ -655,11 +676,11 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         val storage = storage ?: return
         val folder = _state.value.device.files.folder
-        setTransfer(TransferUi(file.name, toTv = false, folder = folder, progress = Progress(0, file.size)))
-        transferJob = viewModelScope.launch {
+        setTransfer(id, TransferUi(file.name, toTv = false, folder = folder, progress = Progress(0, file.size)))
+        transferJobs[id] = viewModelScope.launch {
             try {
                 storage.create(uri).use { sink ->
-                    source.pull(id, folder, file, sink) { p -> updateTransfer { it.copy(progress = p) } }
+                    source.pull(id, folder, file, sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
                 }
                 _notice.value = Copy.saved(file.name)
             } catch (e: CancellationException) {
@@ -670,14 +691,14 @@ class TellyscopeViewModel(
                 storage.delete(uri)
                 _notice.value = Copy.saveFailed(file.name)
             } finally {
-                setTransfer(null)
+                setTransfer(id, null)
             }
         }
     }
 
     /** Only the dialog's Cancel button calls this. */
     fun cancelTransfer() {
-        transferJob?.cancel()
+        transferJobs[_state.value.selectedId]?.cancel()
     }
 
     private fun setSideload(ui: SideloadUi?) = _state.update { it.copy(device = it.device.copy(sideload = ui)) }
@@ -685,10 +706,15 @@ class TellyscopeViewModel(
     private fun updateSideload(f: (SideloadUi) -> SideloadUi) =
         _state.update { s -> s.device.sideload?.let { s.copy(device = s.device.copy(sideload = f(it))) } ?: s }
 
-    private fun setTransfer(ui: TransferUi?) = _state.update { it.copy(device = it.device.copy(transfer = ui)) }
+    private fun setTransfer(id: String, ui: TransferUi?) {
+        if (ui == null) transfers -= id else transfers[id] = ui
+        updateDevice(id) { it.copy(transfer = ui) }
+    }
 
-    private fun updateTransfer(f: (TransferUi) -> TransferUi) =
-        _state.update { s -> s.device.transfer?.let { s.copy(device = s.device.copy(transfer = f(it))) } ?: s }
+    private fun updateTransfer(id: String, f: (TransferUi) -> TransferUi) {
+        val ui = transfers[id]?.let(f) ?: return
+        setTransfer(id, ui)
+    }
 
     fun doneShown() {
         _done.value = null

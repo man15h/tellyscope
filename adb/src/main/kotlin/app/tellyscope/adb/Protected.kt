@@ -24,7 +24,7 @@ object Protected {
     private val CORE = Regex(
         "android|com\\.android\\.systemui|com\\.android\\.shell|com\\.android\\.phone|" +
             "com\\.(google\\.)?android\\.(permissioncontroller|packageinstaller|ext\\.services|ext\\.shared|modulemetadata)|" +
-            "com\\.google\\.android\\.overlay\\.modules.*|com\\.android\\.providers\\..*",
+            "com\\.google\\.android\\.overlay\\.modules.*|com\\.(google\\.)?android\\.providers\\..*",
     )
     /** Providers no TV feature uses; tested lists turn them off. */
     private val CORE_OK = Regex("com\\.android\\.providers\\.(calendar|contacts|userdictionary|blockednumber)")
@@ -32,6 +32,8 @@ object Protected {
     private val EXACT: Map<String, ProtectedReason> = mapOf(
         "com.android.settings" to ProtectedReason.SETTINGS,
         "com.android.tv.settings" to ProtectedReason.SETTINGS,
+        "com.amazon.tv.settings.v2" to ProtectedReason.SETTINGS, // Fire TV
+        "org.droidtv.settings" to ProtectedReason.SETTINGS, // Philips
         "com.android.vending" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gms" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gsf" to ProtectedReason.PLAY_SERVICES,

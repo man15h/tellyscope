@@ -13,6 +13,12 @@ class ProtectedTest {
         assertNull(Protected.reason("com.android.providers.calendar"))
     }
 
+    @Test fun vendorSettingsAndTheMediaModule() {
+        assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.amazon.tv.settings.v2"))
+        assertEquals(ProtectedReason.SETTINGS, Protected.reason("org.droidtv.settings"))
+        assertEquals(ProtectedReason.SYSTEM, Protected.reason("com.google.android.providers.media.module"))
+    }
+
     /** Package names from an Android TV 11 XGIMI projector. */
     @Test fun xgimiPackages() {
         assertEquals(ProtectedReason.TV_INPUTS_REMOTE, Protected.reason("com.xgimi.tvinput"))

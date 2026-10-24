@@ -12,6 +12,10 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Fixed:** A TV connecting mid-copy no longer hides the copy's dialog. [#93](../../pull/93)
+- **Fixed:** Undo can't run twice on the same change. [#93](../../pull/93)
+- **Fixed:** Fire TV and Philips Settings and the media storage service are protected. [#93](../../pull/93)
+- **Improved:** The README names the scan's lookup of each TV's name. [#93](../../pull/93)
 - **Fixed:** Debloat no longer crashes on a list that repeats an app. [#91](../../pull/91)
 - **Fixed:** One bad entry no longer hides every debloat list. [#91](../../pull/91)
 - **Fixed:** Sending a file never overwrites a hidden file on the TV. [#91](../../pull/91)
