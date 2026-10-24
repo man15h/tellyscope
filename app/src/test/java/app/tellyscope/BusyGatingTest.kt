@@ -9,10 +9,16 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.DeviceList
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.Suggested
+import app.tellyscope.data.SuggestedGroup
+import app.tellyscope.data.Suggestions
 import app.tellyscope.ui.AppRow
 import app.tellyscope.ui.Copy
+import app.tellyscope.ui.DebloatScreen
 import app.tellyscope.ui.DeviceActions
+import app.tellyscope.ui.DisableDialog
 import app.tellyscope.ui.HistoryList
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -60,6 +66,31 @@ class BusyGatingTest {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
         compose.setContent { HistoryList(history, 0L, onUndo = {}) }
         compose.onNodeWithText(Copy.undo(Action.Enable)).assertIsEnabled()
+    }
+
+    private val lists = Suggestions.Ready(
+        null,
+        DeviceList("test-tv", "Test TV", null, null, emptySet(), emptyList()),
+        null,
+        listOf(SuggestedGroup("Extras", listOf(Suggested(pkg, "Example", null, optional = false, ticked = true)))),
+        emptyList(),
+    )
+
+    @Test fun debloatWaitsWhileTheTvIsBusy() {
+        // A Disable started on the Apps tab is still running when Debloat opens.
+        compose.setContent { DebloatScreen(lists, {}, {}, {}, busy = true) }
+        compose.onNodeWithText("Disable 1 app").assertIsNotEnabled()
+    }
+
+    @Test fun debloatConfirmWaitsWhileTheTvIsBusy() {
+        val apps = listOf(Suggested(pkg, "Example", null, optional = false, ticked = true))
+        compose.setContent { DisableDialog(apps, onDisable = {}, onDismiss = {}, enabled = false) }
+        compose.onNodeWithText("Yes, disable them").assertIsNotEnabled()
+    }
+
+    @Test fun idleDebloatStillWorks() {
+        compose.setContent { DebloatScreen(lists, {}, {}, {}) }
+        compose.onNodeWithText("Disable 1 app").assertIsEnabled()
     }
 
     @Test fun launcherSwitchWithItsTargetGoneIsCancelled() {

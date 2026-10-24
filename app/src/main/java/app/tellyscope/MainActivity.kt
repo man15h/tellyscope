@@ -233,6 +233,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             tvMakers = listOfNotNull(state.selected?.brand, state.selected?.manufacturer).distinct(),
             tv = state.selected,
             tvApps = state.device.apps,
+            busy = state.device.busy != null,
         )
     } else {
         DeviceTabsScreen(
