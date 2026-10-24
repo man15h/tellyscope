@@ -110,7 +110,7 @@ data class DeviceActions(
     val foldSystem: (AppsTab, Boolean) -> Unit = { _, _ -> },
 )
 
-/** Off while the remote is made faster: the device page hides its Remote button. */
+/** Off while the remote is made faster: Overview hides its Remote button. */
 internal const val REMOTE_ENABLED = false
 
 /**

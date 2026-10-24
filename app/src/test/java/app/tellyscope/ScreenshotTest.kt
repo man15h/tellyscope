@@ -5,35 +5,48 @@ package app.tellyscope
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.activity.OnBackPressedDispatcher
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performScrollToIndex
-import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.InstallRefusal
@@ -48,52 +61,49 @@ import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
-import app.tellyscope.data.TvSettings
-import app.tellyscope.data.TvTweaks
+import app.tellyscope.data.LastKnown
 import app.tellyscope.data.ListEntry
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.Proc
+import app.tellyscope.data.RELEASES
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.ScanProgress
 import app.tellyscope.data.Suggested
 import app.tellyscope.data.SuggestedGroup
-import app.tellyscope.data.Proc
 import app.tellyscope.data.Suggestions
+import app.tellyscope.data.TvSettings
+import app.tellyscope.data.TvTweaks
 import app.tellyscope.ui.AdvancedScreen
 import app.tellyscope.ui.AppsTab
 import app.tellyscope.ui.ConnectScreen
+import app.tellyscope.ui.Copy
 import app.tellyscope.ui.DebloatScreen
 import app.tellyscope.ui.DeviceActions
 import app.tellyscope.ui.DeviceTabsScreen
-import app.tellyscope.ui.TvTab
-import app.tellyscope.data.LastKnown
-import app.tellyscope.ui.Copy
-import app.tellyscope.ui.TweaksBlock
 import app.tellyscope.ui.DeviceUi
 import app.tellyscope.ui.DisableDialog
-import app.tellyscope.ui.ForgetDialog
 import app.tellyscope.ui.FilesBlock
 import app.tellyscope.ui.FilesUi
-import app.tellyscope.ui.RestoreDialog
+import app.tellyscope.ui.ForgetDialog
 import app.tellyscope.ui.PermissionScreen
-import app.tellyscope.ui.WelcomeScreen
 import app.tellyscope.ui.RebootDialog
 import app.tellyscope.ui.RemoteActions
 import app.tellyscope.ui.RemoteScreen
 import app.tellyscope.ui.Restart
+import app.tellyscope.ui.RestoreDialog
 import app.tellyscope.ui.RowState
 import app.tellyscope.ui.ScanScreen
 import app.tellyscope.ui.ScanUi
+import app.tellyscope.ui.SettingsScreen
 import app.tellyscope.ui.SideloadUi
 import app.tellyscope.ui.TransferUi
+import app.tellyscope.ui.TvTab
+import app.tellyscope.ui.TweaksBlock
+import app.tellyscope.ui.UiState
+import app.tellyscope.ui.WelcomeScreen
 import app.tellyscope.ui.brands
 import app.tellyscope.ui.name
-import app.tellyscope.ui.SettingsScreen
-import app.tellyscope.data.RELEASES
-import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.runtime.CompositionLocalProvider
-import app.tellyscope.ui.UiState
 import app.tellyscope.ui.theme.TellyscopeTheme
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -916,6 +926,40 @@ class ScreenshotTest {
     @Test fun remote() = shot("12_remote") { RemoteScreen(deviceState(), RemoteActions()) }
 
     @Test fun remote_dark() = shot("12_remote", dark = true) { RemoteScreen(deviceState(), RemoteActions()) }
+
+    @Test fun remote_offline() = shot("12_remote_offline") { RemoteScreen(offlineRemote(), RemoteActions()) }
+
+    @Test fun remote_offline_dark() = shot("12_remote_offline", dark = true) { RemoteScreen(offlineRemote(), RemoteActions()) }
+
+    /** Robolectric draws no keyboard, so a stand-in takes its height, as the IME padding would. */
+    private fun typingShot(dark: Boolean) = shot("14_remote_typing", dark) {
+        Column(Modifier.fillMaxSize()) {
+            Box(Modifier.weight(1f)) { RemoteScreen(deviceState(), RemoteActions(), startTyping = true) }
+            Box(Modifier.fillMaxWidth().height(280.dp).background(Color(0xFF9E9E9E)), contentAlignment = Alignment.Center) { Text("Keyboard") }
+        }
+    }
+
+    @Test fun remote_typing() = typingShot(dark = false)
+
+    @Test fun remote_typing_dark() = typingShot(dark = true)
+
+    @Test fun overview_remote() = shot("77_overview_remote") { DeviceTabsScreen(md3State(), DeviceActions(), remoteEnabled = true) }
+
+    @Test fun overview_remote_dark() = shot("77_overview_remote", dark = true) { DeviceTabsScreen(md3State(), DeviceActions(), remoteEnabled = true) }
+
+    /** Scrolled to the end, the last card has to clear the Remote button. */
+    private fun overviewRemoteEnd(dark: Boolean) {
+        val end = { compose.onNode(hasScrollAction()).performTouchInput { repeat(6) { swipeUp() } }; Unit }
+        shot("78_overview_remote_end", dark, before = end) { DeviceTabsScreen(md3State(), DeviceActions(), remoteEnabled = true) }
+    }
+
+    @Test fun overview_remote_end() = overviewRemoteEnd(dark = false)
+
+    @Test fun overview_remote_end_dark() = overviewRemoteEnd(dark = true)
+
+    private fun offlineRemote() = deviceState().let { s ->
+        s.copy(devices = s.devices.map { if (it.id == s.selectedId) it.copy(state = DeviceState.Offline, lastSeen = now - 120_000) else it })
+    }
 
     @Test fun remote_restarting() {
         val state = deviceState().let { it.copy(restarting = mapOf(it.selectedId!! to Restart(now - 25_000, down = true))) }

@@ -310,7 +310,6 @@ object Copy {
     const val UPDATES_OPENED = "Opened the update screen on the TV. Look at the TV to check for updates."
     const val REBOOT_REFUSED = "The TV said no to restarting. Use its own remote or power button instead."
     const val REBOOT_IGNORED = "The TV didn't restart. Use its own remote or power button instead."
-    const val REMOTE_OFFLINE = "The TV is offline. The remote works again once it reconnects."
     const val TYPE_HINT = "Select a text box on the TV, like a search box, then type here."
 
     fun cantType(text: String): String {

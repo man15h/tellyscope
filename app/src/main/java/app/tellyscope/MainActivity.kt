@@ -204,6 +204,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 press = vm::press,
                 type = vm::type,
                 reboot = vm::reboot,
+                reconnect = { state.selectedId?.let(vm::reconnect) },
                 back = { remote = false },
             ),
         )
