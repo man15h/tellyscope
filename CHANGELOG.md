@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+## 0.6.2 — 2026-10-25
+
 - **Fixed:** App buttons and Undo wait while another change is running. [#92](../../pull/92)
 - **Fixed:** Turning off a launcher mid-switch no longer crashes the Apps tab. [#92](../../pull/92)
 - **Fixed:** A TV connecting mid-copy no longer hides the copy's dialog. [#93](../../pull/93)
