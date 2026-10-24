@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Improved:** The remote looks like Google TV's and opens from Overview. [#NN](../../pull/NN)
+- **Improved:** The remote looks like Google TV's and opens from Overview. [#89](../../pull/89)
 
 ## 0.6.1 — 2026-10-25
 
