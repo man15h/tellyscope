@@ -154,12 +154,12 @@ fun matches(rule: Map<String, List<String>>?, props: Map<String, String?>): Bool
         values.any { it.equals(actual, ignoreCase = true) }
     }
 
-/** Null unless it is a schema 1 index. Entries with a bad file name or checksum are dropped. */
+/** Null unless it is a schema 1 index. Entries with a missing field, bad file name or checksum are dropped. */
 fun parseIndex(text: String): ListIndex? = try {
     val o = jsonObject(text)
     if (o.optInt("schema") != SCHEMA) null else ListIndex(
         commit = o.optJSONObject("source")?.optStringOrNull("commit"),
-        devices = o.getJSONArray("devices").objects().mapNotNull { d ->
+        devices = o.getJSONArray("devices").objectsOrSkip { d ->
             ListEntry(
                 id = d.getString("id"),
                 name = d.getString("name"),
@@ -176,20 +176,22 @@ fun parseIndex(text: String): ListIndex? = try {
     null
 }
 
-/** Null unless it is a schema 1 device file for [id]. Names that aren't package names are dropped. */
+/**
+ * Null unless it is a schema 1 device file for [id]. Entries that can't be read and names that
+ * aren't package names are dropped.
+ */
 fun parseList(text: String, id: String): DeviceList? = try {
     val o = jsonObject(text)
     val tested = o.optJSONObject("tested")
-    fun packages(a: JSONArray?) = a?.objects().orEmpty()
-        .map { ListPackage(it.getString("pkg"), it.optStringOrNull("note"), it.optBoolean("optional")) }
-        .filter { PACKAGE.matches(it.pkg) }
+    fun packages(a: JSONArray?) = a?.objectsOrSkip { ListPackage(it.getString("pkg"), it.optStringOrNull("note"), it.optBoolean("optional")) }
+        .orEmpty().filter { PACKAGE.matches(it.pkg) }
     if (o.optInt("schema") != SCHEMA || o.optString("id") != id) null else DeviceList(
         id = id,
         name = o.getString("name"),
         testedOs = tested?.optStringOrNull("os"),
         sdk = tested?.optIntOrNull("sdk"),
         keep = packages(o.optJSONArray("keep")).map { it.pkg }.toSet(),
-        groups = o.getJSONArray("groups").objects().map { g ->
+        groups = o.getJSONArray("groups").objectsOrSkip { g ->
             ListGroup(g.optString("title"), packages(g.optJSONArray("packages")))
         }.filter { it.packages.isNotEmpty() },
     )
@@ -200,15 +202,17 @@ fun parseList(text: String, id: String): DeviceList? = try {
 /**
  * The list cut down to this TV: only apps it actually has, still on, and not protected (built in
  * or by the list's keep). Pre-ticked only for non-optional entries on a TV with the SDK the list
- * was tested on.
+ * was tested on. Groups with the same title become one, and an app shows once, in its first group,
+ * since the screen keys rows by title and package.
  */
 fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGroup> {
     val installed = apps.associateBy { it.packageName }
     val tick = sdk != null && sdk == list.sdk
-    return list.groups.map { g ->
-        SuggestedGroup(g.title, g.packages.mapNotNull { p ->
+    val seen = mutableSetOf<String>()
+    return list.groups.groupBy { it.title }.map { (title, gs) ->
+        SuggestedGroup(title, gs.flatMap { it.packages }.mapNotNull { p ->
             val app = installed[p.pkg]?.takeIf { it.enabled && it.protectedReason == null && p.pkg !in list.keep }
-            app?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional) }
+            app?.takeIf { seen.add(p.pkg) }?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional) }
         })
     }.filter { it.packages.isNotEmpty() }
 }
@@ -409,7 +413,14 @@ internal fun depth(text: String): Int {
     return max
 }
 
-private fun JSONArray.objects() = (0 until length()).map { getJSONObject(it) }
+/** [f] over each element, leaving out any that isn't an object or that [f] can't read. */
+private fun <T : Any> JSONArray.objectsOrSkip(f: (JSONObject) -> T?): List<T> = (0 until length()).mapNotNull {
+    try {
+        f(getJSONObject(it))
+    } catch (_: org.json.JSONException) {
+        null
+    }
+}
 private fun JSONArray.strings() = (0 until length()).map { getString(it) }
 private fun JSONObject.optStringOrNull(k: String) = if (isNull(k)) null else optString(k)
 private fun JSONObject.optIntOrNull(k: String) = if (isNull(k)) null else optInt(k)

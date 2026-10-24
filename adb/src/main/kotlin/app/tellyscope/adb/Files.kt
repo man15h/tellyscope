@@ -35,7 +35,9 @@ class Files(private val session: AdbSession) {
         folder: TvFolder,
         onProgress: (Progress) -> Unit = {},
     ): String {
-        val target = uniqueName(safeName(name), list(folder).map { it.name }.toSet())
+        // Every entry counts as taken, hidden files and folders too, not just what [list] shows.
+        val taken = runTransfer { _ -> session.list(folder.path).map { it.name }.toSet() }
+        val target = uniqueName(safeName(name), taken)
         val path = "${folder.path}/$target"
         runTransfer(cleanUp = { runCatching { session.shell("rm -f ${shellQuote(path)}") } }) { stopped ->
             session.push(source.counting(size, stopped, onProgress), path, FILE_MODE, System.currentTimeMillis())

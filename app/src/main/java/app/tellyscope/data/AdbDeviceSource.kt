@@ -553,25 +553,18 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val t = Tweaks(session(deviceId))
         val strictDns = tweak == Tweak.PRIVATE_DNS && values["private_dns_mode"] == "hostname"
         if (strictDns && (sdk(deviceId) ?: TvSettings.DNS_SDK) < TvSettings.DNS_SDK) throw IllegalStateException(TvSettings.DNS_TOO_OLD)
-        // Only the keys being written: Undo must not touch the ones this change left alone.
-        val before = t.read(tweak).filterKeys { it in values }
-        if (!t.write(tweak, values)) throw IllegalStateException("the TV didn't accept the change")
-        // Strict Private DNS fails closed: a provider the network can't reach takes the TV
-        // offline. Put it back on the spot; ADB stays up, it's the LAN by address.
-        if (strictDns && !t.resolves()) {
-            t.write(tweak, before)
-            throw IllegalStateException(TvSettings.dnsUnreachable(values["private_dns_specifier"]))
+        return applyTweak(t, tweak, values, strictDns) { label, previous ->
+            book.record(
+                deviceId = key(deviceId),
+                at = System.currentTimeMillis(),
+                action = Action.Change,
+                packageName = tweak.name,
+                label = label,
+                undo = Action.Change,
+                undoing = undoing,
+                previous = previous,
+            )
         }
-        return book.record(
-            deviceId = key(deviceId),
-            at = System.currentTimeMillis(),
-            action = Action.Change,
-            packageName = tweak.name,
-            label = TvSettings.label(tweak, t.read(tweak)),
-            undo = Action.Change,
-            undoing = undoing,
-            previous = before,
-        )
     }
 
     override suspend fun clearCaches(deviceId: String): Long? {
@@ -686,4 +679,35 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         ProtectedReason.UNKNOWN_HOME -> "this TV didn't say which app is its home screen, so Tellyscope won't change anything"
         ProtectedReason.CAME_WITH_TV -> "it came with the TV, so it can only be disabled"
     }
+}
+
+/**
+ * Writes [values] and hands [record] the label and the old values for History. Strict Private DNS
+ * fails closed: a provider the network can't reach takes the TV offline, so it's put back on the
+ * spot (ADB stays up, it's the LAN by address). If putting it back fails too, the change is still
+ * recorded, so Undo in History can take the TV back.
+ */
+internal suspend fun applyTweak(
+    t: Tweaks,
+    tweak: Tweak,
+    values: Map<String, String?>,
+    strictDns: Boolean,
+    record: suspend (label: String, previous: Map<String, String?>) -> HistoryEntry,
+): HistoryEntry {
+    // Only the keys being written: Undo must not touch the ones this change left alone.
+    val before = t.read(tweak).filterKeys { it in values }
+    if (!t.write(tweak, values)) throw IllegalStateException("the TV didn't accept the change")
+    if (strictDns && !t.resolves()) {
+        val restored = try {
+            t.write(tweak, before)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+        if (restored) throw IllegalStateException(TvSettings.dnsUnreachable(values["private_dns_specifier"]))
+        record(TvSettings.label(tweak, values), before)
+        throw IllegalStateException(TvSettings.dnsStuck(values["private_dns_specifier"]))
+    }
+    return record(TvSettings.label(tweak, t.read(tweak)), before)
 }

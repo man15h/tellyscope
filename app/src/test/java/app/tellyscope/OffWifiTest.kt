@@ -24,6 +24,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -104,6 +105,26 @@ class OffWifiTest {
                 source.lan.tryEmit(Unit)
                 runCurrent()
                 assertEquals(2, source.scans)
+            }
+        } finally {
+            vm.viewModelScope.cancel()
+            Dispatchers.resetMain()
+        }
+    }
+
+    @Test fun anEmptyScanTriesAgainEvery15Seconds() {
+        val dispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(dispatcher)
+        val source = JoinsWifi()
+        val vm = TellyscopeViewModel(source, clock = { 0L })
+        try {
+            with(TestScope(dispatcher)) {
+                runCurrent()
+                assertEquals(1, source.scans)
+                advanceTimeBy(15_001)
+                assertEquals(2, source.scans)
+                advanceTimeBy(15_001)
+                assertEquals(3, source.scans)
             }
         } finally {
             vm.viewModelScope.cancel()

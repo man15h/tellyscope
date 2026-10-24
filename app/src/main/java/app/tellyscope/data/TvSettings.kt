@@ -46,4 +46,8 @@ object TvSettings {
 
     fun dnsUnreachable(host: String?) =
         "the TV couldn't look anything up through $host, so Private DNS was put back. The network may block encrypted DNS (port 853)"
+
+    fun dnsStuck(host: String?) =
+        "the TV couldn't look anything up through $host, and putting the old Private DNS back failed. " +
+            "The TV may be offline until you undo it in History"
 }

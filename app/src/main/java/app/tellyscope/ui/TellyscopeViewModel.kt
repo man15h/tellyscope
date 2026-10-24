@@ -238,27 +238,28 @@ class TellyscopeViewModel(
     fun rescan() {
         if (scanJob?.isActive == true) return
         scanJob = viewModelScope.launch {
-            _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false)) }
-            source.scan().collect { e ->
-                when (e) {
-                    is ScanEvent.Progress -> _state.update { it.copy(scan = it.scan.copy(progress = e.progress)) }
-                    is ScanEvent.Found -> _state.update { s ->
-                        val known = s.devices.any { it.hit.ip == e.hit.ip }
-                        if (known || s.scan.hits.any { it.ip == e.hit.ip }) s
-                        else s.copy(scan = s.scan.copy(
-                            hits = (s.scan.hits + e.hit).sortedWith(compareBy({ it.maker == null }, { ipKey(it.ip) })),
-                            rows = s.scan.rows + (e.hit.ip to RowState.Found),
-                        ))
+            // Empty scan with no TV open: the guide is on screen; keep looking so the user never has to
+            // press anything. The retry stays in this job, as rescan() from here would see it still active.
+            while (true) {
+                _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false)) }
+                source.scan().collect { e ->
+                    when (e) {
+                        is ScanEvent.Progress -> _state.update { it.copy(scan = it.scan.copy(progress = e.progress)) }
+                        is ScanEvent.Found -> _state.update { s ->
+                            val known = s.devices.any { it.hit.ip == e.hit.ip }
+                            if (known || s.scan.hits.any { it.ip == e.hit.ip }) s
+                            else s.copy(scan = s.scan.copy(
+                                hits = (s.scan.hits + e.hit).sortedWith(compareBy({ it.maker == null }, { ipKey(it.ip) })),
+                                rows = s.scan.rows + (e.hit.ip to RowState.Found),
+                            ))
+                        }
+                        ScanEvent.NoLan -> _state.update { it.copy(scan = it.scan.copy(noLan = true)) }
+                        ScanEvent.Done -> Unit
                     }
-                    ScanEvent.NoLan -> _state.update { it.copy(scan = it.scan.copy(noLan = true)) }
-                    ScanEvent.Done -> Unit
                 }
-            }
-            _state.update { it.copy(scan = it.scan.copy(scanning = false)) }
-            // Empty scan: the guide is on screen; keep looking so the user never has to press anything.
-            if (_state.value.scan.hits.isEmpty()) {
+                _state.update { it.copy(scan = it.scan.copy(scanning = false)) }
+                if (_state.value.let { it.scan.hits.isNotEmpty() || it.selected != null }) break
                 delay(15_000)
-                rescan()
             }
         }
     }
@@ -446,7 +447,9 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                updateDevice(id) { it.copy(busy = null) }
+                // A change can fail after it was recorded (a rollback that didn't take), so History is reread.
+                val history = source.history(id)
+                updateDevice(id) { it.copy(busy = null, history = history) }
                 _notice.value = e.message?.replaceFirstChar(Char::uppercase) ?: "That didn't work."
                 return@launch
             }

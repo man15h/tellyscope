@@ -204,6 +204,43 @@ class DeviceListsTest {
         assertEquals(mapOf("com.a.one" to false, "com.a.two" to false), suggest(list.copy(sdk = null), apps, null).flatMap { it.packages }.associate { it.pkg to it.ticked })
     }
 
+    @Test fun anAppInTwoGroupsOrTwoGroupsWithOneTitleShowOnce() {
+        fun p(pkg: String) = ListPackage(pkg, null, false)
+        val list = DeviceList(
+            "x", "X", null, 30, emptySet(),
+            listOf(
+                ListGroup("Junk", listOf(p("com.a.one"), p("com.a.two"))),
+                ListGroup("Ads", listOf(p("com.a.one"), p("com.a.three"))),
+                ListGroup("Junk", listOf(p("com.a.four"), p("com.a.two"))),
+            ),
+        )
+        val groups = suggest(list, listOf("one", "two", "three", "four").map { app("com.a.$it") }, 30)
+        // The screen keys rows by group title and by package, so a repeat of either crashes it.
+        assertEquals(listOf("Junk", "Ads"), groups.map { it.title })
+        assertEquals(listOf("com.a.one", "com.a.two", "com.a.four"), groups[0].packages.map { it.pkg })
+        assertEquals(listOf("com.a.three"), groups[1].packages.map { it.pkg })
+    }
+
+    @Test fun oneBadEntryIsDroppedNotTheWholeIndex() {
+        val text = """
+            {"schema": 1, "devices": [
+              {"id": "no-sha", "name": "No sha", "file": "devices/no-sha.json"},
+              "not an object",
+              {"id": "good", "name": "Good", "file": "devices/good.json", "sha256": "${"0".repeat(64)}"}]}
+        """.trimIndent()
+        assertEquals(listOf("good"), parseIndex(text)?.devices?.map { it.id })
+    }
+
+    @Test fun oneBadPackageOrGroupIsDroppedNotTheWholeList() {
+        val text = """
+            {"schema": 1, "id": "x", "name": "X", "keep": [{"note": "no pkg"}, {"pkg": "com.a.keep"}],
+             "groups": [7, {"title": "Junk", "packages": [{"note": "no pkg"}, {"pkg": "com.a.one"}]}]}
+        """.trimIndent()
+        val list = parseList(text, "x")
+        assertEquals(setOf("com.a.keep"), list?.keep)
+        assertEquals(listOf("com.a.one"), list?.groups?.flatMap { g -> g.packages.map { it.pkg } })
+    }
+
     @Test fun keepIsNeverSuggested() {
         val keep = setOf("com.acme.hdmi")
         // A list that names a package in both keep and a group never suggests it.

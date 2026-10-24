@@ -30,6 +30,14 @@ class FilesTest {
         assertContentEquals(byteArrayOf(1), sh.transfer.files["/sdcard/Download/clip.mp4"])
     }
 
+    @Test fun pushNeverOverwritesAHiddenFile() = runTest {
+        val sh = FakeShell()
+        sh.transfer.files["/sdcard/Download/.config"] = byteArrayOf(1)
+        val name = Files(sh).push(Buffer().write(data), data.size.toLong(), ".config", TvFolder.DOWNLOAD)
+        assertEquals(".config (1)", name)
+        assertContentEquals(byteArrayOf(1), sh.transfer.files["/sdcard/Download/.config"])
+    }
+
     @Test fun pushReportsProgressToTheEnd() = runTest {
         val sh = FakeShell()
         val seen = mutableListOf<Progress>()
