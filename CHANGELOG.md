@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Improved:** The remote looks like Google TV's and opens from Overview. [#89](../../pull/89)
+
 ## 0.6.1 — 2026-10-25
 
 - **Fixed:** Set as default launcher now works when Android TV Home is Home. [#84](../../pull/84)

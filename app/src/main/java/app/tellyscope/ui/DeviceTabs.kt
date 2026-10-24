@@ -138,6 +138,8 @@ fun DeviceTabsScreen(
     actions: DeviceActions,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     startTab: TvTab = TvTab.Overview,
+    /** Shows the Remote button; screenshots turn it on while [REMOTE_ENABLED] is off. */
+    remoteEnabled: Boolean = REMOTE_ENABLED,
 ) {
     val device = state.selected ?: return
     val ui = state.device
@@ -195,6 +197,7 @@ fun DeviceTabsScreen(
                 if (!offline) when (tab) {
                     TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text("Install app") })
                     TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text("Upload files") })
+                    TvTab.Overview -> if (remoteEnabled) ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(RemoteIcons.Remote, null) }, text = { Text("Remote") })
                     else -> {}
                 }
             },
@@ -209,7 +212,6 @@ fun DeviceTabsScreen(
                             containerColor = lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse),
                         ),
                         actions = {
-                            if (REMOTE_ENABLED) TextButton(onClick = actions.remote, enabled = !offline) { Text("Remote") }
                             AppMenu(state, actions)
                         },
                     )
