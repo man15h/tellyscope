@@ -98,6 +98,8 @@ fun DebloatScreen(
     tv: Device? = null,
     /** The TV's apps, to pick from by hand when no list fits it. */
     tvApps: List<AppInfo> = emptyList(),
+    /** Something is running on this TV: Disable waits for it, like the Apps tab does. */
+    busy: Boolean = false,
 ) {
     val ready = lists as? Suggestions.Ready
     val devices = when (lists) {
@@ -136,7 +138,7 @@ fun DebloatScreen(
     if (confirming && groups != null) {
         // The dialog's list is exactly what gets disabled.
         val apps = groups.flatMap { it.packages }.filter { it.pkg in ticked }
-        DisableDialog(apps, onDisable = { confirming = false; onDisable(apps.map { it.pkg }); back() }, onDismiss = { confirming = false })
+        DisableDialog(apps, onDisable = { confirming = false; onDisable(apps.map { it.pkg }); back() }, onDismiss = { confirming = false }, enabled = !busy)
     }
     val use = { marked?.let { if (it != ready?.list?.id) { chosen = it; onPick(it) } }; searching = false }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -162,7 +164,7 @@ fun DebloatScreen(
                     } else {
                         Button(
                             onClick = { confirming = true },
-                            enabled = groups != null && ticked.isNotEmpty(),
+                            enabled = groups != null && ticked.isNotEmpty() && !busy,
                             modifier = Modifier.fillMaxWidth(),
                         ) { Text("Disable ${ticked.size} ${if (ticked.size == 1) "app" else "apps"}") }
                     }
@@ -313,7 +315,7 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
 }
 
 @Composable
-internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit) {
+internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Disable ${apps.size} ${if (apps.size == 1) "app" else "apps"}?") },
@@ -331,7 +333,7 @@ internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismi
                 }
             }
         },
-        confirmButton = { Button(onClick = onDisable) { Text("Yes, disable them") } },
+        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text("Yes, disable them") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
 }

@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -351,7 +352,7 @@ internal fun homeLabel(apps: List<AppInfo>, app: AppInfo): String? =
 
 /** Uninstall has no undo, so it asks in a dialog that names the app, not inline. */
 @Composable
-fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit) {
+fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(Copy.uninstallTitle(app.label)) },
@@ -359,6 +360,7 @@ fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit
         confirmButton = {
             Button(
                 onClick = onUninstall,
+                enabled = enabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
             ) { Text(Copy.confirm(Action.Uninstall)) }
         },
@@ -376,6 +378,8 @@ internal fun AppRow(
     actions: DeviceActions,
     /** The current home screen's name, when this app can replace it. */
     homeLabel: String? = null,
+    /** Something else is running on this TV: every button waits for it, like the tweaks do. */
+    locked: Boolean = false,
 ) {
     var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
     // A launcher can be protected by its name and still be offered as the new home screen.
@@ -402,22 +406,26 @@ internal fun AppRow(
             }
             if (busy) androidx.compose.material3.LoadingIndicator(Modifier.size(32.dp))
         }
-        val proposed = pending?.takeIf { it.first == app.packageName }?.second
+        val asked = pending?.takeIf { it.first == app.packageName }?.second
+        // A launcher switch whose target went away meanwhile (turned off in Debloat, say) has nothing left to explain.
+        val orphaned = (asked == Action.Home && home == null) || (asked == Action.HomeBack && back == null)
+        if (orphaned) LaunchedEffect(app.packageName) { actions.cancel() }
+        val proposed = asked.takeUnless { orphaned }
         AnimatedVisibility((open || proposed != null) && changeable) {
             Column(Modifier.padding(start = 52.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // The label is whatever the app calls itself; the package id is what an action touches.
                 Text(app.packageName, style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (proposed == null) {
                     if (app.protectedReason == null) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (app.enabled && ram > 0) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }) { Text(Copy.button(Action.Stop)) }
-                        if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }) { Text(Copy.button(Action.Disable)) }
-                        else FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }) { Text(Copy.button(Action.Enable)) }
-                        if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }) { Text(Copy.button(Action.Uninstall)) }
+                        if (app.enabled && ram > 0) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop)) }
+                        if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable)) }
+                        else FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable)) }
+                        if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall)) }
                     }
-                    if (home != null) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Home) }) { Text(Copy.MAKE_HOME) }
-                    if (back != null) OutlinedButton(onClick = { actions.propose(app.packageName, Action.HomeBack) }) { Text(Copy.homeBack(back)) }
+                    if (home != null) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Home) }, enabled = !locked) { Text(Copy.MAKE_HOME) }
+                    if (back != null) OutlinedButton(onClick = { actions.propose(app.packageName, Action.HomeBack) }, enabled = !locked) { Text(Copy.homeBack(back)) }
                 } else if (proposed == Action.Uninstall) {
-                    UninstallDialog(app, onUninstall = actions.confirm, onDismiss = actions.cancel)
+                    UninstallDialog(app, onUninstall = actions.confirm, onDismiss = actions.cancel, enabled = !locked)
                 } else {
                     Text(
                         when {
@@ -429,7 +437,7 @@ internal fun AppRow(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = actions.confirm) { Text(Copy.confirm(proposed)) }
+                        Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed)) }
                         TextButton(onClick = actions.cancel) { Text("Cancel") }
                     }
                 }
@@ -445,6 +453,8 @@ internal fun HistoryList(
     onUndo: (HistoryEntry) -> Unit,
     restoring: Boolean = false,
     onRestoreAll: () -> Unit = {},
+    /** Something is running on this TV, a restore included: Undo and Restore wait for it. */
+    busy: Boolean = restoring,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     val off = HistoryBook.leftDisabled(history).size
@@ -454,7 +464,7 @@ internal fun HistoryList(
         UndoDisableDialog(h, onDisable = { disabling = null; onUndo(h) }, onDismiss = { disabling = null })
     }
     if (off > 0) {
-        OutlinedButton(onClick = { confirming = true }, enabled = !restoring) {
+        OutlinedButton(onClick = { confirming = true }, enabled = !busy) {
             Text(if (restoring) "Turning apps back on…" else "Restore everything ($off)")
         }
     }
@@ -483,7 +493,7 @@ internal fun HistoryList(
                     Spacer(Modifier.width(4.dp))
                     Text("Undone")
                 }
-                h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }) { Text(Copy.undo(h.undo)) }
+                h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo)) }
             }
         }
     }

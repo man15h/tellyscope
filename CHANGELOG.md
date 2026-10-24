@@ -17,6 +17,8 @@ until this file has a section for its version.
 - **Fixed:** Sending a file never overwrites a hidden file on the TV. [#91](../../pull/91)
 - **Fixed:** A failed Private DNS put-back is reported, with Undo in History. [#91](../../pull/91)
 - **Fixed:** An empty scan now retries every 15 seconds. [#91](../../pull/91)
+- **Fixed:** App buttons and Undo wait while another change is running. [#92](../../pull/92)
+- **Fixed:** Turning off a launcher mid-switch no longer crashes the Apps tab. [#92](../../pull/92)
 
 ## 0.6.1 — 2026-10-25
 

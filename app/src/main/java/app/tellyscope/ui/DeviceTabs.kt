@@ -282,7 +282,7 @@ fun DeviceTabsScreen(
                     TvTab.Apps -> {
                         val procs = snap?.procs.orEmpty()
                         fun rows(apps: List<AppInfo>) = items(apps, key = { it.packageName }) { app ->
-                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, homeLabel(ui.apps, app))
+                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, homeLabel(ui.apps, app), locked = ui.busy != null)
                         }
                         if (searching) {
                             // One flat list of every matching app, whichever button it sits under; each row says
@@ -338,7 +338,7 @@ fun DeviceTabsScreen(
                         else item { Panel(Copy.TWEAKS) { TweaksBlock(ui, actions) } }
                         item {
                             Panel("Recent changes") {
-                                HistoryList(ui.history, state.now, actions.undo, restoring = ui.busy == RESTORING, onRestoreAll = actions.restoreAll)
+                                HistoryList(ui.history, state.now, actions.undo, restoring = ui.busy == RESTORING, onRestoreAll = actions.restoreAll, busy = ui.busy != null)
                             }
                         }
                     }
