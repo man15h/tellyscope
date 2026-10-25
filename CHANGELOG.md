@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **New:** An Other chip in the pairing guide, for TVs not listed. [#PR](../../pull/PR)
+- **New:** An Other chip in the pairing guide, for TVs not listed. [#100](../../pull/100)
 
 ## 0.6.2 — 2026-10-25
 
