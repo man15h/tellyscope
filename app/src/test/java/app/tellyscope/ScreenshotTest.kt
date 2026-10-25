@@ -187,6 +187,10 @@ class ScreenshotTest {
 
     @Test fun scan_empty_dark() = scan(empty, dark = true, name = "03_scan_empty_guide")
 
+    @Test fun scan_otherGuide() = shot("03_scan_other_guide", before = { compose.onNodeWithText("Other").performClick() }) {
+        ScanScreen(empty, now, {}, {}, { _, _ -> }, {}, { null })
+    }
+
     private val key = "3F:A2:91:0C:7B:E4:58:D6:21:9A:C3:4F:80:1E:B7:65"
 
     private fun connect(hit: ScanHit, row: RowState, dark: Boolean, name: String) = shot(name, dark) {
