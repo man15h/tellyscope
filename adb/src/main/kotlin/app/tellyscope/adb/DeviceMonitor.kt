@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package app.tellyscope.adb
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import java.io.IOException
 import java.time.YearMonth
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
 /** One reading for the stat strip. Null fields mean "this TV doesn't report it". */
@@ -35,69 +38,152 @@ data class Stats(
 )
 
 /** One process and the package it belongs to; null for native daemons. */
-data class AppProcess(val pid: Int, val name: String, val packageName: String?, val cpuPercent: Double, val rssKb: Long)
+data class AppProcess(val pid: Int, val name: String, val packageName: String?, val cpuPercent: Double?, val rssKb: Long)
 
 /** Where [DeviceLink] gets readings from; [DeviceMonitor] in the app, a fake in tests. */
 fun interface MonitorSource {
     fun stats(): Flow<Stats>
 }
 
-/**
- * Live stats on three tiers: CPU/RAM/network speed every [fast], processes and screen state every [medium],
- * identity/storage/uptime/temperature/packages every [slow].
- * The first emission comes after one fast interval, since CPU % needs two samples.
- * Shell failures and reads slower than [readTimeout] throw [IOException], so the caller can mark
- * the device offline instead of waiting out the socket timeout.
- */
-class DeviceMonitor(
-    private val shell: AdbShell,
-    private val fast: Duration = 2.seconds,
-    private val medium: Duration = 10.seconds,
-    private val slow: Duration = 60.seconds,
-    private val readTimeout: Duration = 10.seconds,
-    /** Times network speed; tests pass the test scheduler's clock. */
-    private val clock: TimeSource.WithComparableMarks = TimeSource.Monotonic,
-) : MonitorSource {
-    override fun stats(): Flow<Stats> = flow {
-        var slowStats = readSlow()
-        var lastSlow = TimeSource.Monotonic.markNow()
-        var mediumStats = readMedium(slowStats.packages)
-        var lastMedium = TimeSource.Monotonic.markNow()
-        var prev = readFast()
+/** How much of the process list a screen needs. */
+enum class ProcessLevel {
+    /** Nothing shown: no process read; the last list is kept. */
+    NONE,
 
-        while (true) {
-            delay(fast)
-            if (lastSlow.elapsedNow() >= slow) {
-                slowStats = readSlow()
-                lastSlow = TimeSource.Monotonic.markNow()
-            }
-            if (lastMedium.elapsedNow() >= medium) {
-                mediumStats = readMedium(slowStats.packages)
-                lastMedium = TimeSource.Monotonic.markNow()
-            }
-            val now = readFast()
-            val pct = if (prev.cpu != null && now.cpu != null) Parsers.cpuPercent(prev.cpu, now.cpu) else null
-            emit(
-                slowStats.copy(
-                    cpuPercent = pct,
-                    memory = now.memory,
-                    processes = mediumStats.first,
-                    screenOn = mediumStats.second,
-                    netBytesPerSec = rate(prev, now),
-                ),
-            )
-            prev = now
+    /** Memory per app (Overview, Apps): `ps`, no CPU and no screen state. */
+    LIGHT,
+
+    /** CPU per process and the screen state (Advanced): `top` and `dumpsys power`. */
+    FULL,
+}
+
+/**
+ * How often one screen refreshes what it shows: the stat strip (CPU, RAM, network) every [fastEvery],
+ * the process list at [processes] every [processEvery].
+ */
+data class StatsProfile(val fastEvery: Duration, val processes: ProcessLevel, val processEvery: Duration) {
+    companion object {
+        val OVERVIEW = StatsProfile(2.seconds, ProcessLevel.LIGHT, 2.seconds)
+        val APPS = StatsProfile(10.seconds, ProcessLevel.LIGHT, 10.seconds)
+        val ADVANCED = StatsProfile(2.seconds, ProcessLevel.FULL, 2.seconds)
+
+        /** Files, Tweaks, Remote, Settings, Debloat, and every TV that isn't on screen. */
+        val OTHER = StatsProfile(10.seconds, ProcessLevel.NONE, 10.seconds)
+    }
+}
+
+/**
+ * What the app tells one TV's stats loop. [during] pauses it while a change runs, so a slow read
+ * never competes with `pm`, an install or a Home switch; [profile] is the open screen's refresh
+ * rates. Until a screen sets one, everything is read every 2 s.
+ */
+class StatsGate {
+    private val running = MutableStateFlow(0)
+
+    val profile = MutableStateFlow(StatsProfile.ADVANCED)
+
+    val busy: Boolean get() = running.value > 0
+
+    suspend fun <T> during(block: suspend () -> T): T {
+        running.update { it + 1 }
+        try {
+            return block()
+        } finally {
+            running.update { it - 1 }
         }
     }
 
-    private suspend fun run(command: String): String =
-        withTimeoutOrNull(readTimeout) { shell.shell(command).output }
-            ?: throw IOException("no answer in $readTimeout")
+    internal suspend fun awaitIdle() {
+        running.first { it == 0 }
+    }
+}
+
+/**
+ * Live stats on three tiers, at the rates of [StatsGate.profile]: CPU/RAM/network speed, the process
+ * list (read at once when its level changes), and identity/storage/uptime/temperature/packages every
+ * [slow]. Reads run one after another, never overlapping: a tier slower than its interval just
+ * reads back to back. A new profile takes effect at once, not after the old interval.
+ * The first emission comes after one fast interval, since CPU % needs two samples.
+ * A read slower than [readTimeout] skips that sample. Shell failures throw, and so does a slow read
+ * the TV then doesn't follow with an `echo` answer within [pingTimeout], so the caller can mark it
+ * offline instead of waiting out the socket timeout.
+ */
+class DeviceMonitor(
+    private val shell: AdbShell,
+    private val slow: Duration = 60.seconds,
+    private val readTimeout: Duration = 10.seconds,
+    private val pingTimeout: Duration = 10.seconds,
+    /** While a change runs, how often the TV is pinged instead of read. */
+    private val pingEvery: Duration = 10.seconds,
+    private val gate: StatsGate = StatsGate(),
+    /** Times the tiers and network speed; tests pass the test scheduler's clock. */
+    private val clock: TimeSource.WithComparableMarks = TimeSource.Monotonic,
+) : MonitorSource {
+    override fun stats(): Flow<Stats> = flow {
+        var slowStats = Stats(cpuPercent = null, memory = null)
+        var lastSlow: TimeMark? = null
+        var procStats: Pair<List<AppProcess>, Boolean?> = emptyList<AppProcess>() to null
+        var lastProcs: TimeMark? = null
+        var lastLevel = ProcessLevel.NONE
+        var prev: Fast? = null
+
+        while (true) {
+            val profile = gate.profile.value
+            // Tiers are timed from the start of the round they ran in, so a 2 s tier runs every round.
+            val started = clock.markNow()
+            // A skipped tier waits its whole interval again, so a TV that is always slow isn't asked every round.
+            if (lastSlow.due(slow)) {
+                readSlow()?.let { slowStats = it }
+                lastSlow = started
+            }
+            val level = profile.processes
+            if (level != ProcessLevel.NONE && (level != lastLevel || lastProcs.due(profile.processEvery))) {
+                readProcesses(level, slowStats.packages, procStats.second)?.let { procStats = it }
+                lastProcs = started
+                lastLevel = level
+            }
+            val now = readFast()
+            val last = prev
+            if (now != null && last != null) {
+                val pct = if (last.cpu != null && now.cpu != null) Parsers.cpuPercent(last.cpu, now.cpu) else null
+                emit(
+                    slowStats.copy(
+                        cpuPercent = pct,
+                        memory = now.memory,
+                        processes = procStats.first,
+                        screenOn = procStats.second,
+                        netBytesPerSec = rate(last, now),
+                    ),
+                )
+            }
+            if (now != null) prev = now
+            val wait = profile.fastEvery - started.elapsedNow()
+            if (wait.isPositive()) withTimeoutOrNull(wait) { gate.profile.first { it != profile } }
+        }
+    }
+
+    private fun TimeMark?.due(every: Duration) = this == null || elapsedNow() >= every
+
+    /**
+     * Null skips the sample: the read ran past [readTimeout] while a change was running, or the TV
+     * still answered `echo` after it. While a change runs nothing is read, but the TV is pinged
+     * every [pingEvery], so one that dies mid-change still ends the change instead of hanging it.
+     */
+    private suspend fun run(command: String): String? {
+        while (withTimeoutOrNull(pingEvery) { gate.awaitIdle() } == null) ping()
+        withTimeoutOrNull(readTimeout) { shell.shell(command).output }?.let { return it }
+        if (!gate.busy) ping()
+        return null
+    }
+
+    private suspend fun ping() {
+        withTimeoutOrNull(pingTimeout) { shell.shell("echo") } ?: throw IOException("no answer to echo in $pingTimeout")
+    }
 
     private class Fast(val cpu: Parsers.CpuTimes?, val memory: Parsers.Memory?, val netBytes: Long?, val at: ComparableTimeMark)
 
-    private suspend fun readFast(): Fast {
-        val (stat, meminfo, netDev) = Commands.split(run(Commands.FAST), 3)
+    private suspend fun readFast(): Fast? {
+        val (stat, meminfo, netDev) = Commands.split(run(Commands.FAST) ?: return null, 3)
         return Fast(Parsers.cpuTimes(stat), Parsers.memory(meminfo), Parsers.netBytes(netDev), clock.markNow())
     }
 
@@ -108,17 +194,36 @@ class DeviceMonitor(
         return if (bytes < 0 || ms <= 0) null else bytes * 1000 / ms
     }
 
-    private suspend fun readMedium(packages: Map<Int, List<String>>): Pair<List<AppProcess>, Boolean?> {
-        val (top, power) = Commands.split(run(Commands.MEDIUM), 2)
-        val known = packages.values.flatten().toSet()
-        val procs = Parsers.processes(top).map { p ->
-            AppProcess(p.pid, p.name, Parsers.owner(p, packages, known), p.cpuPercent, p.rssKb)
+    /** The light read keeps [screenOn] from the last full one; only Advanced shows it. */
+    private suspend fun readProcesses(level: ProcessLevel, packages: Map<Int, List<String>>, screenOn: Boolean?): Pair<List<AppProcess>, Boolean?>? {
+        val (procs, screen) = if (level == ProcessLevel.FULL) {
+            val (top, power) = Commands.split(run(Commands.MEDIUM) ?: return null, 2)
+            Parsers.processes(top) to Parsers.screenOn(power)
+        } else {
+            (readPs() ?: return null) to screenOn
         }
-        return procs to Parsers.screenOn(power)
+        val known = packages.values.flatten().toSet()
+        return procs.map { p -> AppProcess(p.pid, p.name, Parsers.owner(p, packages, known), p.cpuPercent, p.rssKb) } to screen
     }
 
-    private suspend fun readSlow(): Stats {
-        val (getprop, df, uptime, thermal, pm) = Commands.split(run(Commands.SLOW), 5)
+    /** Set once `ps -o` answered without a single process row; plain `ps` from then on. */
+    private var plainPs = false
+
+    private suspend fun readPs(): List<Parsers.Process>? {
+        if (!plainPs) {
+            val out = run(Commands.LIGHT) ?: return null
+            // A blank reply is a hiccup that skips the sample. Plain `ps` lists only the shell's own
+            // processes on toybox, so it's only for a `ps` that answers but ignores `-o`.
+            if (out.isBlank()) return null
+            val procs = Parsers.psProcesses(out)
+            if (procs.isNotEmpty()) return procs
+            plainPs = true
+        }
+        return Parsers.psProcesses(run("ps") ?: return null)
+    }
+
+    private suspend fun readSlow(): Stats? {
+        val (getprop, df, uptime, thermal, pm) = Commands.split(run(Commands.SLOW) ?: return null, 5)
         val props = Parsers.props(getprop)
         return Stats(
             cpuPercent = null,

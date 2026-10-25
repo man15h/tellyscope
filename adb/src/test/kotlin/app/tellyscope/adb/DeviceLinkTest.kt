@@ -55,7 +55,7 @@ class DeviceLinkTest {
         var failNext = true
         val link = DeviceLink(
             "tv", 5555, backgroundScope,
-            monitorFor = { fakeMonitor(failFirst = failNext.also { failNext = false }) },
+            monitorFor = { _, _ -> fakeMonitor(failFirst = failNext.also { failNext = false }) },
             open = { _, _ ->
                 if (reachable) ConnectResult.Online(FakeShell().also { sessions += it }) else ConnectResult.Unreachable("no route")
             },
@@ -90,7 +90,7 @@ class DeviceLinkTest {
         var calls = 0
         val link = DeviceLink(
             "tv", 5555, backgroundScope,
-            monitorFor = { fakeMonitor(failFirst = true) },
+            monitorFor = { _, _ -> fakeMonitor(failFirst = true) },
             open = { _, _ -> if (calls++ == 0) ConnectResult.Online(FakeShell()) else ConnectResult.NotAllowed },
         )
         link.connect(); runCurrent()
@@ -101,7 +101,7 @@ class DeviceLinkTest {
 
     @Test fun disconnectClosesSessionAndResets() = runTest {
         val shell = FakeShell()
-        val link = DeviceLink("tv", 5555, backgroundScope, monitorFor = { fakeMonitor(failFirst = false) },
+        val link = DeviceLink("tv", 5555, backgroundScope, monitorFor = { _, _ -> fakeMonitor(failFirst = false) },
             open = { _, _ -> ConnectResult.Online(shell) })
         link.connect(); runCurrent()
         assertEquals(DeviceState.ONLINE, link.state.value)

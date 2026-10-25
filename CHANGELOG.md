@@ -12,6 +12,9 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Fixed:** A slow stats read no longer drops the TV mid-change. [#99](../../pull/99)
+- **Improved:** Each screen reads only what it shows, at its own rate. [#99](../../pull/99)
+
 ## 0.6.2 — 2026-10-25
 
 - **Fixed:** App buttons and Undo wait while another change is running. [#92](../../pull/92)

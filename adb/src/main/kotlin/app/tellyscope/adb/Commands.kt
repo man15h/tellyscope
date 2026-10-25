@@ -22,7 +22,10 @@ internal object Commands {
         PACKAGES,
     ).batch()
 
-    /** Every 10 s and on open: processes and whether the screen is on. */
+    /** Every 10 s on Overview and Apps: memory per process, without `top`'s CPU sampling. */
+    const val LIGHT = "ps -A -o PID,USER,RSS,NAME 2>/dev/null"
+
+    /** Every 10 s on Advanced: processes with CPU, and whether the screen is on. */
     val MEDIUM = listOf(
         "top -b -n 1 -o PID,USER,RES,%CPU,NAME",
         "dumpsys power | grep -E 'mWakefulness=|mScreenOn='",

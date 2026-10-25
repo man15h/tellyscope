@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.InstallKind
+import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
 import app.tellyscope.adb.Progress
@@ -332,6 +333,9 @@ class TellyscopeViewModel(
         // A TV that comes online mid-copy joins the list; switching pages would hide the copy's dialog and its Cancel.
         if (transferJobs[_state.value.selectedId]?.isActive != true) select(device.id)
     }
+
+    /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
+    fun showStats(profile: StatsProfile) = source.showStats(_state.value.selectedId, profile)
 
     fun select(id: String?) {
         liveJob?.cancel()

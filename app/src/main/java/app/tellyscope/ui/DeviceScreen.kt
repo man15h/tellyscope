@@ -52,6 +52,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
@@ -109,6 +110,8 @@ data class DeviceActions(
     val dismissRequest: () -> Unit = {},
     /** Folds an Apps tab's System section away, or opens it; remembered across restarts. */
     val foldSystem: (AppsTab, Boolean) -> Unit = { _, _ -> },
+    /** The open tab's refresh rates; the TV's stats reads follow them. */
+    val showStats: (StatsProfile) -> Unit = {},
 )
 
 /** Off while the remote is made faster: the device page hides its Remote button. */

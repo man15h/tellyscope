@@ -31,6 +31,7 @@ import app.tellyscope.adb.ProtectedReason
 import app.tellyscope.adb.Remote
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.Stats
+import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.PairResult
 import app.tellyscope.adb.pairOnFreshPort
 import app.tellyscope.adb.Tweak
@@ -70,6 +71,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     private val appContext = context.applicationContext
     private val scope = CoroutineScope(SupervisorJob())
     private val links = ConcurrentHashMap<String, DeviceLink>()
+    /** The TV on screen and its screen's refresh rates; every other TV reads at [StatsProfile.OTHER]. */
+    @Volatile private var statsFor: Pair<String, StatsProfile>? = null
     private val hits = ConcurrentHashMap<String, ScanHit>()
     private val store = DeviceStore(File(appContext.filesDir, "devices.tsv"))
     private val saved = ConcurrentHashMap<String, SavedDevice>()
@@ -111,6 +114,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val link = DeviceLink(host, port, scope, knownGood = knownGood, open = { h, p ->
             pending?.also { pending = null } ?: Connector.connect(h, p)
         })
+        link.gate.profile.value = statsFor?.takeIf { it.first == host }?.second ?: StatsProfile.OTHER
         links.put(host, link)?.disconnect()
         watchers.put(host, scope.launch {
             // Save a fresh reading only when what's kept of it changed, not every 2 s.
@@ -296,12 +300,21 @@ class AdbDeviceSource(context: Context) : DeviceSource {
                     tempC = s.temperatureC?.toInt(),
                     uptimeSeconds = s.uptimeSeconds ?: 0,
                     screenOn = s.screenOn,
-                    procs = s.processes.map { Proc(it.pid, it.name, it.packageName, it.cpuPercent, (it.rssKb / 1024).toInt()) },
+                    procs = s.processes.map { Proc(it.pid, it.name, it.packageName, it.cpuPercent ?: 0.0, (it.rssKb / 1024).toInt()) },
                     netBytesPerSec = s.netBytesPerSec,
                     softwareMonth = s.softwareMonth,
                 )
             }
     }
+
+    override fun showStats(deviceId: String?, profile: StatsProfile) {
+        statsFor = deviceId?.let { it to profile }
+        links.forEach { (host, link) -> link.gate.profile.value = if (host == deviceId) profile else StatsProfile.OTHER }
+    }
+
+    /** Runs a change with that TV's stats paused, so a slow stats read can't compete with it or cut it off. */
+    private suspend fun <T> busy(deviceId: String, block: suspend () -> T): T =
+        links[deviceId]?.gate?.during(block) ?: block()
 
     override suspend fun apps(deviceId: String): List<AppInfo> {
         val shell = session(deviceId)
@@ -381,7 +394,10 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         return labels[pkg] ?: AppNames.fallback(pkg)
     }
 
-    override suspend fun act(deviceId: String, action: Action, packageName: String, undoing: Long?): HistoryEntry {
+    override suspend fun act(deviceId: String, action: Action, packageName: String, undoing: Long?): HistoryEntry =
+        busy(deviceId) { actNow(deviceId, action, packageName, undoing) }
+
+    private suspend fun actNow(deviceId: String, action: Action, packageName: String, undoing: Long?): HistoryEntry {
         val shell = session(deviceId)
         // Before the first change on a TV, note what was already off: Restore must leave those alone.
         val key = key(deviceId)
@@ -534,9 +550,9 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         return Resolved(index, match, list, out.getOrNull(MATCH_KEYS.size)?.toIntOrNull())
     }
 
-    override suspend fun press(deviceId: String, key: RemoteKey) = Remote(session(deviceId)).press(key)
+    override suspend fun press(deviceId: String, key: RemoteKey) = busy(deviceId) { Remote(session(deviceId)).press(key) }
 
-    override suspend fun type(deviceId: String, text: String) = Remote(session(deviceId)).type(text)
+    override suspend fun type(deviceId: String, text: String) = busy(deviceId) { Remote(session(deviceId)).type(text) }
 
     override suspend fun reboot(deviceId: String) = Remote(session(deviceId)).reboot()
 
@@ -549,7 +565,10 @@ class AdbDeviceSource(context: Context) : DeviceSource {
 
     private suspend fun sdk(deviceId: String) = session(deviceId).shell("getprop ro.build.version.sdk").output.trim().toIntOrNull()
 
-    override suspend fun change(deviceId: String, tweak: Tweak, values: Map<String, String?>, undoing: Long?): HistoryEntry {
+    override suspend fun change(deviceId: String, tweak: Tweak, values: Map<String, String?>, undoing: Long?): HistoryEntry =
+        busy(deviceId) { changeNow(deviceId, tweak, values, undoing) }
+
+    private suspend fun changeNow(deviceId: String, tweak: Tweak, values: Map<String, String?>, undoing: Long?): HistoryEntry {
         val t = Tweaks(session(deviceId))
         val strictDns = tweak == Tweak.PRIVATE_DNS && values["private_dns_mode"] == "hostname"
         if (strictDns && (sdk(deviceId) ?: TvSettings.DNS_SDK) < TvSettings.DNS_SDK) throw IllegalStateException(TvSettings.DNS_TOO_OLD)
@@ -568,7 +587,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     }
 
     override suspend fun clearCaches(deviceId: String): Long? {
-        val freed = Tweaks(session(deviceId)).clearCaches()
+        val freed = busy(deviceId) { Tweaks(session(deviceId)).clearCaches() }
         book.record(key(deviceId), System.currentTimeMillis(), Action.ClearCaches, "", TvSettings.CACHES, undo = null)
         return freed
     }
@@ -616,15 +635,15 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         apk: ApkInfo,
         allowDowngrade: Boolean,
         onProgress: (Progress) -> Unit,
-    ): InstallResult = Sideload(session(deviceId)).install(apks, apk, allowDowngrade, onProgress)
+    ): InstallResult = busy(deviceId) { Sideload(session(deviceId)).install(apks, apk, allowDowngrade, onProgress) }
 
     override suspend fun files(deviceId: String, folder: TvFolder) = Files(session(deviceId)).list(folder)
 
     override suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit) =
-        Files(session(deviceId)).push(source, size, name, folder, onProgress)
+        busy(deviceId) { Files(session(deviceId)).push(source, size, name, folder, onProgress) }
 
     override suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit) =
-        Files(session(deviceId)).pull(folder, file, sink, onProgress)
+        busy(deviceId) { Files(session(deviceId)).pull(folder, file, sink, onProgress) }
 
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw IllegalStateException("$deviceId is offline")

@@ -65,6 +65,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -92,6 +93,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -173,6 +175,18 @@ fun DeviceTabsScreen(
     // "See changes" lands on Tweaks scrolled to Recent changes, the list's third item, after the hero.
     var toChanges by remember { mutableStateOf(false) }
     var shown by rememberSaveable { mutableStateOf(tab) }
+    // Each tab refreshes what it shows at its own rate: Overview and Apps (Running, sorted by RAM) need
+    // memory per app only, Files and Tweaks no processes at all.
+    DisposableEffect(tab, device.id) {
+        actions.showStats(
+            when (tab) {
+                TvTab.Overview -> StatsProfile.OVERVIEW
+                TvTab.Apps -> StatsProfile.APPS
+                TvTab.Files, TvTab.Tweaks -> StatsProfile.OTHER
+            },
+        )
+        onDispose { actions.showStats(StatsProfile.OTHER) }
+    }
     LaunchedEffect(tab) {
         if (tab == shown) return@LaunchedEffect
         shown = tab

@@ -186,4 +186,15 @@ class ParsersTest {
         assertEquals(java.time.YearMonth.of(2020, 9), Parsers.softwareMonth(mapOf("ro.build.date.utc" to "1600000000")))
         assertEquals(null, Parsers.softwareMonth(mapOf("ro.build.version.security_patch" to "", "ro.build.date.utc" to "0")))
     }
+
+    @Test fun psProcessesFromToyboxAndToolbox() {
+        val toybox = Parsers.psProcesses("PID USER RSS NAME\n2201 u0_a87 319488 com.google.android.youtube.tv\n")
+        assertEquals(listOf(Parsers.Process(2201, "u0_a87", 319488, null, "com.google.android.youtube.tv")), toybox)
+        // Old toolbox ps: a state column the header doesn't name, so the name is the last field.
+        val toolbox = Parsers.psProcesses(
+            "USER PID PPID VSIZE RSS WCHAN PC NAME\nroot 1 0 8904 788 ffffffff 00000000 S /init\n",
+        )
+        assertEquals(listOf(Parsers.Process(1, "root", 788, null, "/init")), toolbox)
+        assertEquals(emptyList<Parsers.Process>(), Parsers.psProcesses("bad option -o\n"))
+    }
 }

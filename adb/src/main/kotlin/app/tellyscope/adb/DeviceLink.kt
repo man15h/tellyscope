@@ -26,7 +26,7 @@ class DeviceLink(
     val port: Int,
     private val scope: CoroutineScope,
     private val retryEvery: Duration = 5.seconds,
-    private val monitorFor: (AdbShell) -> MonitorSource = { DeviceMonitor(it) },
+    private val monitorFor: (AdbShell, StatsGate) -> MonitorSource = { s, gate -> DeviceMonitor(s, gate = gate) },
     private val open: suspend (String, Int) -> ConnectResult = { h, p -> Connector.connect(h, p) },
     private val knownGood: Boolean = false,
     private val notAllowedLimit: Int = 3,
@@ -37,6 +37,9 @@ class DeviceLink(
     /** Last reading; kept while offline so the page can show it greyed out with "last seen". */
     private val _stats = MutableStateFlow<Stats?>(null)
     val stats: StateFlow<Stats?> = _stats.asStateFlow()
+
+    /** Pauses the stats while a change runs on this TV, and sets their refresh rates. */
+    val gate = StatsGate()
 
     @Volatile var session: AdbSession? = null
         private set
@@ -88,7 +91,7 @@ class DeviceLink(
         session = s
         _state.value = _state.value.on(DeviceEvent.Authorized)
         try {
-            monitorFor(s).stats().collect {
+            monitorFor(s, gate).stats().collect {
                 _stats.value = it
                 lastSeenMillis = System.currentTimeMillis()
             }

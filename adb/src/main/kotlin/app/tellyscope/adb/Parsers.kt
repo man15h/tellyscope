@@ -84,7 +84,8 @@ object Parsers {
         Package(name, uid, version).takeIf { name.isNotEmpty() }
     }.toList()
 
-    data class Process(val pid: Int, val user: String, val rssKb: Long, val cpuPercent: Double, val name: String)
+    /** [cpuPercent] is null from [psProcesses], which reads memory only. */
+    data class Process(val pid: Int, val user: String, val rssKb: Long, val cpuPercent: Double?, val name: String)
 
     /**
      * `top -b -n 1 -o PID,USER,RES,%CPU,NAME`. Header and summary lines are skipped by requiring a
@@ -98,6 +99,25 @@ object Parsers {
         val cpu = f[3].toDoubleOrNull() ?: return@mapNotNull null
         Process(pid, f[1], rss, cpu, f[4])
     }.toList()
+
+    /**
+     * `ps -A -o PID,USER,RSS,NAME`, or plain `ps` where `-o` isn't taken. Columns are found by the
+     * header and the name is the last field, since old toolbox `ps` prints a state column it doesn't
+     * name. RSS is in KB; CPU is left null.
+     */
+    fun psProcesses(ps: String): List<Process> {
+        val lines = ps.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }
+        val header = lines.firstOrNull()?.split(Regex("\\s+")) ?: return emptyList()
+        val pid = header.indexOf("PID")
+        val user = header.indexOf("USER")
+        val rss = header.indexOf("RSS")
+        if (pid < 0 || user < 0 || rss < 0) return emptyList()
+        return lines.drop(1).mapNotNull { line ->
+            val f = line.split(Regex("\\s+"))
+            if (f.size < header.size) return@mapNotNull null
+            Process(f[pid].toIntOrNull() ?: return@mapNotNull null, f[user], f[rss].toLongOrNull() ?: return@mapNotNull null, null, f.last())
+        }.toList()
+    }
 
     /** `u0_a123` → 10123, `system` etc. → null. */
     fun appUid(user: String): Int? {

@@ -19,6 +19,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.tellyscope.adb.Connector
+import app.tellyscope.adb.StatsProfile
 import app.tellyscope.data.AdbDeviceSource
 import app.tellyscope.data.AndroidPhoneStorage
 import app.tellyscope.data.FakeDeviceSource
@@ -209,6 +211,10 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         )
     } else if (advanced) {
         BackHandler { advanced = false }
+        DisposableEffect(Unit) {
+            vm.showStats(StatsProfile.ADVANCED)
+            onDispose { vm.showStats(StatsProfile.OTHER) }
+        }
         AdvancedScreen(state, back = { advanced = false }, snackbar = snackbar)
     } else if (settings) {
         BackHandler { settings = false }
@@ -272,6 +278,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 answerRequest = vm::answerRequest,
                 dismissRequest = vm::dismissRequest,
                 foldSystem = vm::foldSystem,
+                showStats = vm::showStats,
             ),
         )
     }
