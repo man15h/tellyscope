@@ -82,6 +82,13 @@ val brands = listOf(
         debug = "Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older projectors have **USB debugging**, then **Network debugging** if it's listed: turn on both.",
         pair = ANDROID_TV_PAIR,
     ),
+    TvBrand(
+        "Other",
+        unlock = "On the TV, open **Settings**. Has **System**? It's Google TV: go to **System → About** and press OK on **Android TV OS build** 7 times. Has **Device Preferences**? It's Android TV: go to **Device Preferences → About** and press OK on **Build** 7 times.",
+        debugTitle = "Turn on Wireless debugging",
+        debug = "Back one level, open **Developer options**. Turn on **Wireless debugging**. Older TVs have **USB debugging**, and some **Network debugging** too: turn on what's there.",
+        pair = "**Developer options → Wireless debugging → Pair device with pairing code**",
+    ),
 )
 
 /** The brand chips: every brand stays visible, so nobody has to guess what a menu hides. */

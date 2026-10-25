@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **New:** An Other chip in the pairing guide, for TVs not listed. [#PR](../../pull/PR)
+
 ## 0.6.2 — 2026-10-25
 
 - **Fixed:** App buttons and Undo wait while another change is running. [#92](../../pull/92)
