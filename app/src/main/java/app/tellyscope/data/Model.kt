@@ -126,7 +126,7 @@ data class AppInfo(
     val removable: Boolean = false,
     /** The launcher Home opens now. */
     val home: Boolean = false,
-    /** On the bundled `launchers.json`: a launcher people add, never a TV's own. */
+    /** On `launchers.json`: a launcher people add, never a TV's own. */
     val listedLauncher: Boolean = false,
     /** Another launcher that can replace the current home screen, [homeInstead]: Make Home is offered. */
     val homeInstead: String? = null,
@@ -157,7 +157,7 @@ data class AppInfo(
 /** Where an install from the Play Store stands, read every few seconds while the TV shows the Store. */
 enum class StoreState { Installed, InStore, Elsewhere }
 
-/** An app on the Remote's dock. [label] is kept so it can be named after the app is gone. */
+/** The app a Remote button opens. [label] is kept so it can be named after the app is gone. */
 data class Docked(val packageName: String, val label: String)
 
 data class Socket(val app: String, val remote: String, val state: String)

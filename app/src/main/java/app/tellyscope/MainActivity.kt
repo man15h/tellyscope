@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -42,6 +43,7 @@ import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.Connector
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.data.AdbDeviceSource
+import app.tellyscope.data.AndroidLauncherDownload
 import app.tellyscope.data.AndroidPhoneStorage
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
@@ -126,6 +128,7 @@ class MainActivity : ComponentActivity() {
                                         gates = FoldBook(File(filesDir, "gates.properties")),
                                         historySeen = SeenBook(File(filesDir, "history-seen.properties")),
                                         appFacts = AppFacts(installedVersion(), "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"),
+                                        launcherDownload = if (scenario != null) null else AndroidLauncherDownload(applicationContext),
                                     )
                                 }
                             },
@@ -207,8 +210,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     var rejoinId by rememberSaveable { mutableStateOf<String?>(null) }
     var rejoinSince by rememberSaveable { mutableStateOf(0L) }
 
-    // "*/*": file managers label .apks and .xapk bundles inconsistently, so a narrower type would grey them out.
-    val pickApp = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { vm.pickedApp(it) }
+    val pickApp = rememberLauncherForActivityResult(InDownloads.Multiple()) { vm.pickedApp(it) }
+    val pickProjectivy = rememberLauncherForActivityResult(InDownloads.One()) { uri -> uri?.let(vm::pickedProjectivy) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::push) }
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), vm::saveTo)
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
@@ -238,6 +241,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         if (st == DeviceState.Online || (st == DeviceState.NotAllowed && loggedOutAt == null)) rejoinId = null
     }
 
+    LaunchedEffect(adding) { vm.addingTv(adding) }
     if (state.selected == null || adding) {
         BackHandler(enabled = adding) { adding = false }
         ScanScreen(
@@ -336,8 +340,16 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 install = vm::installLauncher,
                 chooseAnother = vm::pickLauncher,
                 switch = vm::switchToLauncher,
+                makeHome = vm::makeHome,
+                open = vm::openLauncher,
                 later = vm::launcherLater,
+                fireCheck = vm::checkProjectivy,
+                fireInstall = vm::installProjectivy,
+                fireDismiss = vm::dismissProjectivy,
+                firePick = { pickProjectivy.launch(arrayOf(InDownloads.APK)) },
             ),
+            snackbar = snackbar,
+            direct = vm.directDownload,
         )
     } else if (debloat && state.device.debloat != null) {
         // Leaving mid-run only closes the screen; the run goes on, and History has each app.
@@ -382,7 +394,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 forget = vm::forget,
                 rename = vm::rename,
                 restoreAll = vm::restoreAll,
-                pickApp = { pickApp.launch(arrayOf("*/*")) },
+                pickApp = { pickApp.launch(InDownloads.APPS) },
                 allowDowngrade = vm::allowDowngrade,
                 install = vm::install,
                 closeSideload = vm::closeSideload,
@@ -408,6 +420,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 screenshot = { saveScreenshot.launch(Copy.screenshotName(System.currentTimeMillis())) },
                 answerRequest = vm::answerRequest,
                 dismissRequest = vm::dismissRequest,
+                closeAlert = vm::closeAlert,
                 foldSystem = vm::foldSystem,
                 showStats = vm::showStats,
                 whoHasAccess = { access = true },
@@ -502,6 +515,11 @@ private fun Context.openWifiSettings() {
 private fun accessActions(vm: TellyscopeViewModel, back: () -> Unit) = AccessActions(
     back = back,
     markMine = vm::markMine,
+    markKeyMine = vm::markKeyMine,
+    showRequest = vm::showRequest,
+    answerRequest = vm::answerRequest,
+    dismissRequest = vm::dismissRequest,
+    closeAlert = vm::closeAlert,
     askRemove = vm::askRemoveAccess,
     close = vm::closeRemoval,
     remove = vm::removeAccess,
@@ -512,3 +530,29 @@ private fun accessActions(vm: TellyscopeViewModel, back: () -> Unit) = AccessAct
     checkAgain = vm::checkAgain,
     restart = vm::restartToRemove,
 )
+
+/**
+ * The system file picker, opened in Downloads, where a browser saves what it downloads. Most pickers
+ * start there; some ignore it. It can't be kept there, or searched for the user.
+ */
+private object InDownloads {
+    const val APK = "application/vnd.android.package-archive"
+
+    /**
+     * Apps and the bundle types file managers give .apks and .xapk files, which vary: zip, unknown
+     * ("octet-stream"), or a type of their own. Photos, videos and documents are greyed out.
+     */
+    val APPS = arrayOf(APK, "application/zip", "application/x-zip-compressed", "application/octet-stream", "application/xapk-package-archive")
+
+    private val DOWNLOADS: Uri = DocumentsContract.buildDocumentUri("com.android.providers.downloads.documents", "downloads")
+
+    class One : ActivityResultContracts.OpenDocument() {
+        override fun createIntent(context: Context, input: Array<String>): Intent =
+            super.createIntent(context, input).putExtra(DocumentsContract.EXTRA_INITIAL_URI, DOWNLOADS)
+    }
+
+    class Multiple : ActivityResultContracts.OpenMultipleDocuments() {
+        override fun createIntent(context: Context, input: Array<String>): Intent =
+            super.createIntent(context, input).putExtra(DocumentsContract.EXTRA_INITIAL_URI, DOWNLOADS)
+    }
+}

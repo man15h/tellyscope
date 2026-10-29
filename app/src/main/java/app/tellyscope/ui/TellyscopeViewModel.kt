@@ -32,10 +32,16 @@ import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.LauncherDownload
+import app.tellyscope.data.LauncherRelease
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.NotAnApp
+import app.tellyscope.data.NotProjectivy
+import app.tellyscope.data.PROJECTIVY
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.RateLimited
+import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.ResetApp
 import app.tellyscope.data.ResetFailure
 import app.tellyscope.data.ResetPart
@@ -59,6 +65,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -89,6 +96,8 @@ data class ScanUi(
     val noLan: Boolean = false,
     val hits: List<ScanHit> = emptyList(),
     val rows: Map<String, RowState> = emptyMap(),
+    /** Nothing found yet: when the next scan starts by itself. Null while a scan runs or once a TV turns up. */
+    val nextScanAt: Long? = null,
 ) {
     /** Off Wi-Fi with nothing found: the scan screen asks the user to join one instead of listing. */
     val offWifi get() = noLan && hits.isEmpty()
@@ -165,8 +174,35 @@ data class ResetUi(
  * opens at its page ([Step.Waiting], or [Step.NoStore] when the Store didn't open and the user
  * searches by hand), then switch to it ([Step.Installed]). [Step.Left]: the Store closed first.
  */
-data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg) {
+data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg, val fire: FireInstall? = null) {
     enum class Step { Pick, Waiting, NoStore, Left, Installed }
+
+    /** Fire OS: Projectivy alone, with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
+    val fireOs get() = fire != null && !fire.store
+}
+
+/**
+ * Install Projectivy on Fire OS ([fireInstall]), on [LauncherFlow.Step.Pick] in place of the picker: there's no
+ * Play Store, so Tellyscope reads the latest release ([Step.Checking]), asks ([Step.Confirm]), downloads and
+ * checks it ([Step.Downloading]), installs it over adb ([Step.Installing]), then moves to [LauncherFlow.Step.Installed].
+ * A null [step] is the picker with nothing started. [error] is the TV's refusal, for [Step.Refused].
+ * [store]: Download directly on a TV with the Play Store, from the picker ([downloadable]); its steps offer the
+ * Store instead, and closing one goes back to the picker.
+ * After [Step.NoDownload] the user can download it themselves and pick the file ([picked]): [Step.Reading] checks
+ * it, then it installs the same way. [until]: GitHub refused the lookup until then, epoch millis, not the network.
+ */
+data class FireInstall(
+    val step: Step? = null,
+    val release: LauncherRelease? = null,
+    val progress: Progress? = null,
+    val error: String? = null,
+    val store: Boolean = false,
+    val picked: Boolean = false,
+    val until: Long? = null,
+    /** The APK's size once it's downloaded or picked, for the steps' first line. */
+    val size: Long? = null,
+) {
+    enum class Step { Checking, Confirm, Downloading, Reading, Installing, NotProjectivy, NoDownload, Refused }
 }
 
 /**
@@ -321,8 +357,14 @@ const val SCREENSHOT = "screenshot"
 /** [DeviceUi.busy] value while the TV's connection prompt is being answered. */
 const val ANSWERING = "request"
 
+/** How long Fire OS takes to hand focus from its closed alert to the prompt under it. */
+private const val ALERT_CLOSING_MS = 1_000L
+
 /** How often Install a home screen asks the TV whether the launcher is in yet. */
 const val STORE_POLL_MS = 3_000L
+
+/** An empty scan starts again after this long, unless Rescan is tapped first. */
+const val RESCAN_EVERY_MS = 10_000L
 
 /** How long it keeps asking before it says the launcher didn't arrive. */
 const val STORE_WAIT_MS = 10 * 60_000L
@@ -348,6 +390,8 @@ class TellyscopeViewModel(
     private val historySeen: SeenBook? = null,
     /** This build and phone, for reports. */
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
+    /** Projectivy from its developer's GitHub, for Fire OS. */
+    private val launcherDownload: LauncherDownload? = null,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState(now = clock()))
@@ -370,6 +414,9 @@ class TellyscopeViewModel(
 
     /** Last stats per TV, so an offline page shows where it stood instead of blanks. Lives as long as the app. */
     private val lastSnapshot = mutableMapOf<String, Snapshot>()
+    /** Each TV's app list and debloat list as last shown, so switching back shows them while fresh reads replace them. */
+    private val lastApps = mutableMapOf<String, List<AppInfo>>()
+    private val lastLists = mutableMapOf<String, Suggestions>()
 
     /** Keys go out one at a time, in the order pressed. */
     private val keys = Mutex()
@@ -381,6 +428,10 @@ class TellyscopeViewModel(
     private val typed = mutableMapOf<String, Int>()
 
     private var scanJob: Job? = null
+    /** Rescan tapped while an empty scan waits: cuts the wait short. */
+    private val scanNow = Channel<Unit>(Channel.CONFLATED)
+    /** The add flow is open over a selected TV, so an empty scan keeps looking there too. */
+    private var addingTv = false
     private var sideloadJob: Job? = null
     /** File copies by TV: each dialog shows only on its own TV's page, and its Cancel stops only that copy. */
     private val transferJobs = mutableMapOf<String, Job>()
@@ -488,10 +539,14 @@ class TellyscopeViewModel(
             scanOnResume = true
             return
         }
-        if (scanJob?.isActive == true) return
+        if (scanJob?.isActive == true) {
+            if (_state.value.scan.nextScanAt != null) scanNow.trySend(Unit)
+            return
+        }
         scanJob = viewModelScope.launch {
-            // Empty scan with no TV open: the guide is on screen; keep looking so the user never has to
-            // press anything. The retry stays in this job, as rescan() from here would see it still active.
+            // Empty scan with the guide on screen: keep looking so the user never has to press anything.
+            // The retry stays in this job, as rescan() from here would see it still active.
+            val done = { _state.value.let { it.scan.hits.isNotEmpty() || (it.selected != null && !addingTv) } }
             while (true) {
                 _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false)) }
                 source.scan().collect { e ->
@@ -510,10 +565,24 @@ class TellyscopeViewModel(
                     }
                 }
                 _state.update { it.copy(scan = it.scan.copy(scanning = false)) }
-                if (_state.value.let { it.scan.hits.isNotEmpty() || it.selected != null }) break
-                delay(15_000)
+                if (done()) break
+                scanNow.tryReceive() // drops a tap that raced the last wait's timeout
+                _state.update { it.copy(scan = it.scan.copy(nextScanAt = clock() + RESCAN_EVERY_MS)) }
+                try {
+                    withTimeoutOrNull(RESCAN_EVERY_MS) { scanNow.receive() }
+                } finally {
+                    _state.update { it.copy(scan = it.scan.copy(nextScanAt = null)) }
+                }
+                if (done()) break
             }
         }
+    }
+
+    /** The add flow opened or closed over a selected TV. Closed, an empty scan stops waiting to look again. */
+    fun addingTv(open: Boolean) {
+        addingTv = open
+        if (open) rescan()
+        else if (_state.value.let { it.selected != null && it.scan.nextScanAt != null }) scanJob?.cancel()
     }
 
     fun connect(hit: ScanHit) {
@@ -588,10 +657,20 @@ class TellyscopeViewModel(
         launcherJob?.cancel()
         // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
         val transfer = id?.let(transfers::get)
+        _state.value.let { s ->
+            // A forgotten TV is no longer in the list, and keeps nothing.
+            val old = s.selectedId?.takeIf { old -> s.devices.any { it.id == old } } ?: return@let
+            if (s.device.apps.isNotEmpty()) lastApps[old] = s.device.apps
+            s.device.lists?.let { lastLists[old] = it }
+        }
+        // Only an online TV gets its old lists back: the offline card stays as it was.
+        val online = _state.value.devices.firstOrNull { it.id == id }?.state == DeviceState.Online
         // A removal survives the reconnect it causes; the TV coming back reselects it.
         _state.update {
             val removal = it.device.removal.takeIf { _ -> it.selectedId == id }
-            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), transfer = transfer, removal = removal), query = "")
+            val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
+            val lists = if (online) id?.let(lastLists::get) else null
+            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal), query = "")
         }
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
@@ -702,6 +781,8 @@ class TellyscopeViewModel(
     fun forget(id: String) {
         viewModelScope.launch {
             source.forget(id)
+            lastApps.remove(id)
+            lastLists.remove(id)
             val known = source.known()
             val lists = runCatching { source.listSource() }.getOrNull()
             _state.update { it.copy(devices = known, listSource = lists) }
@@ -788,10 +869,127 @@ class TellyscopeViewModel(
         }
     }
 
-    /** Opens Install a home screen on its picker. */
+    /** Opens Install a home screen on its picker; not before the launcher list has been downloaded once. */
     fun openLauncherFlow() {
         val id = _state.value.selectedId ?: return
+        if (_state.value.selected?.let { fireInstall(it, _state.value.device.apps) } == true) {
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = PROJECTIVY, fire = FireInstall())) }
+            return
+        }
+        if (RECOMMENDED.isEmpty()) {
+            _notice.value = Copy.NO_LAUNCHER_LIST
+            return
+        }
         updateDevice(id) { it.copy(launcher = LauncherFlow()) }
+    }
+
+    private fun setFire(id: String, f: (FireInstall) -> FireInstall) =
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.fire?.let { l.copy(fire = f(it)) } }) }
+
+    /** Download directly is offered beside the Play Store: there's a way to download, as on Fire OS. */
+    val directDownload get() = launcherDownload != null
+
+    /**
+     * Install Projectivy on Fire OS, or Download directly in the picker: reads the latest release, for the
+     * confirm dialog to show where it comes from.
+     */
+    fun checkProjectivy() {
+        val id = _state.value.selectedId ?: return
+        val download = launcherDownload ?: return
+        val store = _state.value.device.launcher?.let { it.fire?.store ?: true } ?: return
+        launcherJob?.cancel()
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = PROJECTIVY, fire = FireInstall(FireInstall.Step.Checking, store = store))) }
+        launcherJob = viewModelScope.launch {
+            val release = try {
+                download.latest()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: RateLimited) {
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, until = e.until) }
+            } catch (_: Exception) {
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store) }
+            }
+            setFire(id) { FireInstall(FireInstall.Step.Confirm, release, store = store) }
+        }
+    }
+
+    /**
+     * Download and install: fetches the APK, which must be Projectivy signed by its developer, then installs it
+     * over adb like any sideload. Nothing reaches the TV unless the check passes.
+     */
+    fun installProjectivy() {
+        val id = _state.value.selectedId ?: return
+        val download = launcherDownload ?: return
+        val release = _state.value.device.launcher?.fire?.takeIf { it.step == FireInstall.Step.Confirm }?.release ?: return
+        launcherJob?.cancel()
+        setFire(id) { it.copy(step = FireInstall.Step.Downloading, progress = null, picked = false, size = null, until = null) }
+        launcherJob = viewModelScope.launch {
+            val app = try {
+                download.fetch(release) { p -> setFire(id) { it.copy(progress = p) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: NotProjectivy) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: Exception) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.NoDownload) }
+            }
+            installFetched(id, app)
+        }
+    }
+
+    /**
+     * Pick the downloaded file, after Couldn't download: the file the user picked, checked like the download,
+     * then installed the same way. Nothing reaches the TV unless it's Projectivy signed by its developer.
+     */
+    fun pickedProjectivy(uri: Uri) {
+        val id = _state.value.selectedId ?: return
+        val download = launcherDownload ?: return
+        // The picker answers on its own timing: only from a step that offers it, never over a running install.
+        val step = _state.value.device.launcher?.fire?.step
+        if (step != FireInstall.Step.NoDownload && step != FireInstall.Step.NotProjectivy && step != FireInstall.Step.Refused) return
+        launcherJob?.cancel()
+        setFire(id) { it.copy(step = FireInstall.Step.Reading, picked = true, progress = null, size = null) }
+        launcherJob = viewModelScope.launch {
+            val app = try {
+                download.open(uri)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: NotProjectivy) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: Exception) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.Refused, error = Copy.CANT_READ_FILE) }
+            }
+            installFetched(id, app)
+        }
+    }
+
+    /** Projectivy, downloaded or picked and checked, onto the TV over adb like any sideload. */
+    private suspend fun installFetched(id: String, app: PickedApp) {
+        setFire(id) { it.copy(step = FireInstall.Step.Installing, progress = null, size = app.sizeBytes) }
+        val result = try {
+            source.install(id, app.files, app.info, allowDowngrade = false) { p -> setFire(id) { it.copy(progress = p) } }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return setFire(id) { it.copy(step = FireInstall.Step.Refused, error = Copy.SIDELOAD_LOST) }
+        }
+        when (result) {
+            // The steps close with it: Installing would keep them up, and Close waits on that.
+            InstallResult.Done -> launcherInstalled(id, PROJECTIVY) { step ->
+                updateDevice(id) { it.copy(launcher = it.launcher?.let { l -> l.copy(step = step, fire = if (l.fire?.store == true) null else FireInstall()) }) }
+            }
+            is InstallResult.Refused -> setFire(id) {
+                it.copy(step = FireInstall.Step.Refused, error = Copy.installRefused(result.reason, launcherName(PROJECTIVY)))
+            }
+        }
+    }
+
+    /** X or Stop on a Fire OS step: back to the start, or to the picker after Download directly. Not while the install runs. */
+    fun dismissProjectivy() {
+        val id = _state.value.selectedId ?: return
+        if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
+        launcherJob?.cancel()
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall()) }) }
     }
 
     /** Not now on the Apps tab's card: it stays away on this TV, and Tweaks keeps the way in. */
@@ -810,14 +1008,17 @@ class TellyscopeViewModel(
 
     fun closeLauncherFlow() {
         val id = _state.value.selectedId ?: return
+        // An install under way finishes; cutting it off could leave the TV half done.
+        if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
         launcherJob?.cancel()
         updateDevice(id) { it.copy(launcher = null) }
     }
 
     /**
      * Opens the Play Store on the TV at [pkg]'s page, then checks every few seconds whether it's
-     * installed, or the Store has closed without it. Where the Store didn't open, it keeps
-     * checking while the user searches by hand. After [STORE_WAIT_MS] without it, it stops at [LauncherFlow.Step.Left].
+     * installed, or the Store has closed without it, which goes back to the picker. Where the Store
+     * didn't open, it keeps checking while the user searches by hand. After [STORE_WAIT_MS] without it,
+     * it stops at [LauncherFlow.Step.Left].
      *
      * Known: a Google sign-in or consent screen inside the Store runs as another app
      * (com.google.android.gms), so it can read as leaving the Store and end the wait early.
@@ -827,7 +1028,7 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         launcherJob?.cancel()
         val step = { s: LauncherFlow.Step -> updateDevice(id) { it.copy(launcher = it.launcher?.let { _ -> LauncherFlow(s, pkg) }) } }
-        // Already on the TV (picked from Tweaks after a launcher was added): no Store detour.
+        // Already on the TV, installed since the picker was drawn (Open Store again after the wait): no Store detour.
         _state.value.device.apps.firstOrNull { it.packageName == pkg && it.enabled }?.let { have ->
             if (have.homeInstead != null) {
                 step(LauncherFlow.Step.Installed)
@@ -858,27 +1059,12 @@ class TellyscopeViewModel(
                     return@repeat // a dropped read: the next one tells
                 }
                 when (now) {
-                    StoreState.Installed -> {
-                        val apps = try {
-                            source.apps(id)
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (_: Exception) {
-                            null
-                        }
-                        apps?.let { a -> updateDevice(id) { it.copy(apps = a) } }
-                        // No way to offer it as Home (the TV asks each time): say where to find it instead.
-                        if (apps?.firstOrNull { it.packageName == pkg }?.homeInstead == null) {
-                            updateDevice(id) { it.copy(launcher = null) }
-                            _notice.value = Copy.launcherInstalled(launcherName(pkg))
-                        } else {
-                            step(LauncherFlow.Step.Installed)
-                        }
-                        return@launch
-                    }
+                    StoreState.Installed -> return@launch launcherInstalled(id, pkg, step)
                     StoreState.InStore -> seen = true
                     StoreState.Elsewhere -> if (seen) {
-                        step(LauncherFlow.Step.Left)
+                        // The Store closed without it: back to the picker, still chosen, and the snackbar says so.
+                        step(LauncherFlow.Step.Pick)
+                        _notice.value = Copy.wasntInstalled(launcherName(pkg))
                         return@launch
                     }
                 }
@@ -887,12 +1073,42 @@ class TellyscopeViewModel(
         }
     }
 
+    /** [pkg] is now on the TV: rereads the apps, then on to Make it the home screen. */
+    private suspend fun launcherInstalled(id: String, pkg: String, step: (LauncherFlow.Step) -> Unit) {
+        val apps = try {
+            source.apps(id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        apps?.let { a -> updateDevice(id) { it.copy(apps = a) } }
+        // No way to offer it as Home (the TV asks each time): say where to find it instead.
+        if (apps?.firstOrNull { it.packageName == pkg }?.homeInstead == null) {
+            updateDevice(id) { it.copy(launcher = null) }
+            _notice.value = Copy.launcherInstalled(launcherName(pkg))
+        } else {
+            step(LauncherFlow.Step.Installed)
+        }
+    }
+
     /** Yes on the installed launcher, with its accessibility service or without; the flow closes and the switch runs. */
     fun switchToLauncher(service: Boolean) {
+        makeHome(_state.value.device.launcher?.pkg ?: return, service)
+    }
+
+    /** Make Home on [pkg], from the picker or after its install: the flow closes and the switch runs. */
+    fun makeHome(pkg: String, service: Boolean) {
         val id = _state.value.selectedId ?: return
-        val pkg = _state.value.device.launcher?.pkg ?: return
+        launcherJob?.cancel()
         updateDevice(id) { it.copy(launcher = null) }
         run(pkg, Action.Home, id = id) { source.makeHome(it, pkg, service) }
+    }
+
+    /** Open in the picker: shows the launcher [pkg] on the TV. The picker stays. */
+    fun openLauncher(pkg: String) {
+        val label = _state.value.device.apps.firstOrNull { it.packageName == pkg }?.label ?: launcherName(pkg)
+        open(pkg, label)
     }
 
     /** Not now on the installed launcher: where to switch later. */
@@ -1265,15 +1481,44 @@ class TellyscopeViewModel(
      */
     private suspend fun watchRequests(id: String) {
         while (true) {
-            val request = try {
-                source.connectionRequest(id)?.takeIf { it.fingerprint != dismissedRequest }
+            readRequest(id)
+            delay(5_000)
+        }
+    }
+
+    private suspend fun readRequest(id: String) {
+        val request = try {
+            source.connectionRequest(id).also {
+                // A prompt under Amazon's alert has no fingerprint to hide it by: Close hides it until the alert is gone.
+                if (it == null && dismissedRequest == "") dismissedRequest = null
+            }?.takeIf { it.fingerprint != dismissedRequest }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        updateDevice(id) { if (it.busy == ANSWERING) it else it.copy(request = request) }
+    }
+
+    /**
+     * Press OK on the TV, on a prompt under Fire OS's remote alert: one Back, sent only while the alert has focus.
+     * Then a fresh read, so the prompt itself, with its fingerprint, takes over without waiting for the next check.
+     */
+    fun closeAlert() {
+        val id = _state.value.selectedId ?: return
+        if (_state.value.device.request?.behindAlert != true) return
+        updateDevice(id) { it.copy(busy = ANSWERING) }
+        viewModelScope.launch {
+            try {
+                source.closeAlert(id)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                null
+                false
             }
-            updateDevice(id) { if (it.busy == ANSWERING) it else it.copy(request = request) }
-            delay(5_000)
+            delay(ALERT_CLOSING_MS)
+            updateDevice(id) { it.copy(busy = null) }
+            readRequest(id)
         }
     }
 
@@ -1337,6 +1582,22 @@ class TellyscopeViewModel(
             source.markMine(id, address)
             readAccess(id)
         }
+    }
+
+    /** "It's mine" on a new allowed computer: it stops showing as new on this TV. */
+    fun markKeyMine(fingerprint: String) {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch {
+            source.markKeyMine(id, fingerprint)
+            readAccess(id)
+        }
+    }
+
+    /** Answer on a waiting connection: the TV's prompt again, even after it was dismissed. */
+    fun showRequest() {
+        val id = _state.value.selectedId ?: return
+        dismissedRequest = null
+        viewModelScope.launch { readRequest(id) }
     }
 
     private fun setRemoval(id: String, removal: Removal?) = updateDevice(id) { it.copy(removal = removal) }
@@ -1466,6 +1727,8 @@ class TellyscopeViewModel(
                 return@launch
             }
             val now = source.listSource()
+            // Every TV's list came from the old source.
+            lastLists.clear()
             _state.update { it.copy(listSource = now, device = it.device.copy(lists = null)) }
             _notice.value = Copy.listSource(now)
             if (id != null) loadLists(id) { shownApps(id) }
@@ -1800,24 +2063,38 @@ class TellyscopeViewModel(
         viewModelScope.launch { source.setDock(id, dock) }
     }
 
-    /** A dock tap: opens the app on the TV, without a history entry. */
+    /** A Remote button: opens the app on the TV, without a history entry. */
     fun launch(app: Docked) {
+        // An empty list hasn't been read yet, so the TV gets to try.
+        val apps = _state.value.device.apps
+        if (apps.isNotEmpty() && apps.none { it.packageName == app.packageName }) {
+            _notice.value = Copy.notOnTv(app.label)
+            return
+        }
+        open(app.packageName, app.label)
+    }
+
+    private fun open(pkg: String, label: String) {
         val id = _state.value.selectedId ?: return
         viewModelScope.launch {
             val ok = try {
-                source.launch(id, app.packageName)
+                source.launch(id, pkg)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
                 _notice.value = Copy.REMOTE_LOST
                 return@launch
             }
-            if (!ok) _notice.value = Copy.cantOpen(app.label)
+            if (!ok) _notice.value = Copy.cantOpen(label)
         }
     }
 
-    /** An app uninstalled, here or on the TV itself, leaves the dock, and the snackbar says so. */
+    /**
+     * An app uninstalled, here or on the TV itself, takes its button off the Remote, and the snackbar
+     * says so. Not with [RemoteButtons.ANY_SERVICE], where any service can have a button.
+     */
     private suspend fun pruneDock(id: String, apps: List<AppInfo>) {
+        if (RemoteButtons.ANY_SERVICE) return
         val (kept, gone) = Dock.prune(source.dock(id), apps)
         if (gone.isEmpty()) return
         source.setDock(id, kept)

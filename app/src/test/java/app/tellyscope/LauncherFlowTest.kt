@@ -105,8 +105,13 @@ private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
     }
 }
 
-/** Install a home screen: the Store wait, its dead ends, and the card's Not now. */
+/**
+ * Install a home screen: the Store wait, its dead ends, and the card's Not now. The picker's
+ * launchers come from the bundled `launchers.json`, read with Android's org.json: Robolectric.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class LauncherFlowTest {
     private val dispatcher = StandardTestDispatcher()
     private val test = TestScope(dispatcher)
@@ -147,13 +152,25 @@ class LauncherFlowTest {
         assertEquals(listOf(PROJECTIVY to false), source.switched)
     }
 
-    @Test fun aStoreThatClosesWithoutTheInstallSaysSo() = with(test) {
+    @Test fun aStoreThatClosesWithoutTheInstallGoesBackToThePicker() = with(test) {
         source.states = ArrayDeque(listOf(StoreState.InStore, StoreState.Elsewhere))
         started().installLauncher(PROJECTIVY)
         advanceTimeBy(2 * STORE_POLL_MS + 1)
-        assertEquals(LauncherFlow.Step.Left, step)
+        assertEquals(LauncherFlow(LauncherFlow.Step.Pick, PROJECTIVY), vm.state.value.device.launcher)
+        assertEquals(Copy.wasntInstalled("Projectivy Launcher"), vm.notice.value)
+        source.states = ArrayDeque(listOf(StoreState.Installed))
         advanceTimeBy(10 * STORE_POLL_MS)
-        assertEquals(LauncherFlow.Step.Left, step) // stopped checking
+        assertEquals(LauncherFlow.Step.Pick, step) // stopped checking
+        assertFalse(source.installed)
+    }
+
+    @Test fun makeHomeFromThePickerSwitchesWithoutTheStore() = with(test) {
+        source.installed = true
+        started().makeHome(PROJECTIVY, service = true)
+        runCurrent()
+        assertNull(step)
+        assertTrue(source.opened.isEmpty())
+        assertEquals(listOf(PROJECTIVY to true), source.switched)
     }
 
     @Test fun aStoreThatDidntOpenSaysSoAndStillCatchesAnInstallByHand() = with(test) {
@@ -291,8 +308,30 @@ class LauncherScreenTest {
         val installs = mutableListOf<String>()
         compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock), LauncherActions(install = { installs += it })) }
         compose.onNodeWithText("FLauncher").performScrollTo().performClick() // under the bottom bar on a small screen
-        compose.onNodeWithText(Copy.OPEN_IN_STORE).performClick()
+        compose.onNodeWithText(Copy.GET_FROM_STORE).performClick()
         assertEquals(listOf(FLAUNCHER), installs)
+    }
+
+    @Test fun theStoreComesFirstAndOnlyAPinnedLauncherDownloadsDirectly() {
+        val installs = mutableListOf<String>()
+        var downloads = 0
+        compose.setContent {
+            LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions(install = { installs += it }, fireCheck = { downloads++ }), direct = true)
+        }
+        compose.onNodeWithText(Copy.STORE_RECOMMENDED).assertExists()
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).performClick()
+        compose.onNodeWithText(Copy.GET_FROM_STORE).performClick()
+        assertEquals(1, downloads)
+        assertEquals(listOf(PROJECTIVY), installs)
+        compose.onNodeWithText("FLauncher").performScrollTo().performClick()
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).assertDoesNotExist()
+        compose.onNodeWithText(Copy.GET_FROM_STORE).assertExists()
+    }
+
+    @Test fun withoutADownloadOnlyTheStoreIsOffered() {
+        compose.setContent { LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions()) }
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).assertDoesNotExist()
+        compose.onNodeWithText(Copy.STORE_RECOMMENDED).assertDoesNotExist()
     }
 
     @Test fun theStoreDidntOpenOffersAnotherOrARetry() {
@@ -306,6 +345,42 @@ class LauncherScreenTest {
         compose.onNodeWithText(Copy.CHOOSE_ANOTHER).performClick()
         assertEquals(listOf(PROJECTIVY), installs)
         assertEquals(listOf(PROJECTIVY), picks)
+    }
+
+    @Test fun aLauncherOnTheTvOffersMakeHomeAndOpenInsteadOfTheStore() {
+        val homes = mutableListOf<Pair<String, Boolean>>()
+        val opens = mutableListOf<String>()
+        val flauncher = AppInfo(FLAUNCHER, "FLauncher", null, false, true, null, "1.0", removable = true, answersHome = true, homeInstead = TV_HOME)
+        compose.setContent {
+            LauncherScreen(tv, LauncherFlow(pkg = FLAUNCHER), listOf(store, stock, flauncher), LauncherActions(makeHome = { p, s -> homes += p to s }, open = { opens += it }))
+        }
+        compose.onNodeWithText(Copy.INSTALLED).assertExists()
+        compose.onNodeWithText(Copy.GET_FROM_STORE).assertDoesNotExist()
+        compose.onNodeWithText(Copy.OPEN).performClick()
+        compose.onNodeWithText(Copy.MAKE_HOME).performClick()
+        assertEquals(listOf(FLAUNCHER), opens)
+        assertEquals(listOf(FLAUNCHER to false), homes)
+    }
+
+    @Test fun theLauncherOnHomeOffersOnlyOpen() {
+        val flauncher = AppInfo(FLAUNCHER, "FLauncher", null, false, true, null, "1.0", removable = true, answersHome = true, home = true, homeBack = "Google TV Home")
+        compose.setContent { LauncherScreen(tv, LauncherFlow(pkg = FLAUNCHER), listOf(store, stock.copy(home = false), flauncher), LauncherActions()) }
+        compose.onNodeWithText(Copy.HOME_NOW).assertExists()
+        compose.onNodeWithText(Copy.OPEN).assertExists()
+        compose.onNodeWithText(Copy.MAKE_HOME).assertDoesNotExist()
+    }
+
+    @Test fun aLauncherNotRecommendedIsListedOnThisTv() {
+        val wolf = AppInfo("com.wolf.firelauncher", "Wolf Launcher", null, false, true, null, "1.0", removable = true, answersHome = true, homeInstead = TV_HOME)
+        compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock, wolf), LauncherActions()) }
+        compose.onNodeWithText(Copy.ON_THIS_TV).assertExists()
+        compose.onNodeWithText("Wolf Launcher").performClick()
+        compose.onNodeWithText(Copy.MAKE_HOME).assertExists()
+    }
+
+    @Test fun noOtherLauncherNoOnThisTv() {
+        compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock), LauncherActions()) }
+        compose.onNodeWithText(Copy.ON_THIS_TV).assertDoesNotExist()
     }
 
     @Test fun yesOnAServiceLauncherAsksAboutTheService() {

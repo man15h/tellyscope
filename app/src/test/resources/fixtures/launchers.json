@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "launchers": [
+    { "package": "com.spocky.projengmenu", "name": "Projectivy Launcher", "about": "The most popular. Rows, wallpapers and icons you can change." },
+    { "package": "me.efesser.flauncher", "name": "FLauncher", "about": "Simple: your apps in rows, nothing else." },
+    { "package": "com.wolf.firelauncher", "name": "Wolf Launcher" }
+  ]
+}

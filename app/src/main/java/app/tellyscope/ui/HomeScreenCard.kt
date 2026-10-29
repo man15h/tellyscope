@@ -62,9 +62,10 @@ internal fun homeMove(app: AppInfo, current: AppInfo?): Action? = when {
 /**
  * The Home screen card at the top of Tweaks: every launcher on the TV, which one Home opens, and
  * the one place to change it. Make Home asks first; only the TV's own launcher is ever turned off.
+ * [fire]: Fire OS ([fireInstall]), where Get another launcher installs Projectivy without a Play Store.
  */
 @Composable
-fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions) {
+fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false) {
     val launchers = homeLaunchers(ui.apps)
     val current = launchers.firstOrNull { it.home }
     val locked = ui.busy != null
@@ -85,10 +86,10 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions) {
         }
     }
     // Only before a launcher was added: after that, the rows above are the way to switch.
-    if (launchers.none { !it.system } && hasPlayStore(ui.apps)) {
+    if (launchers.none { !it.system } && (hasPlayStore(ui.apps) || fire)) {
         Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(Copy.GET_LAUNCHER, style = MaterialTheme.typography.bodyLarge)
-            Text(Copy.GET_LAUNCHER_TEXT, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (fire) Copy.GET_PROJECTIVY_TEXT else Copy.GET_LAUNCHER_TEXT, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             FilledTonalButton(onClick = actions.installLauncher, enabled = !locked) { Text(Copy.GET_LAUNCHER) }
         }
     }
@@ -97,7 +98,7 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions) {
     when (action) {
         Action.Uninstall -> if (app != null) UninstallDialog(app, onUninstall = actions.confirm, onDismiss = actions.cancel, enabled = !locked)
         Action.Home, Action.HomeBack -> if (app != null && homeMove(app, current) == action) {
-            MakeHomeDialog(app, action, current, ui.apps, locked, actions)
+            MakeHomeDialog(app, action, current, ui.apps, locked, actions, fire)
         } else {
             // A switch whose target changed meanwhile (turned off in Debloat, say) has nothing left to ask.
             LaunchedEffect(pkg, action) { actions.cancel() }
@@ -172,7 +173,7 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
  * accessibility service gets its own yes for that next, never as a side effect of this one.
  */
 @Composable
-private fun MakeHomeDialog(app: AppInfo, action: Action, current: AppInfo?, apps: List<AppInfo>, locked: Boolean, actions: DeviceActions) {
+private fun MakeHomeDialog(app: AppInfo, action: Action, current: AppInfo?, apps: List<AppInfo>, locked: Boolean, actions: DeviceActions, fire: Boolean) {
     val replaced = homeLabel(apps, app)
     val asks = action == Action.Home && app.homeService
     var askService by remember(app.packageName) { mutableStateOf(false) }
@@ -187,6 +188,7 @@ private fun MakeHomeDialog(app: AppInfo, action: Action, current: AppInfo?, apps
     val currentService = current != null && current.homeService && !current.homeServiceOff
     val text = when {
         action == Action.HomeBack && current != null -> Copy.explainLeave(app.label, off = !app.enabled, current.label, currentService, service = false)
+        fire && action == Action.Home && app.homeService && current != null -> Copy.explainFireHome(app.label, app.packageName, current.label)
         current != null && !current.system -> Copy.explainLeave(app.label, off = false, current.label, currentService, app.homeService)
         replaced != null && app.homeInstead != null -> Copy.explainReplace(app.label, replaced, app.homeInstead, app.homeService)
         else -> Copy.explainFirstHome(app.label, app.packageName, app.homeService)

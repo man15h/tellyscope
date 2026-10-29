@@ -87,6 +87,13 @@ import app.tellyscope.data.TvAccess
 data class AccessActions(
     val back: () -> Unit = {},
     val markMine: (String) -> Unit = {},
+    /** "It's mine" on a new allowed computer, by its fingerprint. */
+    val markKeyMine: (String) -> Unit = {},
+    /** Answer on a waiting connection: the TV's prompt, over this screen. */
+    val showRequest: () -> Unit = {},
+    val answerRequest: (allow: Boolean, always: Boolean) -> Unit = { _, _ -> },
+    val dismissRequest: () -> Unit = {},
+    val closeAlert: () -> Unit = {},
     val askRemove: () -> Unit = {},
     val close: () -> Unit = {},
     val remove: () -> Unit = {},
@@ -334,6 +341,10 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
         }
     }
     if (removal?.step == Removal.Step.Confirm) ConfirmRemoval(actions)
+    // The TV's prompt shows here as on the TV's page, so a computer asking in is answered where it's listed.
+    else if (removal == null && device.state == DeviceState.Online) {
+        ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
+    }
 }
 
 /** C4: the one warning before every key on the TV goes, this phone's included. */
@@ -371,7 +382,7 @@ private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: A
         when (val list = access?.allowed) {
             null -> item { Muted(if (access == null) "Checking…" else Copy.CANT_CHECK_ALLOWED) }
             emptyList<AccessKey>() -> item { Muted(Copy.NOBODY_ALLOWED) }
-            else -> segmented(list) { AllowedRow(it, now) }
+            else -> segmented(list) { AllowedRow(it, now, actions) }
         }
         item {
             Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -423,11 +434,23 @@ private fun ConnectedRow(client: AccessClient, actions: AccessActions) {
             AccessClient.Who.OnTv -> Copy.ON_TV
             else -> client.address
         },
-        chip = phone,
+        chip = when (client.who) {
+            AccessClient.Who.Phone -> Chip.Tellyscope
+            AccessClient.Who.Waiting -> Chip.Waiting
+            else -> null
+        },
     ) {
         if (phone || client.who == AccessClient.Who.OnTv) Sub(client.address)
-        Sub(Copy.connections(client.connections))
+        // Not in yet, so no connection count: it isn't using the TV.
+        if (client.who != AccessClient.Who.Waiting) Sub(Copy.connections(client.connections))
         when (client.who) {
+            AccessClient.Who.Waiting -> {
+                Text(Copy.WAITING_LINE, style = MaterialTheme.typography.bodyMedium)
+                Sub(Copy.WAITING_TEXT)
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    FilledTonalButton(onClick = actions.showRequest) { Text(Copy.ANSWER) }
+                }
+            }
             AccessClient.Who.Other, AccessClient.Who.OnTv -> {
                 Text(Copy.NOT_THIS_PHONE, style = MaterialTheme.typography.bodyMedium, color = c.error)
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
@@ -441,7 +464,7 @@ private fun ConnectedRow(client: AccessClient, actions: AccessActions) {
 }
 
 @Composable
-private fun AllowedRow(key: AccessKey, now: Long) {
+private fun AllowedRow(key: AccessKey, now: Long, actions: AccessActions) {
     val name = key.name
     AccessRow(
         icon = when {
@@ -451,25 +474,41 @@ private fun AllowedRow(key: AccessKey, now: Long) {
             else -> AccessIcons.Desktop
         },
         title = if (key.phone) Copy.THIS_PHONE else name ?: Copy.UNNAMED_COMPUTER,
-        chip = key.phone,
+        chip = if (key.phone) Chip.Tellyscope else if (key.new) Chip.New else null,
     ) {
         Text(Copy.shortFingerprint(key.fingerprint), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Sub(Copy.lastSeen(key.lastSeen, now))
+        if (key.new) {
+            Text(Copy.NEW_KEY_TEXT, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                FilledTonalButton(onClick = { actions.markKeyMine(key.fingerprint) }) { Text(Copy.ITS_MINE) }
+            }
+        }
     }
 }
 
+/** Beside a row's title: this phone is Tellyscope, filled; Waiting and New are neutral outlines, a state and not an alarm. */
+private enum class Chip(val text: String) { Tellyscope(Copy.TELLYSCOPE), Waiting(Copy.WAITING_CHIP), New(Copy.NEW_CHIP) }
+
 @Composable
-private fun AccessRow(icon: ImageVector, title: String, chip: Boolean, lines: @Composable () -> Unit) {
+private fun AccessRow(icon: ImageVector, title: String, chip: Chip?, lines: @Composable () -> Unit) {
+    val c = MaterialTheme.colorScheme
     Row(Modifier.padding(16.dp)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(icon, contentDescription = null, tint = c.onSurfaceVariant)
         Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                if (chip) {
+                if (chip != null) {
                     Spacer(Modifier.width(8.dp))
-                    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
-                        Text(Copy.TELLYSCOPE, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                    val filled = chip == Chip.Tellyscope
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (filled) c.secondaryContainer else Color.Transparent,
+                        contentColor = if (filled) c.onSecondaryContainer else c.onSurfaceVariant,
+                        border = if (filled) null else BorderStroke(1.dp, c.outline),
+                    ) {
+                        Text(chip.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                     }
                 }
             }

@@ -55,7 +55,7 @@ import app.tellyscope.ui.theme.SmallNumber
  * Both dialogs here close only through their own buttons: a tap outside or Back would otherwise
  * drop an install halfway through its questions, or look like it cancelled a copy.
  */
-private val Sticky = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+internal val Sticky = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
 
 /**
  * The three things people come to a TV's page for, as big tiles under the system widget.

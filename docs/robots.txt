@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://man15h.github.io/tellyscope/sitemap.xml

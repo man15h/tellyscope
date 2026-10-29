@@ -3,7 +3,7 @@ package app.tellyscope.adb
 
 /**
  * The `enabled_accessibility_services` setting, for launchers that keep Home with their own
- * accessibility service. Which launchers those are is the app's `launchers.json`.
+ * accessibility service. Which launchers those are is the app's `ACCESSIBILITY_LAUNCHERS`.
  */
 object HomeServices {
     /** [list] is the `enabled_accessibility_services` setting: colon-separated, "null" when unset. */

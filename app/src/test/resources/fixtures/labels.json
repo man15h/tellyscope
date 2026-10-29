@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "groups": [
+    {
+      "name": "Fixture",
+      "labels": {
+        "android": "Android System",
+        "com.android.systemui": "System UI",
+        "com.android.tv.settings": "Settings",
+        "com.android.vending": "Google Play Store",
+        "com.google.android.gms": "Google Play services",
+        "com.google.android.tvlauncher": "Android TV Home",
+        "com.google.android.apps.tv.launcherx": "Google TV Home",
+        "com.google.android.play.games": "Google Play Games",
+        "com.google.android.youtube.tv": "YouTube",
+        "com.google.android.youtube.tvkids": "YouTube Kids",
+        "com.netflix.ninja": "Netflix",
+        "com.amazon.amazonvideo.livingroom": "Prime Video",
+        "com.disney.disneyplus": "Disney+",
+        "com.spotify.tv.android": "Spotify",
+        "com.plexapp.android": "Plex",
+        "org.jellyfin.androidtv": "Jellyfin",
+        "org.xbmc.kodi": "Kodi",
+        "com.teamsmart.videomanager.tv": "SmartTube",
+        "com.spocky.projengmenu": "Projectivy Launcher"
+      }
+    }
+  ]
+}

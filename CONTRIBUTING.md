@@ -28,9 +28,17 @@ The per-TV lists behind **Debloat** and the Overview's list card live in the [te
 
 You don't have to trust ours. Fork tellyscope-devices, edit the lists in your fork, and keep `index.json` on schema 1 with each file's sha256 updated. Then in the app open **Settings** (in the ⋮ menu at the top right), open **Advanced** at the bottom, tap **Use your own debloat lists**, and paste the raw address of the folder that holds `index.json`, for example `https://raw.githubusercontent.com/<you>/tellyscope-devices/main/`. Only HTTPS is accepted, and a source that doesn't serve a schema 1 index is refused without changing anything. Switching drops the cached lists. While your source is in use, the review step says where the list came from. The built-in protected list still wins over any list, and **Reset to default** goes back to tellyscope-devices.
 
-## Launchers
+## Launchers, app names and streaming services
 
-[`app/src/main/assets/launchers.json`](app/src/main/assets/launchers.json) lists the third-party launchers Tellyscope knows. Set `"accessibility": true` only for a launcher that keeps Home with its own accessibility service: Make Home offers to turn that service on, and an accessibility service can read the screen. Check the APK's manifest for a service with `BIND_ACCESSIBILITY_SERVICE`, and put the version you checked in `"checked"`. The list ships with the app and is never fetched, so a custom list source can't add to it.
+These lists live in tellyscope-devices too, next to the debloat lists, and the app downloads them from the same source: change one there with a pull request and it reaches people without an app release. A fork's source supplies them as well. File formats and checks are in that repo's README.
+
+- `lists/launchers.json`: the third-party launchers Tellyscope knows. One with an `"about"` line is offered in **Install a home screen**, in the file's order. On Fire OS, which has no Play Store, only Projectivy is offered, while it's on the list: Tellyscope downloads it from its developer's GitHub releases and installs only an APK signed with the certificate pinned in [`LauncherDownload.kt`](app/src/main/java/app/tellyscope/data/LauncherDownload.kt).
+- `lists/labels.json`: names shown for common TV apps when the TV can't tell us.
+- `lists/streaming.json` and `logos/`: the streaming services the Remote can have a button for, with their logos.
+
+Which launchers may turn on an accessibility service is not on any list: it's `ACCESSIBILITY_LAUNCHERS` in [`Launchers.kt`](app/src/main/java/app/tellyscope/data/Launchers.kt), because an accessibility service can read the screen. Add one only for a launcher that keeps Home with its own accessibility service: check the APK's manifest for a service with `BIND_ACCESSIBILITY_SERVICE` and put the version you checked next to it. `LaunchersTest` names every such launcher on purpose, so add yours there too and a reviewer sees it.
+
+The tests use small fixtures in [`app/src/test/resources/fixtures/`](app/src/test/resources/fixtures/) that only check the code: change the real lists in tellyscope-devices, not there. The app itself bundles none.
 
 ## README screenshots
 

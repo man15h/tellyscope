@@ -19,21 +19,8 @@ class DockTest {
     private val netflix = Docked("com.netflix.ninja", "Netflix")
     private val smarttube = Docked("org.smarttube.stable", "SmartTube")
 
-    @Test fun addStopsAtFourAndNeverTwice() {
-        val four = (1..4).map { Docked("com.example.app$it", "App $it") }
-        assertEquals(four, Dock.add(four, app("com.example.app5")))
-        assertEquals(listOf(youtube), Dock.add(listOf(youtube), app(youtube.packageName)))
-        assertEquals(listOf(youtube, Docked("com.example.kodi", "kodi")), Dock.add(listOf(youtube), app("com.example.kodi")))
-    }
-
-    @Test fun changeKeepsTheSlot() {
+    @Test fun move() {
         val dock = listOf(youtube, netflix, smarttube)
-        assertEquals(listOf(youtube, Docked("com.example.kodi", "kodi"), smarttube), Dock.replace(dock, netflix.packageName, app("com.example.kodi")))
-    }
-
-    @Test fun removeAndMove() {
-        val dock = listOf(youtube, netflix, smarttube)
-        assertEquals(listOf(youtube, smarttube), Dock.remove(dock, netflix.packageName))
         assertEquals(listOf(netflix, smarttube, youtube), Dock.move(dock, 0, 2))
         assertEquals(listOf(smarttube, youtube, netflix), Dock.move(dock, 2, 0))
         assertEquals(dock, Dock.move(dock, 1, 3)) // off the end: nothing moves
@@ -48,18 +35,6 @@ class DockTest {
     @Test fun anEmptyAppListIsAFailedReadNotAnEmptyTv() {
         val dock = listOf(youtube, netflix)
         assertEquals(dock to emptyList<Docked>(), Dock.prune(dock, emptyList()))
-    }
-
-    @Test fun thePickerOffersAppsALauncherCanOpen() {
-        val apps = listOf(app("com.a"), app("com.b", launchable = false), app("com.c", enabled = false))
-        assertEquals(listOf("com.a"), Dock.choices(apps).map { it.packageName })
-    }
-
-    @Test fun thePickerLeavesOutBuiltInPhoneStyleApps() {
-        val camera = AppInfo("com.android.camera2", "Camera", null, true, true, null, "", launchable = true, tvHome = false)
-        val settings = AppInfo("com.android.tv.settings", "Settings", null, true, true, null, "", launchable = true, tvHome = true)
-        val sideloaded = app("com.example.phoneapp").copy(tvHome = false)
-        assertEquals(listOf("com.android.tv.settings", "com.example.phoneapp"), Dock.choices(listOf(camera, settings, sideloaded)).map { it.packageName })
     }
 
     @Test fun theBookKeepsOrderAcrossARestartAndFollowsARekey() {

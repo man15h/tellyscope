@@ -130,6 +130,7 @@ class Actions(private val shell: AdbShell) {
             setHome(from)
             return HomeResult.Failed("the TV kept its own home screen, so nothing was turned off")
         }
+        require(PACKAGE.matches(old)) { "not a package name: $old" } // read from the TV, and it goes into a shell line
         val off = exec("pm disable-user --user 0 $old", undo = null) { "disabled-user" in it }
         if (off is ActionResult.Failed) {
             setHome(from)
@@ -288,11 +289,17 @@ class Actions(private val shell: AdbShell) {
     private fun activitiesIn(brief: String): List<String> =
         brief.lineSequence().map(String::trim).filter { '/' in it && ' ' !in it }.distinct().toList()
 
-    /** TV apps register under LEANBACK_LAUNCHER only; phone-style apps under LAUNCHER. Try both. */
+    /**
+     * TV apps register under LEANBACK_LAUNCHER only; phone-style apps under LAUNCHER. Try both, then
+     * HOME, for a launcher with no icon of its own. `--pct-syskeys 0` because monkey aborts before
+     * launching on a TV whose remote has no keys it counts as system keys (Fire TV, exit -5).
+     */
     private suspend fun open(pkg: String): ActionResult {
+        require(PACKAGE.matches(pkg)) { "not a package name: $pkg" }
         var last = ""
-        for (category in listOf("android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER")) {
-            val r = shell.shell("monkey -p $pkg -c $category 1 2>&1")
+        for (category in listOf("android.intent.category.LEANBACK_LAUNCHER", "android.intent.category.LAUNCHER", "android.intent.category.HOME")) {
+            require(CATEGORY.matches(category)) { "not an intent category: $category" } // both go into the shell line
+            val r = shell.shell("monkey -p $pkg -c $category --pct-syskeys 0 1 2>&1")
             if (r.exitCode == 0 && "No activities found" !in r.output && "aborted" !in r.output) {
                 return ActionResult.Done(undo = null)
             }
@@ -309,6 +316,7 @@ class Actions(private val shell: AdbShell) {
     internal companion object {
         val PACKAGE = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+|android")
         val ACTIVITY = Regex("(${PACKAGE.pattern})/[A-Za-z0-9_.$]+")
+        private val CATEGORY = Regex("android\\.intent\\.category\\.[A-Z_]+")
 
         /**
          * Android's SecurityException when ADB tries to turn on an app the TV disabled itself:

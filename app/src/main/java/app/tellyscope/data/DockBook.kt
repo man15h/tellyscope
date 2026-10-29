@@ -5,7 +5,7 @@ package app.tellyscope.data
 import java.io.File
 
 /**
- * The apps on each TV's Remote dock, in order, keyed like [NameBook] so the dock follows the TV
+ * The services on each TV's Remote buttons, in order, keyed like [NameBook] so the dock follows the TV
  * across DHCP changes. `key \t package \t label` per line; null file keeps it in memory (tests,
  * the fake source).
  */
@@ -53,32 +53,10 @@ class DockBook(private val file: File? = null) {
     }
 }
 
-/** The dock's rules, kept apart from the screen so they can be tested on their own. */
+/** The saved buttons' rules, kept apart from the screen so they can be tested on their own. */
 object Dock {
-    /** One row of four along the Remote's bottom edge; the Add tile goes once it's full. */
+    /** The most buttons the Remote shows, on a screen 600 dp or wider; a phone shows three of them. */
     const val MAX = 4
-
-    /**
-     * The apps the picker offers: ones a launcher can open, already-docked ones included (shown as Added).
-     * A built-in app with only a phone-style icon (Camera, WebView, a maker's updater) is left out; one
-     * the user installed stays, whatever kind of icon it has.
-     */
-    fun choices(apps: List<AppInfo>): List<AppInfo> = apps.filter { it.launchable && it.enabled && (it.tvHome || !it.system) }
-
-    fun add(dock: List<Docked>, app: AppInfo): List<Docked> =
-        if (dock.size >= MAX || dock.any { it.packageName == app.packageName }) dock else dock + Docked(app.packageName, app.label)
-
-    /** Puts [app] in [old]'s place; an app already elsewhere on the dock moves here instead. */
-    fun replace(dock: List<Docked>, old: String, app: AppInfo): List<Docked> =
-        dock.mapNotNull {
-            when (it.packageName) {
-                old -> Docked(app.packageName, app.label)
-                app.packageName -> null
-                else -> it
-            }
-        }
-
-    fun remove(dock: List<Docked>, pkg: String): List<Docked> = dock.filterNot { it.packageName == pkg }
 
     fun move(dock: List<Docked>, from: Int, to: Int): List<Docked> {
         if (from !in dock.indices || to !in dock.indices || from == to) return dock

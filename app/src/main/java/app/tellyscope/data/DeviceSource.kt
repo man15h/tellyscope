@@ -88,7 +88,7 @@ interface DeviceSource {
     /** Puts away the TV page's card about [packageName]'s service being off, until the next switch. */
     suspend fun dismissServiceNote(deviceId: String, packageName: String) {}
 
-    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from the bundled list; false when it didn't open. */
+    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from `launchers.json`; false when it didn't open. */
     suspend fun openStore(deviceId: String, packageName: String): Boolean = false
 
     /** Whether [packageName] is installed yet, and if not, whether the Store is still on screen. */
@@ -214,6 +214,9 @@ interface DeviceSource {
      */
     suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean): Boolean
 
+    /** Presses OK once on Fire OS's remote alert over that prompt ([ConnectionRequest.behindAlert]). False when nothing was sent. */
+    suspend fun closeAlert(deviceId: String): Boolean
+
     /** What a report says about the TV: model, Android, the apps it came with. Throws if it's gone. */
     suspend fun facts(deviceId: String): TvFacts
 
@@ -222,6 +225,9 @@ interface DeviceSource {
 
     /** "It's mine": connections from [address] stop counting toward the warning on this TV. */
     suspend fun markMine(deviceId: String, address: String) {}
+
+    /** "It's mine" on a new allowed computer: [fingerprint] counts as known on this TV from now on. */
+    suspend fun markKeyMine(deviceId: String, fingerprint: String) {}
 
     /** Bluetooth, input, USB storage, HDMI-CEC and audio, for the Connected devices card. */
     suspend fun peripherals(deviceId: String): List<Peripheral> = emptyList()

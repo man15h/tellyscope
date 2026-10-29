@@ -14,7 +14,10 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
-/** Where the per-TV debloat lists live: the tellyscope-devices repo, built from cleanyourtv. */
+/**
+ * Where the per-TV debloat lists live, with the launcher, app name and streaming lists and the
+ * Remote's logos: the tellyscope-devices repo.
+ */
 const val LISTS_BASE = "https://raw.githubusercontent.com/man15h/tellyscope-devices/main/"
 
 /** One row of `index.json`. [match] is null for lists nobody has matched to a TV yet. */
@@ -95,7 +98,16 @@ fun merge(maker: String, lists: List<DeviceList>): DeviceList = DeviceList(
     },
 )
 
-data class ListIndex(val commit: String?, val devices: List<ListEntry>)
+/** A file the index names outside `devices/`, checked against [sha256] like a device file. */
+data class ListFile(val file: String, val sha256: String)
+
+/** [lists] by name (`launchers`, `labels`, `streaming`) and [logos] by logo name; empty on an index from before they moved here. */
+data class ListIndex(
+    val commit: String?,
+    val devices: List<ListEntry>,
+    val lists: Map<String, ListFile> = emptyMap(),
+    val logos: Map<String, ListFile> = emptyMap(),
+)
 
 data class ListPackage(val pkg: String, val note: String?, val optional: Boolean)
 
@@ -141,7 +153,12 @@ sealed interface Suggestions {
 /** Same rule tellyscope-devices checks; a name goes into a `pm` shell line. */
 internal val PACKAGE = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
 private val FILE = Regex("devices/[A-Za-z0-9][A-Za-z0-9._-]*\\.json")
+private val LIST_FILE = Regex("lists/[a-z]+\\.json")
+private val LOGO_FILE = Regex("logos/[a-z0-9]+\\.png")
 private val SHA256 = Regex("[0-9a-f]{64}")
+/** A list id goes into `picks.tsv`, one tab-separated line per TV, so no tab or newline. */
+private val LIST_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+private val COMMIT = Regex("[0-9a-f]{7,40}")
 private const val SCHEMA = 1
 
 /** The props a match rule may name, read from `ro.product.*`; brand also finds the maker's lists. */
@@ -154,26 +171,41 @@ fun matches(rule: Map<String, List<String>>?, props: Map<String, String?>): Bool
         values.any { it.equals(actual, ignoreCase = true) }
     }
 
-/** Null unless it is a schema 1 index. Entries with a missing field, bad file name or checksum are dropped. */
+/**
+ * Null unless it is a schema 1 index. Entries with a missing field, bad file name or checksum are
+ * dropped, in `devices`, `lists` and `logos` alike.
+ */
 fun parseIndex(text: String): ListIndex? = try {
     val o = jsonObject(text)
     if (o.optInt("schema") != SCHEMA) null else ListIndex(
-        commit = o.optJSONObject("source")?.optStringOrNull("commit"),
+        commit = o.optJSONObject("source")?.optStringOrNull("commit")?.takeIf { COMMIT.matches(it) },
         devices = o.getJSONArray("devices").objectsOrSkip { d ->
             ListEntry(
                 id = d.getString("id"),
-                name = d.getString("name"),
+                name = plainText(d.getString("name"), NAME_MAX),
                 match = d.optJSONObject("match")?.let { m ->
                     m.keys().asSequence().associateWith { k -> m.getJSONArray(k).strings() }
                 },
                 sdk = d.optIntOrNull("sdk"),
                 file = d.getString("file"),
                 sha256 = d.getString("sha256"),
-            ).takeIf { FILE.matches(it.file) && SHA256.matches(it.sha256) }
+            ).takeIf { LIST_ID.matches(it.id) && it.name.isNotEmpty() && FILE.matches(it.file) && SHA256.matches(it.sha256) }
         },
+        lists = o.files("lists", LIST_FILE),
+        logos = o.files("logos", LOGO_FILE),
     )
 } catch (_: org.json.JSONException) {
     null
+}
+
+/** The `{name: {file, sha256}}` map under [key], without entries whose file isn't [pattern] or whose checksum can't be one. */
+private fun JSONObject.files(key: String, pattern: Regex): Map<String, ListFile> {
+    val o = optJSONObject(key) ?: return emptyMap()
+    return o.keys().asSequence().mapNotNull { k ->
+        val f = o.optJSONObject(k) ?: return@mapNotNull null
+        val file = ListFile(f.optString("file"), f.optString("sha256"))
+        (k to file).takeIf { pattern.matches(file.file) && SHA256.matches(file.sha256) }
+    }.toMap()
 }
 
 /**
@@ -183,16 +215,16 @@ fun parseIndex(text: String): ListIndex? = try {
 fun parseList(text: String, id: String): DeviceList? = try {
     val o = jsonObject(text)
     val tested = o.optJSONObject("tested")
-    fun packages(a: JSONArray?) = a?.objectsOrSkip { ListPackage(it.getString("pkg"), it.optStringOrNull("note"), it.optBoolean("optional")) }
+    fun packages(a: JSONArray?) = a?.objectsOrSkip { ListPackage(it.getString("pkg"), it.optStringOrNull("note")?.let { n -> plainText(n, NOTE_MAX) }, it.optBoolean("optional")) }
         .orEmpty().filter { PACKAGE.matches(it.pkg) }
     if (o.optInt("schema") != SCHEMA || o.optString("id") != id) null else DeviceList(
         id = id,
-        name = o.getString("name"),
-        testedOs = tested?.optStringOrNull("os"),
+        name = plainText(o.getString("name"), NAME_MAX),
+        testedOs = tested?.optStringOrNull("os")?.let { plainText(it, NAME_MAX) },
         sdk = tested?.optIntOrNull("sdk"),
         keep = packages(o.optJSONArray("keep")).map { it.pkg }.toSet(),
         groups = o.getJSONArray("groups").objectsOrSkip { g ->
-            ListGroup(g.optString("title"), packages(g.optJSONArray("packages")))
+            ListGroup(plainText(g.optString("title"), NAME_MAX), packages(g.optJSONArray("packages")))
         }.filter { it.packages.isNotEmpty() },
     )
 } catch (_: org.json.JSONException) {
@@ -201,8 +233,8 @@ fun parseList(text: String, id: String): DeviceList? = try {
 
 /**
  * The list cut down to this TV: only apps it actually has, still on, and not protected (built in
- * or by the list's keep). Pre-ticked only for non-optional entries on a TV with the SDK the list
- * was tested on. Groups with the same title become one, and an app shows once, in its first group,
+ * or by the list's keep), and never one of the TV's own launchers. Pre-ticked only for
+ * non-optional entries on a TV with the SDK the list was tested on. Groups with the same title become one, and an app shows once, in its first group,
  * since the screen keys rows by title and package.
  */
 fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGroup> {
@@ -211,15 +243,15 @@ fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGro
     val seen = mutableSetOf<String>()
     return list.groups.groupBy { it.title }.map { (title, gs) ->
         SuggestedGroup(title, gs.flatMap { it.packages }.mapNotNull { p ->
-            val app = installed[p.pkg]?.takeIf { it.enabled && it.protectedReason == null && p.pkg !in list.keep }
+            val app = installed[p.pkg]?.takeIf { it.enabled && it.protectedReason == null && !it.builtInLauncher && p.pkg !in list.keep }
             app?.takeIf { seen.add(p.pkg) }?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional) }
         })
     }.filter { it.packages.isNotEmpty() }
 }
 
 /**
- * Fetches and caches the index and device files under [dir]. A failed fetch falls back to the
- * cache; a device file is only used (and cached) when its sha256 matches the index. Hand picks
+ * Fetches and caches the index, device files, lists and logos under [dir]. A failed fetch falls
+ * back to the cache; a file is only used (and cached) when its sha256 matches the index. Hand picks
  * are remembered per [historyKey].
  */
 class DeviceLists(
@@ -231,8 +263,8 @@ class DeviceLists(
     private val picks = File(dir, "picks.tsv")
     private val sourceFile = File(dir, "source.txt")
 
-    /** The folder holding `index.json`: one the user set, else [LISTS_BASE]. */
-    val base: String get() = custom() ?: LISTS_BASE
+    /** The folder holding `index.json`: one the user set, else [LISTS_BASE]. Checked again here, so a stored address that isn't `https` is never used. */
+    val base: String get() = custom()?.let(::normalize) ?: LISTS_BASE
 
     /** The user's own source, or null for tellyscope-devices. */
     @Synchronized
@@ -254,6 +286,8 @@ class DeviceLists(
         withContext(Dispatchers.IO) {
             File(dir, "index.json").delete()
             File(dir, "devices").deleteRecursively()
+            File(dir, "lists").deleteRecursively()
+            File(dir, "logos").deleteRecursively()
             dir.mkdirs()
             if (text != null) File(dir, "index.json").writeText(text)
             synchronized(this@DeviceLists) {
@@ -279,12 +313,55 @@ class DeviceLists(
     }
 
     /** The device file for [entry], from cache or the network. Null when the bytes don't match its sha256. */
-    suspend fun list(entry: ListEntry): DeviceList? = withContext(Dispatchers.IO) {
-        val cache = File(dir, entry.file) // lists/devices/<id>.json, apart from index.json
-        val bytes = cache.takeIf { it.exists() }?.readBytes()?.takeIf { sha256(it) == entry.sha256 }
-            ?: attempt { fetch(base + entry.file) }?.takeIf { sha256(it) == entry.sha256 }
+    suspend fun list(entry: ListEntry): DeviceList? =
+        file(entry.file, entry.sha256)?.let { parseList(it.decodeToString(), entry.id) }
+
+    /**
+     * The launcher, app name and streaming lists the index names, each from cache or the network.
+     * One that can't be had is null in [SharedFiles], so the caller keeps what it has.
+     */
+    suspend fun shared(): SharedFiles {
+        val lists = index()?.lists.orEmpty()
+        suspend fun get(name: String) = lists[name]?.let { file(it.file, it.sha256) }?.decodeToString()
+        return SharedFiles(get("launchers"), get("labels"), get("streaming"))
+    }
+
+    /** The lists as last cached, without the network, for the moment before [shared] answers; each only while it matches the cached index. */
+    suspend fun cachedShared(): SharedFiles = withContext(Dispatchers.IO) {
+        val lists = File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex)?.lists.orEmpty()
+        fun read(name: String) = lists[name]?.let { f -> cached(f.file)?.takeIf { sha256(it) == f.sha256 } }?.decodeToString()
+        SharedFiles(read("launchers"), read("labels"), read("streaming"))
+    }
+
+    /**
+     * A logo's PNG by the name `streaming.json` gives it; null when the index has none or it can't be
+     * had. Uses the index already read, never fetching it: offline, every button on screen asking at
+     * once would queue one network timeout each behind [lock].
+     */
+    suspend fun logo(name: String): ByteArray? {
+        val known = index ?: withContext(Dispatchers.IO) { File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex) }
+        return known?.logos?.get(name)?.let { file(it.file, it.sha256, Png::ok) }
+    }
+
+    /**
+     * [path] under [dir] when its bytes match [sha] and pass [valid], else fetched from [base] and
+     * cached if they do. Null for a path that isn't one the index may name or that leaves [dir].
+     */
+    private suspend fun file(path: String, sha: String, valid: (ByteArray) -> Boolean = { true }): ByteArray? = withContext(Dispatchers.IO) {
+        val cache = cacheFile(path) ?: return@withContext null
+        fun ok(b: ByteArray) = sha256(b) == sha && valid(b)
+        cache.takeIf { it.exists() }?.readBytes()?.takeIf(::ok)
+            ?: attempt { fetch(base + path) }?.takeIf(::ok)
                 ?.also { cache.parentFile?.mkdirs(); cache.writeBytes(it) }
-        bytes?.let { parseList(it.decodeToString(), entry.id) }
+    }
+
+    private fun cached(path: String): ByteArray? = cacheFile(path)?.takeIf { it.exists() }?.readBytes()
+
+    /** Where [path] is cached: only a name [parseIndex] keeps, and only inside [dir] once resolved. */
+    private fun cacheFile(path: String): File? {
+        if (!FILE.matches(path) && !LIST_FILE.matches(path) && !LOGO_FILE.matches(path)) return null
+        val root = dir.canonicalFile
+        return File(root, path).canonicalFile.takeIf { it.path.startsWith(root.path + File.separator) }
     }
 
     /**
@@ -324,6 +401,9 @@ class DeviceLists(
     }
 }
 
+/** The raw text of each shared list; null for one not available. */
+data class SharedFiles(val launchers: String?, val labels: String?, val streaming: String?)
+
 enum class SourceResult { Ok, NotHttps, Unreachable, NotAList }
 
 const val NOT_A_LIST = "this source isn't a Tellyscope list"
@@ -359,14 +439,23 @@ fun sourceName(base: String): String {
 }
 
 private const val MAX_BYTES = 2 shl 20 // 2 MiB; the index is ~60 KB
+private const val MAX_MILLIS = 30_000L
 
-/** Plain GET with short timeouts, so a slow network falls back to the cache rather than hanging. */
+/**
+ * Plain GET with short timeouts, so a slow network falls back to the cache rather than hanging.
+ * `https` only, where it ends up too: a redirect to anything else fails. A server that sends a
+ * byte every few seconds still gives up after [MAX_MILLIS].
+ */
 internal suspend fun download(url: String): ByteArray = withContext(Dispatchers.IO) {
+    require(url.startsWith("https://", ignoreCase = true)) { "not https: $url" }
     val c = URL(url).openConnection() as HttpURLConnection
     c.connectTimeout = 10_000
     c.readTimeout = 10_000
+    val start = System.nanoTime()
     try {
         check(c.responseCode == 200) { "HTTP ${c.responseCode}" }
+        check(c.url.protocol.equals("https", ignoreCase = true)) { "redirected off https" }
+        check(c.contentLengthLong <= MAX_BYTES) { "too large" }
         c.inputStream.use { s ->
             val out = java.io.ByteArrayOutputStream()
             val buf = ByteArray(8192)
@@ -374,6 +463,7 @@ internal suspend fun download(url: String): ByteArray = withContext(Dispatchers.
                 val n = s.read(buf).takeIf { it >= 0 } ?: break
                 out.write(buf, 0, n)
                 check(out.size() <= MAX_BYTES) { "too large" }
+                check(System.nanoTime() - start <= MAX_MILLIS * 1_000_000) { "too slow" }
             }
             out.toByteArray()
         }
@@ -387,7 +477,7 @@ private fun sha256(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b
 /** Real lists nest about four deep; org.json parses recursively, so a deeply nested file would overflow the stack. */
 private const val MAX_DEPTH = 32
 
-private fun jsonObject(text: String): JSONObject {
+internal fun jsonObject(text: String): JSONObject {
     if (depth(text) > MAX_DEPTH) throw org.json.JSONException("nested deeper than $MAX_DEPTH")
     return JSONObject(text)
 }
@@ -412,6 +502,24 @@ internal fun depth(text: String): Int {
     }
     return max
 }
+
+internal const val NAME_MAX = 80
+internal const val NOTE_MAX = 300
+
+/**
+ * Fetched text as it may be shown: no control characters, no bidi controls that would make it
+ * read in another order ("\u202Egnp.exe"), no line breaks of Unicode's own, at most [max]
+ * characters, trimmed.
+ */
+internal fun plainText(s: String, max: Int): String {
+    val clean = s.filterNot { Character.getType(it) == Character.CONTROL.toInt() || it in BIDI || it == '\u2028' || it == '\u2029' }.trim()
+    if (clean.length <= max) return clean
+    // Never half a surrogate pair at the cut.
+    val end = if (Character.isHighSurrogate(clean[max - 1])) max - 1 else max
+    return clean.substring(0, end).trimEnd()
+}
+
+private val BIDI = setOf('\u061C', '\u200E', '\u200F') + ('\u202A'..'\u202E') + ('\u2066'..'\u2069')
 
 /** [f] over each element, leaving out any that isn't an object or that [f] can't read. */
 internal fun <T : Any> JSONArray.objectsOrSkip(f: (JSONObject) -> T?): List<T> = (0 until length()).mapNotNull {

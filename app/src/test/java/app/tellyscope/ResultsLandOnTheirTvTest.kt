@@ -138,6 +138,26 @@ class ResultsLandOnTheirTvTest {
         assertEquals("tv-a", vm.done.value?.deviceId)
     }
 
+    @Test fun switchingBackShowsTheLastListsUntilFreshOnesReplaceThem() = with(test) {
+        source.listKeep = setOf("kept")
+        vm = TellyscopeViewModel(source, clock = { 0L })
+        runCurrent()
+        vm.select("tv-b")
+        runCurrent()
+
+        source.appsDelayMs = 5_000
+        vm.select("tv-a")
+        runCurrent()
+        val page = vm.state.value.device
+        assertEquals(listOf("app-on-tv-a"), page.apps.map { it.packageName })
+        assertFalse(page.appsLoading)
+        assertEquals("tv-a", ((page.lists as Suggestions.Ready).list).id)
+
+        // The fresh read was still out; once it lands it replaces the shown list.
+        advanceTimeBy(5_100)
+        assertEquals(listOf("app-on-tv-a"), vm.state.value.device.apps.map { it.packageName })
+    }
+
     @Test fun snackbarUndoGoesToTheTvItCameFrom() = with(test) {
         vm = TellyscopeViewModel(source, clock = { 0L })
         runCurrent()

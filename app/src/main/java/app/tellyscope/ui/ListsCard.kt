@@ -21,7 +21,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -49,6 +51,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,12 +61,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
@@ -142,7 +150,7 @@ fun DebloatScreen(
         lists is Suggestions.NoList -> listOf(
             SuggestedGroup(
                 "Apps on this TV",
-                tvApps.filter { it.enabled && it.protectedReason == null }.sortedBy { it.label.lowercase() }
+                tvApps.filter { it.enabled && it.protectedReason == null && !it.builtInLauncher }.sortedBy { it.label.lowercase() }
                     .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false) },
             ),
         )
@@ -276,13 +284,20 @@ fun DebloatScreen(
                         Muted(if (showing == null) "Every app left on is one the TV needs." else "Nothing on the list is still on here.")
                     }
                 }
+                // A list's groups are a tree: each heading ticks its whole group. The TV's own apps, with no list, stay flat.
+                val tree = showing != null
                 groups.filter { it.packages.isNotEmpty() }.forEach { g ->
+                    val pkgs = g.packages.map { it.pkg }
                     item(key = "g:" + g.title) {
-                        Text(g.title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 12.dp))
+                        if (tree) GroupRow(g.title, pkgs.count { it in ticked }, pkgs.size) {
+                            ticked = if (pkgs.all { it in ticked }) ticked - pkgs.toSet() else ticked + pkgs
+                        } else Text(g.title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 12.dp))
                     }
-                    items(g.packages, key = { it.pkg }) { p ->
+                    itemsIndexed(g.packages, key = { _, p -> p.pkg }) { i, p ->
                         Row(
-                            Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium)
+                            Modifier.fillMaxWidth()
+                                .then(if (tree) Modifier.treeLine(MaterialTheme.colorScheme.outlineVariant, last = i == g.packages.lastIndex).padding(start = Indent) else Modifier)
+                                .clip(MaterialTheme.shapes.medium)
                                 .clickable { ticked = if (p.pkg in ticked) ticked - p.pkg else ticked + p.pkg },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
@@ -302,6 +317,52 @@ fun DebloatScreen(
             }
         }
     }
+}
+
+/** How far a group's apps sit in from its heading: a checkbox and its gap, so theirs line up under its title. */
+private val Indent = 32.dp
+
+/** The gap between rows, which a group's line bridges. Matches the list's spacedBy. */
+private val RowGap = 4.dp
+
+/**
+ * A group's heading: its checkbox ticks every app in it (optional ones too), or unticks them all
+ * once they all are, with a dash while only some are.
+ */
+@Composable
+private fun GroupRow(title: String, on: Int, of: Int, onToggle: () -> Unit) {
+    val state = when (on) {
+        of -> ToggleableState.On
+        0 -> ToggleableState.Off
+        else -> ToggleableState.Indeterminate
+    }
+    Row(
+        Modifier.padding(top = 8.dp).fillMaxWidth().heightIn(min = 48.dp)
+            .treeLine(MaterialTheme.colorScheme.outlineVariant, head = true)
+            .clip(MaterialTheme.shapes.medium)
+            .triStateToggleable(state, role = Role.Checkbox, onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TriStateCheckbox(state, onClick = null)
+        Spacer(Modifier.width(8.dp))
+        Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
+        Text("$on of $of", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+    }
+}
+
+/**
+ * The line down a group, under the heading's checkbox. A [head]ing's starts just below its
+ * checkbox; an app's bridges the gap above it, runs to its foot (to its middle on the
+ * [last] one) and turns across to its checkbox.
+ */
+private fun Modifier.treeLine(color: Color, last: Boolean = false, head: Boolean = false) = drawBehind {
+    // From the start edge, which is the right one in a right-to-left language.
+    fun at(dx: Dp) = if (layoutDirection == LayoutDirection.Ltr) dx.toPx() else size.width - dx.toPx()
+    val x = at(12.dp)
+    val mid = size.height / 2
+    val stroke = 1.dp.toPx()
+    drawLine(color, Offset(x, if (head) mid + 12.dp.toPx() else -RowGap.toPx()), Offset(x, if (last) mid else size.height), stroke)
+    if (!head) drawLine(color, Offset(x, mid), Offset(at(Indent - 4.dp), mid), stroke)
 }
 
 /** No list for this TV: send its model and stock apps to cleanyourtv, where the lists come from. */

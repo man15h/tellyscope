@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.Reports
 import app.tellyscope.adb.TvFacts
+import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
@@ -46,6 +47,8 @@ private class ReportTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scena
     )
 
     override fun live(deviceId: String) = emptyFlow<Snapshot>()
+    // No app list read yet, so a launch goes to the TV and fails there.
+    override suspend fun apps(deviceId: String) = emptyList<AppInfo>()
     override suspend fun launch(deviceId: String, packageName: String) = false
     override suspend fun facts(deviceId: String) = if (readable) facts else throw java.io.IOException("gone")
 }

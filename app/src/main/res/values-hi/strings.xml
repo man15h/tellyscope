@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="scan_rescan">फिर से स्कैन करें</string>
+    <string name="scan_none_yet_in">अभी कोई TV नहीं मिला। %1$d सेकंड में फिर से ढूंढा जाएगा</string>
+</resources>

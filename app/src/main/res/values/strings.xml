@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">Tellyscope</string>
+    <string name="app_name" translatable="false">Tellyscope</string>
+    <string name="scan_rescan">Rescan</string>
+    <string name="scan_none_yet_in">No TV yet. Looking again in %1$d s</string>
 </resources>

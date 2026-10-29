@@ -111,7 +111,7 @@ class PauseTest {
     @Test fun theEmptyScanStopsInTheBackgroundAndStartsAgainAfter() = with(test) {
         val tv = Counted(tvs = false)
         open(tv)
-        assertTrue("scan" in tv.reads) // no TV, nothing found: it keeps looking every 15 s
+        assertTrue("scan" in tv.reads) // no TV, nothing found: it keeps looking every 10 s
         vm.pause()
         runCurrent()
         tv.reads.clear()

@@ -85,9 +85,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     @Volatile private var paused = false
     private val hits = ConcurrentHashMap<String, ScanHit>()
     private val store = DeviceStore(File(appContext.filesDir, "devices.tsv"))
-    private val launchers by lazy { parseLaunchers(appContext.assets.open("launchers.json").bufferedReader().use { it.readText() }) }
-    /** Launchers whose accessibility service a switch may turn on: only those `launchers.json` names. */
-    private val serviceLaunchers by lazy { launchers.filter { it.accessibility }.map { it.pkg }.toSet() }
+    /** Launchers whose accessibility service a switch may turn on: only the built-in ones. */
+    private val serviceLaunchers = ACCESSIBILITY_LAUNCHERS.keys
     private val saved = ConcurrentHashMap<String, SavedDevice>()
     /** Remembered TVs that haven't answered since launch: shown offline, not "connecting". */
     private val restoring = ConcurrentHashMap.newKeySet<String>()
@@ -102,6 +101,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     /** TVs whose Apps tab got Not now on the card about a better home screen. */
     private val launcherCards = FoldBook(File(appContext.filesDir, "launcher-card.properties"))
     private val mine = MineBook(File(appContext.filesDir, "mine.tsv"))
+    /** The keys each TV was seen to allow, so one allowed behind Tellyscope's back shows as new. */
+    private val knownKeys = MineBook(File(appContext.filesDir, "known-keys.tsv"))
     private val networkNames = NetworkNames()
     /** Last label seen per package, so history entries read like the app list. */
     private val labels = ConcurrentHashMap<String, String>()
@@ -117,6 +118,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
 
     init {
         Connector.init(File(appContext.filesDir, "adbkey.pem"))
+        scope.launch(Dispatchers.IO) { SharedLists.load(lists) }
     }
 
     /** Remembered TVs reconnect in the background from launch; [known] waits for the file read. */
@@ -361,6 +363,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     override fun pause(paused: Boolean) {
         this.paused = paused
         links.values.forEach { it.gate.paused.value = paused }
+        // Back in front: lists that couldn't be downloaded at launch get another go.
+        if (!paused) scope.launch(Dispatchers.IO) { SharedLists.refresh() }
     }
 
     /**
@@ -388,6 +392,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         // Same key as history: a placeholder serial must not give two boxes one cache.
         val names = appNames.names(key(deviceId), listed, LabelHelper(session, helperDex)::describe)
         val keep = keep[key(deviceId)].orEmpty()
+        // Fire OS keeps Amazon's launcher the default; a launcher whose service is on holds Home instead.
+        val held = if (fireOs(deviceId, FIRE_TV_LAUNCHER in system)) Actions(shell).fireServiceHolder(serviceLaunchers)?.first else null
         // On a launcher the user added, offer the way back to the one it replaced.
         val own = homeOptions?.let { builtIns(system, disabled, it) }.orEmpty()
         val back = homeOptions?.current?.takeIf { it !in system }
@@ -420,8 +426,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
                 version = "",
                 icon = name.icon,
                 removable = p.name in userInstalled,
-                home = p.name == homeOptions?.takeIf { it.default }?.current,
-                listedLauncher = launchers.any { it.pkg == p.name },
+                home = if (held != null) p.name == held else p.name == homeOptions?.takeIf { it.default }?.current,
+                listedLauncher = SharedLists.launchers.any { it.pkg == p.name },
                 homeInstead = homeOptions?.takeIf { p.name in it.others }?.current,
                 homeFirst = homeOptions?.takeIf { it.current == null && p.name in it.others } != null,
                 answersHome = homeOptions?.let { p.name == it.current || p.name in it.others } == true,
@@ -485,7 +491,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val label = labels[packageName] ?: AppNames.fallback(packageName)
         val service = packageName.takeIf { it in serviceLaunchers }?.let { actions.homeService(it) }
             ?: throw IllegalStateException("$label has no accessibility service")
-        if (!actions.setService(service, true)) throw IllegalStateException(serviceNotOn(label))
+        if (!actions.grant(service)) throw IllegalStateException(serviceNotOn(label))
         // Undo of the switch to it turns it off again, as if the switch had turned it on.
         openSwitch(deviceId, packageName)?.let { book.amend(it, mapOf("service" to service)) }
         Unit
@@ -542,12 +548,21 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     private suspend fun switchHome(deviceId: String, packageName: String, undoing: Long?, withService: Boolean): HistoryEntry {
         fireHomes -= deviceId
         val key = key(deviceId)
-        return switchHome(Actions(session(deviceId)), packageName, withService, serviceLaunchers, ::labelOf, ::reasonText) { pkg, undo, previous ->
+        val actions = Actions(session(deviceId))
+        if (packageName in serviceLaunchers && fireOs(deviceId, actions.installed(FIRE_TV_LAUNCHER))) {
+            return fireServiceHome(actions, packageName, withService, ::labelOf) { previous ->
+                book.record(key, System.currentTimeMillis(), Action.Home, packageName, labelOf(packageName), Action.Enable.takeIf { previous.isNotEmpty() }, undoing, previous)
+            }
+        }
+        return switchHome(actions, packageName, withService, serviceLaunchers, ::labelOf, ::reasonText) { pkg, undo, previous ->
             book.record(key, System.currentTimeMillis(), Action.Home, pkg, labelOf(packageName), undo, undoing, previous)
         }
     }
 
     private fun labelOf(pkg: String) = labels[pkg] ?: AppNames.fallback(pkg)
+
+    /** A Fire TV by its model, or any TV with Amazon's launcher: [amazonLauncher] says whether it has one. */
+    private fun fireOs(deviceId: String, amazonLauncher: Boolean) = amazonLauncher || deviceKind(device(deviceId)) == DeviceKind.FireTv
 
     /** Undo of a first home: [launcher] stays Home, as there's none to go back to; its [service] goes off. */
     private suspend fun firstHomeServiceOff(deviceId: String, launcher: String, service: String, undoing: Long): HistoryEntry {
@@ -585,6 +600,14 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         val system = Parsers.packages(shell.shell("pm list packages -s").output).map { it.name }.toSet()
         val disabled = Parsers.packages(shell.shell("pm list packages -d").output).map { it.name }.toSet()
         val nothing = "there's no home screen to switch back to"
+        if (fireOs(deviceId, FIRE_TV_LAUNCHER in system)) Actions(shell).fireServiceHolder(serviceLaunchers)?.let { held ->
+            val (added, _) = held
+            // Reverses the Make Home that turned the service on, so Restore leaves it alone.
+            val home = undoing ?: book.entries(key).filter { it.action == Action.Home && it.undoneAt == null && it.firstHomeService != null && it.packageName == added }.maxByOrNull { it.id }?.id
+            return fireHomeBack(Actions(shell), held, ::labelOf) { to, previous ->
+                book.record(key, System.currentTimeMillis(), Action.HomeBack, added, to?.let(::labelOf) ?: labelOf(FIRE_TV_LAUNCHER), Action.Home, home, previous)
+            }
+        }
         val options = Actions(shell).homeOptions() ?: throw IllegalStateException(nothing)
         val added = options.current?.takeIf { it !in system } ?: throw IllegalStateException(nothing)
         val own = builtIns(system, disabled, options)
@@ -628,8 +651,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     override suspend fun history(deviceId: String): List<HistoryEntry> = book.entries(key(deviceId))
 
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
-        // Only a launcher the bundled list names: the Store link is the one thing this opens.
-        if (launchers.none { it.pkg == packageName }) return false
+        // Only a launcher the list names: the Store link is the one thing this opens.
+        if (SharedLists.launchers.none { it.pkg == packageName }) return false
         return Actions(session(deviceId)).openStore(packageName)
     }
 
@@ -769,7 +792,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             if (from == null || !actions.setHome(from)) {
                 homeLeft = true
                 errors += "the TV kept ${labelOf(to.substringBefore('/'))} as the home screen"
-            } else p[ResetRecord.SERVICE]?.let { if (!actions.setService(it, true)) errors += serviceNotOn(name) }
+            } else p[ResetRecord.SERVICE]?.let { if (!actions.grant(it)) errors += serviceNotOn(name) }
         }
         val ownHome = p[ResetRecord.TO]?.substringBefore('/')?.takeIf { homeLeft }
         suspend fun each(pkgs: List<String>, change: suspend (String) -> Unit) = pkgs.filter { pkg ->
@@ -827,7 +850,10 @@ class AdbDeviceSource(context: Context) : DeviceSource {
 
     override suspend fun setListSource(url: String?) {
         when (lists.setSource(url)) {
-            SourceResult.Ok -> keep.clear() // the old source's keep entries
+            SourceResult.Ok -> {
+                keep.clear() // the old source's keep entries
+                scope.launch(Dispatchers.IO) { SharedLists.load(lists, fresh = true) }
+            }
             SourceResult.NotHttps -> throw IllegalStateException("the address has to start with https://")
             SourceResult.Unreachable -> throw IllegalStateException("couldn't reach that address. Check it and the phone's internet")
             SourceResult.NotAList -> throw IllegalStateException(NOT_A_LIST)
@@ -944,15 +970,34 @@ class AdbDeviceSource(context: Context) : DeviceSource {
 
     override suspend fun connectionRequest(deviceId: String) = ConnectionPrompt(session(deviceId)).pending()
 
-    override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean) =
-        ConnectionPrompt(session(deviceId)).answer(request, allow, always)
+    /**
+     * Allow pressed from the app makes that key known, so it isn't flagged new. Only on a TV with a
+     * known list: before the first read every key counts as known anyway.
+     */
+    override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean): Boolean {
+        val answered = ConnectionPrompt(session(deviceId)).answer(request, allow, always)
+        val tv = key(deviceId)
+        if (answered && allow && request.fingerprint.isNotEmpty() && knownKeys.has(tv)) knownKeys.add(tv, request.fingerprint)
+        return answered
+    }
+
+    override suspend fun closeAlert(deviceId: String) = ConnectionPrompt(session(deviceId)).closeAlert()
 
     override suspend fun facts(deviceId: String) = TvFacts.read(session(deviceId))
 
     override suspend fun access(deviceId: String): TvAccess {
         val a = Access(session(deviceId))
         val port = links[deviceId]?.port ?: Access.CLASSIC_PORT
-        val access = TvAccess.of(a.clients(port), a.keys(), phoneAddresses(), deviceId, mine[key(deviceId)], phoneFingerprint())
+        val pending = runCatching { connectionRequest(deviceId)?.fingerprint }.getOrNull()
+        val tv = key(deviceId)
+        val access = TvAccess.of(
+            a.clients(port), a.keys(), phoneAddresses(), deviceId, mine[tv], phoneFingerprint(),
+            pending = pending, known = knownKeys[tv].takeIf { knownKeys.has(tv) },
+        )
+        access.allowed?.let { keys ->
+            val known = knownKeys[tv] + keys.filterNot { it.new }.map { it.fingerprint }
+            if (!knownKeys.has(tv) || known != knownKeys[tv]) knownKeys.set(tv, known)
+        }
         // Other computers only: this phone and apps on the TV itself need no name.
         val lookup = access.connected.orEmpty().filter { it.who == AccessClient.Who.Other || it.who == AccessClient.Who.Mine }
         return access.named(networkNames.of(lookup.map { it.address }))
@@ -963,9 +1008,17 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         mine.add(key(deviceId), address)
     }
 
+    override suspend fun markKeyMine(deviceId: String, fingerprint: String) {
+        restored.await()
+        knownKeys.add(key(deviceId), fingerprint)
+    }
+
     override suspend fun peripherals(deviceId: String) = Peripherals(session(deviceId)).read()
 
-    override suspend fun revokeAll(deviceId: String) = Access(session(deviceId)).revokeAll()
+    /** Every key goes, so none counts as known after: a computer allowed again later shows as new. */
+    override suspend fun revokeAll(deviceId: String) = Access(session(deviceId)).revokeAll().also { ok ->
+        if (ok) knownKeys.set(key(deviceId), setOfNotNull(phoneFingerprint()))
+    }
 
     override suspend fun openDeveloperOptions(deviceId: String) = Access(session(deviceId)).openDeveloperOptions()
 
@@ -1001,6 +1054,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
             names.rekey(deviceId, key)
             docks.rekey(deviceId, key)
             mine.rekey(deviceId, key)
+            knownKeys.rekey(deviceId, key)
             remember(deviceId)
         }
         return key
@@ -1117,7 +1171,7 @@ internal suspend fun switchHome(
     is HomeResult.Switched -> {
         // Where the TV sends Home to its own launcher, the new one holds it with this service.
         val service = pkg.takeIf { withService && it in serviceLaunchers }?.let { actions.homeService(it) }?.takeUnless { actions.serviceOn(it) }
-        val on = service?.let { actions.setService(it, true) }
+        val on = service?.let { actions.grant(it) }
         val was = r.from?.substringBefore('/')?.takeIf { r.kept }
         val old = was?.takeIf { it in serviceLaunchers }?.let { actions.homeService(it) }?.takeIf { actions.serviceOn(it) }
         val off = old?.let { actions.setService(it, false) }
@@ -1145,13 +1199,73 @@ internal suspend fun switchHome(
 }
 
 /**
+ * Fire OS's Home: it refuses to turn Amazon's launcher off and won't keep another default, but [pkg]'s
+ * accessibility service takes the Home key, and opens of Amazon's launcher, on its own. So only the
+ * service goes on and Amazon's launcher stays as it is. Recorded as a home with nothing to replace:
+ * "service" when this turned it on, so Undo turns it off and does nothing else.
+ */
+internal suspend fun fireServiceHome(
+    actions: Actions,
+    pkg: String,
+    withService: Boolean,
+    label: (String) -> String,
+    record: (previous: Map<String, String?>) -> HistoryEntry,
+): HistoryEntry {
+    if (!withService) throw IllegalStateException(fireNeedsService(label(pkg)))
+    val service = actions.homeService(pkg) ?: throw IllegalStateException("${label(pkg)} has no accessibility service")
+    if (actions.serviceOn(service)) return record(emptyMap())
+    if (!actions.grant(service)) throw IllegalStateException(fireServiceNotOn(label(pkg)))
+    return record(mapOf("service" to service))
+}
+
+/**
+ * On Fire OS, the launcher of [launchers] whose accessibility service is on, and that service: it
+ * holds Home there while Amazon's launcher stays the default ([fireServiceHome]). Null when none is.
+ */
+internal suspend fun Actions.fireServiceHolder(launchers: Collection<String>): Pair<String, String>? {
+    for (pkg in launchers) {
+        val service = homeService(pkg) ?: continue
+        if (serviceOn(service)) return pkg to service
+    }
+    return null
+}
+
+/**
+ * Fire OS's way back to Amazon's launcher: [held]'s service, from [fireServiceHolder], goes off, so
+ * Home opens the default again, and the TV shows it. [record] gets the home activity and "service";
+ * its Undo, a Make Home, turns the service back on.
+ */
+internal suspend fun fireHomeBack(
+    actions: Actions,
+    held: Pair<String, String>,
+    label: (String) -> String,
+    record: (to: String?, previous: Map<String, String?>) -> HistoryEntry,
+): HistoryEntry {
+    val (pkg, service) = held
+    if (!actions.setService(service, false)) throw IllegalStateException(fireServiceNotOff(label(pkg)))
+    val to = actions.currentHome()
+    val left = to?.let { actions.handOff(pkg, it) }
+    return record(to?.substringBefore('/'), mapOf("service" to service)).also {
+        left?.let { throw ActionFailed(notShown(label(to!!.substringBefore('/')), it.reason), it.output) }
+    }
+}
+
+/**
+ * Turns accessibility [service] on, only for a launcher in [ACCESSIBILITY_LAUNCHERS]. Every path that
+ * turns one on comes here, so neither a fetched list nor a saved record can name another; false
+ * for any other, as for a TV that refused.
+ */
+internal suspend fun Actions.grant(service: String): Boolean =
+    service.substringBefore('/') in ACCESSIBILITY_LAUNCHERS && setService(service, true)
+
+/**
  * The rest of [switch]'s Undo once its old launcher is on again: Home back to that launcher, the
  * service the switch turned on off, and the old one's back on. False when Home didn't go back.
  */
 internal suspend fun undoHomeSwitch(actions: Actions, switch: HistoryEntry): Boolean {
     val back = switch.previous?.get("from")?.let { actions.setHome(it) }
     switch.previous?.get("service")?.let { actions.setService(it, false) }
-    switch.previous?.get("fromService")?.let { actions.setService(it, true) }
+    switch.previous?.get("fromService")?.let { actions.grant(it) }
     return back != false
 }
 
@@ -1163,6 +1277,13 @@ private fun serviceNotOn(app: String) =
 
 /** Home moved, but the old launcher didn't close or [app] didn't open: [why] is [HandOffFailed.reason]. */
 private fun notShown(app: String, why: String) = "$app is Home now, but $why"
+
+/** Fire OS, after No to the service: without it, Home can't open [app]. */
+private fun fireNeedsService(app: String) = "on Fire TV, Home can only open $app through its accessibility service, so nothing changed"
+
+private fun fireServiceNotOn(app: String) = "the TV didn't turn on $app's accessibility service, so nothing changed"
+
+private fun fireServiceNotOff(app: String) = "the TV didn't turn off $app's accessibility service, so nothing changed"
 
 private fun serviceNotOff(app: String) =
     "switched back, but $app's accessibility service is still on. Turn it off in the TV's Settings → Accessibility"

@@ -3,6 +3,9 @@
 package app.tellyscope.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
@@ -50,9 +54,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.ScanHit
 import app.tellyscope.ui.theme.SmallNumber
 
@@ -132,7 +138,7 @@ fun ScanScreen(
             }
             BrandChips(brand, onPick = { brandName = it.name })
             GuideSteps(brand, step, onStep = { step = it }) {
-                FoundTvs(scan, onRescan, onPick = { hit ->
+                FoundTvs(scan, now, onRescan, onPick = { hit ->
                     val row = scan.rows[hit.ip] ?: RowState.Found
                     if (row == RowState.Found || row == RowState.NotAllowed) onConnect(hit)
                     open = hit.ip
@@ -166,7 +172,7 @@ fun ScanScreen(
 /** Step 3: what the scan has found so far, each a tap away from its connect screen. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FoundTvs(scan: ScanUi, onRescan: () -> Unit, onPick: (ScanHit) -> Unit) {
+private fun FoundTvs(scan: ScanUi, now: Long, onRescan: () -> Unit, onPick: (ScanHit) -> Unit) {
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         scan.hits.forEach { hit ->
             val row = scan.rows[hit.ip] ?: RowState.Found
@@ -211,7 +217,19 @@ private fun FoundTvs(scan: ScanUi, onRescan: () -> Unit, onPick: (ScanHit) -> Un
                     )
                     if (p != null) Text("${p.probed}/${p.total}", style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                // An empty scan starts again by itself; only a list that has something offers the button.
+                // An empty scan starts again by itself; the ring empties until it does.
+                scan.hits.isEmpty() && scan.nextScanAt != null -> {
+                    val left = (scan.nextScanAt - now).coerceIn(0L, RESCAN_EVERY_MS)
+                    // The clock ticks once a second; the ring glides between ticks.
+                    val ring by animateFloatAsState(left / RESCAN_EVERY_MS.toFloat(), tween(1_000, easing = LinearEasing), label = "next scan")
+                    CircularProgressIndicator(progress = { ring }, modifier = Modifier.size(32.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        stringResource(R.string.scan_none_yet_in, ((left + 999) / 1_000).toInt().coerceAtLeast(1)),
+                        style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 scan.hits.isEmpty() -> Text(
                     "No TV yet. Tellyscope looks again in a moment.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -223,6 +241,12 @@ private fun FoundTvs(scan: ScanUi, onRescan: () -> Unit, onPick: (ScanHit) -> Un
                     Text("Scan again")
                 }
             }
+        }
+        // Until a TV turns up, Rescan stays in one place; it waits out a scan rather than throw its probes away.
+        if (scan.hits.isEmpty()) FilledTonalButton(onClick = onRescan, enabled = !scan.scanning) {
+            Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.scan_rescan))
         }
     }
 }

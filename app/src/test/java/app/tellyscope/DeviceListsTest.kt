@@ -261,6 +261,42 @@ class DeviceListsTest {
         assertEquals(2, depth("""{"a":["[[[{{{\"]"]}"""))
     }
 
+    private val launchers = """{"schema": 1, "launchers": [{"package": "com.good.launcher", "name": "Good"}]}""".toByteArray()
+    /** A PNG signature and an IHDR for 1 × 1, which is all [app.tellyscope.data.Png.ok] reads. */
+    private val logo = byteArrayOf(0x89.toByte(), 'P'.code.toByte(), 'N'.code.toByte(), 'G'.code.toByte(), 0x0D, 0x0A, 0x1A, 0x0A) +
+        byteArrayOf(0, 0, 0, 13) + "IHDR".toByteArray() + byteArrayOf(0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0)
+
+    /** An index with only lists and logos; [bad] adds entries whose file is outside lists/ or logos/. */
+    private fun sharedIndex(launchersSha: String = sha256(launchers), bad: Boolean = false) = """
+        {"schema": 1, "devices": [],
+         "lists": {"launchers": {"file": "lists/launchers.json", "sha256": "$launchersSha"}${if (bad) """, "labels": {"file": "../labels.json", "sha256": "${"0".repeat(64)}"}""" else ""}},
+         "logos": {"netflix": {"file": "logos/netflix.png", "sha256": "${sha256(logo)}"}${if (bad) """, "x": {"file": "logos/x.svg", "sha256": "${"0".repeat(64)}"}""" else ""}}}
+    """.trimIndent().toByteArray()
+
+    @Test fun theIndexNamesListsAndLogosOnlyInsideTheirFolders() {
+        val index = parseIndex(sharedIndex(bad = true).decodeToString())!!
+        assertEquals(setOf("launchers"), index.lists.keys)
+        assertEquals(setOf("netflix"), index.logos.keys)
+        // An index from before they moved here still reads.
+        assertTrue(parseIndex(index().decodeToString())!!.lists.isEmpty())
+    }
+
+    @Test fun listsAndLogosAreCheckedCachedAndReadOffline() = runTest {
+        val lists = DeviceLists(tmp.root, served("index.json" to sharedIndex(), "lists/launchers.json" to launchers, "logos/netflix.png" to logo))
+        assertEquals(launchers.decodeToString(), lists.shared().launchers)
+        assertNull(lists.shared().streaming) // the index names none
+        assertTrue(logo.contentEquals(lists.logo("netflix")))
+        assertNull(lists.logo("hulu"))
+
+        val offline = DeviceLists(tmp.root) { throw IOException("offline") }
+        assertEquals(launchers.decodeToString(), offline.cachedShared().launchers)
+        assertEquals(launchers.decodeToString(), offline.shared().launchers)
+        assertTrue(logo.contentEquals(offline.logo("netflix")))
+
+        val wrong = DeviceLists(tmp.newFolder(), served("index.json" to sharedIndex(launchersSha = "f".repeat(64)), "lists/launchers.json" to launchers))
+        assertNull(wrong.shared().launchers)
+    }
+
     private val fork = "https://raw.githubusercontent.com/someone/my-lists/main/"
 
     @Test fun aForkThatServesSchemaOneBecomesTheSourceAndDropsTheOldCache() = runTest {
@@ -273,10 +309,13 @@ class DeviceListsTest {
         val lists = DeviceLists(tmp.root, fetch)
         assertNotNull(lists.list(lists.index()!!.devices.first()))
         assertTrue(tmp.root.resolve("devices/acme-55.json").exists())
+        tmp.root.resolve("logos").mkdirs()
+        tmp.root.resolve("logos/netflix.png").writeBytes(logo)
 
         assertEquals(SourceResult.Ok, lists.setSource(fork.removeSuffix("/") + "/index.json"))
         assertEquals(fork, lists.custom())
         assertFalse(tmp.root.resolve("devices").exists())
+        assertFalse(tmp.root.resolve("logos").exists())
         // Survives a restart, and every later fetch goes to the fork.
         val again = DeviceLists(tmp.root, fetch)
         assertEquals(fork, again.base)

@@ -27,8 +27,9 @@ The TV and HDMI (streaming stick) device icons use the path data of the
 Apps, Files and Tweaks tabs those of "apps", "folder" and "tune", the
 Upload files button that of "upload", the empty Movies folder that of
 "movie", the links in Settings that of "open_in_new", and the Remote's
-restart, waiting, can't-reach and dock menu icons those of "restart_alt",
-"hourglass_top", "link_off", "swap_horiz" and "remove_circle_outline".
+restart, waiting and can't-reach icons and the Remote buttons sheet's drag
+handle those of "restart_alt", "hourglass_top", "link_off" and
+"drag_handle".
 Report a problem, Help add this TV and Add the rest use those of
 "bug_report", "add_to_queue" and "content_copy".
 The access warning, Who has access and Remove all other access use those
@@ -78,8 +79,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 --------------------------------------------------------------------------------
-App icons in app/src/test/resources/dock-icons/ (screenshot tests only, not in
+Streaming service logos (downloaded from tellyscope-devices, not in this repo)
+The names and logos of the services in lists/streaming.json are trademarks of
+their owners. They are not covered by the GNU General Public License: they are
+not part of Tellyscope's source, and no licence to them is given. Tellyscope
+shows them only to name the app a Remote button opens, and isn't affiliated
+with or endorsed by any of their owners. They are drawn from Wikimedia
+Commons, Simple Icons (https://simpleicons.org) and the services' own
+projects; tellyscope-devices' logos/SOURCES.md lists each one's source and
+licence.
+
+--------------------------------------------------------------------------------
+App icon in app/src/test/resources/dock-icons/ (screenshot tests only, not in
 the app)
-The YouTube, Netflix, Jellyfin and Spotify names and logos belong to their
-owners. They are shown only to illustrate the Remote's dock in the README's
-screenshot.
+The YouTube name and logo belong to its owner. It is shown only to illustrate
+the Apps list in a screenshot.

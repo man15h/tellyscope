@@ -15,7 +15,13 @@ import org.junit.Assert.assertSame
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+/** The fallback names come from the test fixture `labels.json`, read with Android's org.json: Robolectric. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class AppNamesTest {
     @get:Rule val tmp = TemporaryFolder()
 
@@ -58,11 +64,17 @@ class AppNamesTest {
         assertEquals("Spotifytv", AppNames.fallback("com.spotify.spotifytv")) // maker already in the name
     }
 
+    @Test fun aClassNameInPlaceOfALabelIsHumanised() {
+        assertEquals("Amazon Firehomestarter", AppNames.named("com.amazon.firehomestarter", "com.amazon.firehomestarter.FireHomeStarterApplication"))
+        assertEquals("Example Weatherbox", AppNames.named("com.example.weatherbox", "com.example.weatherbox"))
+        assertEquals("Fire TV Home", AppNames.named("com.amazon.tv.launcher", "Fire TV Home"))
+    }
+
     @Test fun fallbackWhenTheHelperFails() = runBlocking {
         val helper = Helper(fail = true)
         val appNames = AppNames(tmp.root)
         val names = appNames.names("SN1", listOf(netflix, odd), helper::describe)
-        assertEquals("Netflix", names.getValue("com.netflix.ninja").label) // bundled table
+        assertEquals("Netflix", names.getValue("com.netflix.ninja").label) // fixture table
         assertEquals("Example Weatherbox", names.getValue("com.example.weatherbox").label) // humanised id, maker kept
         assertNull(names.getValue("com.netflix.ninja").icon) // letter avatar
         // A refusal isn't retried on every open; the next app start tries again.

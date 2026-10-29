@@ -15,7 +15,10 @@ data class TvAccess(
     val connected: List<AccessClient>? = null,
     val allowed: List<AccessKey>? = null,
 ) {
-    /** Connections the warning is about: neither this phone nor an address the user said is theirs. */
+    /**
+     * Connections the warning is about: neither this phone nor an address the user said is theirs.
+     * One [AccessClient.Who.Waiting] isn't in yet, so it doesn't count.
+     */
     val others: List<AccessClient> get() = connected.orEmpty().filter { it.who == AccessClient.Who.Other || it.who == AccessClient.Who.OnTv }
 
     val warning: Boolean get() = others.isNotEmpty()
@@ -32,6 +35,14 @@ data class TvAccess(
          * Sorts the TV's open connections into this phone, the user's own and the rest. A
          * loopback connection is this phone only when Tellyscope itself reaches the TV over
          * loopback ([tvHost], as through an emulator's forward); otherwise it is an app on the TV.
+         *
+         * [pending]: the fingerprint on the TV's "Allow debugging?" prompt now, empty when the prompt
+         * can't be read, null when there is none. A prompt for a key that isn't allowed means a
+         * connection is waiting on it; with exactly one other connection, from an address with no other, that one is
+         * [AccessClient.Who.Waiting]. With more, nothing says which, so none is.
+         *
+         * [known]: the keys this TV was seen to allow before, null on the first read, when every key
+         * counts as known. A key that isn't is [AccessKey.new].
          */
         fun of(
             clients: List<AdbClient>?,
@@ -40,6 +51,8 @@ data class TvAccess(
             tvHost: String,
             mine: Set<String>,
             phoneFingerprint: String?,
+            pending: String? = null,
+            known: Set<String>? = null,
         ): TvAccess {
             val tvLoopback = tvHost == "localhost" || AdbClient(tvHost, 0).loopback
             val connected = clients?.groupBy { it.address }?.map { (address, rows) ->
@@ -52,9 +65,16 @@ data class TvAccess(
                     else -> AccessClient.Who.Other
                 }
                 AccessClient(address, rows.size, who)
+            }?.let { list ->
+                // A client waiting on the prompt holds one connection; a second from that address is a live session.
+                val waiting = pending != null && keys?.none { it.fingerprint == pending } != false &&
+                    list.singleOrNull { it.who == AccessClient.Who.Other }?.connections == 1
+                if (waiting) list.map { if (it.who == AccessClient.Who.Other) it.copy(who = AccessClient.Who.Waiting) else it } else list
             }?.sortedBy { it.who.ordinal }
-            val allowed = keys?.map { AccessKey(it.fingerprint, it.name, it.lastSeen, phone = it.fingerprint == phoneFingerprint) }
-                ?.sortedByDescending { it.phone }
+            val allowed = keys?.map { k ->
+                val phone = k.fingerprint == phoneFingerprint
+                AccessKey(k.fingerprint, k.name, k.lastSeen, phone, new = !phone && known != null && k.fingerprint !in known)
+            }?.sortedWith(compareByDescending<AccessKey> { it.phone }.thenByDescending { it.new })
             return TvAccess(connected, allowed)
         }
     }
@@ -65,15 +85,19 @@ data class TvAccess(
  * describes the address only, never which key is behind it.
  */
 data class AccessClient(val address: String, val connections: Int, val who: Who, val name: String? = null) {
-    enum class Who { Phone, Mine, Other, OnTv }
+    /** [Waiting]: its "Allow debugging?" prompt is on the TV, so it can't do anything yet. */
+    enum class Who { Phone, Mine, Waiting, Other, OnTv }
 }
 
-/** An allowed computer. [lastSeen] is rough: the TV stamps keys, not sessions. */
-data class AccessKey(val fingerprint: String, val name: String?, val lastSeen: Long?, val phone: Boolean = false)
+/**
+ * An allowed computer. [lastSeen] is rough: the TV stamps keys, not sessions. [new]: allowed while
+ * Tellyscope wasn't watching, until the user says it's theirs.
+ */
+data class AccessKey(val fingerprint: String, val name: String?, val lastSeen: Long?, val phone: Boolean = false, val new: Boolean = false)
 
 /**
- * Addresses the user marked "It's mine" on each TV, keyed like [NameBook]. `key \t address` per
- * line; null file keeps it in memory (tests, the fake source).
+ * A set of strings per TV, keyed like [NameBook]: the addresses the user marked "It's mine", or the
+ * keys a TV was seen to allow. `key \t value` per line; null file keeps it in memory (tests, the fake source).
  */
 class MineBook(private val file: File? = null) {
     private val mine = linkedMapOf<String, Set<String>>()
@@ -89,6 +113,16 @@ class MineBook(private val file: File? = null) {
 
     @Synchronized
     operator fun get(key: String): Set<String> = mine[key].orEmpty()
+
+    /** Whether [key] has a set at all, even one that was never added to since. */
+    @Synchronized
+    fun has(key: String): Boolean = key in mine
+
+    @Synchronized
+    fun set(key: String, values: Set<String>) {
+        mine[key] = values.filter { it.isNotBlank() && '\t' !in it && '\n' !in it }.toSet()
+        save()
+    }
 
     @Synchronized
     fun add(key: String, address: String) {

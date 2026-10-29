@@ -156,6 +156,7 @@ fun DeviceTabsScreen(
 ) {
     val device = state.selected ?: return
     val ui = state.device
+    val fire = fireInstall(device, ui.apps)
     var tab by rememberSaveable { mutableStateOf(startTab) }
     LaunchedEffect(tab) { onTab(tab) }
     var searching by rememberSaveable { mutableStateOf(false) }
@@ -192,7 +193,7 @@ fun DeviceTabsScreen(
         val toApps = { gate = false; tab = TvTab.Apps }
         DebloatGate(
             // Only where the picker can install one: the Play Store is on and no launcher was added yet.
-            launcher = offerChoose(ui.apps),
+            launcher = offerChoose(ui.apps, fire),
             onChoose = { gate = false; actions.installLauncher() },
             onApps = toApps,
             onNeverAgain = { actions.debloatGateOff(); toApps() },
@@ -360,8 +361,8 @@ fun DeviceTabsScreen(
                                     below = { SearchPill(enabled = !offline) { searching = true } },
                                 ) { appsTab = AppsTab.entries[it] }
                             }
-                            if (!offline && offerLauncher(ui.apps, ui.launcherCardHidden)) item(key = "launcherCard") {
-                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher)
+                            if (!offline && offerLauncher(ui.apps, ui.launcherCardHidden, fire)) item(key = "launcherCard") {
+                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
                             }
                             if (split != null) {
                                 if (split.apps.isEmpty() && split.system.isEmpty()) item {
@@ -404,14 +405,14 @@ fun DeviceTabsScreen(
                     TvTab.Tweaks -> {
                         if (offline) item { Muted("Connect to the TV to change its settings.") }
                         else {
-                            if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN) { HomeScreenBlock(ui, actions) } }
+                            if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN) { HomeScreenBlock(ui, actions, fire) } }
                             item { Panel(Copy.TWEAKS) { TweaksBlock(ui, actions) } }
                         }
                     }
                 }
                 item(key = "tail") { Spacer(Modifier.height(with(LocalDensity.current) { tail.toDp() }).testTag("tail")) }
             }
-            if (!offline) ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest) }
+            if (!offline) ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
             ui.sideload?.let { SideloadDialog(it, actions) }
             ui.transfer?.let { TransferDialog(it, actions.cancelTransfer) }
         }

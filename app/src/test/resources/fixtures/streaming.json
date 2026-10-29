@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "groups": [
+    {
+      "name": "Fixture",
+      "services": [
+        { "name": "Netflix", "packages": ["com.netflix.ninja"], "color": "#000000", "logo": "netflix", "dark": "#E50914" },
+        { "name": "YouTube", "packages": ["com.google.android.youtube.tv"], "color": "#FFFFFF", "logo": "youtube" },
+        { "name": "Prime Video", "packages": ["com.amazon.amazonvideo.livingroom", "com.amazon.amazonvideo.livingroom.nvidia"], "color": "#0F171E", "logo": "primevideo", "dark": "#00A8E1" },
+        { "name": "Spotify", "packages": ["com.spotify.tv.android"], "color": "#000000", "logo": "spotify", "dark": "#1ED760" },
+        { "name": "Disney+", "packages": ["com.disney.disneyplus"], "color": "#0B1446", "logo": "disney", "dark": "#00B4FF" },
+        { "name": "HBO Max", "packages": ["com.wbd.stream", "com.hbo.hbonow"], "color": "#000000", "logo": "hbomax" },
+        { "name": "Plex", "packages": ["com.plexapp.android"], "color": "#E5A00D", "logo": "plex" },
+        { "name": "Jellyfin", "packages": ["org.jellyfin.androidtv"], "color": "#AA5CC3", "color2": "#00A4DC", "logo": "jellyfin" },
+        { "name": "Emby", "packages": ["tv.emby.embyatv"], "color": "#52B54B", "logo": "emby" },
+        { "name": "Kodi", "packages": ["org.xbmc.kodi"], "color": "#1C2B3A", "logo": "kodi", "dark": "#17B2E7" }
+      ]
+    }
+  ]
+}

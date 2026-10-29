@@ -68,4 +68,54 @@ class ConnectionPromptTest {
         assertFalse(ConnectionPrompt(sh).answer(ConnectionRequest(fp), allow = true, always = false))
         assertFalse(sh.ran.any { it.startsWith("input") })
     }
+
+    // Fire OS 8 on a Fire TV Stick 4K Max: its "Unable to Detect Your Remote" alert, a bare `android` window,
+    // holds focus while the debugging prompt waits under it.
+    private val alertFocus = "mCurrentFocus=Window{2 u0 android}\n" +
+        "  Window #9 Window{1 u0 com.android.systemui/com.android.systemui.usb.UsbDebuggingActivity}:"
+    private val alert = """
+        <?xml version='1.0' encoding='UTF-8' standalone='yes' ?><hierarchy rotation="0">
+        <node index="0" text="" resource-id="amazon.fireos:id/auto_pair_troubleshoot_layout" package="android" bounds="[0,0][1920,1080]" />
+        <node index="1" text="Unable to Detect Your Remote" resource-id="amazon.fireos:id/troubleshoot_title" package="android" bounds="[600,300][1320,360]" />
+        <node index="2" text="OK" resource-id="amazon.fireos:id/ok_button" package="android" focused="true" bounds="[860,800][1060,860]" />
+        </hierarchy>
+    """.trimIndent()
+
+    @Test fun aPromptUnderAmazonsAlertSaysSoWithoutAFingerprint() = runTest {
+        assertEquals(ConnectionRequest("", canAlwaysAllow = false, behindAlert = true), ConnectionPrompt(tv(alert, alertFocus)).pending())
+    }
+
+    private val back = "dumpsys window | grep -q 'mCurrentFocus=Window{[^ ]* u[0-9]* android}' && input keyevent 4"
+
+    @Test fun backIsSentOnceAndCheckedInTheSameCall() = runTest {
+        val sh = tv(alert, alertFocus)
+        assertTrue(ConnectionPrompt(sh).closeAlert())
+        assertEquals(listOf(back), sh.ran.filter { "input" in it })
+    }
+
+    @Test fun noKeyOnceThePromptHasFocus() = runTest {
+        val sh = tv(dump())
+        assertFalse(ConnectionPrompt(sh).closeAlert())
+        assertFalse(sh.ran.any { "input" in it })
+    }
+
+    @Test fun theAlertClosingDuringTheDumpSendsNothing() = runTest {
+        // The TV's grep finds no alert by the final check, so `&&` never runs the key.
+        val sh = tv(alert, alertFocus).apply { answer = { if (it == back) ShellResult("", 1) else null } }
+        assertFalse(ConnectionPrompt(sh).closeAlert())
+        assertEquals(listOf(back), sh.ran.filter { "input" in it })
+    }
+
+    @Test fun anotherSystemWindowIsNotTheAlert() = runTest {
+        val sh = tv(alert.replace("amazon.fireos:id/ok_button", "android:id/button1"), alertFocus)
+        assertNull(ConnectionPrompt(sh).pending())
+        assertFalse(ConnectionPrompt(sh).closeAlert())
+        assertFalse(sh.ran.any { "input" in it })
+    }
+
+    @Test fun theAlertAloneIsNoPrompt() = runTest {
+        val sh = tv(alert, "mCurrentFocus=Window{2 u0 android}")
+        assertNull(ConnectionPrompt(sh).pending())
+        assertFalse(sh.ran.any { it.startsWith("uiautomator") })
+    }
 }

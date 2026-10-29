@@ -2,14 +2,13 @@
 
 package app.tellyscope.ui
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.indication
+import androidx.compose.foundation.interaction.InteractionSource
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
@@ -28,8 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -56,8 +53,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -78,13 +73,14 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -92,28 +88,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -123,21 +117,40 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.coerceIn
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalDensity
+import app.tellyscope.data.Png
+import app.tellyscope.data.SharedLists
+import app.tellyscope.data.RemoteButtons
+import app.tellyscope.data.StreamingService
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
-import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -199,7 +212,7 @@ private const val SHORT_PHONE_DP = 760
 /**
  * The remote, as a sheet over the TV's page with the ⋮ sheet's header. It never scrolls, which would
  * fight the drag that closes it: the D-pad takes the height that's left, so a short phone, large text
- * or the keyboard shrink it instead of pushing the dock off-screen.
+ * or the keyboard shrink it instead of pushing the buttons off-screen.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -229,22 +242,46 @@ fun RemoteScreen(
     }
     // Set once the D-pad hits its floor, and cleared once there's room for the hint again.
     var tight by remember { mutableStateOf(false) }
-    // While typing, the keyboard needs the room: volume, the hint and the dock step aside for the D-pad.
+    // While typing, the keyboard needs the room: volume, the hint and the buttons step aside for the D-pad,
+    // and back, home and menu shrink.
     val typing = WindowInsets.isImeVisible
+    // The text box in window coordinates, so a tap on it (or its ⌫ and Send) keeps the keyboard up.
+    var field by remember { mutableStateOf(Rect.Zero) }
+    var origin by remember { mutableStateOf(Offset.Zero) }
     val rowGap = if (tight || typing) 12.dp else 20.dp
     val short = LocalConfiguration.current.screenHeightDp < SHORT_PHONE_DP
+    val cap = RemoteButtons.cap(LocalConfiguration.current.screenWidthDp)
+    var editing by rememberSaveable { mutableStateOf(false) }
+    if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
 
     ModalBottomSheet(
         onDismissRequest = actions.back,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        dragHandle = { HandleRow(screenControl, screenOff, live, showTip = state.screenOffTip, actions, onRestart = { confirmReboot = true }) },
     ) {
-        Box(Modifier.fillMaxSize()) {
+        // The sheet is its own window, so the text box's focus lives here, not in the screen's.
+        val focus = LocalFocusManager.current
+        // A tap on empty space puts the keyboard away once the finger lifts. Keys and buttons consume
+        // their lift, so the D-pad can move through results with the keyboard still up. Never consumed here.
+        Box(
+            Modifier.fillMaxSize()
+                .onGloballyPositioned { origin = it.positionInWindow() }
+                .pointerInput(typing) {
+                    if (!typing) return@pointerInput
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                        if (field.contains(origin + down.position)) return@awaitEachGesture
+                        // Null when something else took the lift (a key, a button, a drag of the sheet): leave the keyboard be.
+                        if (waitForUpOrCancellation(PointerEventPass.Final) != null) focus.clearFocus()
+                    }
+                },
+        ) {
             Column(
                 Modifier.fillMaxSize().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null })
+                RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null }) {
+                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                }
                 CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) { Column(
                     Modifier.weight(1f).alpha(if (live) 1f else 0.38f),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -274,10 +311,14 @@ fun RemoteScreen(
                             ) { Icon(RemoteIcons.VolumeDown, null) }
                         }
                     }
+                    // While typing these shrink so the D-pad keeps its room; 48 dp is still a full touch target.
+                    val side = if (typing) 48.dp else 64.dp
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        RoundKey(RemoteKey.BACK, "Back", live, actions.press, Modifier.align(Alignment.CenterStart)) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-                        RoundKey(RemoteKey.HOME, "Home", live, actions.press, size = 80.dp) { Icon(Icons.Outlined.Home, null, Modifier.size(32.dp)) }
-                        RoundKey(RemoteKey.MENU, "Menu", live, actions.press, Modifier.align(Alignment.CenterEnd)) { Icon(Icons.Default.Menu, null) }
+                        RoundKey(RemoteKey.BACK, "Back", live, actions.press, Modifier.align(Alignment.CenterStart), size = side) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                        RoundKey(RemoteKey.HOME, "Home", live, actions.press, size = if (typing) 56.dp else 80.dp) {
+                            Icon(Icons.Outlined.Home, null, Modifier.size(if (typing) 24.dp else 32.dp))
+                        }
+                        RoundKey(RemoteKey.MENU, "Menu", live, actions.press, Modifier.align(Alignment.CenterEnd), size = side) { Icon(Icons.Default.Menu, null) }
                     }
                     if (!typing && !short) {
                     Spacer(Modifier.height(rowGap))
@@ -299,13 +340,16 @@ fun RemoteScreen(
                     }
                     // Twice the usual gap, so a thumb aiming at a volume key doesn't land in the text box.
                     Spacer(Modifier.height(if (typing) rowGap else 24.dp))
-                    Keyboard(live, actions.type, actions.press, hint = !tight && !typing)
+                    Keyboard(
+                        live, actions.type, actions.press, hint = !tight && !typing,
+                        modifier = Modifier.onGloballyPositioned { field = it.boundsInWindow() },
+                    )
                 } }
                 // Under the keys, out of a thumb's way.
                 if (!typing) {
                     Spacer(Modifier.height(if (tight) 8.dp else 16.dp))
                     CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) {
-                        DockBand(state.device.dock, state.device.apps, name(device), live, actions)
+                        ButtonsRow(RemoteButtons.shown(state.device.dock, SharedLists.state.collectAsState().value.streaming, cap), state.device.apps, live, actions, onEdit = { editing = true })
                     }
                 }
             }
@@ -314,14 +358,17 @@ fun RemoteScreen(
     }
 }
 
-/** The ⋮ sheet's header: the TV, and a second line for its state, a screen that's off or a restart. */
+/**
+ * The ⋮ sheet's header: the TV, and a second line for its state, a screen that's off or a restart.
+ * [menu] sits at its end, centred on the name and its line.
+ */
 @Composable
-private fun RemoteHeader(state: UiState, device: Device, restart: Restart?, screenOff: Boolean, onRestartTap: () -> Unit) {
+private fun RemoteHeader(state: UiState, device: Device, restart: Restart?, screenOff: Boolean, onRestartTap: () -> Unit, menu: @Composable () -> Unit) {
     val c = MaterialTheme.colorScheme
     Row(Modifier.fillMaxWidth().padding(start = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Cookie(device, 48.dp)
         Spacer(Modifier.width(16.dp))
-        Column {
+        Column(Modifier.weight(1f)) {
             Text(name(device), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             when {
                 restart != null -> RestartStatus(late = restart.phase(state.clock()) != Restart.Phase.Waiting, onClick = onRestartTap)
@@ -334,6 +381,8 @@ private fun RemoteHeader(state: UiState, device: Device, restart: Restart?, scre
                 }
             }
         }
+        // Out by the button's own padding, so the glyph's edge lines up with the keys and buttons below.
+        Box(Modifier.offset(x = 12.dp)) { menu() }
     }
 }
 
@@ -394,7 +443,7 @@ private fun RoundKey(
     icon: @Composable () -> Unit,
 ) = KeySurface(key, label, enabled, press, CircleShape, MaterialTheme.colorScheme.secondaryContainer, modifier.size(size), icon)
 
-/** Off in Settings, a key press or a dock tap doesn't vibrate. */
+/** Off in Settings, a key press or a button tap doesn't vibrate. */
 private val LocalKeyHaptics = staticCompositionLocalOf { true }
 
 /**
@@ -436,7 +485,8 @@ private fun KeySurface(
                     if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                     var held = true
                     scope.launch { repeatWhileHeld(key, { held }, press = press) }
-                    waitForUpOrCancellation()
+                    // Consumed so the Remote knows a key took the tap and keeps the keyboard up.
+                    waitForUpOrCancellation()?.consume()
                     held = false
                     interactions.tryEmit(PressInteraction.Release(p))
                 }
@@ -449,7 +499,13 @@ private fun KeySurface(
 /** [hint] off on a screen too short for it; an error still shows. */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
-private fun Keyboard(enabled: Boolean, type: (String) -> String?, press: suspend (RemoteKey) -> Boolean, hint: Boolean = true) {
+private fun Keyboard(
+    enabled: Boolean,
+    type: (String) -> String?,
+    press: suspend (RemoteKey) -> Boolean,
+    hint: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
     var text by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     fun send() {
@@ -479,7 +535,7 @@ private fun Keyboard(enabled: Boolean, type: (String) -> String?, press: suspend
                 }
             }
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
     )
 }
 
@@ -564,12 +620,13 @@ private fun StatusShape(icon: ImageVector, container: Color, content: Color) {
 }
 
 /**
- * The sheet's drag handle, with Screen off (or on again) and Restart beside it, so the TV's name
- * keeps the header's full width. Explains Screen off on the first visit.
+ * The header's ⋮: Screen off (or on again), Restart TV, then Remote buttons. It drops below the ⋮,
+ * so the TV's name stays readable. Explains Screen off on the first visit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HandleRow(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, onRestart: () -> Unit) {
+private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, onRestart: () -> Unit, onButtons: () -> Unit) {
+    var open by remember { mutableStateOf(false) }
     val tip = rememberTooltipState(isPersistent = true)
     LaunchedEffect(showTip, screenControl) {
         if (showTip && screenControl) {
@@ -577,27 +634,50 @@ private fun HandleRow(screenControl: Boolean, off: Boolean, live: Boolean, showT
             actions.screenOffTipSeen()
         }
     }
-    Box(Modifier.fillMaxWidth().padding(end = 12.dp)) {
-        BottomSheetDefaults.DragHandle(Modifier.align(Alignment.Center))
-        Row(Modifier.align(Alignment.CenterEnd).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (screenControl) TooltipBox(
-                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
-                tooltip = {
-                    PlainTooltip {
-                        Column(Modifier.padding(vertical = 4.dp)) {
-                            Text(Copy.SCREEN_OFF, style = MaterialTheme.typography.labelLarge)
-                            Text(Copy.SCREEN_OFF_TIP)
-                        }
+    Box {
+        TooltipBox(
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below),
+            tooltip = {
+                PlainTooltip {
+                    Column(Modifier.padding(vertical = 4.dp)) {
+                        Text(Copy.SCREEN_OFF, style = MaterialTheme.typography.labelLarge)
+                        Text(Copy.SCREEN_OFF_TIP)
                     }
-                },
-                state = tip,
-                enableUserInput = false,
-            ) {
-                // Filled while the picture is off: the one thing to press to get it back.
-                if (off) FilledIconButton(onClick = { actions.screenOff(false) }, enabled = live) { Icon(RemoteIcons.Tv, contentDescription = Copy.SCREEN_ON) }
-                else FilledTonalIconButton(onClick = { actions.screenOff(true) }, enabled = live) { Icon(RemoteIcons.TvOff, contentDescription = Copy.SCREEN_OFF) }
+                }
+            },
+            state = tip,
+            enableUserInput = false,
+        ) {
+            IconButton(onClick = { open = true }) { Icon(Icons.Default.MoreVert, contentDescription = Copy.MORE) }
+        }
+        DropdownMenu(open, onDismissRequest = { open = false }, shape = MaterialTheme.shapes.large) {
+            if (screenControl) {
+                // While the picture is off, the item turns it back on.
+                if (off) DropdownMenuItem(
+                    text = { Text(Copy.SCREEN_ON) },
+                    leadingIcon = { Icon(RemoteIcons.Tv, null) },
+                    enabled = live,
+                    onClick = { open = false; actions.screenOff(false) },
+                )
+                else DropdownMenuItem(
+                    text = { Text(Copy.SCREEN_OFF) },
+                    leadingIcon = { Icon(RemoteIcons.TvOff, null) },
+                    enabled = live,
+                    onClick = { open = false; actions.screenOff(true) },
+                )
             }
-            FilledTonalIconButton(onClick = onRestart, enabled = live) { Icon(RemoteIcons.RestartAlt, contentDescription = Copy.REMOTE_RESTART) }
+            DropdownMenuItem(
+                text = { Text(Copy.REMOTE_RESTART) },
+                leadingIcon = { Icon(RemoteIcons.RestartAlt, null) },
+                enabled = live,
+                onClick = { open = false; onRestart() },
+            )
+            HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            DropdownMenuItem(
+                text = { Text(Copy.REMOTE_BUTTONS) },
+                leadingIcon = { Icon(Icons.Default.Edit, null) },
+                onClick = { open = false; onButtons() },
+            )
         }
     }
 }
@@ -622,243 +702,203 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * The strip under the keys: up to [Dock.MAX] apps, each centred in an equal share of it so a tap
- * can't land on the wrong one, with an Add tile in the next free slot. A tap opens the app on the TV; a long press opens its menu, and moving while still
- * holding drags it to another slot.
+ * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some.
+ * A tap opens the service on the TV; holding one opens the picker, as ⋮ › Remote buttons does.
  */
 @Composable
-private fun DockBand(dock: List<Docked>, apps: List<AppInfo>, tvName: String, enabled: Boolean, actions: RemoteActions) {
-    // Null: closed. Empty: adding. A package: swapping that app for another.
-    var picking by rememberSaveable { mutableStateOf<String?>(null) }
-    picking?.let { swap ->
-        DockPicker(
-            dock, apps, tvName, swapping = dock.firstOrNull { it.packageName == swap },
-            onPick = { app ->
-                picking = null
-                actions.setDock(if (swap.isEmpty()) Dock.add(dock, app) else Dock.replace(dock, swap, app))
-            },
-            onDismiss = { picking = null },
-        )
-    }
-    Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = MaterialTheme.shapes.extraLarge) {
-        Box(Modifier.padding(horizontal = 4.dp, vertical = 8.dp).alpha(if (enabled) 1f else 0.38f)) {
-            DockRow(dock, apps, enabled, actions, onAdd = { picking = "" }, onSwap = { picking = it.packageName })
-        }
-    }
-}
-
-@Composable
-private fun DockRow(dock: List<Docked>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onAdd: () -> Unit, onSwap: (Docked) -> Unit) {
-    var menu by remember { mutableStateOf<String?>(null) }
-    // The app being dragged, and how far; the others make room for it as it goes.
-    var lifted by remember { mutableStateOf<String?>(null) }
-    var dragX by remember { mutableFloatStateOf(0f) }
-    BoxWithConstraints(Modifier.fillMaxWidth().height(48.dp)) {
-        val slot = constraints.maxWidth / Dock.MAX.toFloat()
-        fun from() = dock.indexOfFirst { it.packageName == lifted }
-        fun to() = (from() + (dragX / slot).roundToInt()).coerceIn(0, dock.lastIndex)
-        val order = if (from() < 0) dock else Dock.move(dock, from(), to())
-        if (dock.size < Dock.MAX) {
-            AddTile(enabled, onAdd, Modifier.width(maxWidth / Dock.MAX).offset { IntOffset((dock.size * slot).roundToInt(), 0) })
-        }
-        if (dock.isEmpty()) Text(
-            Copy.DOCK_EMPTY,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterStart).padding(start = maxWidth / Dock.MAX, end = 8.dp),
-        )
-        dock.forEachIndexed { i, app -> key(app.packageName) {
-            val up = app.packageName == lifted
-            val x by animateFloatAsState(order.indexOf(app) * slot, label = "dock slot")
-            val info = apps.firstOrNull { it.packageName == app.packageName }
-                ?: AppInfo(app.packageName, app.label, null, false, true, null, "")
-            Box(
-                Modifier
-                    .width(maxWidth / Dock.MAX)
-                    .offset { IntOffset((if (up) i * slot + dragX else x).roundToInt(), 0) }
-                    .zIndex(if (up) 1f else 0f),
-            ) {
-                val moves = listOfNotNull(
-                    CustomAccessibilityAction("Move left") { actions.setDock(Dock.move(dock, i, i - 1)); true }.takeIf { i > 0 },
-                    CustomAccessibilityAction("Move right") { actions.setDock(Dock.move(dock, i, i + 1)); true }.takeIf { i < dock.lastIndex },
-                )
-                DockTile(
-                    info, up, enabled, moves,
-                    onOpen = { actions.launch(app) },
-                    onHold = { menu = app.packageName; lifted = app.packageName; dragX = 0f },
-                    onDrag = { dx ->
-                        dragX = dx
-                        // A real move means reordering, so the menu gets out of the way.
-                        if (abs(dx) > slot / 4) menu = null
-                    },
-                    onDrop = {
-                        if (from() >= 0 && to() != from()) actions.setDock(Dock.move(dock, from(), to()))
-                        lifted = null
-                        dragX = 0f
-                    },
-                    onMenu = { menu = app.packageName },
-                )
-                DropdownMenu(menu == app.packageName, onDismissRequest = { menu = null }, shape = MaterialTheme.shapes.large) {
-                    Row(Modifier.padding(start = 12.dp, end = 16.dp, top = 4.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        AppIcon(info, Modifier.size(32.dp))
-                        Spacer(Modifier.width(12.dp))
-                        Text(app.label, style = MaterialTheme.typography.titleSmall)
-                    }
-                    MenuBlock {
-                        DropdownMenuItem(
-                            text = { Text(Copy.DOCK_CHANGE) },
-                            leadingIcon = { Icon(RemoteIcons.SwapHoriz, null) },
-                            onClick = { menu = null; onSwap(app) },
-                        )
-                        DropdownMenuItem(
-                            text = { Text(Copy.DOCK_REMOVE, color = MaterialTheme.colorScheme.error) },
-                            leadingIcon = { Icon(RemoteIcons.RemoveCircle, null, tint = MaterialTheme.colorScheme.error) },
-                            onClick = { menu = null; actions.setDock(Dock.remove(dock, app.packageName)) },
-                        )
-                    }
-                    Text(
-                        Copy.DOCK_REORDER,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
-                    )
-                }
+private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onEdit: () -> Unit) {
+    val installed = remember(apps) { apps.mapTo(HashSet()) { it.packageName } }
+    Row(Modifier.fillMaxWidth().height(48.dp).alpha(if (enabled) 1f else 0.38f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (buttons.isEmpty()) AddButtons(enabled, onEdit, Modifier.weight(1f))
+        buttons.forEach { s ->
+            key(s.name) {
+                ServiceButton(s, enabled, onOpen = { actions.launch(Docked(s.packageOn(installed), s.name)) }, onHold = onEdit, Modifier.weight(1f))
             }
-        } }
+        }
     }
 }
 
-/** One docked app: its icon, centred in the whole slot it answers to, lifted a size up while held. Its name is for TalkBack and the menu. */
+/**
+ * One streaming button: its pill, 40 dp tall in a 48 dp tall target. Its name is for TalkBack.
+ * The ripple is drawn on the pill, inside its shape, not across the whole target.
+ */
 @Composable
-private fun DockTile(
-    app: AppInfo,
-    lifted: Boolean,
-    enabled: Boolean,
-    /** Reordering for a screen reader, which can't drag. */
-    moves: List<CustomAccessibilityAction>,
-    onOpen: () -> Unit,
-    onHold: () -> Unit,
-    onDrag: (Float) -> Unit,
-    onDrop: () -> Unit,
-    onMenu: () -> Unit,
-) {
+private fun ServiceButton(s: StreamingService, enabled: Boolean, onOpen: () -> Unit, onHold: () -> Unit, modifier: Modifier = Modifier) {
     val haptic = LocalHapticFeedback.current
     val haptics = LocalKeyHaptics.current
-    val scale by animateFloatAsState(if (lifted) 1.1f else 1f, label = "dock lift")
-    // The gesture outlives a recomposition; it must call the newest handlers, which see the newest dock.
-    val open by rememberUpdatedState(onOpen)
-    val hold by rememberUpdatedState(onHold)
-    val move by rememberUpdatedState(onDrag)
-    val drop by rememberUpdatedState(onDrop)
-    Box(
-        Modifier
-            .fillMaxSize()
-            .graphicsLayer { scaleX = scale; scaleY = scale }
-            .semantics {
-                role = Role.Button
-                contentDescription = app.label
-                if (enabled) {
-                    onClick("Open on the TV") { onOpen(); true }
-                    onLongClick("Change or remove") { onMenu(); true }
-                    customActions = moves
-                }
-            }
-            .pointerInput(enabled, haptics) {
-                if (!enabled) return@pointerInput
-                awaitEachGesture {
-                    val down = awaitFirstDown()
-                    // Up before the long-press time is a tap; still down after it is a hold.
-                    var up: PointerInputChange? = null
-                    val held = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) { up = waitForUpOrCancellation(); false } ?: true
-                    if (!held) {
-                        up?.let {
-                            it.consume()
-                            if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                            open()
-                        }
-                        return@awaitEachGesture
-                    }
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    hold()
-                    var dx = 0f
-                    drag(down.id) { change ->
-                        dx += change.positionChange().x
-                        change.consume()
-                        move(dx)
-                    }
-                    drop()
-                }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.shadow(if (lifted) 6.dp else 0.dp, MaterialTheme.shapes.medium)) { AppIcon(app, word = true) }
-    }
-}
-
-/** The next free slot: a dashed outline the size of an app icon, centred in the whole slot. */
-@Composable
-private fun AddTile(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val outline = MaterialTheme.colorScheme.outline
-    val shape = MaterialTheme.shapes.medium
+    val interactions = remember { MutableInteractionSource() }
     Box(
         modifier
             .fillMaxHeight()
-            .clickable(enabled = enabled, onClickLabel = Copy.ADD_TO_DOCK, role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = Copy.ADD_TO_DOCK },
+            .combinedClickable(
+                interactionSource = interactions,
+                indication = null,
+                enabled = enabled,
+                role = Role.Button,
+                onClickLabel = Copy.OPEN_ON_TV,
+                onLongClickLabel = Copy.REMOTE_BUTTONS,
+                onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onHold() },
+                onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onOpen() },
+            )
+            .semantics { contentDescription = s.name },
         contentAlignment = Alignment.Center,
     ) {
-        Box(
-            Modifier.size(40.dp).drawBehind {
-                val corner = shape.topStart.toPx(size, this)
-                drawRoundRect(
-                    outline,
-                    cornerRadius = CornerRadius(corner),
-                    style = Stroke(1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))),
-                )
-            },
-            contentAlignment = Alignment.Center,
-        ) { Icon(Icons.Default.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) }
+        ServicePill(s, Modifier.fillMaxWidth().height(40.dp), interactions)
     }
 }
 
-/** The apps a launcher can open, to add to the dock or to put in [swapping]'s place. Docked ones show as Added. */
+/** Nothing picked yet: an outlined pill the size of a button, the way into the picker. */
+@Composable
+private fun AddButtons(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = MaterialTheme.colorScheme
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = CircleShape,
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, c.outline),
+        modifier = modifier.fillMaxHeight(),
+    ) {
+        Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Add, contentDescription = null, tint = c.primary, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(Copy.REMOTE_BUTTONS, style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
+        }
+    }
+}
+
+/**
+ * A service's brand pill, the same colour in both themes like a button on a real remote, drawn by
+ * [RemoteButtons.look] against the sheet behind it.
+ */
+@Composable
+private fun ServicePill(s: StreamingService, modifier: Modifier = Modifier, interactions: InteractionSource? = null) {
+    val c = MaterialTheme.colorScheme
+    val dark = c.surface.luminance() < 0.5f
+    val look = RemoteButtons.look(s, c.surfaceContainerLow.toArgb().toLong() and 0xFFFFFFFF, dark)
+    // The name stands in until the logo is downloaded, or for good when it can't be.
+    val logo = produceState<ImageBitmap?>(null, s.logo) {
+        value = SharedLists.logo(s.logo)?.let(Png::decode)?.asImageBitmap()
+    }.value
+    val fill = look.fill2?.let { Brush.linearGradient(listOf(Color(look.fill), Color(it))) } ?: SolidColor(Color(look.fill))
+    Box(
+        modifier
+            .clip(CircleShape)
+            .background(fill)
+            .then(if (look.outline) Modifier.border(1.dp, c.outline, CircleShape) else Modifier)
+            .then(if (interactions != null) Modifier.indication(interactions, ripple()) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (logo != null) {
+            // Drawn at four times its size in dp.
+            Image(
+                logo, contentDescription = null,
+                modifier = Modifier.size((logo.width / 4f).dp, (logo.height / 4f).dp),
+                colorFilter = look.ink?.let { ColorFilter.tint(Color(it)) },
+            )
+        } else {
+            Text(s.name, style = MaterialTheme.typography.labelLarge, color = Color(look.ink ?: RemoteButtons.WHITE), maxLines = 1)
+        }
+    }
+}
+
+/**
+ * Which services get a button, and in what order: ticked ones first, dragged by their handle to
+ * reorder, then the rest by group. Past [cap] the others wait for one to be unticked.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DockPicker(dock: List<Docked>, apps: List<AppInfo>, tvName: String, swapping: Docked?, onPick: (AppInfo) -> Unit, onDismiss: () -> Unit) {
-    val choices = Dock.choices(apps)
+private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setDock: (List<Docked>) -> Unit, onDismiss: () -> Unit) {
+    val services = SharedLists.state.collectAsState().value.streaming
+    val ticked = dock.mapNotNull { RemoteButtons.serviceOf(it, services) }.distinct()
+    val rest = RemoteButtons.choices(services, apps) - ticked.toSet()
+    val toggle = { s: StreamingService -> setDock(RemoteButtons.toggle(dock, s, services, cap, apps)) }
+    // One entry per ticked service, in the same order, so a ticked row's index moves its entry.
+    val mine = dock.filter { RemoteButtons.serviceOf(it, services) != null }.distinctBy { RemoteButtons.serviceOf(it, services) }
+    // The ticked row being dragged, and how far.
+    var lifted by remember { mutableStateOf<String?>(null) }
+    var dragY by remember { mutableFloatStateOf(0f) }
+    val rowPx = with(LocalDensity.current) { SHEET_ROW.toPx() }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 24.dp).padding(bottom = 8.dp)) {
-            Text(swapping?.let { Copy.dockSwap(it.label) } ?: Copy.DOCK_PICK_TITLE, style = MaterialTheme.typography.titleLarge)
-            Text(Copy.dockPickFrom(tvName), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
+            Text(Copy.REMOTE_BUTTONS, style = MaterialTheme.typography.titleLarge)
+            Text(Copy.buttonsHint(cap), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        if (choices.isEmpty()) {
-            Text(
-                Copy.DOCK_NO_APPS,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-            )
-            return@ModalBottomSheet
-        }
-        LazyColumn {
-            items(choices, key = { it.packageName }) { app ->
-                val added = dock.any { it.packageName == app.packageName }
-                ListItem(
-                    headlineContent = { Text(app.label) },
-                    leadingContent = { AppIcon(app) },
-                    trailingContent = if (added) ({ Text(Copy.DOCK_ADDED, style = MaterialTheme.typography.labelMedium) }) else null,
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                    modifier = Modifier.alpha(if (added) 0.38f else 1f).clickable(enabled = !added) { onPick(app) },
-                )
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
+            ticked.forEachIndexed { i, s ->
+                key(s.name) {
+                    val up = lifted == s.name
+                    val moves = listOfNotNull(
+                        CustomAccessibilityAction("Move up") { setDock(Dock.move(mine, i, i - 1)); true }.takeIf { i > 0 },
+                        CustomAccessibilityAction("Move down") { setDock(Dock.move(mine, i, i + 1)); true }.takeIf { i < ticked.lastIndex },
+                    )
+                    ServiceRow(
+                        s, checked = true, enabled = true, onToggle = { toggle(s) },
+                        modifier = Modifier
+                            .offset { IntOffset(0, if (up) dragY.roundToInt() else 0) }
+                            .zIndex(if (up) 1f else 0f)
+                            .background(if (up) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent)
+                            .semantics { customActions = moves },
+                    ) {
+                        Icon(
+                            RemoteIcons.DragHandle, contentDescription = null,
+                            modifier = Modifier.size(48.dp).padding(12.dp).pointerInput(s.name, ticked.size) {
+                                detectDragGestures(
+                                    onDragStart = { lifted = s.name; dragY = 0f },
+                                    onDragEnd = {
+                                        val to = (i + (dragY / rowPx).roundToInt()).coerceIn(0, ticked.lastIndex)
+                                        if (to != i) setDock(Dock.move(mine, i, to))
+                                        lifted = null
+                                        dragY = 0f
+                                    },
+                                    onDragCancel = { lifted = null; dragY = 0f },
+                                ) { change, amount -> change.consume(); dragY += amount.y }
+                            },
+                        )
+                    }
+                }
             }
-            item {
-                Text(
-                    Copy.DOCK_PICK_HINT,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp),
-                )
+            rest.forEachIndexed { i, s ->
+                if (i == 0 || rest[i - 1].group != s.group) {
+                    Text(
+                        s.group,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp, bottom = 4.dp),
+                    )
+                }
+                key(s.name) { ServiceRow(s, checked = false, enabled = ticked.size < cap, onToggle = { toggle(s) }) }
             }
         }
+    }
+}
+
+private val SHEET_ROW = 56.dp
+
+/** A row of the picker: its tick, its pill and its name, and [trailing] for a ticked one's drag handle. */
+@Composable
+private fun ServiceRow(
+    s: StreamingService,
+    checked: Boolean,
+    enabled: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    trailing: @Composable () -> Unit = {},
+) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .height(SHEET_ROW)
+            .toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
+            .alpha(if (enabled) 1f else 0.38f)
+            .padding(start = 20.dp, end = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked, onCheckedChange = null, enabled = enabled, modifier = Modifier.size(48.dp))
+        ServicePill(s, Modifier.width(80.dp).height(40.dp))
+        Spacer(Modifier.width(16.dp))
+        Text(s.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        trailing()
     }
 }
 
@@ -912,13 +952,7 @@ private object RemoteIcons {
             "M4.27 3L3 4.27L7.73 9L3 9L3 15L7 15L12 20L12 13.27L16.25 17.52C15.58 18.04 14.83 18.45 14 18.7L14 20.76C15.38 20.45 16.63 19.81 17.69 18.95" +
             "L19.73 21L21 19.73L12 10.73L4.27 3Z M12 4L9.91 6.09L12 8.18L12 4Z",
     )
-    val SwapHoriz = icon("SwapHoriz", "M6.99 11L3 15L6.99 19L6.99 16L14 16L14 14L6.99 14L6.99 11Z M21 9L17.01 5L17.01 8L10 8L10 10L17.01 10L17.01 13L21 9Z")
-    val RemoveCircle = icon(
-        "RemoveCircle",
-        "M7 11L7 13L17 13L17 11L7 11Z" +
-            "M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2Z" +
-            "M12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z",
-    )
+    val DragHandle = icon("DragHandle", "M20 9L4 9L4 11L20 11L20 9Z M4 15L20 15L20 13L4 13L4 15Z")
 
     private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         .addPath(PathParser().parsePathString(path).toNodes(), pathFillType = PathFillType.NonZero, fill = SolidColor(Color.Black))

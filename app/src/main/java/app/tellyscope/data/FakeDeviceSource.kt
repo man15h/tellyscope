@@ -401,6 +401,8 @@ class FakeDeviceSource(
 
     override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean) = false
 
+    override suspend fun closeAlert(deviceId: String) = false
+
     /** Addresses marked "It's mine", and TVs whose access was cleared, so the demo flow ends on Done. */
     private val mine = mutableSetOf<String>()
     private val revoked = mutableSetOf<String>()

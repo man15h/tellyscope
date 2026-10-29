@@ -125,6 +125,8 @@ data class DeviceActions(
     val answerRequest: (allow: Boolean, always: Boolean) -> Unit = { _, _ -> },
     /** Hides that prompt on the phone without answering it; the TV keeps asking. */
     val dismissRequest: () -> Unit = {},
+    /** Press OK on the TV, on Fire OS's remote alert over that prompt. */
+    val closeAlert: () -> Unit = {},
     /** Folds an Apps tab's System section away, or opens it; remembered across restarts. */
     val foldSystem: (AppsTab, Boolean) -> Unit = { _, _ -> },
     /** The open tab's refresh rates; the TV's stats reads follow them. */

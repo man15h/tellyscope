@@ -17,6 +17,12 @@ private val STICK = Regex("chromecast|stick|streamer|shield", RegexOption.IGNORE
 /** Projector makers or "projector" in a name, then Amazon, then other sticks and boxes; anything else is a TV. */
 fun deviceKind(d: Device): DeviceKind = kindOf(listOfNotNull(d.manufacturer, d.hit.maker), listOfNotNull(d.model, d.hit.hostname))
 
+/** Amazon's launcher, on every Fire OS device: Fire TV Edition TVs too, whose maker may not say Amazon. */
+const val FIRE_TV_LAUNCHER = "com.amazon.tv.launcher"
+
+/** Fire OS: a Fire TV by name, or any TV with Amazon's launcher. No Play Store there. */
+fun isFireOs(d: Device, apps: List<AppInfo>) = deviceKind(d) == DeviceKind.FireTv || apps.any { it.packageName == FIRE_TV_LAUNCHER }
+
 /** The same guess for a debloat list, from its maker (see [listMakers]) and model name. */
 fun listKind(e: ListEntry, maker: String): DeviceKind = kindOf(listOf(maker), listOf(e.name))
 

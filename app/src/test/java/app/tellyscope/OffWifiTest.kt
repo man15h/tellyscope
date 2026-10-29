@@ -112,7 +112,7 @@ class OffWifiTest {
         }
     }
 
-    @Test fun anEmptyScanTriesAgainEvery15Seconds() {
+    @Test fun anEmptyScanTriesAgainEvery10Seconds() {
         val dispatcher = StandardTestDispatcher()
         Dispatchers.setMain(dispatcher)
         val source = JoinsWifi()
@@ -121,9 +121,9 @@ class OffWifiTest {
             with(TestScope(dispatcher)) {
                 runCurrent()
                 assertEquals(1, source.scans)
-                advanceTimeBy(15_001)
+                advanceTimeBy(10_001)
                 assertEquals(2, source.scans)
-                advanceTimeBy(15_001)
+                advanceTimeBy(10_001)
                 assertEquals(3, source.scans)
             }
         } finally {

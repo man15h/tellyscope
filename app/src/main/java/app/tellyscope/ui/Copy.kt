@@ -98,6 +98,7 @@ object Copy {
     const val MAKE_HOME = "Make Home"
     const val GET_LAUNCHER = "Get another launcher"
     const val GET_LAUNCHER_TEXT = "Install one from the Play Store, like Projectivy or FLauncher. Switch back any time."
+    const val GET_PROJECTIVY_TEXT = "Install Projectivy. Switch back any time."
 
     /** The Apps tab's launcher rows: switching lives in the card, this opens it. */
     const val HOME_SETTINGS = "Home screen settings"
@@ -139,6 +140,11 @@ object Copy {
         if (service) append("\n\nNext, you choose whether to turn on its accessibility service.")
     }
 
+    /** Fire OS: Amazon's launcher can't be turned off or replaced, so [app]'s accessibility service holds Home instead. */
+    fun explainFireHome(app: String, pkg: String, current: String) =
+        "Makes Home open $app ($pkg) through its accessibility service. Fire OS won't let $current be turned off or replaced, " +
+            "so it stays on and nothing else changes. Undo in History turns the service off.\n\nNext, you choose whether to turn on its accessibility service."
+
     /** No default home and no launcher of the TV's own on: nothing is turned off, so Undo can only turn its service off. */
     fun explainFirstHome(app: String, pkg: String, service: Boolean = false) = buildString {
         append("Makes $app ($pkg) open when you press Home. The TV has no default home screen now, and nothing else is turned off.")
@@ -168,17 +174,33 @@ object Copy {
     /** Install a home screen: the Apps tab's card, the picker, the wait for the Store, and its dead ends. */
     const val BETTER_HOME = "Get a better home screen"
 
-    fun betterHomeText(current: String?) =
-        "Swap ${current ?: "the TV's home screen"} for a launcher without ads. Free on the Play Store; switch back any time."
+    /** [fire]: Fire OS, where there's no Play Store and Tellyscope installs it. */
+    fun betterHomeText(current: String?, fire: Boolean = false) =
+        "Swap ${current ?: "the TV's home screen"} for a launcher without ads" +
+            if (fire) "; switch back any time." else ". Free on the Play Store; switch back any time."
 
     const val CHOOSE_ONE = "Choose one"
+    const val INSTALL_ONE = "Install it"
     const val CHOOSE_HOME = "Choose a home screen"
     const val CHOOSE_HOME_TEXT = "Each one replaces the TV's home screen. Tellyscope opens it in the Play Store on the TV; you install it with the remote."
+    /** After [CHOOSE_HOME_TEXT] when Download directly is offered. */
+    const val CAN_DOWNLOAD = "Some can also be downloaded directly."
+    const val NO_LAUNCHER_LIST = "Couldn't load the list of home screens. Check the phone's internet and try again."
     const val RECOMMENDED = "Recommended"
+    /** The picker's section for launchers on the TV that Recommended doesn't list. */
+    const val ON_THIS_TV = "On this TV"
+    const val INSTALLED = "Installed"
+    const val HOME_NOW = "Home now"
+    /** Shows a launcher on the TV, from the picker. */
+    const val OPEN = "Open"
     const val USES_SERVICE = "Uses an accessibility service"
     const val NO_SERVICE = "Open source · no accessibility service"
+    /** Under the picker's list: any other launcher works too, and comes back as On this TV. */
+    const val OTHER_LAUNCHER = "Prefer another launcher? Install it from the Play Store on your TV, then come back here. It shows up under $ON_THIS_TV."
     const val NOT_AFFILIATED = "Tellyscope isn't affiliated with any of these launchers or their developers."
-    const val OPEN_IN_STORE = "Open in Play Store"
+    const val GET_FROM_STORE = "Get it from Play Store"
+    const val STORE_RECOMMENDED = "Play Store recommended: it updates itself"
+    const val DOWNLOAD_DIRECTLY = "Download directly"
     const val INSTALL_HOME = "Install a home screen"
     const val INSTALL_IT = "Install it on your TV"
 
@@ -209,6 +231,74 @@ object Copy {
     const val CHOOSE_ANOTHER = "Choose another"
 
     fun notInstalled(name: String) = "$name isn't installed"
+    /** The Store closed without an install: back on the picker, still chosen. */
+    fun wasntInstalled(name: String) = "$name wasn't installed"
+
+    /** Install Projectivy on Fire OS: Tellyscope downloads it from its developer's GitHub and installs it over adb. */
+    const val INSTALL_PROJECTIVY = "Install Projectivy"
+    const val FIRE_INSTALL_TEXT = "A home screen without ads. Tellyscope installs it on the TV for you; there's nothing to do on the TV."
+
+    fun downloadsFrom(name: String) = "Tellyscope downloads $name from the developer's own release page:"
+
+    fun release(version: String, size: Long) = "Release $version · ${bytes(size)}"
+
+    const val WHERE_FROM = "Where it comes from"
+    const val SIGNED_CHECK =
+        "Tellyscope checks it's signed by Projectivy's developer before installing it on the TV. Tellyscope isn't affiliated with Projectivy."
+    const val DOWNLOAD_AND_INSTALL = "Download and install"
+
+    /** Download directly on a TV with the Play Store: what Tellyscope checks, what it doesn't, and the safer way. */
+    fun downloadDirectly(name: String) = "Download $name directly?"
+
+    const val DIRECT_CHECK =
+        "Tellyscope checks the app carries the developer's signature. It does not scan the app for malicious code, and the app won't update on its own."
+    const val STORE_SAFER = "Getting it from Play Store is safer and keeps it updated."
+    const val DOWNLOAD_ANYWAY = "Download anyway"
+    const val STORE_INSTEAD = "Get it from the Play Store on the TV instead."
+
+    /** Install Projectivy's steps, one panel: download (or the picked file), the check, the install. */
+    fun installing(name: String) = "Installing $name"
+    const val STEP_DOWNLOAD = "Download from GitHub"
+    const val STEP_DOWNLOADED = "Downloaded"
+    fun downloading(percent: Int, done: Long, total: Long) = "Downloading · $percent% · ${bytes(done)} of ${bytes(total)}"
+    const val STEP_PICKED = "Picked a file"
+    const val STEP_CHECK = "Check it's Projectivy"
+    const val STEP_CHECKING = "Checking it's Projectivy…"
+    const val STEP_CHECKED = "It's Projectivy"
+    const val STEP_CHECKED_TEXT = "Signed by its developer"
+    const val STEP_FAILED = "Not Projectivy"
+    const val STEP_FAILED_TEXT = "Package name or signature didn't match"
+    fun installOn(tv: String) = "Install on $tv"
+
+    fun installingOn(tv: String) = "Installing on $tv…"
+
+    /** X while it downloads: nothing is on the TV yet. */
+    const val STOP_TITLE = "Stop the download?"
+    const val STOP_TEXT = "Nothing is on the TV yet. You can start again any time."
+    const val STOP = "Stop"
+    const val KEEP_DOWNLOADING = "Keep downloading"
+
+    const val NOT_PROJECTIVY = "That download isn't Projectivy"
+    const val NOT_PROJECTIVY_TEXT =
+        "The file from GitHub didn't match Projectivy's package name or its developer's signature, so Tellyscope installed nothing on the TV."
+    const val NOT_PROJECTIVY_FILE = "That file isn't Projectivy"
+    const val NOT_PROJECTIVY_FILE_TEXT =
+        "It didn't match Projectivy's package name or its developer's signature, so Tellyscope installed nothing on the TV."
+    const val CANT_READ_FILE = "Tellyscope couldn't read that file. Pick it again, or download it again."
+    fun cantInstall(name: String) = "Couldn't install $name"
+
+    /** Couldn't download: GitHub's limit for the network ([until] is a clock time), or no way to reach it. */
+    const val NO_DOWNLOAD = "Couldn't download Projectivy"
+    const val NO_DOWNLOAD_OFFLINE = "The phone can't reach GitHub. Check its internet, then try again."
+    fun noDownloadLimited(until: String?) =
+        "GitHub is limiting downloads from your network ${if (until != null) "until $until" else "for a while"}. Try again then, or download it yourself."
+    const val OR_YOURSELF = "Or download it yourself"
+    const val YOURSELF_PAGE = "Download the app file (.apk) from the release page in your browser."
+    fun yourselfPick(file: String?) = "Come back and pick ${file ?: "it"}. Tellyscope checks it's Projectivy before installing it."
+    const val LATEST_RELEASE = "Latest release"
+    const val PICK_DOWNLOADED = "Pick the downloaded file"
+    const val PICK_ANOTHER = "Pick another file"
+    const val TRY_DOWNLOAD_AGAIN = "Try download again"
 
     const val NOT_INSTALLED_TEXT =
         "The Play Store closed on the TV before it was installed. If the Store said it isn't available for this TV, choose another launcher."
@@ -508,25 +598,18 @@ object Copy {
     fun restartLost(name: String) = "Still can't reach $name"
     fun backOnline(name: String) = "Back online. $name reconnected."
 
-    // Dock
+    // Remote buttons
 
-    const val ADD_TO_DOCK = "Add to dock"
-    const val DOCK_EMPTY = "Dock up to four TV apps, one tap to open."
-    const val DOCK_PICK_TITLE = "Add an app to the dock"
-    const val DOCK_PICK_HINT = "Tap an app to add it."
-    const val DOCK_ADDED = "Added"
-    const val DOCK_NO_APPS = "Still reading the TV's apps. Open this again in a moment."
-    const val DOCK_CHANGE = "Change app"
-    const val DOCK_REMOVE = "Remove from dock"
-    const val DOCK_REORDER = "Keep holding and move to reorder"
+    const val REMOTE_BUTTONS = "Remote buttons"
+    const val MORE = "More options"
 
-    fun dockPickFrom(name: String) = "Apps installed on $name"
-    fun dockSwap(label: String) = "Put another app in $label's place"
+    fun buttonsHint(cap: Int) = "Pick up to $cap. Drag to set the order. To pick another, untick one first."
+    fun notOnTv(name: String) = "$name isn't on this TV. Install it from the Play Store on the TV."
     fun cantOpen(label: String) = "The TV couldn't open $label. If it's turned off, turn it on in Apps."
 
     fun leftDock(labels: List<String>) =
-        if (labels.size == 1) "${labels[0]} was uninstalled, so it left the dock."
-        else "${labels.size} apps were uninstalled, so they left the dock."
+        if (labels.size == 1) "${labels[0]} was uninstalled, so its button left the Remote."
+        else "${labels.size} apps were uninstalled, so their buttons left the Remote."
 
     fun restarting(minutes: Long) =
         if (minutes < 3) "Tellyscope reconnects on its own when the TV is back, usually within a couple of minutes."
@@ -567,6 +650,11 @@ object Copy {
     const val REQUEST_ALLOWED = "Allowed. That device can control the TV now."
     const val REQUEST_DENIED = "Denied. That device can't connect."
     const val REQUEST_GONE = "The TV's prompt had closed or changed, so nothing was pressed."
+    /** A prompt under Fire OS's remote alert: it can't be read until the alert closes. */
+    const val REQUEST_BEHIND_ALERT = "The TV's prompt is behind an Amazon alert, “Unable to Detect Your Remote”. Press OK on your TV remote to close it."
+    const val REQUEST_THEN = "Then the prompt shows here, so you can check its fingerprint."
+    const val REQUEST_WAITING = "Waiting for the TV's prompt"
+    const val PRESS_OK = "Press OK on the TV"
 
     // Who has access
     const val WARNING_TITLE = "Another computer is connected to this TV"
@@ -659,6 +747,12 @@ object Copy {
     const val TELLYSCOPE = "Tellyscope"
     const val NOT_THIS_PHONE = "Not this phone"
     const val YOURS = "Yours"
+    const val WAITING_CHIP = "Waiting"
+    const val WAITING_LINE = "Waiting for you to allow it on the TV"
+    const val WAITING_TEXT = "An Allow prompt for it is on the TV now. It can't do anything until you choose Allow there. Not yours? Choose Deny."
+    const val ANSWER = "Answer"
+    const val NEW_CHIP = "New"
+    const val NEW_KEY_TEXT = "Allowed on the TV while Tellyscope wasn't watching. Not yours? Remove all other access."
     const val ALLOWED_COMPUTERS = "Allowed computers"
     const val UNNAMED_COMPUTER = "Unnamed computer"
     const val CANT_CHECK_CONNECTED = "This TV doesn't say who is connected."

@@ -12,6 +12,10 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.fireHomeBack
+import app.tellyscope.data.fireServiceHolder
+import app.tellyscope.data.fireServiceHome
+import app.tellyscope.data.firstHomeService
 import app.tellyscope.data.switchHome
 import app.tellyscope.data.undoHomeSwitch
 import java.io.File
@@ -23,6 +27,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
 
 private const val TV_HOME = "com.google.android.tvlauncher"
@@ -184,5 +189,64 @@ class HomeSwitchTest {
         val off = tv.ran.indexOfLast { it.startsWith("settings delete secure enabled_accessibility_services") || it.startsWith("settings put secure enabled_accessibility_services") }
         val opened = tv.ran.indexOf(open(tv.activities.getValue(FLAUNCHER)))
         assertTrue(tv.ran.toString(), off >= 0 && opened > off && tv.ran.indexOf(stop(PROJECTIVY)) > off)
+    }
+
+    private suspend fun fire(tv: LauncherTv, withService: Boolean = true): HistoryEntry =
+        fireServiceHome(Actions(tv), PROJECTIVY, withService, { it }) { previous ->
+            book.record("tv", 0, Action.Home, PROJECTIVY, PROJECTIVY, Action.Enable.takeIf { previous.isNotEmpty() }, previous = previous)
+        }
+
+    @Test fun onFireOsOnlyTheServiceGoesOnAndItsUndoIsTheServiceAlone() = runTest {
+        val tv = LauncherTv(home = TV_HOME)
+        val entry = fire(tv)
+        assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
+        // Fire OS refuses both, so neither is tried: the TV's own launcher stays on and stays the default.
+        assertEquals(TV_HOME, tv.home)
+        assertTrue(TV_HOME in tv.enabled)
+        assertFalse(tv.ran.toString(), tv.ran.any { it.startsWith("pm disable-user") || it.startsWith("cmd package set-home-activity") })
+        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
+        // A home with nothing replaced: its Undo is the service alone.
+        assertEquals(PROJECTIVY_SERVICE, entry.firstHomeService)
+        assertEquals(Action.Enable, entry.undo)
+    }
+
+    @Test fun onFireOsAServiceAlreadyOnChangesNothing() = runTest {
+        val tv = LauncherTv(home = TV_HOME).apply { services += PROJECTIVY_SERVICE }
+        val entry = fire(tv)
+        assertNull(entry.undo)
+        assertFalse(tv.ran.toString(), tv.ran.any { it.startsWith("settings put") })
+    }
+
+    @Test fun onFireOsNoToTheServiceChangesNothing() = runTest {
+        val tv = LauncherTv(home = TV_HOME)
+        try {
+            fire(tv, withService = false)
+            fail("expected a refusal")
+        } catch (_: IllegalStateException) {
+        }
+        assertTrue(tv.ran.toString(), tv.ran.isEmpty())
+        assertTrue(book.entries("tv").isEmpty())
+    }
+
+    @Test fun onFireOsTheLauncherWhoseServiceIsOnHoldsHome() = runTest {
+        val tv = LauncherTv(home = TV_HOME)
+        assertNull(Actions(tv).fireServiceHolder(listOf(FLAUNCHER, PROJECTIVY)))
+        tv.services += PROJECTIVY_SERVICE
+        assertEquals(PROJECTIVY to PROJECTIVY_SERVICE, Actions(tv).fireServiceHolder(listOf(FLAUNCHER, PROJECTIVY)))
+    }
+
+    @Test fun onFireOsGoingBackTurnsTheServiceOffAndItsUndoOn() = runTest {
+        val tv = LauncherTv(home = TV_HOME).apply { services += PROJECTIVY_SERVICE }
+        val back = fireHomeBack(Actions(tv), PROJECTIVY to PROJECTIVY_SERVICE, { it }) { to, previous ->
+            book.record("tv", 0, Action.HomeBack, PROJECTIVY, to ?: "", Action.Home, previous = previous)
+        }
+        assertTrue(tv.services.isEmpty())
+        assertEquals(TV_HOME, back.label)
+        assertEquals(mapOf("service" to PROJECTIVY_SERVICE), back.previous)
+        // The default never moved: Home only opens the TV's own, which is on screen now.
+        assertEquals(TV_HOME, tv.home)
+        assertTrue(tv.ran.toString(), tv.ran.any { it.contains(tv.activities.getValue(TV_HOME)) && it.startsWith("am start") })
+        fire(tv)
+        assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
     }
 }
