@@ -5,6 +5,8 @@ package app.tellyscope
 import app.tellyscope.data.Action
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.UiText
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.uninstallAfterHomeBack
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -44,14 +46,14 @@ class UninstallHomeTest {
 
     @Test fun aSwitchThatFailsUninstallsNothingAndSaysSo() = runTest {
         val e = runCatching { uninstallAfterHomeBack({ throw IllegalStateException("the TV kept the home screen it has") }, ::uninstall) { dropped += it } }.exceptionOrNull()
-        assertEquals("Home didn't switch back: the TV kept the home screen it has. Nothing was uninstalled", e?.message)
+        assertEquals("Home didn't switch back: the TV kept the home screen it has. Nothing was uninstalled", (e as UiTextException).text.text())
         assertTrue(steps.isEmpty() && dropped.isEmpty())
     }
 
     @Test fun aServiceStillOnUninstallsNothing() = runTest {
         val why = "switched back, but Projectivy Launcher's accessibility service is still on. Turn it off in the TV's Settings → Accessibility"
-        val e = runCatching { uninstallAfterHomeBack({ throw IllegalStateException(why) }, ::uninstall) { dropped += it } }.exceptionOrNull()
-        assertEquals("$why. Nothing was uninstalled", e?.message)
+        val e = runCatching { uninstallAfterHomeBack({ throw UiTextException(UiText(R.string.data_service_not_off, "Projectivy Launcher")) }, ::uninstall) { dropped += it } }.exceptionOrNull()
+        assertEquals("$why. Nothing was uninstalled", (e as UiTextException).text.text())
         assertTrue(steps.isEmpty() && dropped.isEmpty())
     }
 }

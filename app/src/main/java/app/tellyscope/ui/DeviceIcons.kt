@@ -4,12 +4,15 @@
 
 package app.tellyscope.ui
 
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.DeviceKind
 
 /** Generic device shapes in the Material style; no maker's logo or artwork. */
@@ -66,9 +69,13 @@ object DeviceIcons {
 }
 
 /** Screen-reader name for the icon. */
-fun DeviceKind.word() = when (this) {
-    DeviceKind.Tv -> "TV"
-    DeviceKind.Projector -> "Projector"
-    DeviceKind.FireTv -> "Fire TV"
-    DeviceKind.Stick -> "Streaming device"
-}
+@Composable
+fun DeviceKind.word() = stringResource(
+    when (this) {
+        DeviceKind.Tv -> R.string.kind_tv
+        DeviceKind.Projector -> R.string.kind_projector
+        DeviceKind.FireTv -> R.string.kind_fire_tv
+        DeviceKind.Stick -> R.string.kind_stick
+    },
+)
+

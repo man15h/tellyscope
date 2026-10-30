@@ -26,7 +26,9 @@ The TV and HDMI (streaming stick) device icons use the path data of the
 "cleaning_services", the off-Wi-Fi screen that of "wifi_off", and the
 Apps, Files and Tweaks tabs those of "apps", "folder" and "tune", the
 Upload files button that of "upload", the empty Movies folder that of
-"movie", the links in Settings that of "open_in_new", and the Remote's
+"movie", the links in Settings that of "open_in_new", Settings' What's new
+row that of the Material Symbols "new_releases", What's new's Update card
+and can't-load line those of "system_update" and "cloud_off", and the Remote's
 restart, waiting and can't-reach icons and the Remote buttons sheet's drag
 handle those of "restart_alt", "hourglass_top", "link_off" and
 "drag_handle".

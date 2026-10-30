@@ -4,6 +4,7 @@ package app.tellyscope
 
 import android.net.Uri
 import androidx.lifecycle.viewModelScope
+import app.tellyscope.R
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.Progress
@@ -24,6 +25,7 @@ import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Suggestions
+import app.tellyscope.data.UiText
 import app.tellyscope.data.isFireOs
 import app.tellyscope.data.isProjectivy
 import app.tellyscope.data.latestTag
@@ -70,9 +72,9 @@ private val amazon = tv("Amazon", "AFTKRT")
 private val insignia = tv("Insignia", "NS-43F301NA22")
 private val androidTv = tv("Google", "Chromecast")
 
-private val fireHome = AppInfo(FIRE_TV_LAUNCHER, "Fire TV Home", null, true, true, "this is your home screen", "1.0", home = true)
+private val fireHome = AppInfo(FIRE_TV_LAUNCHER, "Fire TV Home", null, true, true, UiText(R.string.data_protected_home_screen), "1.0", home = true)
 private val store = AppInfo(PLAY_STORE, "Google Play Store", null, true, true, null, "1.0")
-private val tvHome = AppInfo("com.google.android.tvlauncher", "Google TV Home", null, true, true, "this is your home screen", "1.0", home = true)
+private val tvHome = AppInfo("com.google.android.tvlauncher", "Google TV Home", null, true, true, UiText(R.string.data_protected_home_screen), "1.0", home = true)
 
 private const val TAG = "4.72"
 private const val PAGE = "https://github.com/spocky/miproja1/releases/tag/$TAG"

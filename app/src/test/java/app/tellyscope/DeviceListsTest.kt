@@ -11,6 +11,7 @@ import app.tellyscope.data.ListGroup
 import app.tellyscope.data.ListIndex
 import app.tellyscope.data.ListMatch
 import app.tellyscope.data.ListPackage
+import app.tellyscope.data.UiText
 import app.tellyscope.data.matches
 import app.tellyscope.data.merge
 import app.tellyscope.data.SourceResult
@@ -60,7 +61,7 @@ class DeviceListsTest {
            {"id": "other", "name": "Other TV", "match": null, "sdk": null, "file": "devices/other.json", "sha256": "${"0".repeat(64)}"}]}
     """.trimIndent().toByteArray()
 
-    private fun app(pkg: String, enabled: Boolean = true, protectedReason: String? = null) =
+    private fun app(pkg: String, enabled: Boolean = true, protectedReason: UiText? = null) =
         AppInfo(pkg, pkg.substringAfterLast('.'), null, true, enabled, protectedReason, "")
 
     private fun served(vararg files: Pair<String, ByteArray>): suspend (String) -> ByteArray {
@@ -248,7 +249,7 @@ class DeviceListsTest {
         assertTrue(suggest(list, listOf(app("com.acme.hdmi")), 30).isEmpty())
         // Nor one the app already protects.
         val builtIn = list.copy(keep = emptySet())
-        assertTrue(suggest(builtIn, listOf(app("com.acme.hdmi", protectedReason = "your remote or HDMI inputs could stop working")), 30).isEmpty())
+        assertTrue(suggest(builtIn, listOf(app("com.acme.hdmi", protectedReason = UiText(R.string.data_protected_tv_inputs_remote))), 30).isEmpty())
     }
 
     private fun sha256(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }

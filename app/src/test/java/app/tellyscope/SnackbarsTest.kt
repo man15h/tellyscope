@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import app.tellyscope.data.Action
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.UiText
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.Done
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +27,7 @@ class SnackbarsTest {
     @get:Rule val compose = createComposeRule()
 
     private val done = MutableStateFlow<Done?>(null)
-    private val notice = MutableStateFlow<String?>(null)
+    private val notice = MutableStateFlow<UiText?>(null)
     private var undone: Done? = null
 
     private fun show() {
@@ -42,7 +43,7 @@ class SnackbarsTest {
 
     @Test fun noticeStaysOnScreen() {
         show()
-        notice.value = "Turned 2 apps back on."
+        notice.value = UiText.plural(R.plurals.vm_turned_back_on, 2)
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Turned 2 apps back on.").assertExists()
         // Shown once: it was taken off the queue as it went up.
@@ -54,8 +55,8 @@ class SnackbarsTest {
         val entry = HistoryEntry(7, "tv-a", 0L, Action.Disable, "com.example", "Example", Action.Enable, null)
         done.value = Done("tv-a", entry)
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText(Copy.done(Action.Disable, "Example")).assertExists()
-        compose.onNodeWithText(Copy.undo(Action.Enable)).performClick()
+        compose.onNodeWithText(Copy.done(Action.Disable, "Example").text()).assertExists()
+        compose.onNodeWithText(Copy.undo(Action.Enable).text()).performClick()
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals(Done("tv-a", entry), undone)
     }

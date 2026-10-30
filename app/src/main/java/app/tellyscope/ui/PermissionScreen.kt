@@ -22,7 +22,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 
 /**
  * Shown before the first scan on Android 17+, where talking to anything on the
@@ -43,24 +45,23 @@ fun PermissionScreen(denied: Boolean, canAsk: Boolean, onAllow: () -> Unit, onSe
             ) {
                 Icon(Icons.Default.Search, contentDescription = null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.onPrimaryContainer)
             }
-            Text("Find TVs on your Wi-Fi", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.permission_title), style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Android asks before an app talks to other devices on your Wi-Fi. " +
-                    "Tellyscope only connects to the TVs you pick.",
+                stringResource(R.string.permission_local_network_text),
                 style = MaterialTheme.typography.bodyLarge,
             )
             if (denied) {
                 Text(
-                    "Without it, Tellyscope can't see any TV. In Settings, open Permissions → Nearby devices and choose Allow.",
+                    stringResource(R.string.permission_denied),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = onSettings) { Text("Open Settings") }
-                    if (canAsk) TextButton(onClick = onAllow) { Text("Ask again") }
+                    Button(onClick = onSettings) { Text(stringResource(R.string.permission_open_settings)) }
+                    if (canAsk) TextButton(onClick = onAllow) { Text(stringResource(R.string.permission_ask_again)) }
                 }
             } else {
-                Button(onClick = onAllow) { Text("Continue") }
+                Button(onClick = onAllow) { Text(stringResource(R.string.screen_continue)) }
             }
         }
     }

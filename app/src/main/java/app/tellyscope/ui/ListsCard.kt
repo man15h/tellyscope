@@ -67,12 +67,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceKind
@@ -149,7 +152,7 @@ fun DebloatScreen(
         showing != null -> showing.groups
         lists is Suggestions.NoList -> listOf(
             SuggestedGroup(
-                "Apps on this TV",
+                stringResource(R.string.lists_apps_on_tv),
                 tvApps.filter { it.enabled && it.protectedReason == null && !it.builtInLauncher }.sortedBy { it.label.lowercase() }
                     .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false) },
             ),
@@ -170,9 +173,9 @@ fun DebloatScreen(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(if (searching) "Which TV is this?" else "Debloat") },
+                title = { Text(stringResource(if (searching) R.string.lists_which_tv else R.string.lists_debloat)) },
                 navigationIcon = {
-                    IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.lists_back)) }
                 },
             )
         },
@@ -181,13 +184,13 @@ fun DebloatScreen(
             Surface(tonalElevation = 3.dp, modifier = Modifier.imePadding()) {
                 Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                     if (searching) {
-                        Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text("Use this list") }
+                        Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lists_use_this)) }
                     } else {
                         Button(
                             onClick = { confirming = true },
                             enabled = groups != null && ticked.isNotEmpty() && !busy,
                             modifier = Modifier.fillMaxWidth(),
-                        ) { Text("Disable ${ticked.size} ${if (ticked.size == 1) "app" else "apps"}") }
+                        ) { Text(pluralStringResource(R.plurals.lists_disable_apps, ticked.size, ticked.size)) }
                     }
                 }
             }
@@ -202,10 +205,10 @@ fun DebloatScreen(
                 item {
                     OutlinedTextField(
                         q, { typed = it },
-                        placeholder = { Text("Brand or model") },
+                        placeholder = { Text(stringResource(R.string.lists_brand_or_model)) },
                         leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
                         trailingIcon = {
-                            if (q.isNotEmpty()) IconButton(onClick = { typed = "" }) { Icon(Icons.Filled.Clear, contentDescription = "Clear search") }
+                            if (q.isNotEmpty()) IconButton(onClick = { typed = "" }) { Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.lists_clear_search)) }
                         },
                         singleLine = true,
                         // The keyboard's action key closes it, and moves on once a TV is picked.
@@ -222,7 +225,7 @@ fun DebloatScreen(
                     items(shown, key = { it.id }) { d -> ListRow(d, makers.getValue(d.id), d.id == marked) { marked = d.id } }
                     return@LazyColumn
                 }
-                if (missed != null) item { Muted("No list for \u201c$missed\u201d. Pick the closest model.") }
+                if (missed != null) item { Muted(stringResource(R.string.lists_no_match, missed)) }
                 // Only a connected TV can say which apps it came with.
                 if (missed != null && tv?.state == DeviceState.Online) item { HelpAddCard(onHelpAdd) }
                 // Every list, by maker, with the maker in view while scrolling.
@@ -244,8 +247,8 @@ fun DebloatScreen(
                 if (groups == null) {
                     item {
                         Muted(
-                            if (lists == Suggestions.Unavailable) "Couldn't load that list. Check the phone's internet and try again."
-                            else "Loading the list…",
+                            if (lists == Suggestions.Unavailable) stringResource(R.string.lists_unavailable)
+                            else stringResource(R.string.lists_loading),
                         )
                     }
                     return@LazyColumn
@@ -255,33 +258,35 @@ fun DebloatScreen(
                     val entry = showing?.let { r -> devices.firstOrNull { it.id == r.list.id } ?: devices.firstOrNull { squash(makers.getValue(it.id)) == squash(r.list.name) } }
                     val kind = entry?.let { listKind(it, makers.getValue(it.id)) } ?: tv?.let(::deviceKind) ?: DeviceKind.Tv
                     when {
-                        showing == null -> MatchCard(kind, tv?.let(::name) ?: "This TV", "No list for this TV or its maker yet", Match.None) { marked = null; searching = true }
-                        showing.byMaker -> MatchCard(kind, showing.list.name, "No list for this model, so these come from ${showing.list.name}'s other models", Match.Loose) { marked = null; searching = true }
-                        showing.sdkMatches -> MatchCard(kind, showing.list.name, "This model's list · tested on ${showing.list.testedOs ?: showing.sdk?.let(::androidName)}", Match.Exact) { marked = null; searching = true }
+                        showing == null -> MatchCard(kind, tv?.let(::name) ?: stringResource(R.string.lists_this_tv), stringResource(R.string.lists_match_none), Match.None) { marked = null; searching = true }
+                        showing.byMaker -> MatchCard(kind, showing.list.name, stringResource(R.string.lists_match_by_maker, showing.list.name), Match.Loose) { marked = null; searching = true }
+                        showing.sdkMatches -> MatchCard(kind, showing.list.name, stringResource(R.string.lists_match_exact, (showing.list.testedOs ?: showing.sdk?.let(::androidName)).toString()), Match.Exact) { marked = null; searching = true }
                         else -> MatchCard(
                             kind, showing.list.name,
-                            showing.list.testedOs?.let { "This model's list, tested on $it, not this TV's Android" }
-                                ?: "This model's list, with no Android it was tested on",
+                            showing.list.testedOs?.let { stringResource(R.string.lists_match_other_android, it) }
+                                ?: stringResource(R.string.lists_match_no_android),
                             Match.Loose,
                         ) { marked = null; searching = true }
                     }
                     Text(
-                        when {
-                            showing == null -> "Tick the apps to turn off. Apps the TV needs to run aren't shown."
-                            showing.sdkMatches && !showing.byMaker -> "These apps will be turned off. Untick any you use."
-                            else -> "Nothing is ticked: tick only the apps you know you don't use."
-                        } + " Nothing is deleted, and History can turn each one back on.",
+                        stringResource(
+                            when {
+                                showing == null -> R.string.lists_intro_by_hand
+                                showing.sdkMatches && !showing.byMaker -> R.string.lists_intro_ticked
+                                else -> R.string.lists_intro_unticked
+                            },
+                        ) + " " + stringResource(R.string.lists_intro_undo),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 12.dp),
                     )
                     // Nobody should debloat from a list they didn't mean to use.
                     if (source != null && showing != null) Text(
-                        "This list comes from ${sourceName(source)}, not tellyscope-devices.",
+                        stringResource(R.string.lists_custom_source, sourceName(source)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
                     if (groups.all { it.packages.isEmpty() }) {
-                        Muted(if (showing == null) "Every app left on is one the TV needs." else "Nothing on the list is still on here.")
+                        Muted(stringResource(if (showing == null) R.string.lists_all_needed else R.string.lists_all_off))
                     }
                 }
                 // A list's groups are a tree: each heading ticks its whole group. The TV's own apps, with no list, stay flat.
@@ -306,7 +311,7 @@ fun DebloatScreen(
                             Column(Modifier.weight(1f)) {
                                 Text(p.label, style = MaterialTheme.typography.bodyLarge)
                                 Text(
-                                    listOfNotNull(p.pkg, p.note, "optional: tick it if you don't use it".takeIf { p.optional }).joinToString(" · "),
+                                    listOfNotNull(p.pkg, p.note, stringResource(R.string.lists_optional).takeIf { p.optional }).joinToString(" · "),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
@@ -346,7 +351,7 @@ private fun GroupRow(title: String, on: Int, of: Int, onToggle: () -> Unit) {
         TriStateCheckbox(state, onClick = null)
         Spacer(Modifier.width(8.dp))
         Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.weight(1f))
-        Text("$on of $of", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+        Text(stringResource(R.string.lists_group_count, on, of), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
     }
 }
 
@@ -376,12 +381,12 @@ private fun HelpAddCard(onHelpAdd: () -> Unit) {
             Icon(AddToQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text("Not in the list? Help add this TV", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.lists_help_add_title), style = MaterialTheme.typography.titleSmall)
                 Text(
-                    "Send its model and stock apps to cleanyourtv, where Tellyscope\u2019s lists come from. You see the text first.",
+                    stringResource(R.string.lists_help_add_text),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                FilledTonalButton(onClick = onHelpAdd, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) { Text("Help add this TV") }
+                FilledTonalButton(onClick = onHelpAdd, modifier = Modifier.align(Alignment.End).padding(top = 8.dp)) { Text(stringResource(R.string.lists_help_add_button)) }
             }
         }
     }
@@ -407,7 +412,7 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
                 Text(name, style = MaterialTheme.typography.titleMedium)
                 Text(detail, style = MaterialTheme.typography.bodySmall)
             }
-            TextButton(onClick = onNotThis) { Text("Not this TV?") }
+            TextButton(onClick = onNotThis) { Text(stringResource(R.string.lists_not_this_tv)) }
         }
     }
 }
@@ -416,11 +421,11 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
 internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Disable ${apps.size} ${if (apps.size == 1) "app" else "apps"}?") },
+        title = { Text(pluralStringResource(R.plurals.lists_disable_apps_confirm, apps.size, apps.size)) },
         text = {
             // Every name, so a list can't slip something in behind a count.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Each one is hidden and stops running. Nothing is deleted; every one shows in History, where you can turn it back on.")
+                Text(stringResource(R.string.lists_disable_text))
                 LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(apps, key = { it.pkg }) { a ->
                         Column {
@@ -431,8 +436,8 @@ internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismi
                 }
             }
         },
-        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text("Yes, disable them") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text(stringResource(R.string.lists_disable_yes)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.lists_cancel)) } },
     )
 }
 
@@ -455,26 +460,26 @@ fun AboutDialog(commit: String?, onDismiss: () -> Unit, version: String = instal
     val browser = LocalUriHandler.current
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("About Tellyscope") },
+        title = { Text(stringResource(R.string.lists_about_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Version $version", style = MaterialTheme.typography.titleSmall)
-                AboutLink("Website", SITE, browser::openUri)
+                Text(stringResource(R.string.lists_about_version, version), style = MaterialTheme.typography.titleSmall)
+                AboutLink(stringResource(R.string.lists_about_website), SITE, browser::openUri)
                 AboutLink("GitHub", REPO, browser::openUri)
-                AboutLink("Watch the demo on YouTube", DEMO_VIDEO, browser::openUri)
-                Text("Free software under the GNU GPL v3.", style = MaterialTheme.typography.bodyMedium)
+                AboutLink(stringResource(R.string.lists_about_demo), DEMO_VIDEO, browser::openUri)
+                Text(stringResource(R.string.lists_about_licence), style = MaterialTheme.typography.bodyMedium)
                 Text(
-                    "Device lists are adapted from cleanyourtv by Gathin (MIT licence), " +
-                        (commit?.let { "commit ${it.take(12)}." } ?: "once they have downloaded."),
+                    commit?.let { stringResource(R.string.lists_about_lists_commit, it.take(12)) } ?: stringResource(R.string.lists_about_lists_pending),
                     style = MaterialTheme.typography.bodyMedium,
                 )
                 Text(
-                    "Uses Kadb (Apache 2.0) and spake2-java (GPL v3). Full licence texts are in the NOTICE file.",
+                    stringResource(R.string.lists_about_libraries),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.lists_about_close)) } },
+
     )
 }
 
@@ -491,7 +496,7 @@ private fun AboutLink(label: String, url: String, open: (String) -> Unit) {
 }
 
 @Composable
-private fun installedVersion(): String {
+internal fun installedVersion(): String {
     val context = LocalContext.current
     @Suppress("DEPRECATION") // the flags overload is API 33+
     return remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }

@@ -30,13 +30,6 @@ class ParsersTest {
         assertNull(Parsers.storage("df: /data: Permission denied\n"))
     }
 
-    @Test fun temperaturePrefersCpuZoneAndScales() {
-        assertEquals(52.0, Parsers.temperatureC("battery=30000\ncpu-thermal=52000\ngpu=61000\n"))
-        assertEquals(61.0, Parsers.temperatureC("battery=30000\ngpu=61000\n"))
-        assertEquals(45.0, Parsers.temperatureC("soc_thermal=45\n"))
-        assertNull(Parsers.temperatureC("=\ncpu=\nx=-40000\n"))
-    }
-
     @Test fun packagesWithUid() {
         val out = "package:com.google.android.youtube.tv uid:10087\npackage:android uid:1000\npackage:com.shared uid:10050,10051\njunk\n"
         assertEquals(

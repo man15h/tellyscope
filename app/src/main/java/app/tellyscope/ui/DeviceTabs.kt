@@ -5,6 +5,7 @@
 package app.tellyscope.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -97,11 +98,14 @@ import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
@@ -110,10 +114,11 @@ import app.tellyscope.data.DeviceState
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Suggestions
+import app.tellyscope.data.resolve
 import kotlinx.coroutines.launch
 
 /** The TV page's destinations, one job each, in the bottom bar. */
-enum class TvTab(val label: String) { Overview("Overview"), Apps("Apps"), Files("Files"), Tweaks("Tweaks") }
+enum class TvTab(@StringRes val label: Int) { Overview(R.string.tabs_overview), Apps(R.string.tabs_apps), Files(R.string.tabs_files), Tweaks(R.string.tabs_tweaks) }
 
 private object TabIcons {
     val Apps = icon(
@@ -231,9 +236,9 @@ fun DeviceTabsScreen(
             // Each tab's main action as Material's extended FAB: the Remote on Overview, install on Apps, upload on Files.
             floatingActionButton = {
                 if (!offline) when (tab) {
-                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text("Remote") })
-                    TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text("Install app") })
-                    TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text("Upload files") })
+                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text(stringResource(R.string.tabs_remote)) })
+                    TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text(stringResource(R.string.tabs_install_app)) })
+                    TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text(stringResource(R.string.tabs_upload_files)) })
                     else -> {}
                 }
             },
@@ -262,7 +267,7 @@ fun DeviceTabsScreen(
                                 tab = t
                             },
                             icon = { Icon(t.icon(), contentDescription = null) },
-                            label = { Text(t.label) },
+                            label = { Text(stringResource(t.label)) },
                         )
                     }
                 }
@@ -316,9 +321,9 @@ fun DeviceTabsScreen(
                         if (live != null) {
                             item { SystemWidget(live) }
                         } else if (offline && used != null && total != null) {
-                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()) } ?: "the last visit") }
+                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() } ?: stringResource(R.string.tabs_last_visit)) }
                         } else if (offline) {
-                            item { Muted(Copy.noStats(device.state)) }
+                            item { Muted(Copy.noStats(device.state).resolve()) }
                         }
                         if (!offline) {
                             item {
@@ -344,7 +349,7 @@ fun DeviceTabsScreen(
                     }
                     TvTab.Apps -> {
                         fun rows(apps: List<AppInfo>) = items(apps, key = { it.packageName }) { app ->
-                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks })
+                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline)
                         }
                         // Until the first read lands, an empty list means "not yet", not "none".
                         val loading = ui.appsLoading && !offline
@@ -356,7 +361,7 @@ fun DeviceTabsScreen(
                         } else {
                             stickyHeader(key = "appsTabs") {
                                 PinnedSegments(
-                                    AppsTab.entries.map { it.label }, appsTab.ordinal,
+                                    AppsTab.entries.map { stringResource(it.label) }, appsTab.ordinal,
                                     lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp,
                                     below = { SearchPill(enabled = !offline) { searching = true } },
                                 ) { appsTab = AppsTab.entries[it] }
@@ -369,7 +374,7 @@ fun DeviceTabsScreen(
                                     // Away, the TV can't say what's running, rather than nothing is.
                                     when {
                                         loading -> AppsLoading()
-                                        appsTab == AppsTab.Running && live == null -> EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE, Copy.RUNNING_OFFLINE)
+                                        appsTab == AppsTab.Running && live == null -> EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), Copy.RUNNING_OFFLINE.resolve())
                                         else -> EmptyLine(q)
                                     }
                                 }
@@ -385,28 +390,28 @@ fun DeviceTabsScreen(
                     TvTab.Files -> {
                         // Pinned under the bar once the hero has folded into it, like the Apps tabs.
                         stickyHeader(key = "folders") {
-                            PinnedSegments(TvFolder.entries.map(Copy::folder), ui.files.folder.ordinal, lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp) {
+                            PinnedSegments(TvFolder.entries.map { Copy.folder(it).resolve() }, ui.files.folder.ordinal, lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp) {
                                 if (!offline) actions.folder(TvFolder.entries[it])
                             }
                         }
                         val folder = ui.files.folder
                         when {
-                            offline -> item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE, "Connect to the TV to see its files.") }
+                            offline -> item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), stringResource(R.string.tabs_files_offline)) }
                             ui.files.error == null && ui.files.list?.isEmpty() == true -> item {
                                 EmptyState(
                                     if (folder == TvFolder.MOVIES) TileIcons.Movie else TabIcons.Folder,
-                                    "Nothing in ${Copy.folder(folder)} yet",
-                                    "Files you send land here.",
+                                    stringResource(R.string.tabs_folder_empty, Copy.folder(folder).resolve()),
+                                    stringResource(R.string.tabs_folder_empty_line),
                                 )
                             }
                             else -> item { FilesBlock(ui.files, state.clock(), actions) }
                         }
                     }
                     TvTab.Tweaks -> {
-                        if (offline) item { Muted("Connect to the TV to change its settings.") }
+                        if (offline) item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), stringResource(R.string.tabs_tweaks_offline)) }
                         else {
-                            if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN) { HomeScreenBlock(ui, actions, fire) } }
-                            item { Panel(Copy.TWEAKS) { TweaksBlock(ui, actions) } }
+                            if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN.resolve()) { HomeScreenBlock(ui, actions, fire) } }
+                            item { Panel(Copy.TWEAKS.resolve()) { TweaksBlock(ui, actions) } }
                         }
                     }
                 }
@@ -469,7 +474,7 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
     val fresh = state.historyNew
     IconButton(onClick = { open = true }) {
         // The access warning shows on ⋮ too, so it's there from every tab; it outranks a new change.
-        BadgedBox(badge = { MenuDot(others > 0, fresh) }) { Icon(Icons.Default.MoreVert, contentDescription = "More options") }
+        BadgedBox(badge = { MenuDot(others > 0, fresh) }) { Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.tabs_more_options)) }
     }
     if (!open) return
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -483,35 +488,35 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(name(device), style = MaterialTheme.typography.titleLarge)
-                    val health = state.device.snapshot?.takeIf { device.state == DeviceState.Online }?.let { Copy.health(it, heaviest(it, state.device.apps)).text }
+                    val health = state.device.snapshot?.takeIf { device.state == DeviceState.Online }?.let { Copy.health(it, heaviest(it, state.device.apps)).text.resolve() }
                     val line = listOf(makerLine(device), health.orEmpty()).filter { it.isNotEmpty() }.joinToString(" · ")
                     if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
                 }
             }
             val off = HistoryBook.leftDisabled(state.device.history).size
             SheetGroup(
-                { MenuRow(Icons.Default.Edit, "Rename this TV") { pick { renaming = true } } },
-                { MenuRow(HistoryIcons.History, Copy.HISTORY, Copy.stillOff(off).takeIf { off > 0 }, dot = { if (fresh) MenuDot(false, true) }) { pick(actions.history) } },
+                { MenuRow(Icons.Default.Edit, stringResource(R.string.tabs_rename)) { pick { renaming = true } } },
+                { MenuRow(HistoryIcons.History, Copy.HISTORY.resolve(), Copy.stillOff(off).resolve().takeIf { off > 0 }, dot = { if (fresh) MenuDot(false, true) }) { pick(actions.history) } },
                 {
                     MenuRow(
-                        AccessIcons.Shield, Copy.WHO_HAS_ACCESS,
-                        Copy.othersConnected(others).takeIf { others > 0 }, subColor = c.error,
+                        AccessIcons.Shield, Copy.WHO_HAS_ACCESS.resolve(),
+                        Copy.othersConnected(others).resolve().takeIf { others > 0 }, subColor = c.error,
                         dot = { if (state.device.access?.warning == true) MenuDot(true, false) },
                     ) { pick(actions.whoHasAccess) }
                 },
-                { MenuRow(Icons.Default.List, Copy.ADVANCED_MONITOR) { pick(actions.advanced) } },
+                { MenuRow(Icons.Default.List, Copy.ADVANCED_MONITOR.resolve()) { pick(actions.advanced) } },
             )
             Text("Tellyscope", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
             SheetGroup(
-                { MenuRow(Icons.Default.Settings, "Settings") { pick(actions.settings) } },
-                { MenuRow(Icons.Default.Share, Copy.SHARE) { pick { shareTellyscope(context) } } },
-                { MenuRow(Icons.Default.Info, "About & licences") { pick { about = true } } },
+                { MenuRow(Icons.Default.Settings, stringResource(R.string.tabs_settings)) { pick(actions.settings) } },
+                { MenuRow(Icons.Default.Share, Copy.SHARE.resolve()) { pick { shareTellyscope(context) } } },
+                { MenuRow(Icons.Default.Info, stringResource(R.string.tabs_about)) { pick { about = true } } },
             )
             Spacer(Modifier.height(16.dp))
             // Apart, and Forget in red, so neither is one slip from an everyday item.
             SheetGroup(
-                { MenuRow(HistoryIcons.History, Copy.RESET_TV, Copy.RESET_KEEPS) { pick(actions.reset) } },
-                { MenuRow(Icons.Default.Delete, "Forget this TV", tint = c.error) { pick { forgetting = true } } },
+                { MenuRow(HistoryIcons.History, Copy.RESET_TV.resolve(), Copy.RESET_KEEPS.resolve()) { pick(actions.reset) } },
+                { MenuRow(Icons.Default.Delete, stringResource(R.string.tabs_forget), tint = c.error) { pick { forgetting = true } } },
             )
         }
     }
@@ -574,7 +579,7 @@ private fun SearchPill(enabled: Boolean, onClick: () -> Unit) {
         Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(16.dp))
-            Text("Search apps", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.tabs_search_apps), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -590,11 +595,11 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
     Column(Modifier.background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
         Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Close search") }
+                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.tabs_close_search)) }
                 TextField(
                     value = query,
                     onValueChange = onQuery,
-                    placeholder = { Text("Search apps") },
+                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -604,7 +609,7 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
                     ),
                     modifier = Modifier.weight(1f).focusRequester(focus),
                 )
-                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = "Clear search") }
+                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.tabs_clear_search)) }
             }
         }
     }
@@ -633,26 +638,26 @@ internal fun DebloatGate(launcher: Boolean, onChoose: () -> Unit, onApps: () -> 
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Broom, contentDescription = null) },
-        title = { Text(Copy.GATE_TITLE) },
+        title = { Text(Copy.GATE_TITLE.resolve()) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Copy.GATE_DONE)
-                Text(if (launcher) Copy.GATE_LAUNCHER else Copy.GATE_APPS)
+                Text(Copy.GATE_DONE.resolve())
+                Text((if (launcher) Copy.GATE_LAUNCHER else Copy.GATE_APPS).resolve())
             }
         },
         // Three actions stack full width; two sit side by side.
         confirmButton = {
             if (launcher) {
                 Column(Modifier.fillMaxWidth()) {
-                    Button(onClick = onChoose, Modifier.fillMaxWidth()) { Text(Copy.CHOOSE_HOME) }
-                    TextButton(onClick = onApps, Modifier.fillMaxWidth()) { Text(Copy.GO_TO_APPS) }
-                    TextButton(onClick = onNeverAgain, Modifier.fillMaxWidth()) { Text(Copy.DONT_SHOW_AGAIN) }
+                    Button(onClick = onChoose, Modifier.fillMaxWidth()) { Text(Copy.CHOOSE_HOME.resolve()) }
+                    TextButton(onClick = onApps, Modifier.fillMaxWidth()) { Text(Copy.GO_TO_APPS.resolve()) }
+                    TextButton(onClick = onNeverAgain, Modifier.fillMaxWidth()) { Text(Copy.DONT_SHOW_AGAIN.resolve()) }
                 }
             } else {
-                Button(onClick = onApps) { Text(Copy.GO_TO_APPS) }
+                Button(onClick = onApps) { Text(Copy.GO_TO_APPS.resolve()) }
             }
         },
-        dismissButton = if (launcher) null else ({ TextButton(onClick = onNeverAgain) { Text(Copy.DONT_SHOW_AGAIN) } }),
+        dismissButton = if (launcher) null else ({ TextButton(onClick = onNeverAgain) { Text(Copy.DONT_SHOW_AGAIN.resolve()) } }),
     )
 }
 
@@ -675,46 +680,48 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
 @Composable
 private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    val apps = { n: Int -> if (n == 1) "1 app" else "$n apps" }
     Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     when (lists) {
                         is Suggestions.Ready -> when {
-                            d.total == 0 -> "Nothing from the ${lists.list.name} list is on this TV"
-                            d.on == 0 -> if (d.total == 1) "The suggested app is off" else "All ${d.total} suggested apps are off"
-                            else -> "${d.total - d.on} of ${d.total} suggested apps are off"
+                            d.total == 0 -> stringResource(R.string.tabs_suggested_none, lists.list.name)
+                            d.on == 0 -> pluralStringResource(R.plurals.tabs_suggested_all_off, d.total, d.total)
+                            else -> pluralStringResource(R.plurals.tabs_suggested_some_off, d.total, d.total - d.on, d.total)
                         }
-                        is Suggestions.NoList -> "No list for this TV yet"
-                        Suggestions.Unavailable -> "Couldn't load the device lists"
-                        null -> if (offline) "Connect to the TV to see its suggestions" else "Looking up this TV's list\u2026"
+                        is Suggestions.NoList -> stringResource(R.string.tabs_suggested_no_list)
+                        Suggestions.Unavailable -> stringResource(R.string.tabs_suggested_unavailable)
+                        null -> stringResource(if (offline) R.string.tabs_suggested_offline else R.string.tabs_suggested_loading)
                     },
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                TextButton(onClick = onChanges) { Text("See changes") }
+                TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
             }
             if (d.back > 0) {
+                val required = stringResource(R.string.tabs_action_required)
+                val cameBack = pluralStringResource(R.plurals.tabs_came_back_on, d.back, d.back)
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append("Action required: ") }
-                        append("${apps(d.back)} came back on")
+                        withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(required) }
+                        append(" ")
+                        append(cameBack)
                     },
                     Modifier.padding(end = 8.dp, bottom = 4.dp),
                     style = MaterialTheme.typography.bodyLarge, color = c.error,
                 )
             }
             val note = when {
-                lists is Suggestions.Unavailable -> "Check the phone's internet and open this TV again."
-                lists is Suggestions.NoList -> "Tap Debloat to pick the apps to turn off by hand."
-                lists is Suggestions.Ready && lists.byMaker -> "No list for this exact model, so these come from ${lists.list.name}'s other TVs."
-                lists is Suggestions.Ready && !d.todo -> "Debloat now opens Apps for one-off changes."
+                lists is Suggestions.Unavailable -> stringResource(R.string.tabs_note_unavailable)
+                lists is Suggestions.NoList -> stringResource(R.string.tabs_note_no_list)
+                lists is Suggestions.Ready && lists.byMaker -> stringResource(R.string.tabs_note_by_maker, lists.list.name)
+                lists is Suggestions.Ready && !d.todo -> stringResource(R.string.tabs_note_gate)
                 else -> null
             }
             note?.let { Text(it, Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant) }
             if (lists is Suggestions.Ready) {
-                Text("Lists adapted from cleanyourtv (MIT).", Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(stringResource(R.string.tabs_lists_credit), Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
         }
     }
@@ -727,9 +734,10 @@ private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpd
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         StatusRow(
             Icons.Default.Info,
-            device.android?.let { "Android $it" } ?: "Android",
-            (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { "Updated ${Copy.month(it)}" },
-            "Check for updates", !offline, onUpdates,
+            device.android?.let { stringResource(R.string.tabs_android_version, it) } ?: "Android",
+            (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { stringResource(R.string.tabs_updated, Copy.month(it)) },
+            stringResource(R.string.tabs_check_updates), !offline, onUpdates,
+
         )
     }
 }

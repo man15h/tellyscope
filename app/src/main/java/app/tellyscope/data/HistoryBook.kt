@@ -2,6 +2,7 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.R
 import java.io.File
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -234,12 +235,11 @@ suspend fun restoreEach(packages: List<String>, enable: suspend (String) -> Hist
             throw e
         } catch (e: Exception) {
             // A dropped connection counts too: the user still needs to know what already changed.
-            val why = e.message ?: "the TV refused"
-            throw IllegalStateException(
-                if (done.isEmpty()) "couldn't turn apps back on: $why"
-                else "turned ${done.size} ${if (done.size == 1) "app" else "apps"} back on, then stopped: $why",
-                e,
-            )
+            val why = e.why(R.string.data_tv_refused)
+            throw UiTextException(
+                if (done.isEmpty()) UiText(R.string.data_restore_none, why)
+                else UiText.plural(R.plurals.data_restore_some, done.size, done.size, why),
+            ).apply { initCause(e) }
         }
     }
     return done

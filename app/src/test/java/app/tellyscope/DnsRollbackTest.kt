@@ -10,6 +10,7 @@ import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.Tweaks
 import app.tellyscope.data.Action
 import app.tellyscope.data.HistoryBook
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.applyTweak
 import java.io.File
 import java.io.IOException
@@ -47,11 +48,11 @@ class DnsRollbackTest {
 
     private suspend fun run(tv: NoDnsTv, book: HistoryBook): String = try {
         applyTweak(Tweaks(tv), Tweak.PRIVATE_DNS, dns, strictDns = true) { label, previous ->
-            book.record("tv", 0, Action.Change, Tweak.PRIVATE_DNS.name, label, Action.Change, previous = previous)
+            book.record("tv", 0, Action.Change, Tweak.PRIVATE_DNS.name, label.text(), Action.Change, previous = previous)
         }
         error("should have thrown")
     } catch (e: IllegalStateException) {
-        e.message.orEmpty()
+        (e as UiTextException).text.text()
     }
 
     @Test fun aProviderThatDoesntResolveIsPutBackAndNotRecorded() = runTest {

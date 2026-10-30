@@ -58,11 +58,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.adb.Report
 import app.tellyscope.adb.Reports
+import app.tellyscope.data.resolve
 
 /**
  * Report a problem, or Help add this TV: what the TV said about itself, the form's dropdowns, what
@@ -84,10 +88,11 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
     var outcome by rememberSaveable { mutableStateOf<Reports.Outcome?>(null) }
     var stage by rememberSaveable { mutableStateOf<Reports.Stage?>(null) }
     var details by rememberSaveable { mutableStateOf(r.details) }
+    val log = r.log?.resolve()
     // Null until the form's required dropdown is picked, and for a new TV, until it's been read.
-    val report = remember(r.tv, r.log, connection, outcome, stage, details) {
+    val report = remember(r.tv, log, connection, outcome, stage, details) {
         when (r.kind) {
-            ReportKind.Problem -> outcome?.let { Reports.problem(r.app, r.tv, connection, it, details, r.log) }
+            ReportKind.Problem -> outcome?.let { Reports.problem(r.app, r.tv, connection, it, details, log) }
             ReportKind.NewTv -> if (r.tv == null) null else stage?.let { Reports.newTv(r.app, r.tv, it, details) }
         }
     }
@@ -97,29 +102,28 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text(if (newTv) "Help add this TV" else "Report a problem")
+                        Text(stringResource(if (newTv) R.string.report_title_new_tv else R.string.report_title_problem))
                         Text(
-                            if (newTv) "Opens cleanyourtv’s “My TV” form on GitHub" else "Opens an issue on Tellyscope’s GitHub",
+                            stringResource(if (newTv) R.string.report_subtitle_new_tv else R.string.report_subtitle_problem),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = "Close") } },
+                navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
             )
         },
         bottomBar = {
             if (posted == null) Actions(
-                note = "You post it from your own GitHub account. " + (
-                    report?.rest?.let { "What doesn’t fit the link can go in a comment after you post." }
-                        ?: "Tellyscope sends nothing by itself."
-                    ),
+                note = stringResource(R.string.report_note_own_account) + " " + stringResource(
+                    if (report?.rest != null) R.string.report_note_rest else R.string.report_note_nothing_sent,
+                ),
                 cancel = close,
             ) {
                 Button(
                     onClick = { report?.let { runCatching { browser.openUri(it.link) }; onOpened(it) } },
                     enabled = report != null,
-                ) { ButtonIcon(OpenInNew); Text("Open GitHub") }
+                ) { ButtonIcon(OpenInNew); Text(stringResource(R.string.report_open_github)) }
             }
         },
     ) { pad ->
@@ -134,34 +138,34 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
             // Read from the TV, so shown as facts rather than fields to edit.
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                 val tv = r.tv
-                val reading = if (r.reading) "Reading the TV…" else "No TV connected"
-                Fact(if (newTv) "TV model" else "TV", tv?.name ?: reading)
+                val reading = stringResource(if (r.reading) R.string.report_reading_tv else R.string.report_no_tv)
+                Fact(stringResource(if (newTv) R.string.report_tv_model else R.string.report_tv), tv?.name ?: reading)
                 HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                Fact("Android version and firmware build", tv?.android ?: reading)
+                Fact(stringResource(R.string.report_android_build), tv?.android ?: reading)
             }
             if (newTv) {
-                Choice("How far did you get?", stage, Reports.Stage.entries, { it.option }) { stage = it }
+                Choice(stringResource(R.string.report_how_far), stage, Reports.Stage.entries, { it.option }) { stage = it }
             } else {
                 Choice(
-                    "How did you connect?", connection, Reports.Connection.entries, { it.option },
-                    help = "Filled in from this connection; change it if it’s wrong.",
+                    stringResource(R.string.report_how_connect), connection, Reports.Connection.entries, { it.option },
+                    help = stringResource(R.string.report_how_connect_help),
                 ) { connection = it }
-                Choice("What happened?", outcome, Reports.Outcome.entries, { it.option }) { outcome = it }
+                Choice(stringResource(R.string.report_what_happened), outcome, Reports.Outcome.entries, { it.option }) { outcome = it }
             }
             OutlinedTextField(
                 details, { details = it },
-                label = { Text("Details (optional)") },
-                placeholder = { Text(if (newTv) "Anything else?" else "What were you doing?") },
+                label = { Text(stringResource(R.string.report_details)) },
+                placeholder = { Text(stringResource(if (newTv) R.string.report_details_new_tv else R.string.report_details_problem)) },
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("What gets sent", style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.report_what_gets_sent), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             if (report == null) {
                 Text(
                     when {
-                        newTv && r.tv == null -> if (r.reading) "Reading the TV…" else "Connect the TV to list its apps."
-                        newTv -> "Pick how far you got to see the report."
-                        else -> "Pick what happened to see the report."
+                        newTv && r.tv == null -> stringResource(if (r.reading) R.string.report_reading_tv else R.string.report_connect_tv)
+                        newTv -> stringResource(R.string.report_pick_stage)
+                        else -> stringResource(R.string.report_pick_outcome)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -187,27 +191,27 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
             TopAppBar(
                 title = {
                     Column {
-                        Text("Add the rest")
+                        Text(stringResource(R.string.report_add_rest))
                         Text(
-                            "As a comment on your newest issue on ${posted.repo.substringAfter('/')}",
+                            stringResource(R.string.report_add_rest_subtitle, posted.repo.substringAfter('/')),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = back) { Icon(Icons.Default.Close, contentDescription = "Close") } },
+                navigationIcon = { IconButton(onClick = back) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
             )
         },
         bottomBar = {
             Actions(
-                note = "Opens your newest issue on ${posted.repo}. If it’s not the right one, pick yours from the list there.",
+                note = stringResource(R.string.report_add_rest_note, posted.repo),
                 cancel = back,
             ) {
                 Button(onClick = {
                     clipboard.setText(AnnotatedString(rest))
                     runCatching { browser.openUri(posted.myIssues) }
                     done()
-                }) { ButtonIcon(CopyIcon); Text("Copy and open your issue") }
+                }) { ButtonIcon(CopyIcon); Text(stringResource(R.string.report_copy_and_open)) }
             }
         },
     ) { pad ->
@@ -216,8 +220,7 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
-                "This is the comment. GitHub can’t fill in a comment from a link, so Tellyscope copies it and opens " +
-                    "your issue: tap the comment box there and paste.",
+                stringResource(R.string.report_add_rest_text),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Sent(rest, tall = true)
@@ -232,15 +235,15 @@ private fun PostedCard(posted: Report, notNow: () -> Unit, addRest: () -> Unit) 
     val lines = posted.rest.orEmpty().lines().size - 1
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Posted it? Add the rest as a comment", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.report_posted_title), style = MaterialTheme.typography.titleMedium)
             Text(
-                if (posted.repo == Reports.CLEANYOURTV) "$lines apps didn’t fit in the link. Adding them helps cleanyourtv write the full list."
-                else "Part of the report didn’t fit in the link. Adding it helps us find the problem.",
+                if (posted.repo == Reports.CLEANYOURTV) pluralStringResource(R.plurals.report_posted_apps_cut, lines, lines)
+                else stringResource(R.string.report_posted_part_cut),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = notNow) { Text("Not now") }
-                Button(onClick = addRest) { Text("Add the rest") }
+                TextButton(onClick = notNow) { Text(stringResource(R.string.report_not_now)) }
+                Button(onClick = addRest) { Text(stringResource(R.string.report_add_rest)) }
             }
         }
     }
@@ -260,7 +263,7 @@ private fun <T> Choice(label: String, value: T?, options: List<T>, text: (T) -> 
     var open by remember { mutableStateOf(false) }
     ExposedDropdownMenuBox(open, onExpandedChange = { open = it }) {
         OutlinedTextField(
-            value?.let(text) ?: "Choose one", {},
+            value?.let(text) ?: stringResource(R.string.report_choose_one), {},
             readOnly = true,
             label = { Text(label) },
             supportingText = help?.let { { Text(it) } },
@@ -290,7 +293,7 @@ private fun Removed() = Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(Icons.Default.Lock, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
     Spacer(Modifier.width(8.dp))
     Text(
-        "Removed first: serial numbers, IP addresses, ADB keys and fingerprints.",
+        stringResource(R.string.report_removed_first),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -303,7 +306,8 @@ private fun Actions(note: String, cancel: () -> Unit, action: @Composable () -> 
         Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = cancel) { Text("Cancel") }
+                TextButton(onClick = cancel) { Text(stringResource(R.string.report_cancel)) }
+
                 action()
             }
         }

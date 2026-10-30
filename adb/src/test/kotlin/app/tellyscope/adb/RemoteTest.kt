@@ -146,4 +146,42 @@ class RemoteTest {
         }
         assertTrue(Remote(sh).reboot())
     }
+
+    @Test fun volumeMaxIsReadFromTheMusicStream() {
+        val dump = """
+            - STREAM_SYSTEM:
+               Min: 0
+               Max: 7
+            - STREAM_MUSIC:
+               Muted: false
+               Muted Internally: false
+               Min: 0
+               Max: 15
+               streamVolume:15
+               Current: 2 (speaker): 3, 400 (hdmi): 15, 40000000 (default): 3
+               Devices: hdmi
+            - STREAM_ALARM:
+               Max: 7
+        """.trimIndent()
+        assertEquals(15, Remote.musicMax(dump))
+        assertEquals(null, Remote.musicMax("Error: dumpsys not allowed"))
+    }
+
+    @Test fun volumeTapsCoverAboutFifteenSteps() {
+        assertEquals(1, Remote.volumeKeys(15))
+        assertEquals(1, Remote.volumeKeys(7))
+        assertEquals(2, Remote.volumeKeys(30))
+        assertEquals(3, Remote.volumeKeys(50))
+        assertEquals(7, Remote.volumeKeys(100))
+        assertEquals(1, Remote.volumeKeys(null))
+    }
+
+    @Test fun volumeKeysRepeatAndStopAtTheFirstRefusal() = runTest {
+        val sh = FakeShell()
+        assertTrue(Remote(sh).press(RemoteKey.VOLUME_UP, 3))
+        assertEquals(List(3) { "input keyevent 24" }, sh.ran)
+        val refused = FakeShell(mapOf("input keyevent 25" to ShellResult("", 1)))
+        assertFalse(Remote(refused).press(RemoteKey.VOLUME_DOWN, 3))
+        assertEquals(listOf("input keyevent 25"), refused.ran)
+    }
 }

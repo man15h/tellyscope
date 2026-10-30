@@ -34,7 +34,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
+import app.tellyscope.data.UiText
+import app.tellyscope.data.resolve
 
 /**
  * Debloat after "Yes, disable them": the ticked apps, each marked done, running, waiting or
@@ -47,19 +51,19 @@ fun DebloatRunScreen(run: DebloatRun, back: () -> Unit, retry: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Debloat") },
-                navigationIcon = { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+                title = { Text(stringResource(R.string.debloat_title)) },
+                navigationIcon = { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back)) } },
             )
         },
         bottomBar = {
             Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 when {
-                    !run.ran -> Button(onClick = {}, enabled = false) { Text(Copy.DISABLING) }
-                    run.failed.isEmpty() -> Button(onClick = back) { Text("Done") }
+                    !run.ran -> Button(onClick = {}, enabled = false) { Text(Copy.DISABLING.resolve()) }
+                    run.failed.isEmpty() -> Button(onClick = back) { Text(stringResource(R.string.screen_done)) }
                     else -> {
-                        TextButton(onClick = back) { Text("Done") }
+                        TextButton(onClick = back) { Text(stringResource(R.string.screen_done)) }
                         val one = run.failed.keys.singleOrNull()?.let { pkg -> run.apps.first { it.packageName == pkg }.label }
-                        Button(onClick = retry) { Text(Copy.tryAgain(one)) }
+                        Button(onClick = retry) { Text(Copy.tryAgain(one).resolve()) }
                     }
                 }
             }
@@ -82,7 +86,7 @@ private fun Progress(run: DebloatRun) {
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
     )
     Text(
-        Copy.disablingApps(run.at, run.apps.size),
+        Copy.disablingApps(run.at, run.apps.size).resolve(),
         style = MaterialTheme.typography.bodyMedium,
         color = c.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
@@ -106,17 +110,17 @@ private fun Progress(run: DebloatRun) {
                     }
                     Spacer(Modifier.width(16.dp))
                     when (mark) {
-                        Mark.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = "Done", tint = c.primary)
+                        Mark.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = stringResource(R.string.screen_done), tint = c.primary)
                         Mark.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                        Mark.Waiting -> Icon(ResetIcons.Waiting, contentDescription = "Waiting", tint = c.onSurfaceVariant)
-                        Mark.Failed -> Icon(Icons.Default.Warning, contentDescription = "Didn't turn off", tint = c.error)
+                        Mark.Waiting -> Icon(ResetIcons.Waiting, contentDescription = stringResource(R.string.screen_waiting), tint = c.onSurfaceVariant)
+                        Mark.Failed -> Icon(Icons.Default.Warning, contentDescription = stringResource(R.string.debloat_failed), tint = c.error)
                     }
                 }
             }
         }
         item {
             Text(
-                Copy.DISABLING_NOTE,
+                Copy.DISABLING_NOTE.resolve(),
                 style = MaterialTheme.typography.bodySmall,
                 color = c.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
@@ -134,11 +138,12 @@ private fun Result(run: DebloatRun) {
     // No "Turned off 0 of n" row with a tick when the TV refused every one.
     val top = if (off > 0) 1 else 0
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        item { ResultHead(ok, if (ok) Copy.DEBLOAT_DONE else Copy.DEBLOAT_PARTLY, Copy.DEBLOAT_RESULT_TEXT) }
-        if (off > 0) item { ResultRow(Copy.turnedOff(off, run.apps.size), null, groupShape(0, top + still.size)) }
-        itemsIndexed(still) { i, a -> ResultRow(Copy.stillOn(a.label), reason(run.failed.getValue(a.packageName)), groupShape(i + top, top + still.size)) }
+        item { ResultHead(ok, if (ok) Copy.DEBLOAT_DONE.resolve() else Copy.DEBLOAT_PARTLY.resolve(), Copy.DEBLOAT_RESULT_TEXT.resolve()) }
+        if (off > 0) item { ResultRow(Copy.turnedOff(off, run.apps.size).resolve(), null, groupShape(0, top + still.size)) }
+        itemsIndexed(still) { i, a -> ResultRow(Copy.stillOn(a.label).resolve(), reason(run.failed.getValue(a.packageName)), groupShape(i + top, top + still.size)) }
     }
 }
 
 /** The TV's reason as a sentence. */
-private fun reason(why: String) = why.replaceFirstChar(Char::uppercase).trimEnd('.') + "."
+@Composable
+private fun reason(why: UiText) = stringResource(R.string.result_reason, UiText.Capitalized(why).resolve().trimEnd('.'))

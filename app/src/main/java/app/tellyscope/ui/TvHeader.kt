@@ -59,6 +59,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -67,10 +68,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.util.lerp
+import app.tellyscope.R
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.deviceKind
+import app.tellyscope.data.resolve
 
 /*
  * The TV's header, shared by the tabs that lead with the TV: the big hero, which collapses as the
@@ -172,7 +175,7 @@ fun TvHero(state: UiState, live: Snapshot?, actions: DeviceActions, chips: Boole
                             Icon(if (health.ok) Icons.Default.CheckCircle else Icons.Default.Warning, null, Modifier.size(16.dp), tint = if (health.ok) c.primary else c.error)
                         } else StateDot(device.state)
                         Spacer(Modifier.width(8.dp))
-                        Text(health?.text ?: Copy.state(device.state), style = MaterialTheme.typography.labelLarge)
+                        Text((health?.text ?: Copy.state(device.state)).resolve(), style = MaterialTheme.typography.labelLarge)
                     }
                 }
             }
@@ -214,7 +217,7 @@ fun TvBarTitle(device: Device, collapse: () -> Float, morph: HeroMorph, modifier
             Row(Modifier.padding(horizontal = 8.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                 StateDot(device.state)
                 Spacer(Modifier.width(6.dp))
-                Text(Copy.state(device.state), style = MaterialTheme.typography.labelMedium)
+                Text(Copy.state(device.state).resolve(), style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -261,7 +264,7 @@ internal fun HeroMorphOverlay(device: Device, morph: HeroMorph, collapse: () -> 
 @Composable
 private fun LoggedOutBadge() {
     Box(Modifier.size(14.dp).clip(CircleShape).background(MaterialTheme.colorScheme.error), contentAlignment = Alignment.Center) {
-        Icon(DeviceIcons.Logout, contentDescription = Copy.LOGGED_OUT, Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onError)
+        Icon(DeviceIcons.Logout, contentDescription = Copy.LOGGED_OUT.resolve(), Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onError)
     }
 }
 
@@ -291,7 +294,7 @@ private fun TvChips(state: UiState, actions: DeviceActions) {
             )
         }
         // Adding a TV sits with the TVs, as the last chip.
-        AssistChip(onClick = actions.addDevice, label = { Text("Device") }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = "Add a", Modifier.size(18.dp)) })
+        AssistChip(onClick = actions.addDevice, label = { Text(stringResource(R.string.header_add_device_label)) }, leadingIcon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.header_add_device_icon), Modifier.size(18.dp)) })
     }
 }
 
@@ -352,8 +355,9 @@ internal fun AppsLoading() {
     Column(Modifier.fillMaxWidth().padding(top = 96.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         ContainedLoadingIndicator(Modifier.size(56.dp))
         Spacer(Modifier.height(16.dp))
-        Text(Copy.READING_APPS, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+        Text(Copy.READING_APPS.resolve(), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
-        Text(Copy.READING_APPS_LINE, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+        Text(Copy.READING_APPS_LINE.resolve(), style
+ = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
     }
 }

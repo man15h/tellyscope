@@ -7,6 +7,7 @@ import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.ResetRecord
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.firstHomeService
 import app.tellyscope.data.historyKey
 import app.tellyscope.data.restoreEach
@@ -250,7 +251,7 @@ class HistoryBookTest {
                 HistoryEntry(calls.toLong(), tv, 0, Action.Enable, pkg, pkg, Action.Disable, null)
             }
         }.exceptionOrNull()
-        assertEquals("turned 2 apps back on, then stopped: the TV refused", e?.message)
+        assertEquals("turned 2 apps back on, then stopped: the TV refused", (e as UiTextException).text.text())
     }
 
     @Test fun aDroppedConnectionStillSaysHowFarItGot() = runTest {
@@ -260,13 +261,13 @@ class HistoryBookTest {
                 HistoryEntry(1, tv, 0, Action.Enable, pkg, pkg, Action.Disable, null)
             }
         }.exceptionOrNull()
-        assertEquals("turned 1 app back on, then stopped: connection reset", e?.message)
+        assertEquals("turned 1 app back on, then stopped: connection reset", (e as UiTextException).text.text())
     }
 
     @Test fun aResetTurnsOnWhatTellyscopeLeftOffAndItsUndoPutsItBack() {
         val book = HistoryBook()
         book.record("tv", 0L, Action.Disable, "com.xgimi.ota", "XGIMI Updates", undo = Action.Enable)
-        val reset = book.record("tv", 1L, Action.Reset, "reset", ResetRecord.label(2), undo = Action.Reset,
+        val reset = book.record("tv", 1L, Action.Reset, "reset", ResetRecord.label(2).text(), undo = Action.Reset,
             previous = mapOf(ResetRecord.ON to "com.xgimi.ota,com.google.android.videos"))
         assertEquals("Reset TV · 2 changes", reset.label)
         assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
@@ -277,11 +278,17 @@ class HistoryBookTest {
 
     @Test fun amendRelabelsAPartlyUndoneReset() {
         val book = HistoryBook()
-        val reset = book.record("tv", 0L, Action.Reset, "reset", ResetRecord.label(3), undo = Action.Reset,
+        val reset = book.record("tv", 0L, Action.Reset, "reset", ResetRecord.label(3).text(), undo = Action.Reset,
             previous = mapOf(ResetRecord.ON to "a.b,c.d", ResetRecord.BACK to "e.f"))
-        book.amend(reset.id, mapOf(ResetRecord.ON to "c.d", ResetRecord.BACK to null), ResetRecord.label(1))
+        book.amend(reset.id, mapOf(ResetRecord.ON to "c.d", ResetRecord.BACK to null), ResetRecord.label(1).text())
         val left = book.entries("tv").single()
         assertEquals("Reset TV · 1 change", left.label)
         assertEquals(1, ResetRecord.changes(left.previous))
+    }
+
+    @Test fun fireResetCountsTheServiceAsHome() {
+        // Fire OS: Home stays Amazon's launcher, so only the launcher's service is recorded.
+        val previous = mapOf(ResetRecord.ON to "a.b", ResetRecord.SERVICE to "g.h/.HomeService")
+        assertEquals(2, ResetRecord.changes(previous))
     }
 }

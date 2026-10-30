@@ -69,6 +69,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -77,13 +78,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.LauncherRelease
 import app.tellyscope.data.PROJECTIVY
 import app.tellyscope.data.PROJECTIVY_RELEASES
+import app.tellyscope.data.UiText
+import app.tellyscope.data.asUiText
 import app.tellyscope.data.isFireOs
+import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
 
 /** The Play Store's package: a TV without it gets no card and no Tweaks row, unless it runs Fire OS ([fireInstall]). */
@@ -149,8 +154,8 @@ data class LauncherActions(
 @Composable
 fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, fire: Boolean = false) {
     HomeNoteCard(
-        Icons.Outlined.Home, Copy.BETTER_HOME, Copy.betterHomeText(current, fire), Copy.NOT_NOW, onNotNow,
-        if (fire) Copy.INSTALL_ONE else Copy.CHOOSE_ONE, onChoose,
+        Icons.Outlined.Home, Copy.BETTER_HOME.resolve(), Copy.betterHomeText(current, fire).resolve(), Copy.NOT_NOW.resolve(), onNotNow,
+        (if (fire) Copy.INSTALL_ONE else Copy.CHOOSE_ONE).resolve(), onChoose,
     )
 }
 
@@ -200,7 +205,7 @@ fun LauncherScreen(
         ServiceDialog(
             app.label, current,
             onTurnOn = { switch(true) },
-            dismissLabel = Copy.SWITCH_WITHOUT, onOther = { switch(false) }, onDismiss = { askService = false },
+            dismissLabel = Copy.SWITCH_WITHOUT.resolve(), onOther = { switch(false) }, onDismiss = { askService = false },
         )
     }
     Scaffold(
@@ -213,12 +218,12 @@ fun LauncherScreen(
                             flow.fireOs -> Copy.INSTALL_PROJECTIVY
                             flow.step == LauncherFlow.Step.Pick -> Copy.CHOOSE_HOME
                             else -> Copy.INSTALL_HOME
-                        },
+                        }.resolve(),
                     )
                 },
                 // Dimmed while it installs: stopping halfway could leave the TV half done.
                 navigationIcon = {
-                    IconButton(onClick = close, enabled = fire?.step != FireInstall.Step.Installing) { Icon(Icons.Default.Close, contentDescription = "Close") }
+                    IconButton(onClick = close, enabled = fire?.step != FireInstall.Step.Installing) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.launcher_close)) }
                 },
             )
         },
@@ -240,36 +245,36 @@ fun LauncherScreen(
                                     Row(Modifier.align(Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(Modifier.width(6.dp))
-                                        Text(Copy.STORE_RECOMMENDED, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Text(Copy.STORE_RECOMMENDED.resolve(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
-                                IconButtonText(OpenInNew, Copy.GET_FROM_STORE, Modifier.fillMaxWidth()) { actions.install(chosen) }
+                                IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth()) { actions.install(chosen) }
                                 if (both) {
-                                    OutlinedButton(onClick = actions.fireCheck, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY) }
+                                    OutlinedButton(onClick = actions.fireCheck, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
                                 }
                             }
                             // Home now, or a TV that can't take it as Home: only Open.
                             !have.home && current != null -> {
-                                TextButton(onClick = { actions.open(chosen) }) { Text(Copy.OPEN) }
-                                IconButtonText(Icons.Outlined.Home, Copy.MAKE_HOME) { if (have.homeService) askService = true else switch(false) }
+                                TextButton(onClick = { actions.open(chosen) }) { Text(Copy.OPEN.resolve()) }
+                                IconButtonText(Icons.Outlined.Home, Copy.MAKE_HOME.resolve()) { if (have.homeService) askService = true else switch(false) }
                             }
-                            else -> IconButtonText(DeviceIcons.Tv, Copy.OPEN) { actions.open(chosen) }
+                            else -> IconButtonText(DeviceIcons.Tv, Copy.OPEN.resolve()) { actions.open(chosen) }
                         }
                     }
-                    LauncherFlow.Step.Waiting -> TextButton(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN) }
+                    LauncherFlow.Step.Waiting -> TextButton(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN.resolve()) }
                     LauncherFlow.Step.Installed -> {
-                        TextButton(onClick = actions.later) { Text(Copy.NOT_NOW) }
+                        TextButton(onClick = actions.later) { Text(Copy.NOT_NOW.resolve()) }
                         Button(onClick = { if (app?.homeService == true) askService = true else actions.switch(false) }, enabled = current != null) {
-                            Text(Copy.confirm(Action.Home))
+                            Text(Copy.confirm(Action.Home).resolve())
                         }
                     }
                     LauncherFlow.Step.NoStore -> {
-                        TextButton(onClick = { actions.chooseAnother(flow.pkg) }) { Text(Copy.CHOOSE_ANOTHER) }
-                        Button(onClick = { actions.install(flow.pkg) }) { Text(Copy.TRY_AGAIN) }
+                        TextButton(onClick = { actions.chooseAnother(flow.pkg) }) { Text(Copy.CHOOSE_ANOTHER.resolve()) }
+                        Button(onClick = { actions.install(flow.pkg) }) { Text(Copy.TRY_AGAIN.resolve()) }
                     }
                     LauncherFlow.Step.Left -> {
-                        TextButton(onClick = { actions.chooseAnother(flow.pkg) }) { Text(Copy.CHOOSE_ANOTHER) }
-                        Button(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN) }
+                        TextButton(onClick = { actions.chooseAnother(flow.pkg) }) { Text(Copy.CHOOSE_ANOTHER.resolve()) }
+                        Button(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN.resolve()) }
                     }
                 }
             }
@@ -288,38 +293,38 @@ fun LauncherScreen(
                 LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, device, actions.firePick) else Picker(chosen, apps, direct) { chosen = it }
                 LauncherFlow.Step.Waiting -> {
                     Hero(LauncherIcons.Download, c.secondaryContainer, c.onSecondaryContainer)
-                    Headed(Copy.INSTALL_IT, bold(Copy.installItText(label), label, "Install"))
+                    Headed(Copy.INSTALL_IT.resolve(), bold(Copy.installItText(label).resolve(), label, stringResource(R.string.launcher_install_word)))
                     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Column {
                                 Text(label, style = MaterialTheme.typography.bodyLarge)
-                                Text(Copy.storeOn(name(device)), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+                                Text(Copy.storeOn(name(device)).resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
                             }
                             WaitingLine()
                         }
                     }
-                    Text(Copy.DOWNLOADS_TAKE, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                    Text(Copy.DOWNLOADS_TAKE.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 }
                 LauncherFlow.Step.Installed -> {
                     Hero(Icons.Default.Check, c.secondaryContainer, c.onSecondaryContainer)
                     val explain = if (app != null && current != null && app.homeInstead != null) {
-                        " " + if (flow.fire != null) Copy.explainFireHome(app.label, app.packageName, current)
-                        else Copy.explainHome(app.label, app.packageName, current, app.homeInstead, app.homeService)
+                        " " + if (flow.fire != null) Copy.explainFireHome(app.label, app.packageName, current).resolve()
+                        else Copy.explainHome(app.label, app.packageName, current, app.homeInstead, app.homeService).resolve()
                     } else {
                         ""
                     }
-                    Headed(Copy.MAKE_IT_HOME, AnnotatedString(Copy.isInstalled(label) + explain))
+                    Headed(Copy.MAKE_IT_HOME.resolve(), AnnotatedString(Copy.isInstalled(label).resolve() + explain))
                 }
                 LauncherFlow.Step.NoStore -> {
                     Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
-                    Headed(Copy.NO_STORE, bold(Copy.noStoreText(name(device), label), label))
+                    Headed(Copy.NO_STORE.resolve(), bold(Copy.noStoreText(name(device), label).resolve(), label))
                     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
                         Box(Modifier.padding(16.dp)) { WaitingLine() }
                     }
                 }
                 LauncherFlow.Step.Left -> {
                     Hero(LauncherIcons.InfoOutline, c.surfaceContainerHighest, c.onSurfaceVariant)
-                    Headed(Copy.notInstalled(label), AnnotatedString(Copy.NOT_INSTALLED_TEXT))
+                    Headed(Copy.notInstalled(label).resolve(), AnnotatedString(Copy.NOT_INSTALLED_TEXT.resolve()))
                 }
             }
         }
@@ -345,17 +350,20 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
     val c = MaterialTheme.colorScheme
     val others = otherLaunchers(apps)
     val canDownload = direct && RECOMMENDED.any { downloadable(it.pkg) && installedLauncher(apps, it.pkg) == null }
-    Text(if (canDownload) Copy.CHOOSE_HOME_TEXT + " " + Copy.CAN_DOWNLOAD else Copy.CHOOSE_HOME_TEXT, style = MaterialTheme.typography.bodyLarge)
+    Text(
+        if (canDownload) Copy.CHOOSE_HOME_TEXT.resolve() + " " + Copy.CAN_DOWNLOAD.resolve() else Copy.CHOOSE_HOME_TEXT.resolve(),
+        style = MaterialTheme.typography.bodyLarge,
+    )
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (others.isNotEmpty()) {
-            Text(Copy.ON_THIS_TV, style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+            Text(Copy.ON_THIS_TV.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
             Column(Modifier.selectableGroup().padding(bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 others.forEachIndexed { i, a ->
                     PickRow(segment(i, others.lastIndex), a.packageName == chosen, a.label, a, vertical = 12.dp, onClick = { onChoose(a.packageName) })
                 }
             }
         }
-        Text(Copy.RECOMMENDED, style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+        Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RECOMMENDED.forEachIndexed { i, l ->
                 PickRow(segment(i, RECOMMENDED.lastIndex), l.pkg == chosen, l.name, installedLauncher(apps, l.pkg), onClick = { onChoose(l.pkg) }) {
@@ -363,13 +371,13 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
                     Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(if (l.accessibility) DeviceIcons.Accessibility else LauncherIcons.Code, null, Modifier.size(14.dp), tint = c.onSurfaceVariant)
                         Spacer(Modifier.width(6.dp))
-                        Text(if (l.accessibility) Copy.USES_SERVICE else Copy.NO_SERVICE, style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
+                        Text(if (l.accessibility) Copy.USES_SERVICE.resolve() else Copy.NO_SERVICE.resolve(), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
                     }
                 }
             }
         }
-        Text(Copy.OTHER_LAUNCHER, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
-        Text(Copy.NOT_AFFILIATED, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+        Text(Copy.OTHER_LAUNCHER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+        Text(Copy.NOT_AFFILIATED.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
     }
 }
 
@@ -377,7 +385,7 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
 @Composable
 private fun FirePick() {
     val c = MaterialTheme.colorScheme
-    Text(Copy.FIRE_INSTALL_TEXT, style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
+    Text(Copy.FIRE_INSTALL_TEXT.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
     val l = RECOMMENDED.firstOrNull { it.pkg == PROJECTIVY } ?: return
     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -386,7 +394,7 @@ private fun FirePick() {
             Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(if (l.accessibility) DeviceIcons.Accessibility else LauncherIcons.Code, null, Modifier.size(14.dp), tint = c.onSurfaceVariant)
                 Spacer(Modifier.width(6.dp))
-                Text(if (l.accessibility) Copy.USES_SERVICE else Copy.NO_SERVICE, style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
+                Text((if (l.accessibility) Copy.USES_SERVICE else Copy.NO_SERVICE).resolve(), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
             }
         }
     }
@@ -410,50 +418,50 @@ private fun FireBody(f: FireInstall, device: Device, onPick: () -> Unit) {
     when (f.step) {
         null, FireInstall.Step.Checking, FireInstall.Step.Confirm -> if (f.store) {
             WarningBadge()
-            Text(Copy.downloadDirectly(label), style = MaterialTheme.typography.headlineMedium)
-            Text(Copy.downloadsFrom(label), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            Text(Copy.downloadDirectly(label).resolve(), style = MaterialTheme.typography.headlineMedium)
+            Text(Copy.downloadsFrom(label).resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             release?.let { SourceRow(it, openPage) }
-            Text(Copy.DIRECT_CHECK, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-            Text(Copy.STORE_SAFER, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            Text(Copy.DIRECT_CHECK.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            Text(Copy.STORE_SAFER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         } else {
             FirePick()
             if (release != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(Copy.WHERE_FROM, style = MaterialTheme.typography.labelLarge, color = c.primary)
+                    Text(Copy.WHERE_FROM.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
                     SourceRow(release, openPage)
                 }
-                Text(Copy.SIGNED_CHECK, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(Copy.SIGNED_CHECK.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
         }
         FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> {
-            Text(Copy.installing(label), style = MaterialTheme.typography.labelLarge, color = c.primary)
+            Text(Copy.installing(label).resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
             FireSteps(f, device)
-            Text(Copy.INSTALL_KEEP_OPEN, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+            Text(Copy.INSTALL_KEEP_OPEN.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
         }
         FireInstall.Step.NotProjectivy -> {
             Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
             Headed(
-                if (f.picked) Copy.NOT_PROJECTIVY_FILE else Copy.NOT_PROJECTIVY,
-                AnnotatedString(if (f.picked) Copy.NOT_PROJECTIVY_FILE_TEXT else Copy.NOT_PROJECTIVY_TEXT),
+                (if (f.picked) Copy.NOT_PROJECTIVY_FILE else Copy.NOT_PROJECTIVY).resolve(),
+                AnnotatedString((if (f.picked) Copy.NOT_PROJECTIVY_FILE_TEXT else Copy.NOT_PROJECTIVY_TEXT).resolve()),
             )
             FireSteps(f, device)
-            if (f.store) Text(Copy.STORE_INSTEAD, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            if (f.store) Text(Copy.STORE_INSTEAD.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         }
         FireInstall.Step.NoDownload -> {
             Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
             val text = if (f.until != null) Copy.noDownloadLimited(clockTime(f.until)) else Copy.NO_DOWNLOAD_OFFLINE
-            Headed(Copy.NO_DOWNLOAD, AnnotatedString(text))
+            Headed(Copy.NO_DOWNLOAD.resolve(), AnnotatedString(text.resolve()))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.OR_YOURSELF, style = MaterialTheme.typography.labelLarge, color = c.primary)
+                Text(Copy.OR_YOURSELF.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
                 Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Numbered(1) {
-                            Text(Copy.YOURSELF_PAGE, style = MaterialTheme.typography.bodyMedium)
+                            Text(Copy.YOURSELF_PAGE.resolve(), style = MaterialTheme.typography.bodyMedium)
                             SourceRow(release, openPage)
                         }
                         Numbered(2) {
-                            Text(Copy.yourselfPick(release?.apk?.substringAfterLast('/')), style = MaterialTheme.typography.bodyMedium)
-                            FilledTonalButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) { Text(Copy.PICK_DOWNLOADED) }
+                            Text(Copy.yourselfPick(release?.apk?.substringAfterLast('/')).resolve(), style = MaterialTheme.typography.bodyMedium)
+                            FilledTonalButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) { Text(Copy.PICK_DOWNLOADED.resolve()) }
                         }
                     }
                 }
@@ -461,7 +469,7 @@ private fun FireBody(f: FireInstall, device: Device, onPick: () -> Unit) {
         }
         FireInstall.Step.Refused -> {
             Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
-            Headed(Copy.cantInstall(label), AnnotatedString(f.error.orEmpty()))
+            Headed(Copy.cantInstall(label).resolve(), AnnotatedString(f.error?.resolve().orEmpty()))
         }
     }
 }
@@ -473,29 +481,29 @@ private fun FireButtons(f: FireInstall, actions: LauncherActions, modifier: Modi
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
-            null, FireInstall.Step.Checking -> IconButtonText(LauncherIcons.Download, Copy.INSTALL_PROJECTIVY, wide, enabled = f.step == null, onClick = actions.fireCheck)
+            null, FireInstall.Step.Checking -> IconButtonText(LauncherIcons.Download, Copy.INSTALL_PROJECTIVY.resolve(), wide, enabled = f.step == null, onClick = actions.fireCheck)
             // The safe way first and filled; the download only as the outlined second.
             FireInstall.Step.Confirm -> if (f.store) {
-                IconButtonText(OpenInNew, Copy.GET_FROM_STORE, wide, onClick = store)
-                OutlinedButton(onClick = actions.fireInstall, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY) }
+                IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
+                OutlinedButton(onClick = actions.fireInstall, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
             } else {
-                IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL, wide, onClick = actions.fireInstall)
+                IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), wide, onClick = actions.fireInstall)
             }
             FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> Unit
             FireInstall.Step.NotProjectivy -> when {
                 f.picked -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                    TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER) }
-                    Button(onClick = actions.fireCheck) { Text(Copy.TRY_DOWNLOAD_AGAIN) }
+                    TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
+                    Button(onClick = actions.fireCheck) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }
                 }
-                f.store -> IconButtonText(OpenInNew, Copy.GET_FROM_STORE, wide, onClick = store)
-                else -> Button(onClick = actions.fireCheck, modifier = wide) { Text(Copy.TRY_AGAIN) }
+                f.store -> IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
+                else -> Button(onClick = actions.fireCheck, modifier = wide) { Text(Copy.TRY_AGAIN.resolve()) }
             }
             FireInstall.Step.NoDownload -> Row(wide, horizontalArrangement = Arrangement.End) {
-                Button(onClick = actions.fireCheck) { Text(Copy.TRY_AGAIN) }
+                Button(onClick = actions.fireCheck) { Text(Copy.TRY_AGAIN.resolve()) }
             }
             FireInstall.Step.Refused -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                if (f.picked) TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER) }
-                Button(onClick = actions.fireDismiss) { Text("OK") }
+                if (f.picked) TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
+                Button(onClick = actions.fireDismiss) { Text(stringResource(R.string.launcher_ok)) }
             }
         }
     }
@@ -562,7 +570,7 @@ private fun FireSteps(f: FireInstall, device: Device) {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun StepLine(n: Int, mark: StepMark, title: String, text: String? = null, below: @Composable () -> Unit = {}) {
+private fun StepLine(n: Int, mark: StepMark, title: UiText, text: UiText? = null, below: @Composable () -> Unit = {}) {
     val c = MaterialTheme.colorScheme
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) {
@@ -580,8 +588,8 @@ private fun StepLine(n: Int, mark: StepMark, title: String, text: String? = null
             }
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = if (mark == StepMark.Todo) c.onSurfaceVariant else c.onSurface)
-            text?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant) }
+            Text(title.resolve(), style = MaterialTheme.typography.bodyLarge, color = if (mark == StepMark.Todo) c.onSurfaceVariant else c.onSurface)
+            text?.let { Text(it.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant) }
             below()
         }
     }
@@ -592,10 +600,10 @@ private fun StepLine(n: Int, mark: StepMark, title: String, text: String? = null
 private fun StopDialog(onKeep: () -> Unit, onStop: () -> Unit) {
     AlertDialog(
         onDismissRequest = onKeep,
-        title = { Text(Copy.STOP_TITLE) },
-        text = { Text(Copy.STOP_TEXT) },
-        confirmButton = { Button(onClick = onKeep) { Text(Copy.KEEP_DOWNLOADING) } },
-        dismissButton = { TextButton(onClick = onStop) { Text(Copy.STOP) } },
+        title = { Text(Copy.STOP_TITLE.resolve()) },
+        text = { Text(Copy.STOP_TEXT.resolve()) },
+        confirmButton = { Button(onClick = onKeep) { Text(Copy.KEEP_DOWNLOADING.resolve()) } },
+        dismissButton = { TextButton(onClick = onStop) { Text(Copy.STOP.resolve()) } },
     )
 }
 
@@ -624,7 +632,7 @@ private fun SourceRow(release: LauncherRelease?, onOpen: () -> Unit) {
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(PROJECTIVY_SOURCE, style = MaterialTheme.typography.bodyMedium, color = c.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(release?.let { Copy.release(it.version, it.size) } ?: Copy.LATEST_RELEASE, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text((release?.let { Copy.release(it.version, it.size) } ?: Copy.LATEST_RELEASE).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
             Spacer(Modifier.width(8.dp))
             Icon(OpenInNew, null, Modifier.size(18.dp), tint = c.primary)
@@ -694,7 +702,7 @@ private fun InstalledChip(home: Boolean) {
         Row(Modifier.height(24.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(if (home) Icons.Outlined.Home else Icons.Default.Check, null, Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
-            Text(if (home) Copy.HOME_NOW else Copy.INSTALLED, style = MaterialTheme.typography.labelMedium)
+            Text(if (home) Copy.HOME_NOW.resolve() else Copy.INSTALLED.resolve(), style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -721,7 +729,7 @@ private fun WaitingLine() {
     Row(verticalAlignment = Alignment.CenterVertically) {
         LoadingIndicator(Modifier.size(24.dp))
         Spacer(Modifier.width(12.dp))
-        Text(Copy.WAITING_INSTALL, style = MaterialTheme.typography.bodyMedium)
+        Text(Copy.WAITING_INSTALL.resolve(), style = MaterialTheme.typography.bodyMedium)
     }
 }
 

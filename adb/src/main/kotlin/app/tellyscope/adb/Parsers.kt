@@ -53,22 +53,6 @@ object Parsers {
     fun uptimeSeconds(procUptime: String): Long? =
         procUptime.trim().substringBefore(' ').toDoubleOrNull()?.toLong()
 
-    /**
-     * Output of [Commands.THERMAL]: `type=millidegrees` lines. Prefers a CPU/SoC zone, otherwise
-     * the hottest plausible one. Null when nothing readable, so the UI shows a dash, never 0.
-     */
-    fun temperatureC(thermal: String): Double? {
-        val zones = thermal.lineSequence().mapNotNull { line ->
-            val type = line.substringBefore('=', "").trim().lowercase()
-            val raw = line.substringAfter('=', "").trim().toDoubleOrNull() ?: return@mapNotNull null
-            val c = if (raw > 1000) raw / 1000 else raw // some kernels report whole degrees
-            if (c in 1.0..150.0) type to c else null
-        }.toList()
-        if (zones.isEmpty()) return null
-        val cpu = zones.filter { (t, _) -> listOf("cpu", "soc", "tsens", "core").any { t.contains(it) } }
-        return (cpu.ifEmpty { zones }).maxOf { it.second }
-    }
-
     data class Package(val name: String, val uid: Int?, val versionCode: Long? = null)
 
     /**

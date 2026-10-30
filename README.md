@@ -3,9 +3,10 @@
 Debloat your Android TV, install apps, and browse and transfer files on it, all from your phone. No root, no PC.
 
 <p>
-  <img src="https://img.shields.io/badge/size-under%203%20MB-00696B" alt="Under 3 MB">
+  <img src="https://img.shields.io/badge/size-3%20MB-00696B" alt="3 MB">
   <img src="https://img.shields.io/badge/tracking-none-00696B" alt="No tracking">
   <img src="https://img.shields.io/badge/root-not%20needed-00696B" alt="No root">
+  <img src="https://img.shields.io/badge/languages-6-00696B" alt="6 languages">
   <img src="https://img.shields.io/badge/license-GPL--3.0-00696B" alt="GPL-3.0">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/man15h/tellyscope?color=00696B&label=release" alt="Latest release"></a>
 </p>
@@ -19,13 +20,13 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 <table>
   <tr>
     <td width="25%"><img src="docs/screenshots/tv-page.png" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons"></td>
-    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, typing on the TV with a backspace key, and a dock of four TV apps along the bottom"></td>
+    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, typing on the TV with a backspace key, and three streaming buttons along the bottom: YouTube, Netflix and Jellyfin"></td>
     <td width="25%"><img src="docs/screenshots/debloat.png" alt="Debloat: the TV's model on top, then the apps it will turn off, each with its package name"></td>
     <td width="25%"><img src="docs/screenshots/install.png" alt="Installing Kodi on the TV from an APK on the phone: the dialog says it is not on this TV yet"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your TV at a glance</sub></td>
-    <td align="center"><sub>Control the TV, dock your apps</sub></td>
+    <td align="center"><sub>Control the TV from your phone</sub></td>
     <td align="center"><sub>Review every app Debloat turns off</sub></td>
     <td align="center"><sub>Install apps</sub></td>
   </tr>
@@ -47,22 +48,30 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 
 ## What it does
 
-Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi-Fi using ADB, the debugging protocol developers use. Shield and Fire TV haven't been tested on real hardware yet.
+Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi-Fi using ADB, the debugging protocol developers use. Tested on Fire TV (Fire OS 8); a few remote keys don't work there yet. NVIDIA Shield hasn't been tested on real hardware yet.
 
-- **Connect.** Finds TVs on your Wi-Fi, or add one by IP. Works with network debugging and with Android 11+ wireless debugging and its pairing code. TVs reconnect by themselves.
-- **See how it's doing.** Free space, CPU, RAM, temperature and network speed, plus what's paired or plugged in. **Advanced monitor** has CPU and RAM by app, processes, network and data used.
-- **Debloat.** Matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv)) and shows every app it will turn off before it does. Untick anything you use. No list for your model? Pick from the maker's lists, or by hand.
+- **Connect.** Finds TVs on your Wi-Fi, looking again every 10 seconds or when you tap **Rescan**, or add one by IP. Works with network debugging and with Android 11+ wireless debugging and its pairing code. TVs reconnect by themselves.
+- **See how it's doing.** Free space, CPU, RAM and network speed, plus what's paired or plugged in. **Advanced monitor** has CPU and RAM by app, processes, network and data used.
+- **Debloat.** Matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv)) and shows every app it will turn off before it does. Untick anything you use, or a whole group from its heading, then watch each app turn off. No list for your model? Pick from the maker's lists, or by hand.
 - **Apps.** See what's running and what's on the TV. Turn off apps you don't want, turn them back on any time, and uninstall the ones you added yourself.
-- **Install apps.** From an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone. It says first whether it's new, an update or an older version.
-- **A better home screen.** On TVs with the Play Store, pick a recommended launcher (Projectivy, AT4K, Dispatch or FLauncher), install it and make it Home. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes.
+- **Install apps.** From an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone; the picker opens in Downloads and shows only apps. It says first whether it's new, an update or an older version.
+- **A better home screen.** Install Projectivy or FLauncher and make it Home. Android TV installs it from the TV's Play Store, or Projectivy can be downloaded directly after a warning. Fire TV has no Play Store, so Tellyscope downloads Projectivy from its developer's GitHub releases and installs it only if its signature matches. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes.
 - **Send files.** To and from the TV's Download and Movies folders.
-- **Remote.** D-pad, Back, Home, Menu, mute and volume, typing on the TV, a dock of up to four apps, restart the TV, and **Screen off** for music with the picture off (Android 13 or older).
+- **Remote.** D-pad, Back, Home, Menu, mute and volume, typing on the TV, buttons that open Netflix, YouTube, Plex and 20 more streaming apps (hold one to pick up to three), restart the TV, and **Screen off** for music with the picture off (Android 13 or older).
+- **Reset TV.** In ⋮: turn the TV back to how it shipped, with one Undo. Preinstalled apps come back on, uninstalled ones too, and the TV's own launcher is Home again; apps the maker shipped off stay off.
 - **Tweaks.** Block ads with Private DNS, faster animations, clear caches, take a screenshot.
 - **Who has access.** See every computer the TV allows over ADB, remove all but this phone, and answer the TV's "Allow debugging?" prompt from your phone.
 
 <img src="docs/screenshots/clean-home.jpg" alt="A TV home screen after debloating: the inputs and the user's own apps, with no ads or suggestions" width="100%">
 
 <sub>A TV after Tellyscope.</sub>
+
+## Languages
+
+English, Español, 简体中文, 日本語, Русский and हिन्दी.
+
+- Tellyscope follows your phone's language. On Android 13 or newer you can also pick one just for Tellyscope in **Settings → Apps → Tellyscope → Language**.
+- The translations are machine-made. Corrections are welcome as a PR to `app/src/main/res/values-<lang>/strings.xml`.
 
 ## Safety rules
 
@@ -74,7 +83,7 @@ Debloating a TV can break it if done carelessly. Tellyscope keeps to these rules
 4. **You see it first.** Every change names the apps it touches and asks before it runs.
 5. **No root, no exploits.** Only what ADB allows on a stock TV.
 6. **Nothing left on the TV.** Two small helpers run from `/data/local/tmp`: one reads app names and icons and is deleted at once, the other runs the Remote and is deleted when the Remote closes.
-7. **Private.** No ads, tracking or accounts. The only internet requests fetch the debloat lists from GitHub (or [your own fork](CONTRIBUTING.md#using-your-own-lists)) and check for a new version every 30 minutes, which you can turn off in Settings. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
+7. **Private.** No ads, tracking or accounts. The only internet requests fetch the shared lists from GitHub (debloat lists, launchers, app names and streaming services with their logos, or [your own fork](CONTRIBUTING.md#using-your-own-lists)), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
 
 ## Get it
 

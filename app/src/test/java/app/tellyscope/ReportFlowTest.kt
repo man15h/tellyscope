@@ -92,7 +92,7 @@ class ReportFlowTest {
         vm.openReport(ReportKind.Problem, "Tried to install Kodi", said = "INSTALL_FAILED_UPDATE_INCOMPATIBLE")
         val r = vm.state.value.report!!
         assertEquals("Tried to install Kodi", r.details)
-        assertEquals(listOf("00:00:00 " + Copy.cantOpen("Kodi"), "The TV said: INSTALL_FAILED_UPDATE_INCOMPATIBLE"), r.log!!.lines().map { it.replaceFirst(Regex("^\\d\\d:\\d\\d:\\d\\d"), "00:00:00") })
+        assertEquals(listOf("00:00:00 " + Copy.cantOpen("Kodi").text(), "The TV said: INSTALL_FAILED_UPDATE_INCOMPATIBLE"), r.log!!.text().lines().map { it.replaceFirst(Regex("^\\d\\d:\\d\\d:\\d\\d"), "00:00:00") })
     }
 
     @Test fun withNoTvOnlineItSaysItCouldNotConnect() = with(test) {

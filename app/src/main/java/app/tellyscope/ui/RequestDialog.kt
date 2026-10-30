@@ -30,8 +30,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.adb.ConnectionRequest
+import app.tellyscope.data.resolve
 
 /**
  * The TV's "Allow debugging?" prompt, answered from the phone, as a dialog like the TV's own. The
@@ -52,10 +55,10 @@ fun RequestDialog(
     AlertDialog(
         onDismissRequest = { if (!busy) dismiss() },
         icon = { Icon(AccessIcons.Shield, contentDescription = null) },
-        title = { Text(Copy.REQUEST_TITLE) },
+        title = { Text(Copy.REQUEST_TITLE.resolve()) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.REQUEST_TEXT)
+                Text(Copy.REQUEST_TEXT.resolve())
                 // Eight pairs a line, so a pair is never split when comparing it with the other device.
                 Text(
                     request.fingerprint.split(':').chunked(8).joinToString("\n") { it.joinToString(":") },
@@ -68,14 +71,14 @@ fun RequestDialog(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(checked = always, onCheckedChange = null, enabled = !busy)
-                    Text(Copy.REQUEST_ALWAYS, Modifier.padding(start = 8.dp))
+                    Text(Copy.REQUEST_ALWAYS.resolve(), Modifier.padding(start = 8.dp))
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { answer(true, always && request.canAlwaysAllow) }, enabled = !busy) { Text(Copy.REQUEST_ALLOW) }
+            Button(onClick = { answer(true, always && request.canAlwaysAllow) }, enabled = !busy) { Text(Copy.REQUEST_ALLOW.resolve()) }
         },
-        dismissButton = { TextButton(onClick = { answer(false, false) }, enabled = !busy) { Text(Copy.REQUEST_DENY) } },
+        dismissButton = { TextButton(onClick = { answer(false, false) }, enabled = !busy) { Text(Copy.REQUEST_DENY.resolve()) } },
     )
 }
 
@@ -90,19 +93,19 @@ private fun BehindAlertDialog(busy: Boolean, closeAlert: () -> Unit, dismiss: ()
     AlertDialog(
         onDismissRequest = { if (!busy) dismiss() },
         icon = { Icon(AccessIcons.Shield, contentDescription = null) },
-        title = { Text(Copy.REQUEST_TITLE) },
+        title = { Text(Copy.REQUEST_TITLE.resolve()) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.REQUEST_BEHIND_ALERT)
-                Text(Copy.REQUEST_THEN)
+                Text(Copy.REQUEST_BEHIND_ALERT.resolve())
+                Text(Copy.REQUEST_THEN.resolve())
                 Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     LoadingIndicator(Modifier.size(24.dp))
                     Spacer(Modifier.width(12.dp))
-                    Text(Copy.REQUEST_WAITING, style = MaterialTheme.typography.bodyMedium)
+                    Text(Copy.REQUEST_WAITING.resolve(), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },
-        confirmButton = { FilledTonalButton(onClick = closeAlert, enabled = !busy) { Text(Copy.PRESS_OK) } },
-        dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text("Close") } },
+        confirmButton = { FilledTonalButton(onClick = closeAlert, enabled = !busy) { Text(Copy.PRESS_OK.resolve()) } },
+        dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(stringResource(R.string.request_close)) } },
     )
 }

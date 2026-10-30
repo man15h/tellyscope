@@ -34,10 +34,13 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.resolve
 
 /** The launchers the Home screen card lists: the one on Home, then the ones the user added, then the TV's own. */
 internal fun homeLaunchers(apps: List<AppInfo>): List<AppInfo> =
@@ -71,7 +74,7 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false)
     val locked = ui.busy != null
     if (launchers.any { it.packageName == ui.busy }) LinearProgressIndicator(Modifier.fillMaxWidth())
     if (current != null) {
-        Text(Copy.opensOnHome(current.label), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(Copy.opensOnHome(current.label).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
         NoDefaultBanner()
     }
@@ -88,9 +91,9 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false)
     // Only before a launcher was added: after that, the rows above are the way to switch.
     if (launchers.none { !it.system } && (hasPlayStore(ui.apps) || fire)) {
         Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(Copy.GET_LAUNCHER, style = MaterialTheme.typography.bodyLarge)
-            Text(if (fire) Copy.GET_PROJECTIVY_TEXT else Copy.GET_LAUNCHER_TEXT, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FilledTonalButton(onClick = actions.installLauncher, enabled = !locked) { Text(Copy.GET_LAUNCHER) }
+            Text(Copy.GET_LAUNCHER.resolve(), style = MaterialTheme.typography.bodyLarge)
+            Text((if (fire) Copy.GET_PROJECTIVY_TEXT else Copy.GET_LAUNCHER_TEXT).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FilledTonalButton(onClick = actions.installLauncher, enabled = !locked) { Text(Copy.GET_LAUNCHER.resolve()) }
         }
     }
     val (pkg, action) = ui.pending ?: return
@@ -114,7 +117,7 @@ private fun NoDefaultBanner() {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(HubIcons.InfoOutline, contentDescription = null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
             Spacer(Modifier.width(8.dp))
-            Text(Copy.NO_DEFAULT, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(Copy.NO_DEFAULT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
         }
     }
 }
@@ -124,9 +127,9 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
     var turningOn by rememberSaveable(app.packageName) { mutableStateOf(false) }
     if (turningOn && app.homeServiceOff) {
         ServiceDialog(
-            app.label, app.homeBack ?: Copy.TV_OWN_LAUNCHER,
+            app.label, app.homeBack ?: Copy.TV_OWN_LAUNCHER.resolve(),
             onTurnOn = { turningOn = false; onServiceOn() },
-            dismissLabel = Copy.NOT_NOW, onOther = { turningOn = false }, onDismiss = { turningOn = false },
+            dismissLabel = Copy.NOT_NOW.resolve(), onOther = { turningOn = false }, onDismiss = { turningOn = false },
         )
     }
     Column {
@@ -136,7 +139,7 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
             Column(Modifier.weight(1f)) {
                 Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
-                    if (app.system) Copy.builtIn(off = !app.enabled) else Copy.ADDED,
+                    if (app.system) Copy.builtIn(off = !app.enabled).resolve() else Copy.ADDED.resolve(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -144,7 +147,7 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(DeviceIcons.Accessibility, contentDescription = null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(4.dp))
-                        Text(if (app.homeServiceOff) Copy.SERVICE_OFF else Copy.KEEPS_HOME, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (app.homeServiceOff) Copy.SERVICE_OFF.resolve() else Copy.KEEPS_HOME.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -152,7 +155,7 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
                 Row(Modifier.padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(HubIcons.CheckCircleOutline, contentDescription = null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(4.dp))
-                    Text(Copy.CURRENT, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Text(Copy.CURRENT.resolve(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -160,9 +163,9 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
         val serviceOn = app.home && app.homeServiceOff
         if (move != null || serviceOn || app.removable) {
             Row(Modifier.padding(start = 52.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (move != null) FilledTonalButton(onClick = { onMove(move) }, enabled = !locked) { Text(Copy.MAKE_HOME) }
-                if (serviceOn) FilledTonalButton(onClick = { turningOn = true }, enabled = !locked) { Text(Copy.TURN_ON) }
-                if (app.removable) TextButton(onClick = onUninstall, enabled = !locked) { Text(Copy.button(Action.Uninstall)) }
+                if (move != null) FilledTonalButton(onClick = { onMove(move) }, enabled = !locked) { Text(Copy.MAKE_HOME.resolve()) }
+                if (serviceOn) FilledTonalButton(onClick = { turningOn = true }, enabled = !locked) { Text(Copy.TURN_ON.resolve()) }
+                if (app.removable) TextButton(onClick = onUninstall, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
             }
         }
     }
@@ -179,26 +182,26 @@ private fun MakeHomeDialog(app: AppInfo, action: Action, current: AppInfo?, apps
     var askService by remember(app.packageName) { mutableStateOf(false) }
     if (askService) {
         ServiceDialog(
-            app.label, current?.label ?: replaced ?: Copy.TV_OWN_LAUNCHER,
+            app.label, current?.label ?: replaced ?: Copy.TV_OWN_LAUNCHER.resolve(),
             onTurnOn = { actions.confirmHome(true) },
-            dismissLabel = Copy.SWITCH_WITHOUT, onOther = { actions.confirmHome(false) }, onDismiss = { askService = false },
+            dismissLabel = Copy.SWITCH_WITHOUT.resolve(), onOther = { actions.confirmHome(false) }, onDismiss = { askService = false },
         )
         return
     }
     val currentService = current != null && current.homeService && !current.homeServiceOff
     val text = when {
-        action == Action.HomeBack && current != null -> Copy.explainLeave(app.label, off = !app.enabled, current.label, currentService, service = false)
-        fire && action == Action.Home && app.homeService && current != null -> Copy.explainFireHome(app.label, app.packageName, current.label)
-        current != null && !current.system -> Copy.explainLeave(app.label, off = false, current.label, currentService, app.homeService)
-        replaced != null && app.homeInstead != null -> Copy.explainReplace(app.label, replaced, app.homeInstead, app.homeService)
-        else -> Copy.explainFirstHome(app.label, app.packageName, app.homeService)
+        action == Action.HomeBack && current != null -> Copy.explainLeave(app.label, off = !app.enabled, current.label, currentService, service = false).resolve()
+        fire && action == Action.Home && app.homeService && current != null -> Copy.explainFireHome(app.label, app.packageName, current.label).resolve()
+        current != null && !current.system -> Copy.explainLeave(app.label, off = false, current.label, currentService, app.homeService).resolve()
+        replaced != null && app.homeInstead != null -> Copy.explainReplace(app.label, replaced, app.homeInstead, app.homeService).resolve()
+        else -> Copy.explainFirstHome(app.label, app.packageName, app.homeService).resolve()
     }
     AlertDialog(
         onDismissRequest = actions.cancel,
-        title = { Text(Copy.makeHomeTitle(app.label)) },
+        title = { Text(Copy.makeHomeTitle(app.label).resolve()) },
         text = { Text(text) },
-        confirmButton = { Button(onClick = if (asks) ({ askService = true }) else actions.confirm, enabled = !locked) { Text(Copy.MAKE_HOME) } },
-        dismissButton = { TextButton(onClick = actions.cancel) { Text("Cancel") } },
+        confirmButton = { Button(onClick = if (asks) ({ askService = true }) else actions.confirm, enabled = !locked) { Text(Copy.MAKE_HOME.resolve()) } },
+        dismissButton = { TextButton(onClick = actions.cancel) { Text(stringResource(R.string.screen_cancel)) } },
     )
 }
 

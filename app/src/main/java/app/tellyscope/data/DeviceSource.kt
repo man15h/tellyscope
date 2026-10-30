@@ -33,6 +33,9 @@ interface DeviceSource {
     /** Emits whenever the phone is on a Wi-Fi or Ethernet network a [scan] can sweep. */
     fun lanUp(): Flow<Unit> = emptyFlow()
 
+    /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
+    fun onLan(): Boolean = true
+
     /** Classic connect. Suspends while the TV shows the Allow prompt; the caller owns the timeout. */
     suspend fun connect(hit: ScanHit): ConnectResult
 

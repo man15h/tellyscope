@@ -50,10 +50,13 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.resolve
 
 /**
  * Every change Tellyscope made on the TV, newest first, each with its Undo, and Restore everything
@@ -76,12 +79,12 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text(Copy.HISTORY)
+                        Text(Copy.HISTORY.resolve())
                         Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back_to_tv)) }
                 },
             )
         },
@@ -91,7 +94,7 @@ fun HistoryScreen(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
         ) {
             item {
-                if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, "Nothing changed yet", "Anything you stop, disable or turn on shows up here, with a way to undo it.")
+                if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, stringResource(R.string.history_empty_title), stringResource(R.string.history_empty_text))
                 else HistoryList(ui.history, state.clock(), onUndo, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
             }
         }
@@ -126,16 +129,16 @@ internal fun HistoryList(
                 shape = MaterialTheme.shapes.large,
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(Copy.stillOffTitle(off), style = MaterialTheme.typography.titleSmall)
-                    Text(Copy.STILL_OFF_TEXT, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(Copy.stillOffTitle(off).resolve(), style = MaterialTheme.typography.titleSmall)
+                    Text(Copy.STILL_OFF_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.size(8.dp))
                     FilledTonalButton(onClick = { confirming = true }, enabled = !busy) {
                         if (restoring) {
                             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(8.dp))
-                            Text("Turning apps back on…")
+                            Text(stringResource(R.string.history_restoring))
                         } else {
-                            Text("Restore everything ($off)")
+                            Text(stringResource(R.string.history_restore_all, off))
                         }
                     }
                 }
@@ -147,8 +150,8 @@ internal fun HistoryList(
                     Icon(HistoryIcons.of(h.action), contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(Copy.done(h.action, h.label), style = MaterialTheme.typography.bodyLarge)
-                        Text(Copy.ago(h.at, now), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(Copy.done(h.action, h.label).resolve(), style = MaterialTheme.typography.bodyLarge)
+                        Text(Copy.ago(h.at, now).resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     when {
                         // Same button as Undo, switched off: the row keeps its shape and reads as done.
@@ -159,9 +162,9 @@ internal fun HistoryList(
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("Undone")
+                            Text(stringResource(R.string.history_undone))
                         }
-                        h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo)) }
+                        h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo).resolve()) }
                     }
                 }
             }

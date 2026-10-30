@@ -14,31 +14,40 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Update
 
-/** A newer release is out. Get it opens its GitHub page; the app never downloads it itself. */
+/**
+ * A newer release is out. Download APK opens the release's APK in the browser, which downloads it
+ * for Android's installer; Check release opens its GitHub page.
+ */
 @Composable
-fun UpdateDialog(update: Update, onGet: () -> Unit, onLater: () -> Unit, onSkip: () -> Unit) {
+fun UpdateDialog(update: Update, onDownload: () -> Unit, onRelease: () -> Unit, onCancel: () -> Unit) {
     AlertDialog(
-        onDismissRequest = onLater,
-        title = { Text("🎉 Tellyscope ${update.version} is out") },
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.update_title, update.version)) },
         text = {
             Column(Modifier.heightIn(max = 320.dp).verticalScroll(rememberScrollState())) {
-                Text(boldSpans(dialogNotes(update.notes).ifEmpty { "No release notes." }), style = MaterialTheme.typography.bodyMedium)
+                Text(boldSpans(dialogNotes(update.notes, stringResource(R.string.update_more_notes)).ifEmpty { stringResource(R.string.update_no_notes) }), style = MaterialTheme.typography.bodyMedium)
             }
         },
-        // Three actions stack full width.
+        // Three actions stack full width; without an APK this build can install, only its page is left.
         confirmButton = {
             Column(Modifier.fillMaxWidth()) {
-                Button(onClick = onGet, Modifier.fillMaxWidth()) { Text("Get it") }
-                TextButton(onClick = onSkip, Modifier.fillMaxWidth()) { Text("Skip this version") }
-                TextButton(onClick = onLater, Modifier.fillMaxWidth()) { Text("Later") }
+                if (update.apk != null) {
+                    Button(onClick = onDownload, Modifier.fillMaxWidth()) { Text(stringResource(R.string.update_download)) }
+                    TextButton(onClick = onRelease, Modifier.fillMaxWidth()) { Text(stringResource(R.string.update_release)) }
+                } else {
+                    Button(onClick = onRelease, Modifier.fillMaxWidth()) { Text(stringResource(R.string.update_release)) }
+                }
+                TextButton(onClick = onCancel, Modifier.fillMaxWidth()) { Text(stringResource(R.string.update_cancel)) }
             }
         },
     )
@@ -46,13 +55,13 @@ fun UpdateDialog(update: Update, onGet: () -> Unit, onLater: () -> Unit, onSkip:
 
 /**
  * release.yml's body as plain lines: the CHANGELOG part (prod) or the alpha line, without the
- * commit list, code ticks or the trailing PR links, capped at [max] lines. `**` stays for [boldSpans].
+ * commit list, code ticks or the trailing PR links, capped at [max] lines, then [more]. `**` stays for [boldSpans].
  */
-internal fun dialogNotes(body: String, max: Int = 12): String {
+internal fun dialogNotes(body: String, more: String, max: Int = 12): String {
     val lines = body.substringBefore("### Commits").lines()
         .map { it.replace("`", "").replace(PR_LINK, "").trimEnd() }
         .filter { it.isNotBlank() }
-    return (if (lines.size > max) lines.take(max) + "…and more on GitHub" else lines).joinToString("\n")
+    return (if (lines.size > max) lines.take(max) + more else lines).joinToString("\n")
 }
 
 private val PR_LINK = Regex("""\s*\[#\d+]\([^)]*\)\s*$""")

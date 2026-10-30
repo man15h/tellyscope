@@ -60,7 +60,7 @@ class LoggedOutTest {
     @Test fun anotherTvLoggingOutSaysSoAndViewOpensIt() {
         watch(selected = "kitchen")
         logOut("projector")
-        compose.onNodeWithText(Copy.loggedOutOf("Projector")).assertExists()
+        compose.onNodeWithText(Copy.loggedOutOf("Projector").text()).assertExists()
         compose.onNodeWithText("View").performClick()
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals("projector", viewed)
@@ -69,14 +69,14 @@ class LoggedOutTest {
     @Test fun theTvOnScreenGetsThePageNotASnackbar() {
         watch(selected = "projector")
         logOut("projector")
-        compose.onNodeWithText(Copy.loggedOutOf("Projector")).assertDoesNotExist()
+        compose.onNodeWithText(Copy.loggedOutOf("Projector").text()).assertDoesNotExist()
     }
 
     @Test fun alreadyLoggedOutAtLaunchGetsNoSnackbar() {
         devices.value = listOf(tv("projector", "Projector", loggedOutAt = 1L), tv("kitchen", "Kitchen"))
         watch(selected = "kitchen")
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText(Copy.loggedOutOf("Projector")).assertDoesNotExist()
+        compose.onNodeWithText(Copy.loggedOutOf("Projector").text()).assertDoesNotExist()
     }
 
     @Test fun connectAgainLeavesThePage() {
@@ -90,11 +90,11 @@ class LoggedOutTest {
 
     @Test fun timeLineSaysWhen() {
         val hour = 3_600_000L
-        assertEquals("Logged out just now", Copy.loggedOutAt(0L, 60_000L))
-        assertEquals("Logged out yesterday", Copy.loggedOutAt(0L, 30 * hour))
-        assertEquals("Logged out 3 days ago", Copy.loggedOutAt(0L, 80 * hour))
+        assertEquals("Logged out just now", Copy.loggedOutAt(0L, 60_000L).text())
+        assertEquals("Logged out yesterday", Copy.loggedOutAt(0L, 30 * hour).text())
+        assertEquals("Logged out 3 days ago", Copy.loggedOutAt(0L, 80 * hour).text())
         // A day is a calendar day: 23:00 is "yesterday" at 09:00 the next morning, ten hours on.
         val lateEvening = LocalDate.of(2026, 10, 25).atTime(23, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-        assertEquals("Logged out yesterday", Copy.loggedOutAt(lateEvening, lateEvening + 10 * hour))
+        assertEquals("Logged out yesterday", Copy.loggedOutAt(lateEvening, lateEvening + 10 * hour).text())
     }
 }

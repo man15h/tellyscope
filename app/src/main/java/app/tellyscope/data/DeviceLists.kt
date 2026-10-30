@@ -2,6 +2,7 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -406,7 +407,7 @@ data class SharedFiles(val launchers: String?, val labels: String?, val streamin
 
 enum class SourceResult { Ok, NotHttps, Unreachable, NotAList }
 
-const val NOT_A_LIST = "this source isn't a Tellyscope list"
+val NOT_A_LIST: UiText = UiText(R.string.data_lists_not_a_list)
 
 /**
  * An `https://` folder address ending in `/`, or null for anything else. A pasted `index.json`

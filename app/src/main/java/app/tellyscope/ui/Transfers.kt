@@ -50,6 +50,10 @@ import app.tellyscope.adb.InstallKind
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.ui.theme.SmallNumber
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import app.tellyscope.R
+import app.tellyscope.data.resolve
 
 /**
  * Both dialogs here close only through their own buttons: a tap outside or Back would otherwise
@@ -65,20 +69,20 @@ internal val Sticky = DialogProperties(dismissOnBackPress = false, dismissOnClic
 @Composable
 fun ActionTiles(actions: DeviceActions, count: Int, todo: Boolean, disabling: Boolean, onDebloat: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(Icons.Default.Add, "Install app", actions.pickApp, Modifier.weight(1f))
+        Tile(Icons.Default.Add, stringResource(R.string.transfers_install_app), actions.pickApp, Modifier.weight(1f))
         Tile(
-            Broom, if (disabling) "Disabling…" else "Debloat", onDebloat, Modifier.weight(1f),
+            Broom, if (disabling) stringResource(R.string.transfers_disabling) else stringResource(R.string.transfers_debloat), onDebloat, Modifier.weight(1f),
             enabled = !disabling, primary = todo, badge = count.takeIf { todo && it > 0 },
         )
         // Where the file lands is the user's choice, every time, not whatever folder was last shown.
         var choosing by remember { mutableStateOf(false) }
         Box(Modifier.weight(1f)) {
             @Suppress("DEPRECATION") // the AutoMirrored set isn't in icons-core
-            Tile(Icons.Default.Send, "Send file", { choosing = true }, Modifier.fillMaxWidth())
+            Tile(Icons.Default.Send, stringResource(R.string.transfers_send_file), { choosing = true }, Modifier.fillMaxWidth())
             DropdownMenu(choosing, onDismissRequest = { choosing = false }) {
                 TvFolder.entries.forEach { f ->
                     DropdownMenuItem(
-                        text = { Text("To ${Copy.folder(f)}") },
+                        text = { Text(stringResource(R.string.transfers_to_folder, Copy.folder(f).resolve())) },
                         onClick = { choosing = false; actions.pickFile(f) },
                     )
                 }
@@ -149,11 +153,11 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
             LoadingIndicator(Modifier.size(32.dp))
         }
-        files.error != null -> Muted(files.error)
+        files.error != null -> Muted(files.error.resolve())
         else -> {
             list.forEach { f -> FileRow(f, now) { actions.saveFile(f) } }
             // Only with files to tap; an empty folder shows its own page instead.
-            if (list.isNotEmpty()) Muted("Tap a file to save a copy on your phone.")
+            if (list.isNotEmpty()) Muted(stringResource(R.string.transfers_tap_to_save))
         }
     }
 }
@@ -167,12 +171,12 @@ private fun FileRow(f: TvFile, now: Long, onSave: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(f.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
             Text(
-                "${Copy.bytes(f.size)} · ${Copy.ago(f.modifiedMillis, now)}",
+                "${Copy.bytes(f.size).resolve()} · ${Copy.ago(f.modifiedMillis, now).resolve()}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        TextButton(onClick = onSave) { Text("Save") }
+        TextButton(onClick = onSave) { Text(stringResource(R.string.transfers_save)) }
     }
 }
 
@@ -197,9 +201,9 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
         title = {
             Text(
                 when (s.step) {
-                    SideloadUi.Step.Reading -> "Reading the app"
-                    SideloadUi.Step.Failed -> app?.let { "Couldn't install ${it.label}" } ?: "Can't install that"
-                    SideloadUi.Step.Installed -> Copy.installed(kind ?: InstallKind.NEW, app?.label.orEmpty())
+                    SideloadUi.Step.Reading -> stringResource(R.string.transfers_reading)
+                    SideloadUi.Step.Failed -> app?.let { stringResource(R.string.transfers_install_failed, it.label) } ?: stringResource(R.string.transfers_cant_install)
+                    SideloadUi.Step.Installed -> Copy.installed(kind ?: InstallKind.NEW, app?.label.orEmpty()).resolve()
                     else -> app?.label.orEmpty()
                 },
             )
@@ -214,9 +218,9 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                         Text(app.info.packageName, style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             listOfNotNull(
-                                "Version ${app.info.versionName ?: app.info.versionCode}",
-                                Copy.bytes(app.sizeBytes),
-                                if (app.files.size > 1) "${app.files.size} parts" else null,
+                                stringResource(R.string.transfers_version, app.info.versionName ?: app.info.versionCode),
+                                Copy.bytes(app.sizeBytes).resolve(),
+                                if (app.files.size > 1) pluralStringResource(R.plurals.transfers_parts, app.files.size, app.files.size) else null,
                             ).joinToString(" · "),
                             style = SmallNumber,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -225,7 +229,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                 }
                 when (s.step) {
                     SideloadUi.Step.Ready -> if (kind != null) {
-                        Text(Copy.installKind(kind, s.installed?.versionName, app?.info?.versionName), style = MaterialTheme.typography.bodyMedium)
+                        Text(Copy.installKind(kind, s.installed?.versionName, app?.info?.versionName).resolve(), style = MaterialTheme.typography.bodyMedium)
                         if (kind == InstallKind.DOWNGRADE) {
                             Row(
                                 Modifier.fillMaxWidth().clickable { actions.allowDowngrade(!s.allowDowngrade) },
@@ -233,7 +237,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                             ) {
                                 Checkbox(s.allowDowngrade, onCheckedChange = null)
                                 Spacer(Modifier.width(12.dp))
-                                Text(Copy.ALLOW_DOWNGRADE, style = MaterialTheme.typography.bodyMedium)
+                                Text(Copy.ALLOW_DOWNGRADE.resolve(), style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
@@ -244,15 +248,15 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                         if (sending) LinearWavyProgressIndicator(progress = { f }, Modifier.fillMaxWidth())
                         else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
                         Text(
-                            if (sending) "Sending to the TV · ${(f * 100).toInt()}%" else "Installing on the TV…",
+                            if (sending) stringResource(R.string.transfers_sending_percent, (f * 100).toInt()) else stringResource(R.string.transfers_installing),
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        Muted(Copy.INSTALL_KEEP_OPEN)
+                        Muted(Copy.INSTALL_KEEP_OPEN.resolve())
                     }
                     SideloadUi.Step.Failed -> {
-                        Text(s.error.orEmpty(), style = MaterialTheme.typography.bodyMedium)
+                        Text(s.error?.resolve().orEmpty(), style = MaterialTheme.typography.bodyMedium)
                         s.detail?.takeIf { it.isNotBlank() }?.let {
-                            Text("The TV said: $it", style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(R.string.transfers_tv_said, it), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
                         }
                     }
                     else -> Unit
@@ -264,17 +268,17 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                 SideloadUi.Step.Ready -> if (kind != null) Button(
                     onClick = actions.install,
                     enabled = kind != InstallKind.DOWNGRADE || s.allowDowngrade,
-                ) { Text(Copy.installButton(kind)) }
-                SideloadUi.Step.Installed -> Button(onClick = actions.openInstalled) { Text("Open on TV") }
-                SideloadUi.Step.Failed -> Button(onClick = actions.closeSideload) { Text("OK") }
+                ) { Text(Copy.installButton(kind).resolve()) }
+                SideloadUi.Step.Installed -> Button(onClick = actions.openInstalled) { Text(stringResource(R.string.transfers_open_on_tv)) }
+                SideloadUi.Step.Failed -> Button(onClick = actions.closeSideload) { Text(stringResource(R.string.transfers_ok)) }
                 else -> Unit
             }
         },
         dismissButton = {
             when (s.step) {
-                SideloadUi.Step.Reading, SideloadUi.Step.Ready -> TextButton(onClick = actions.closeSideload) { Text("Cancel") }
-                SideloadUi.Step.Installed -> TextButton(onClick = actions.closeSideload) { Text("Done") }
-                SideloadUi.Step.Failed -> TextButton(onClick = { actions.reportInstall(s) }) { Text("Report a problem") }
+                SideloadUi.Step.Reading, SideloadUi.Step.Ready -> TextButton(onClick = actions.closeSideload) { Text(stringResource(R.string.transfers_cancel)) }
+                SideloadUi.Step.Installed -> TextButton(onClick = actions.closeSideload) { Text(stringResource(R.string.transfers_done)) }
+                SideloadUi.Step.Failed -> TextButton(onClick = { actions.reportInstall(s) }) { Text(stringResource(R.string.transfers_report)) }
                 else -> Unit
             }
         },
@@ -288,7 +292,7 @@ fun TransferDialog(t: TransferUi, onCancel: () -> Unit) {
     AlertDialog(
         onDismissRequest = {},
         properties = Sticky,
-        title = { Text(if (t.toTv) "Sending to ${Copy.folder(t.folder)}" else "Saving to your phone") },
+        title = { Text(if (t.toTv) stringResource(R.string.transfers_sending_to, Copy.folder(t.folder).resolve()) else stringResource(R.string.transfers_saving)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(t.name, style = MaterialTheme.typography.bodyLarge, maxLines = 2, overflow = TextOverflow.MiddleEllipsis)
@@ -296,13 +300,13 @@ fun TransferDialog(t: TransferUi, onCancel: () -> Unit) {
                 if (f != null) LinearWavyProgressIndicator(progress = { f }, Modifier.fillMaxWidth())
                 else LinearWavyProgressIndicator(Modifier.fillMaxWidth())
                 Text(
-                    t.progress?.let { p -> p.total?.let { "${Copy.bytes(p.done)} of ${Copy.bytes(it)}" } ?: Copy.bytes(p.done) } ?: "Starting…",
+                    t.progress?.let { p -> p.total?.let { stringResource(R.string.transfers_progress, Copy.bytes(p.done).resolve(), Copy.bytes(it).resolve()) } ?: Copy.bytes(p.done).resolve() } ?: stringResource(R.string.transfers_starting),
                     style = SmallNumber,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.transfers_cancel)) } },
     )
 }

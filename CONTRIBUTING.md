@@ -32,7 +32,7 @@ You don't have to trust ours. Fork tellyscope-devices, edit the lists in your fo
 
 These lists live in tellyscope-devices too, next to the debloat lists, and the app downloads them from the same source: change one there with a pull request and it reaches people without an app release. A fork's source supplies them as well. File formats and checks are in that repo's README.
 
-- `lists/launchers.json`: the third-party launchers Tellyscope knows. One with an `"about"` line is offered in **Install a home screen**, in the file's order. On Fire OS, which has no Play Store, only Projectivy is offered, while it's on the list: Tellyscope downloads it from its developer's GitHub releases and installs only an APK signed with the certificate pinned in [`LauncherDownload.kt`](app/src/main/java/app/tellyscope/data/LauncherDownload.kt).
+- `lists/launchers.json`: the third-party launchers Tellyscope knows. One with an `"about"` line is offered in **Install a home screen**, in the file's order. On Fire OS, which has no Play Store, only Projectivy is offered, while it's on the list: Tellyscope downloads it from its developer's GitHub releases and installs only an APK signed with the certificate pinned in [`LauncherDownload.kt`](app/src/main/java/app/tellyscope/data/LauncherDownload.kt). On Android TV the same download is offered as **Download directly**, under the Play Store and after a warning. Projectivy is the only launcher with a pinned release and signer, so it's the only one offered either way (`downloadable` in [`LauncherFlowUi.kt`](app/src/main/java/app/tellyscope/ui/LauncherFlowUi.kt)).
 - `lists/labels.json`: names shown for common TV apps when the TV can't tell us.
 - `lists/streaming.json` and `logos/`: the streaming services the Remote can have a button for, with their logos.
 
@@ -56,6 +56,8 @@ python3 docs/screenshots/frame.py
 - Kotlin official code style, as set up in `.editorconfig`.
 - Logic that doesn't need Android goes in `:adb`, with unit tests.
 - UI uses Material 3 Expressive components and the app theme. No hard-coded colors.
+- New UI text goes in `app/src/main/res/values/strings.xml`, never as a literal in Kotlin. Compose code reads it with `stringResource`; the ViewModel and data layer return a `UiText` the screen resolves. Counts use `<plurals>`, and values go in as format arguments, not by joining strings.
+- A translation is `app/src/main/res/values-xx/strings.xml` plus its code in `localeFilters` in `app/build.gradle.kts`; the release APK keeps only the languages listed there. `TranslationsTest` checks each one covers every string and keeps its format arguments; a new language adds a one-line subclass there.
 
 ## Reporting a TV
 

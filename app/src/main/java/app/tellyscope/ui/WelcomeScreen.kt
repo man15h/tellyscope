@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.ui.theme.SmallNumber
@@ -48,8 +49,8 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onSkip) { Text("Skip") }
-                Button(onClick = onContinue) { Text("Continue") }
+                TextButton(onClick = onSkip) { Text(stringResource(R.string.welcome_skip)) }
+                Button(onClick = onContinue) { Text(stringResource(R.string.screen_continue)) }
             }
         },
     ) { pad ->
@@ -65,9 +66,9 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
                 // The foreground keeps its art inside the adaptive-icon safe zone; oversize it so the art fills the tile.
                 Image(painterResource(R.drawable.ic_launcher_foreground), contentDescription = null, Modifier.requiredSize(108.dp))
             }
-            Text("Welcome to Tellyscope", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.welcome_title), style = MaterialTheme.typography.headlineMedium)
             Text(
-                "See what's running on your Android TV, and turn off the apps you don't need. All from your phone, over Wi-Fi.",
+                stringResource(R.string.welcome_text),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Card(
@@ -79,14 +80,14 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
                         Row {
                             Text("${i + 1}", Modifier.alignByBaseline(), style = SmallNumber, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(12.dp))
-                            Text(step, Modifier.alignByBaseline(), style = MaterialTheme.typography.bodyLarge)
+                            Text(stringResource(step), Modifier.alignByBaseline(), style = MaterialTheme.typography.bodyLarge)
                         }
                     }
                 }
             }
             if (askLocalNetwork) {
                 Text(
-                    "Android asks before an app talks to other devices on your Wi-Fi. Tellyscope only connects to the TVs you pick.",
+                    stringResource(R.string.permission_local_network_text),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -96,7 +97,7 @@ fun WelcomeScreen(askLocalNetwork: Boolean, onContinue: () -> Unit, onSkip: () -
 }
 
 private val steps = listOf(
-    "Turn on debugging on your TV. The next screen shows how for your brand.",
-    "Tellyscope finds the TV on your Wi-Fi.",
-    "Type the code the TV shows, or choose Allow when it asks.",
+    R.string.welcome_step_1,
+    R.string.welcome_step_2,
+    R.string.welcome_step_3,
 )

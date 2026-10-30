@@ -12,11 +12,15 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.ResetRecord
+import app.tellyscope.data.UiText
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.fireHomeBack
 import app.tellyscope.data.fireServiceHolder
 import app.tellyscope.data.fireServiceHome
 import app.tellyscope.data.firstHomeService
 import app.tellyscope.data.switchHome
+import app.tellyscope.data.undoFireResetHome
 import app.tellyscope.data.undoHomeSwitch
 import java.io.File
 import java.io.IOException
@@ -83,7 +87,7 @@ class HomeSwitchTest {
     private val book = HistoryBook()
 
     private suspend fun switch(tv: LauncherTv, pkg: String, withService: Boolean = true): HistoryEntry =
-        switchHome(Actions(tv), pkg, withService, setOf(PROJECTIVY), { it }, { it.name }) { from, undo, previous ->
+        switchHome(Actions(tv), pkg, withService, setOf(PROJECTIVY), { it }, { UiText.Raw(it.name) }) { from, undo, previous ->
             book.record("tv", 0, Action.Home, from, pkg, undo, previous = previous)
         }
 
@@ -148,7 +152,7 @@ class HomeSwitchTest {
         val tv = LauncherTv(TV_HOME).apply { opens = false }
         val e = runCatching { switch(tv, FLAUNCHER) }.exceptionOrNull()
         assertTrue(e?.message.orEmpty(), e is ActionFailed)
-        assertEquals("$FLAUNCHER is Home now, but it didn't open, so press Home on the remote to go there", e!!.message)
+        assertEquals("$FLAUNCHER is Home now, but it didn't open, so press Home on the remote to go there", (e as UiTextException).text.text())
         assertEquals("Error: Activity not started", (e as ActionFailed).details)
         assertEquals(FLAUNCHER, tv.home)
         assertEquals(TV_HOME, book.entries("tv").single().packageName)
@@ -208,6 +212,8 @@ class HomeSwitchTest {
         // A home with nothing replaced: its Undo is the service alone.
         assertEquals(PROJECTIVY_SERVICE, entry.firstHomeService)
         assertEquals(Action.Enable, entry.undo)
+        // Then Projectivy opens, so the TV shows it without a Home press.
+        assertTrue(tv.ran.toString(), tv.ran.any { it.startsWith("am start") && it.contains(tv.activities.getValue(PROJECTIVY)) })
     }
 
     @Test fun onFireOsAServiceAlreadyOnChangesNothing() = runTest {
@@ -248,5 +254,19 @@ class HomeSwitchTest {
         assertTrue(tv.ran.toString(), tv.ran.any { it.contains(tv.activities.getValue(TV_HOME)) && it.startsWith("am start") })
         fire(tv)
         assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
+    }
+
+    @Test fun onFireOsUndoOfAResetTurnsTheServiceBackOn() = runTest {
+        val tv = LauncherTv(home = TV_HOME)
+        assertEquals(true, undoFireResetHome(Actions(tv), mapOf(ResetRecord.SERVICE to PROJECTIVY_SERVICE)))
+        assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
+        assertEquals(TV_HOME, tv.home)
+    }
+
+    @Test fun undoOfAResetThatMovedHomeLeavesTheServiceToItsOwnBranch() = runTest {
+        val tv = LauncherTv(home = TV_HOME)
+        val previous = mapOf(ResetRecord.TO to "$TV_HOME/.MainActivity", ResetRecord.SERVICE to PROJECTIVY_SERVICE)
+        assertNull(undoFireResetHome(Actions(tv), previous))
+        assertTrue(tv.ran.toString(), tv.ran.isEmpty())
     }
 }

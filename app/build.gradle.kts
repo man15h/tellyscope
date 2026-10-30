@@ -22,8 +22,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // A PR into main must raise both past the latest v* tag (.github/workflows/release-check.yml).
-        versionCode = 25
-        versionName = "0.13.0"
+        versionCode = 26
+        versionName = "0.14.0"
 
         // An alpha tag (release.yml, vX.Y.Z-alpha.N on dev) passes -Ptellyscope.alpha=N:
         // a separate app ID, so it installs next to the release.
@@ -31,6 +31,14 @@ android {
             applicationIdSuffix = ".alpha"
             versionNameSuffix = "-alpha.$run"
         }
+    }
+
+    // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
+    // Material ship (about 440 KB). A new values-xx/strings.xml adds its code here too.
+    androidResources {
+        localeFilters += listOf("en", "es", "zh-rCN", "ja", "ru", "hi")
+        // Lists them for Android 13+'s per-app language setting (default locale: res/resources.properties).
+        generateLocaleConfig = true
     }
 
     // Only CI signs, from repo secrets; without RELEASE_KEYSTORE the release APK is unsigned.
@@ -119,7 +127,23 @@ val dexLabelHelper by tasks.registering(DexLabelHelper::class) {
     outputDir = layout.buildDirectory.dir("generated/labelHelper/assets")
 }
 
-/** Fails the build when a release APK grows past the 3 MB budget. CI's `build` and release.yml both assemble release. */
+/** The repo's CHANGELOG.md, shipped as an asset so What's new matches the installed version, offline. */
+abstract class BundleChangelog : DefaultTask() {
+    @get:InputFile abstract val changelog: RegularFileProperty
+    @get:OutputDirectory abstract val outputDir: DirectoryProperty
+
+    @TaskAction fun copy() {
+        val out = outputDir.get().asFile.also { it.deleteRecursively(); it.mkdirs() }
+        changelog.get().asFile.copyTo(out.resolve("CHANGELOG.md"))
+    }
+}
+
+val bundleChangelog by tasks.registering(BundleChangelog::class) {
+    changelog = rootProject.layout.projectDirectory.file("CHANGELOG.md")
+    outputDir = layout.buildDirectory.dir("generated/changelog/assets")
+}
+
+/** Fails the build when a release APK grows past the 3.5 MB budget. CI's `build` and release.yml both assemble release. */
 abstract class CheckApkSize : DefaultTask() {
     @get:InputFiles abstract val apkDir: DirectoryProperty
     @get:Input abstract val maxBytes: Property<Long>
@@ -139,12 +163,13 @@ abstract class CheckApkSize : DefaultTask() {
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(dexLabelHelper, DexLabelHelper::outputDir)
+        variant.sources.assets?.addGeneratedSourceDirectory(bundleChangelog, BundleChangelog::outputDir)
     }
     onVariants(selector().withBuildType("release")) { variant ->
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val sizeCheck = tasks.register<CheckApkSize>("check${name}ApkSize") {
             apkDir = variant.artifacts.get(SingleArtifact.APK)
-            maxBytes = 3_000_000L
+            maxBytes = 3_500_000L
         }
         afterEvaluate { tasks.named("assemble$name") { finalizedBy(sizeCheck) } }
     }

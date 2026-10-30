@@ -27,18 +27,18 @@ class DebloatGateTest {
 
     @Test fun withoutAnAddedLauncherAHomeScreenLeads() {
         gate(launcher = true)
-        compose.onNodeWithText(Copy.GATE_LAUNCHER).assertExists()
-        compose.onNodeWithText(Copy.CHOOSE_HOME).performClick()
-        compose.onNodeWithText(Copy.GO_TO_APPS).performClick()
-        compose.onNodeWithText(Copy.DONT_SHOW_AGAIN).performClick()
+        compose.onNodeWithText(Copy.GATE_LAUNCHER.text()).assertExists()
+        compose.onNodeWithText(Copy.CHOOSE_HOME.text()).performClick()
+        compose.onNodeWithText(Copy.GO_TO_APPS.text()).performClick()
+        compose.onNodeWithText(Copy.DONT_SHOW_AGAIN.text()).performClick()
         assertEquals(listOf("choose", "apps", "never"), taps)
     }
 
     @Test fun withALauncherSetAppsLeads() {
         gate(launcher = false)
-        compose.onNodeWithText(Copy.GATE_APPS).assertExists()
-        compose.onNodeWithText(Copy.CHOOSE_HOME).assertDoesNotExist()
-        compose.onNodeWithText(Copy.DONT_SHOW_AGAIN).performClick()
+        compose.onNodeWithText(Copy.GATE_APPS.text()).assertExists()
+        compose.onNodeWithText(Copy.CHOOSE_HOME.text()).assertDoesNotExist()
+        compose.onNodeWithText(Copy.DONT_SHOW_AGAIN.text()).performClick()
         assertEquals(listOf("never"), taps)
     }
 }

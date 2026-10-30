@@ -2,6 +2,7 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.R
 import app.tellyscope.adb.AppLabel
 import app.tellyscope.adb.Parsers
 import kotlinx.coroutines.Dispatchers
@@ -91,7 +92,7 @@ class AppNames(private val dir: File) {
             if (label == pkg || label.startsWith("$pkg.")) fallback(pkg) else label
 
         /** What native daemons and system uids are listed as, in place of an app name. */
-        const val SYSTEM = "Android system"
+        val SYSTEM: UiText = UiText(R.string.data_app_names_system)
 
         private val GENERIC = setOf("com", "net", "org", "io", "co", "android", "google", "tv", "app", "apps")
 

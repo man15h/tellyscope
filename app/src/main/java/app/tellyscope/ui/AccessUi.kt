@@ -82,6 +82,10 @@ import app.tellyscope.data.AccessClient
 import app.tellyscope.data.AccessKey
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.TvAccess
+import androidx.compose.ui.res.stringResource
+import app.tellyscope.R
+import app.tellyscope.data.UiText
+import app.tellyscope.data.resolve
 
 /** What the Who has access screen and the warning can do. */
 data class AccessActions(
@@ -190,27 +194,27 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                 Icon(AccessIcons.Shield, contentDescription = null, Modifier.padding(top = 2.dp).size(24.dp))
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(Copy.WARNING_TITLE, style = MaterialTheme.typography.titleMedium)
-                    Text(Copy.WARNING_TEXT, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+                    Text(Copy.WARNING_TITLE.resolve(), style = MaterialTheme.typography.titleMedium)
+                    Text(Copy.WARNING_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
                 }
                 Icon(
                     if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (open) "Show less" else "Show more",
+                    contentDescription = if (open) stringResource(R.string.access_show_less) else stringResource(R.string.access_show_more),
                     Modifier.padding(start = 8.dp),
                 )
             }
             if (open) {
                 Column(Modifier.padding(start = 40.dp, top = 12.dp, end = 4.dp)) {
                     HorizontalDivider(color = c.onErrorContainer.copy(alpha = 0.2f))
-                    Text(Copy.CONNECTED_NOW, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 12.dp))
+                    Text(Copy.CONNECTED_NOW.resolve(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 12.dp))
                     others.forEach { o ->
-                        Text(Copy.connectedFrom(if (o.who == AccessClient.Who.OnTv) Copy.ON_TV.lowercase() else o.address, o.connections), style = MaterialTheme.typography.bodyLarge)
+                        Text(Copy.connectedFrom(if (o.who == AccessClient.Who.OnTv) Copy.ON_TV.resolve().lowercase() else o.address, o.connections).resolve(), style = MaterialTheme.typography.bodyLarge)
                     }
                     Row(
                         Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onWho).padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(Copy.WHO_HAS_ACCESS, style = MaterialTheme.typography.labelLarge)
+                        Text(Copy.WHO_HAS_ACCESS.resolve(), style = MaterialTheme.typography.labelLarge)
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, Modifier.size(18.dp))
                     }
                 }
@@ -219,12 +223,12 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                 val border = BorderStroke(1.dp, c.onErrorContainer)
                 val colors = ButtonDefaults.outlinedButtonColors(contentColor = c.onErrorContainer)
                 OutlinedButton(onClick = { others.singleOrNull()?.let { actions.markMine(it.address) } ?: onWho() }, border = border, colors = colors) {
-                    Text(Copy.ITS_MINE)
+                    Text(Copy.ITS_MINE.resolve())
                 }
                 OutlinedButton(onClick = actions.askRemove, border = border, colors = colors, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
                     Icon(AccessIcons.LockReset, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(Copy.REMOVE_ACCESS)
+                    Text(Copy.REMOVE_ACCESS.resolve())
                 }
             }
         }
@@ -245,12 +249,12 @@ fun ConnectedDevicesCard(peripherals: List<Peripheral>, startOpen: Boolean = fal
         modifier = Modifier.fillMaxWidth().animateContentSize().testTag("connectedDevices"),
     ) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
-            Text(Copy.DEVICES_TITLE, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
+            Text(Copy.DEVICES_TITLE.resolve(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
             if (peripherals.isEmpty()) {
-                Text(Copy.NO_DEVICES, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
+                Text(Copy.NO_DEVICES.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
             } else if (open) {
                 peripherals.groupBy { it.group }.forEach { (group, rows) ->
-                    Text(Copy.group(group), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+                    Text(Copy.group(group).resolve(), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
                     rows.forEach { PeripheralRow(it, grouped = true) }
                 }
             } else {
@@ -258,7 +262,7 @@ fun ConnectedDevicesCard(peripherals: List<Peripheral>, startOpen: Boolean = fal
             }
             if (peripherals.size > COLLAPSED_ROWS) {
                 TextButton(onClick = { open = !open }, contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp)) {
-                    Text(if (open) Copy.SHOW_LESS else Copy.showAll(peripherals.size))
+                    Text(if (open) Copy.SHOW_LESS.resolve() else Copy.showAll(peripherals.size).resolve())
                 }
             }
         }
@@ -275,7 +279,7 @@ private fun PeripheralRow(p: Peripheral, grouped: Boolean) {
         Spacer(Modifier.width(16.dp))
         Text(p.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.width(8.dp))
-        Text(Copy.peripheralStatus(p, grouped), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+        Text(Copy.peripheralStatus(p, grouped).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
     }
 }
 
@@ -296,13 +300,13 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
             TopAppBar(
                 title = {
                     Column {
-                        Text(if (flow) Copy.REMOVE_TITLE else Copy.WHO_HAS_ACCESS)
+                        Text(if (flow) Copy.REMOVE_TITLE.resolve() else Copy.WHO_HAS_ACCESS.resolve())
                         Text(name(device), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
                     IconButton(onClick = if (flow) actions.close else actions.back) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (flow) Copy.WHO_HAS_ACCESS else "Back to the TV's page")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = if (flow) Copy.WHO_HAS_ACCESS.resolve() else stringResource(R.string.access_back_to_tv))
                     }
                 },
             )
@@ -311,32 +315,32 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
         val body = Modifier.fillMaxSize().padding(pad)
         when (removal?.step) {
             null, Removal.Step.Confirm -> AccessList(ui.access, state.clock(), device.state == DeviceState.Online, actions, body)
-            Removal.Step.Revoking -> Waiting(Copy.REVOKING, body)
-            Removal.Step.Checking -> Waiting(Copy.CHECKING, body)
+            Removal.Step.Revoking -> Waiting(Copy.REVOKING.resolve(), body)
+            Removal.Step.Checking -> Waiting(Copy.CHECKING.resolve(), body)
             Removal.Step.Manual -> ManualGuide(actions, body)
             Removal.Step.Allow -> AllowPhone(removal, actions, body)
             Removal.Step.Done -> Outcome(
-                body, Verdict.Done, Copy.DONE_TITLE, Copy.DONE_TEXT,
+                body, Verdict.Done, Copy.DONE_TITLE.resolve(), Copy.DONE_TEXT.resolve(),
                 trust = true,
-            ) { Button(onClick = { actions.close(); actions.back() }) { Text(Copy.backTo(name(device))) } }
+            ) { Button(onClick = { actions.close(); actions.back() }) { Text(Copy.backTo(name(device)).resolve()) } }
             Removal.Step.StillConnected -> if (removal.open) {
                 // Only a restart ends an open connection, so it leads; Who has access steps down to a link.
                 Outcome(
-                    body, Verdict.Still, Copy.STILL_TITLE, Copy.stillOpenText(removal.still ?: Copy.UNNAMED_COMPUTER, name(device)),
-                    link = { TextButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS) } },
+                    body, Verdict.Still, Copy.STILL_TITLE.resolve(), Copy.stillOpenText((removal.still ?: Copy.UNNAMED_COMPUTER).resolve(), name(device)).resolve(),
+                    link = { TextButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS.resolve()) } },
                 ) {
-                    OutlinedButton(onClick = actions.checkAgain) { Text(Copy.CHECK_AGAIN) }
-                    Button(onClick = actions.restart) { Text(Copy.RESTART_TV) }
+                    OutlinedButton(onClick = actions.checkAgain) { Text(Copy.CHECK_AGAIN.resolve()) }
+                    Button(onClick = actions.restart) { Text(Copy.RESTART_TV.resolve()) }
                 }
             } else {
-                Outcome(body, Verdict.Still, Copy.STILL_TITLE, Copy.stillText(removal.still ?: Copy.UNNAMED_COMPUTER, name(device))) {
-                    OutlinedButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS) }
-                    Button(onClick = actions.retry) { Text(Copy.TRY_AGAIN) }
+                Outcome(body, Verdict.Still, Copy.STILL_TITLE.resolve(), Copy.stillText((removal.still ?: Copy.UNNAMED_COMPUTER).resolve(), name(device)).resolve()) {
+                    OutlinedButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS.resolve()) }
+                    Button(onClick = actions.retry) { Text(Copy.TRY_AGAIN.resolve()) }
                 }
             }
-            Removal.Step.Restarting -> Waiting(Copy.RESTARTING_TO_CHECK, body)
-            Removal.Step.Unconfirmed -> Outcome(body, Verdict.Unknown, Copy.UNCONFIRMED_TITLE, Copy.UNCONFIRMED_TEXT) {
-                Button(onClick = actions.close) { Text(Copy.DONE) }
+            Removal.Step.Restarting -> Waiting(Copy.RESTARTING_TO_CHECK.resolve(), body)
+            Removal.Step.Unconfirmed -> Outcome(body, Verdict.Unknown, Copy.UNCONFIRMED_TITLE.resolve(), Copy.UNCONFIRMED_TEXT.resolve()) {
+                Button(onClick = actions.close) { Text(Copy.DONE.resolve()) }
             }
         }
     }
@@ -354,15 +358,15 @@ private fun ConfirmRemoval(actions: AccessActions) {
     AlertDialog(
         onDismissRequest = actions.close,
         icon = { Icon(AccessIcons.LockReset, contentDescription = null, tint = c.error) },
-        title = { Text(Copy.CONFIRM_TITLE, textAlign = TextAlign.Center) },
+        title = { Text(Copy.CONFIRM_TITLE.resolve(), textAlign = TextAlign.Center) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Copy.CONFIRM_TEXT)
-                Text(Copy.CONFIRM_REMOTE)
+                Text(Copy.CONFIRM_TEXT.resolve())
+                Text(Copy.CONFIRM_REMOTE.resolve())
             }
         },
-        confirmButton = { Button(onClick = actions.remove, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) { Text(Copy.CONFIRM_BUTTON) } },
-        dismissButton = { TextButton(onClick = actions.close) { Text(Copy.CANCEL) } },
+        confirmButton = { Button(onClick = actions.remove, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) { Text(Copy.CONFIRM_BUTTON.resolve()) } },
+        dismissButton = { TextButton(onClick = actions.close) { Text(Copy.CANCEL.resolve()) } },
     )
 }
 
@@ -371,23 +375,23 @@ private fun ConfirmRemoval(actions: AccessActions) {
 private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: AccessActions, modifier: Modifier) {
     val c = MaterialTheme.colorScheme
     LazyColumn(modifier, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
-        item { Text(Copy.ACCESS_INTRO, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp)) }
+        item { Text(Copy.ACCESS_INTRO.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp)) }
         section(Copy.CONNECTED_NOW)
         when (val list = access?.connected) {
-            null -> item { Muted(if (access == null) "Checking…" else Copy.CANT_CHECK_CONNECTED) }
+            null -> item { Muted(if (access == null) stringResource(R.string.access_checking) else Copy.CANT_CHECK_CONNECTED.resolve()) }
             else -> segmented(list) { ConnectedRow(it, actions) }
         }
         item { Spacer(Modifier.height(24.dp)) }
         section(Copy.ALLOWED_COMPUTERS)
         when (val list = access?.allowed) {
-            null -> item { Muted(if (access == null) "Checking…" else Copy.CANT_CHECK_ALLOWED) }
-            emptyList<AccessKey>() -> item { Muted(Copy.NOBODY_ALLOWED) }
+            null -> item { Muted(if (access == null) stringResource(R.string.access_checking) else Copy.CANT_CHECK_ALLOWED.resolve()) }
+            emptyList<AccessKey>() -> item { Muted(Copy.NOBODY_ALLOWED.resolve()) }
             else -> segmented(list) { AllowedRow(it, now, actions) }
         }
         item {
             Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.ACCESS_FOOT_LINK, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
-                Text(Copy.ACCESS_FOOT_ALL, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(Copy.ACCESS_FOOT_LINK.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(Copy.ACCESS_FOOT_ALL.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 OutlinedButton(
                     onClick = actions.askRemove,
                     enabled = online,
@@ -397,15 +401,15 @@ private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: A
                 ) {
                     Icon(AccessIcons.LockReset, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(Copy.REMOVE_ACCESS)
+                    Text(Copy.REMOVE_ACCESS.resolve())
                 }
             }
         }
     }
 }
 
-private fun LazyListScope.section(title: String) = item {
-    Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
+private fun LazyListScope.section(title: UiText) = item {
+    Text(title.resolve(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
 }
 
 /** An MD3 segmented list: 2 dp apart, 16 dp outer corners and 4 dp inner ones. */
@@ -430,8 +434,8 @@ private fun ConnectedRow(client: AccessClient, actions: AccessActions) {
     AccessRow(
         icon = if (phone) AccessIcons.Phone else AccessIcons.Lan,
         title = when (client.who) {
-            AccessClient.Who.Phone -> Copy.THIS_PHONE
-            AccessClient.Who.OnTv -> Copy.ON_TV
+            AccessClient.Who.Phone -> Copy.THIS_PHONE.resolve()
+            AccessClient.Who.OnTv -> Copy.ON_TV.resolve()
             else -> client.address
         },
         chip = when (client.who) {
@@ -442,22 +446,22 @@ private fun ConnectedRow(client: AccessClient, actions: AccessActions) {
     ) {
         if (phone || client.who == AccessClient.Who.OnTv) Sub(client.address)
         // Not in yet, so no connection count: it isn't using the TV.
-        if (client.who != AccessClient.Who.Waiting) Sub(Copy.connections(client.connections))
+        if (client.who != AccessClient.Who.Waiting) Sub(Copy.connections(client.connections).resolve())
         when (client.who) {
             AccessClient.Who.Waiting -> {
-                Text(Copy.WAITING_LINE, style = MaterialTheme.typography.bodyMedium)
-                Sub(Copy.WAITING_TEXT)
+                Text(Copy.WAITING_LINE.resolve(), style = MaterialTheme.typography.bodyMedium)
+                Sub(Copy.WAITING_TEXT.resolve())
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    FilledTonalButton(onClick = actions.showRequest) { Text(Copy.ANSWER) }
+                    FilledTonalButton(onClick = actions.showRequest) { Text(Copy.ANSWER.resolve()) }
                 }
             }
             AccessClient.Who.Other, AccessClient.Who.OnTv -> {
-                Text(Copy.NOT_THIS_PHONE, style = MaterialTheme.typography.bodyMedium, color = c.error)
+                Text(Copy.NOT_THIS_PHONE.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.error)
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                    FilledTonalButton(onClick = { actions.markMine(client.address) }) { Text(Copy.ITS_MINE) }
+                    FilledTonalButton(onClick = { actions.markMine(client.address) }) { Text(Copy.ITS_MINE.resolve()) }
                 }
             }
-            AccessClient.Who.Mine -> Sub(Copy.YOURS)
+            AccessClient.Who.Mine -> Sub(Copy.YOURS.resolve())
             AccessClient.Who.Phone -> {}
         }
     }
@@ -473,22 +477,22 @@ private fun AllowedRow(key: AccessKey, now: Long, actions: AccessActions) {
             "laptop" in name.lowercase() || "book" in name.lowercase() -> AccessIcons.Laptop
             else -> AccessIcons.Desktop
         },
-        title = if (key.phone) Copy.THIS_PHONE else name ?: Copy.UNNAMED_COMPUTER,
+        title = if (key.phone) Copy.THIS_PHONE.resolve() else name ?: Copy.UNNAMED_COMPUTER.resolve(),
         chip = if (key.phone) Chip.Tellyscope else if (key.new) Chip.New else null,
     ) {
         Text(Copy.shortFingerprint(key.fingerprint), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Sub(Copy.lastSeen(key.lastSeen, now))
+        Sub(Copy.lastSeen(key.lastSeen, now).resolve())
         if (key.new) {
-            Text(Copy.NEW_KEY_TEXT, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
+            Text(Copy.NEW_KEY_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 4.dp))
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                FilledTonalButton(onClick = { actions.markKeyMine(key.fingerprint) }) { Text(Copy.ITS_MINE) }
+                FilledTonalButton(onClick = { actions.markKeyMine(key.fingerprint) }) { Text(Copy.ITS_MINE.resolve()) }
             }
         }
     }
 }
 
 /** Beside a row's title: this phone is Tellyscope, filled; Waiting and New are neutral outlines, a state and not an alarm. */
-private enum class Chip(val text: String) { Tellyscope(Copy.TELLYSCOPE), Waiting(Copy.WAITING_CHIP), New(Copy.NEW_CHIP) }
+private enum class Chip(val text: UiText) { Tellyscope(Copy.TELLYSCOPE), Waiting(Copy.WAITING_CHIP), New(Copy.NEW_CHIP) }
 
 @Composable
 private fun AccessRow(icon: ImageVector, title: String, chip: Chip?, lines: @Composable () -> Unit) {
@@ -508,7 +512,7 @@ private fun AccessRow(icon: ImageVector, title: String, chip: Chip?, lines: @Com
                         contentColor = if (filled) c.onSecondaryContainer else c.onSurfaceVariant,
                         border = if (filled) null else BorderStroke(1.dp, c.outline),
                     ) {
-                        Text(chip.text, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
+                        Text(chip.text.resolve(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                     }
                 }
             }
@@ -542,36 +546,36 @@ private fun AllowPhone(removal: Removal, actions: AccessActions, modifier: Modif
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         LoadingIndicator(Modifier.size(96.dp))
-        Text(Copy.ALLOW_TITLE, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
+        Text(Copy.ALLOW_TITLE.resolve(), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
         Text(
             buildAnnotatedString {
-                append(Copy.ALLOW_TEXT_A)
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(Copy.ALLOW_ALWAYS) }
-                append(Copy.ALLOW_TEXT_B)
-                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(Copy.ALLOW_BUTTON) }
+                append(Copy.ALLOW_TEXT_A.resolve())
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(Copy.ALLOW_ALWAYS.resolve()) }
+                append(Copy.ALLOW_TEXT_B.resolve())
+                withStyle(SpanStyle(fontWeight = FontWeight.SemiBold)) { append(Copy.ALLOW_BUTTON.resolve()) }
                 append(".")
             },
             style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant, textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 12.dp),
         )
         if (removal.refused) {
-            Text(Copy.REFUSED, style = MaterialTheme.typography.bodyLarge, color = c.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp))
-            Button(onClick = actions.askAgain, Modifier.padding(top = 8.dp)) { Text(Copy.ASK_AGAIN) }
+            Text(Copy.REFUSED.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp))
+            Button(onClick = actions.askAgain, Modifier.padding(top = 8.dp)) { Text(Copy.ASK_AGAIN.resolve()) }
         }
         removal.fingerprint?.let { fp ->
             Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
                 Column(Modifier.padding(16.dp)) {
-                    Text(Copy.FINGERPRINT_LABEL, style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
+                    Text(Copy.FINGERPRINT_LABEL.resolve(), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
                     Text(
                         fp.replace(":", ":​"),
                         style = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Monospace),
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
-                    Text(Copy.FINGERPRINT_HINT, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                    Text(Copy.FINGERPRINT_HINT.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 }
             }
         }
-        TextButton(onClick = actions.close, Modifier.padding(top = 16.dp)) { Text(Copy.STOP_WAITING) }
+        TextButton(onClick = actions.close, Modifier.padding(top = 16.dp)) { Text(Copy.STOP_WAITING.resolve()) }
     }
 }
 
@@ -580,16 +584,16 @@ private fun AllowPhone(removal: Removal, actions: AccessActions, modifier: Modif
 private fun ManualGuide(actions: AccessActions, modifier: Modifier) {
     val c = MaterialTheme.colorScheme
     Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
-        Text(Copy.MANUAL_INTRO, style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
-        Step(1, Copy.MANUAL_STEP_1, Copy.MANUAL_STEP_1_TEXT) {
+        Text(Copy.MANUAL_INTRO.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
+        Step(1, Copy.MANUAL_STEP_1.resolve(), Copy.MANUAL_STEP_1_TEXT.resolve()) {
             Button(onClick = actions.openDeveloperOptions, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
                 Icon(OpenInNew, contentDescription = null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(Copy.OPEN_ON_TV)
+                Text(Copy.OPEN_ON_TV.resolve())
             }
         }
-        Step(2, Copy.MANUAL_STEP_2, Copy.MANUAL_STEP_2_TEXT) {
-            OutlinedButton(onClick = actions.revokedByHand) { Text(Copy.MANUAL_DONE) }
+        Step(2, Copy.MANUAL_STEP_2.resolve(), Copy.MANUAL_STEP_2_TEXT.resolve()) {
+            OutlinedButton(onClick = actions.revokedByHand) { Text(Copy.MANUAL_DONE.resolve()) }
         }
     }
 }
@@ -644,7 +648,7 @@ private fun Outcome(
                 Row(Modifier.padding(16.dp)) {
                     Icon(AccessIcons.ShieldNote, contentDescription = null, tint = c.onSurfaceVariant)
                     Spacer(Modifier.width(16.dp))
-                    Text(Copy.TRUST_WARNING, style = MaterialTheme.typography.bodyLarge)
+                    Text(Copy.TRUST_WARNING.resolve(), style = MaterialTheme.typography.bodyLarge)
                 }
             }
         }

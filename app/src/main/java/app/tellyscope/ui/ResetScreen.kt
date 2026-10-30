@@ -57,14 +57,18 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Device
 import app.tellyscope.data.ResetApp
 import app.tellyscope.data.ResetFailure
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.UiText
+import app.tellyscope.data.resolve
 
 /** What Reset TV's screen can do, for MainActivity to wire to the view model. */
 data class ResetActions(
@@ -90,12 +94,12 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
             TopAppBar(
                 title = {
                     Column {
-                        Text(Copy.RESET_TV)
+                        Text(Copy.RESET_TV.resolve())
                         Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back_to_tv)) }
                 },
             )
         },
@@ -103,17 +107,17 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
             Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 when {
                     plan == null || (plan.changes == 0 && !ui.ran) -> Unit
-                    ui.running != null -> Button(onClick = {}, enabled = false) { Text(Copy.RESETTING) }
+                    ui.running != null -> Button(onClick = {}, enabled = false) { Text(Copy.RESETTING.resolve()) }
                     ui.ran -> {
-                        if (ui.failed.isEmpty()) Button(onClick = actions.back) { Text("Done") }
+                        if (ui.failed.isEmpty()) Button(onClick = actions.back) { Text(stringResource(R.string.screen_done)) }
                         else {
-                            TextButton(onClick = actions.back) { Text("Done") }
-                            Button(onClick = actions.retry) { Text(Copy.tryAgain(ui.failed.singleOrNull()?.app?.label)) }
+                            TextButton(onClick = actions.back) { Text(stringResource(R.string.screen_done)) }
+                            Button(onClick = actions.retry) { Text(Copy.tryAgain(ui.failed.singleOrNull()?.app?.label).resolve()) }
                         }
                     }
                     else -> {
-                        TextButton(onClick = actions.back) { Text("Cancel") }
-                        Button(onClick = actions.reset) { Text(Copy.RESET_BUTTON) }
+                        TextButton(onClick = actions.back) { Text(stringResource(R.string.screen_cancel)) }
+                        Button(onClick = actions.reset) { Text(Copy.RESET_BUTTON.resolve()) }
                     }
                 }
             }
@@ -122,18 +126,18 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
         Box(Modifier.fillMaxSize().padding(pad)) {
             when {
                 ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                    EmptyState(Icons.Default.Warning, "Couldn't read the TV", ui.error)
-                    TextButton(onClick = actions.reload) { Text("Try again") }
+                    EmptyState(Icons.Default.Warning, stringResource(R.string.reset_read_failed), ui.error.resolve())
+                    TextButton(onClick = actions.reload) { Text(stringResource(R.string.screen_try_again)) }
                 }
                 plan == null -> Column(Modifier.fillMaxWidth().padding(top = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     LoadingIndicator(Modifier.size(48.dp))
                     Spacer(Modifier.height(16.dp))
-                    Text("Reading the TV…", style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.reset_reading), style = MaterialTheme.typography.titleSmall)
                 }
                 // Try again runs on this screen too, so a run in progress comes before the last run's result.
                 ui.running == null && ui.ran -> Result(plan, ui.failed)
                 plan.changes == 0 -> Box(Modifier.padding(horizontal = 24.dp)) {
-                    EmptyState(Icons.Default.Check, Copy.NOTHING_TO_RESET, Copy.nothingToReset(plan.ownHome, maker))
+                    EmptyState(Icons.Default.Check, Copy.NOTHING_TO_RESET.resolve(), Copy.nothingToReset(plan.ownHome, maker).resolve())
                 }
                 else -> Found(plan, ui.running, ui.progress, maker)
             }
@@ -151,8 +155,8 @@ private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?
             if (running == null) {
                 Surface(color = c.primaryContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(Copy.resetFound(plan.changes), style = MaterialTheme.typography.titleSmall, color = c.onPrimaryContainer)
-                        Text(Copy.RESET_FOUND_TEXT, style = MaterialTheme.typography.bodyMedium, color = c.onPrimaryContainer)
+                        Text(Copy.resetFound(plan.changes).resolve(), style = MaterialTheme.typography.titleSmall, color = c.onPrimaryContainer)
+                        Text(Copy.RESET_FOUND_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onPrimaryContainer)
                     }
                 }
             } else {
@@ -160,7 +164,7 @@ private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?
                 val done = progress?.let { p -> ResetPart.entries.filter { it < p.part }.sumOf { count(running, it) } + p.done } ?: 0
                 LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
                 Text(
-                    progress?.let { Copy.resetting(it, plan.home?.toLabel) } ?: Copy.RESETTING,
+                    progress?.let { Copy.resetting(it, plan.home?.toLabel).resolve() } ?: Copy.RESETTING.resolve(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = c.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
@@ -175,7 +179,7 @@ private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?
         }
         item {
             Text(
-                Copy.resetLeaves(plan.shippedOff, maker),
+                Copy.resetLeaves(plan.shippedOff, maker).resolve(),
                 style = MaterialTheme.typography.bodySmall,
                 color = c.onSurfaceVariant,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
@@ -209,9 +213,9 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
     val c = MaterialTheme.colorScheme
     var open by rememberSaveable(part) { mutableStateOf(false) }
     val (icon, title, text) = when (part) {
-        ResetPart.TurnOn -> Triple(HistoryIcons.TurnedOn, Copy.turnOnApps(plan.turnOn.size), Copy.TURN_ON_TEXT)
-        ResetPart.BringBack -> Triple(ResetIcons.BringBack, Copy.bringBackApps(plan.bringBack.size), Copy.BRING_BACK_TEXT)
-        ResetPart.Home -> plan.home!!.let { Triple(Icons.Default.Home, Copy.resetHome(it.toLabel), Copy.resetHomeText(it.fromLabel, it.service)) }
+        ResetPart.TurnOn -> Triple(HistoryIcons.TurnedOn, Copy.turnOnApps(plan.turnOn.size).resolve(), Copy.TURN_ON_TEXT.resolve())
+        ResetPart.BringBack -> Triple(ResetIcons.BringBack, Copy.bringBackApps(plan.bringBack.size).resolve(), Copy.BRING_BACK_TEXT.resolve())
+        ResetPart.Home -> plan.home!!.let { Triple(Icons.Default.Home, Copy.resetHome(it.toLabel).resolve(), Copy.resetHomeText(it.fromLabel, it.service).resolve()) }
     }
     Column {
         Row(
@@ -226,10 +230,10 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
             }
             Spacer(Modifier.width(16.dp))
             when (status) {
-                null -> Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = if (open) "Hide the list" else "Show the list")
+                null -> Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = stringResource(if (open) R.string.reset_hide_list else R.string.reset_show_list))
                 Status.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = "Waiting", tint = c.onSurfaceVariant)
-                Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = "Done", tint = c.primary)
+                Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = stringResource(R.string.screen_waiting), tint = c.onSurfaceVariant)
+                Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = stringResource(R.string.screen_done), tint = c.primary)
             }
         }
         if (open && status == null) {
@@ -254,7 +258,7 @@ private fun AppList(apps: List<ResetApp>) {
                 Text(a.packageName, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
-        if (!all && apps.size > SHOWN) TextButton(onClick = { all = true }) { Text(Copy.showAll(apps.size)) }
+        if (!all && apps.size > SHOWN) TextButton(onClick = { all = true }) { Text(Copy.showAll(apps.size).resolve()) }
     }
 }
 
@@ -270,18 +274,22 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
     val home = plan.home?.takeIf { failures(ResetPart.Home).isEmpty() }
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item {
-            ResultHead(ok, if (ok) Copy.RESET_DONE else Copy.RESET_PARTLY, if (ok) Copy.resetDoneText(on + back, home?.toLabel) else Copy.resetPartlyText(failed.size))
+            ResultHead(ok, if (ok) Copy.RESET_DONE.resolve() else Copy.RESET_PARTLY.resolve(), if (ok) Copy.resetDoneText(on + back, home?.toLabel).resolve() else Copy.resetPartlyText(failed.size).resolve())
         }
         val rows = ResetPart.entries.filter { count(plan, it) > 0 }
         itemsIndexed(rows) { i, part ->
             val miss = failures(part)
             val line = when (part) {
-                ResetPart.TurnOn -> Copy.turnedOn(on, plan.turnOn.size)
-                ResetPart.BringBack -> Copy.broughtBack(back, plan.bringBack.size)
+                ResetPart.TurnOn -> Copy.turnedOn(on, plan.turnOn.size).resolve()
+                ResetPart.BringBack -> Copy.broughtBack(back, plan.bringBack.size).resolve()
                 // A miss with an app is only the service: Home did move.
-                ResetPart.Home -> plan.home!!.let { if (miss.all { m -> m.app != null }) Copy.isHome(it.toLabel) else Copy.stillHome(it.fromLabel) }
+                ResetPart.Home -> plan.home!!.let { if (miss.all { m -> m.app != null }) Copy.isHome(it.toLabel).resolve() else Copy.stillHome(it.fromLabel).resolve() }
             }
-            val why = miss.firstOrNull()?.let { f -> (f.app?.takeIf { f.part != ResetPart.Home }?.let { "${it.label}: " } ?: "") + f.reason.replaceFirstChar(Char::uppercase).trimEnd('.') + "." }
+            val why = miss.firstOrNull()?.let { f ->
+                val reason = UiText.Capitalized(f.reason).resolve().trimEnd('.')
+                f.app?.takeIf { f.part != ResetPart.Home }?.let { stringResource(R.string.result_reason_app, it.label, reason) }
+                    ?: stringResource(R.string.result_reason, reason)
+            }
             ResultRow(line, why, groupShape(i, rows.size))
         }
     }

@@ -22,7 +22,6 @@ data class Stats(
     val memory: Parsers.Memory?,
     val storage: Parsers.Storage? = null,
     val uptimeSeconds: Long? = null,
-    val temperatureC: Double? = null,
     val model: String? = null,
     val manufacturer: String? = null,
     /** The name on the box; the manufacturer can be the factory (Philips TVs say TPV). */
@@ -116,7 +115,7 @@ class StatsGate {
 
 /**
  * Live stats on three tiers, at the rates of [StatsGate.profile]: CPU/RAM/network speed, the process
- * list (read at once when its level changes), and identity/storage/uptime/temperature/packages every
+ * list (read at once when its level changes), and identity/storage/uptime/packages every
  * [slow]. Reads run one after another, never overlapping: a tier slower than its interval just
  * reads back to back. A new profile takes effect at once, not after the old interval.
  * The first emission comes after one fast interval, since CPU % needs two samples.
@@ -267,14 +266,13 @@ class DeviceMonitor(
     }
 
     private suspend fun readSlow(): Stats? {
-        val (getprop, df, uptime, thermal, pm) = Commands.split(run(Commands.SLOW) ?: return null, 5)
+        val (getprop, df, uptime, pm) = Commands.split(run(Commands.SLOW) ?: return null, 4)
         val props = Parsers.props(getprop)
         return Stats(
             cpuPercent = null,
             memory = null,
             storage = Parsers.storage(df),
             uptimeSeconds = Parsers.uptimeSeconds(uptime),
-            temperatureC = Parsers.temperatureC(thermal),
             model = props["ro.product.model"],
             manufacturer = props["ro.product.manufacturer"],
             brand = props["ro.product.brand"],

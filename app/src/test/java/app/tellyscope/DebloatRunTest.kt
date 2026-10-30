@@ -86,7 +86,7 @@ class DebloatRunTest {
         val r = run!!
         assertTrue(r.ran)
         assertEquals(3, r.at)
-        assertEquals(mapOf(SPORTS.packageName to "the TV refused it"), r.failed)
+        assertEquals(mapOf(SPORTS.packageName to "the TV refused it"), r.failed.mapValues { it.value.text() })
         assertNull(vm.state.value.device.busy)
         // The result replaces the old snackbar.
         assertNull(vm.notice.value)

@@ -30,6 +30,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -50,6 +51,7 @@ import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
+import app.tellyscope.data.UiText
 import app.tellyscope.data.KeyHaptics
 import app.tellyscope.data.UpdateCheck
 import app.tellyscope.ui.AccessActions
@@ -77,6 +79,8 @@ import app.tellyscope.ui.ReportScreen
 import app.tellyscope.ui.RowState
 import app.tellyscope.ui.ScanScreen
 import app.tellyscope.ui.SettingsScreen
+import app.tellyscope.ui.WhatsNewScreen
+import app.tellyscope.ui.rememberChangelog
 import app.tellyscope.ui.TellyscopeViewModel
 import app.tellyscope.ui.TvTab
 import app.tellyscope.ui.UpdateDialog
@@ -195,6 +199,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val browser = LocalUriHandler.current
     val context = LocalContext.current
+    val res = LocalResources.current
     val snackbar = remember { SnackbarHostState() }
     var adding by rememberSaveable { mutableStateOf(false) }
     var remote by rememberSaveable { mutableStateOf(false) }
@@ -205,6 +210,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     var tvTab by rememberSaveable { mutableStateOf(TvTab.Overview) }
     var debloat by rememberSaveable { mutableStateOf(false) }
     var settings by rememberSaveable { mutableStateOf(false) }
+    var whatsNew by rememberSaveable { mutableStateOf(false) }
     var access by rememberSaveable { mutableStateOf(false) }
     // Connect again from the logged-out page: which TV, and since when, for its Allow screen.
     var rejoinId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -217,7 +223,12 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
 
     state.update?.let { u ->
-        UpdateDialog(u, onGet = { vm.updateLater(); runCatching { browser.openUri(u.url) } }, onLater = vm::updateLater, onSkip = vm::skipUpdate)
+        UpdateDialog(
+            u,
+            onDownload = { vm.updateLater(); u.apk?.let { runCatching { browser.openUri(it) } } },
+            onRelease = { vm.updateLater(); runCatching { browser.openUri(u.url) } },
+            onCancel = vm::updateLater,
+        )
     }
 
     // On every return to the app, not just a cold start; the check itself enforces the interval.
@@ -230,10 +241,10 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     LoggedOutSnackbars(snackbar, { state.devices }, { state.selectedId }, onView = vm::select)
 
     // A newly connected TV becomes the selection; leave the add flow then, not on tap.
-    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; access = false; rejoinId = null }
+    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null }
     // Logged out mid-screen: the page takes over, and the TV comes back on Overview once allowed again.
     val loggedOutAt = state.selected?.loggedOutAt
-    LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; access = false } }
+    LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false } }
     // The Allow screen while the TV is asked; allowed lands on Overview, a Deny there is a plain refusal (its card).
     val rejoining = state.selected?.takeIf { it.id == rejoinId && it.state == DeviceState.Waiting }
     LaunchedEffect(state.selected?.state, loggedOutAt) {
@@ -255,6 +266,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             onBack = if (adding) ({ adding = false }) else null,
             onOpenWifi = { context.openWifiSettings() },
             phoneKey = remember { Connector.fingerprint() },
+            onLeave = vm::leaveConnect,
         )
     } else if (state.report != null) {
         BackHandler { vm.closeReport() }
@@ -317,6 +329,10 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         // A removal started from the warning opens this screen too, and back steps out of it first.
         BackHandler { if (state.device.removal != null) vm.closeRemoval() else access = false }
         AccessScreen(state, accessActions(vm) { access = false }, snackbar = snackbar)
+    } else if (whatsNew) {
+        BackHandler { whatsNew = false }
+        LaunchedEffect(state.available) { vm.loadNewer() }
+        WhatsNewScreen(rememberChangelog(), back = { whatsNew = false }, available = state.available, newer = state.newer, onUpdate = vm::reopenUpdate)
     } else if (settings) {
         BackHandler { settings = false }
         SettingsScreen(
@@ -328,6 +344,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             keyHaptics = state.keyHaptics,
             onKeyHaptics = vm::setKeyHaptics,
             onReport = { vm.openReport(ReportKind.Problem) },
+            onWhatsNew = { whatsNew = true },
             back = { settings = false },
             snackbar = snackbar,
         )
@@ -400,7 +417,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 closeSideload = vm::closeSideload,
                 reportInstall = { s ->
                     vm.closeSideload()
-                    vm.openReport(ReportKind.Problem, s.app?.let { "Tried to install ${it.label} ${it.info.versionName.orEmpty()}".trim() }.orEmpty(), s.detail)
+                    vm.openReport(ReportKind.Problem, s.app?.let { res.getString(R.string.vm_report_tried_install, it.label, it.info.versionName.orEmpty()).trim() }.orEmpty(), s.detail)
                 },
                 openInstalled = vm::openInstalled,
                 folder = vm::folder,
@@ -458,17 +475,18 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
 internal fun Snackbars(
     host: SnackbarHostState,
     done: StateFlow<Done?>,
-    notice: StateFlow<String?>,
+    notice: StateFlow<UiText?>,
     doneShown: () -> Unit,
     noticeShown: () -> Unit,
     undo: (Done) -> Unit,
 ) {
+    val res = LocalContext.current.resources
     LaunchedEffect(host, done) {
         done.filterNotNull().collect { d ->
             doneShown()
             val result = host.showSnackbar(
-                message = Copy.done(d.entry.action, d.entry.label),
-                actionLabel = d.entry.undo?.let(Copy::undo),
+                message = Copy.done(d.entry.action, d.entry.label).resolve(res),
+                actionLabel = d.entry.undo?.let(Copy::undo)?.resolve(res),
                 duration = SnackbarDuration.Short,
             )
             if (result == SnackbarResult.ActionPerformed) undo(d)
@@ -477,7 +495,7 @@ internal fun Snackbars(
     LaunchedEffect(host, notice) {
         notice.filterNotNull().collect { message ->
             noticeShown()
-            host.showSnackbar(message, duration = SnackbarDuration.Short)
+            host.showSnackbar(message.resolve(res), duration = SnackbarDuration.Short)
         }
     }
 }
@@ -489,6 +507,7 @@ internal fun Snackbars(
  */
 @Composable
 internal fun LoggedOutSnackbars(host: SnackbarHostState, devices: () -> List<Device>, selectedId: () -> String?, onView: (String) -> Unit) {
+    val res = LocalContext.current.resources
     LaunchedEffect(host) {
         var seen: Set<String>? = null
         snapshotFlow { devices().filter { it.loggedOutAt != null } }.collect { out ->
@@ -497,7 +516,7 @@ internal fun LoggedOutSnackbars(host: SnackbarHostState, devices: () -> List<Dev
             seen = ids
             fresh.forEach { d ->
                 launch {
-                    val result = host.showSnackbar(Copy.loggedOutOf(name(d)), actionLabel = "View", duration = SnackbarDuration.Long)
+                    val result = host.showSnackbar(Copy.loggedOutOf(name(d)).resolve(res), actionLabel = res.getString(R.string.vm_logged_out_view), duration = SnackbarDuration.Long)
                     if (result == SnackbarResult.ActionPerformed) onView(d.id)
                 }
             }

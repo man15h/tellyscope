@@ -2,6 +2,7 @@
 
 package app.tellyscope.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,12 +18,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Proc
+import app.tellyscope.data.resolve
 
 /** The Apps tab's own tabs: what's running now, what the user installed, and what came with the TV. */
-enum class AppsTab(val label: String) { Running("Running"), Installed("Installed"), BuiltIn("Built-in") }
+enum class AppsTab(@StringRes val label: Int) { Running(R.string.apps_tab_running), Installed(R.string.apps_tab_installed), BuiltIn(R.string.apps_tab_built_in) }
 
 /** One Apps tab's list: the apps the user can change, then the [system] ones they can't, under their own header. */
 data class AppsSplit(val apps: List<AppInfo>, val system: List<AppInfo>)
@@ -61,12 +65,13 @@ internal fun SystemHeader(count: Int, folded: Boolean, onFold: (Boolean) -> Unit
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text("${Copy.SYSTEM} ($count)", style = MaterialTheme.typography.titleSmall)
-            Text(Copy.SYSTEM_WHY, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.apps_system_count, Copy.SYSTEM.resolve(), count), style = MaterialTheme.typography.titleSmall)
+            Text(Copy.SYSTEM_WHY.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(
             if (folded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowUp,
-            contentDescription = if (folded) "Show system apps" else "Hide system apps",
+            contentDescription = stringResource(if (folded) R.string.apps_show_system else R.string.apps_hide_system),
+
         )
     }
 }

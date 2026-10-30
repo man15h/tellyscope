@@ -26,11 +26,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.Tweaks
 import app.tellyscope.data.TvSettings
+import app.tellyscope.data.resolve
 
 /**
  * Whole-TV settings and housekeeping. The two switches land in History with Undo; clearing
@@ -44,19 +47,19 @@ fun TweaksBlock(ui: DeviceUi, actions: DeviceActions) {
     if (ui.busy in TWEAK_BUSY) LinearProgressIndicator(Modifier.fillMaxWidth())
     val dnsOk = tweaks?.dnsSupported != false
     SwitchRow(
-        Copy.DNS_TITLE,
-        if (dnsOk) Copy.dnsState(tweaks?.dnsHost) else Copy.DNS_TOO_OLD,
+        Copy.DNS_TITLE.resolve(),
+        if (dnsOk) Copy.dnsState(tweaks?.dnsHost).resolve() else Copy.DNS_TOO_OLD.resolve(),
         dnsOn,
         enabled = tweaks != null && dnsOk && ui.busy == null,
     ) { on ->
         if (on) askDns = true else actions.setDns(null)
     }
     val fast = tweaks?.animationScale == TvSettings.FAST
-    SwitchRow(Copy.ANIMATIONS_TITLE, Copy.animationsState(tweaks?.animationScale), fast, enabled = tweaks != null && ui.busy == null) {
+    SwitchRow(Copy.ANIMATIONS_TITLE.resolve(), Copy.animationsState(tweaks?.animationScale).resolve(), fast, enabled = tweaks != null && ui.busy == null) {
         actions.setFastAnimations(it)
     }
-    ButtonRow(Copy.CACHES_TITLE, Copy.CACHES_TEXT, Copy.CACHES_BUTTON, enabled = ui.busy == null, actions.clearCaches)
-    ButtonRow(Copy.SCREENSHOT_TITLE, Copy.SCREENSHOT_TEXT, Copy.SCREENSHOT_BUTTON, enabled = ui.busy == null, actions.screenshot)
+    ButtonRow(Copy.CACHES_TITLE.resolve(), Copy.CACHES_TEXT.resolve(), Copy.CACHES_BUTTON.resolve(), enabled = ui.busy == null, actions.clearCaches)
+    ButtonRow(Copy.SCREENSHOT_TITLE.resolve(), Copy.SCREENSHOT_TEXT.resolve(), Copy.SCREENSHOT_BUTTON.resolve(), enabled = ui.busy == null, actions.screenshot)
     if (askDns) DnsDialog(onDismiss = { askDns = false }) { host -> askDns = false; actions.setDns(host) }
 }
 
@@ -92,22 +95,22 @@ private fun DnsDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     val valid = Tweaks.isHostname(host.trim())
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Copy.DNS_DIALOG) },
+        title = { Text(Copy.DNS_DIALOG.resolve()) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Copy.DNS_TEXT)
+                Text(Copy.DNS_TEXT.resolve())
                 OutlinedTextField(
                     value = host,
                     onValueChange = { host = it },
-                    label = { Text(Copy.DNS_FIELD) },
+                    label = { Text(Copy.DNS_FIELD.resolve()) },
                     singleLine = true,
                     isError = !valid,
-                    supportingText = { if (!valid) Text(Copy.DNS_BAD) },
+                    supportingText = { if (!valid) Text(Copy.DNS_BAD.resolve()) },
                 )
             }
         },
-        confirmButton = { Button(onClick = { onConfirm(host.trim()) }, enabled = valid) { Text(Copy.DNS_CONFIRM) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = { onConfirm(host.trim()) }, enabled = valid) { Text(Copy.DNS_CONFIRM.resolve()) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.screen_cancel)) } },
     )
 }
 

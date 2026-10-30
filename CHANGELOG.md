@@ -12,6 +12,20 @@ until this file has a section for its version.
 
 ## Unreleased
 
+## 0.14.0 — 2026-10-30
+
+- **New:** Hindi, Chinese, Japanese, Russian and Spanish support, machine-made; corrections welcome. [#272](../../pull/272)
+- **New:** Settings › What's new shows each version's changes, and what an update brings. [#271](../../pull/271)
+- **Improved:** The update dialog offers Download APK, which gets the new version straight from its release. [#271](../../pull/271)
+- **Improved:** Tweaks shows the same TV-offline screen as Files. [#273](../../pull/273)
+- **Improved:** Remote volume moves the full range in about 15 taps, without lag. [#267](../../pull/267)
+- **Improved:** The Temp reading is gone, since many TVs don't let apps read it. [#268](../../pull/268)
+- **Fixed:** With the TV away, app rows grey out and won't open. [#273](../../pull/273)
+- **Fixed:** Connect says when the phone has dropped off Wi-Fi, and Try again waits for Wi-Fi instead of failing at once. [#274](../../pull/274)
+- **Fixed:** On Fire TV, making Projectivy Home now opens it straight away, without a Home press. [#263](../../pull/263)
+- **Fixed:** On Fire TV, Reset TV now puts Amazon's launcher back when Projectivy holds Home, by turning its accessibility service off. Undo turns it back on. [#263](../../pull/263)
+- **Fixed:** Who has access hides leftover connections when only this phone is allowed. [#269](../../pull/269)
+
 ## 0.13.0 — 2026-10-29
 
 - **New:** Remote buttons open Netflix, YouTube, Plex and 20 more streaming apps. [#224](../../pull/224)

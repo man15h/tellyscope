@@ -2,6 +2,7 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.CancellationException
+import kotlin.math.roundToInt
 
 /**
  * The TV's remote. Keys are a fixed list of Android key codes, so nothing the user does reaches
@@ -32,6 +33,12 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
      */
     suspend fun press(key: RemoteKey): Boolean =
         keys?.press(key.code) ?: (session.shell("input keyevent ${key.code}").exitCode == 0)
+
+    /** [press] [times] over, stopping at the first key the TV didn't take. */
+    suspend fun press(key: RemoteKey, times: Int): Boolean = (1..times).all { press(key) }
+
+    /** The top of the TV's media volume, from `dumpsys audio`; null when it doesn't say. */
+    suspend fun volumeMax(): Int? = musicMax(session.shell("dumpsys audio 2>/dev/null | grep -A12 '^- STREAM_MUSIC:'").output)
 
     /**
      * Home that opens [launcher], the activity Android resolves Home to (see [Actions.currentHome]).
@@ -90,6 +97,18 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
 
     companion object {
         const val MAX_TEXT = 200
+
+        /** A volume tap moves about this share of the range, whatever the TV's own step count. */
+        const val VOLUME_STEPS = 15
+
+        /** `Max: 15` in the STREAM_MUSIC block of `dumpsys audio`. */
+        fun musicMax(dump: String): Int? {
+            val block = dump.substringAfter("- STREAM_MUSIC:", "").ifEmpty { return null }
+            return Regex("""^\s*Max:\s*(\d+)""", RegexOption.MULTILINE).find(block)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }
+        }
+
+        /** Volume keys per tap: 1 on a 15-step TV, 3 on 50, 7 on 100. Never under 1. */
+        fun volumeKeys(max: Int?): Int = ((max ?: VOLUME_STEPS) / VOLUME_STEPS.toDouble()).roundToInt().coerceAtLeast(1)
 
         /** `pkg/.Activity` or `pkg/pkg.Activity`; a nested class has a `$`, which the single quotes keep. */
         private val COMPONENT = Regex("[A-Za-z0-9_.]+/[A-Za-z0-9_.$]+")

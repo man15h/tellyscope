@@ -23,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.ui.theme.SmallNumber
 
 /**
@@ -39,10 +41,11 @@ fun Details(rows: List<Pair<String, String>>, modifier: Modifier = Modifier) {
             Modifier.clip(MaterialTheme.shapes.small).clickable { open = !open }.padding(vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("Details", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.details_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
             Icon(
                 Icons.Default.KeyboardArrowDown,
-                contentDescription = if (open) "Hide details" else "Show details",
+                contentDescription = stringResource(if (open) R.string.details_hide else R.string.details_show),
+
                 Modifier.size(18.dp).rotate(if (open) 180f else 0f),
                 tint = MaterialTheme.colorScheme.primary,
             )

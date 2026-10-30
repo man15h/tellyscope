@@ -157,12 +157,17 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import app.tellyscope.data.Device
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import app.tellyscope.R
+import app.tellyscope.data.UiText
+import app.tellyscope.data.resolve
 
 data class RemoteActions(
     /** Suspends until the TV answers, so a held key never queues up presses. False when it didn't take the key. */
     val press: suspend (RemoteKey) -> Boolean = { true },
     /** Returns why the text can't be typed, or null once it's sent. */
-    val type: (String) -> String? = { null },
+    val type: (String) -> UiText? = { null },
     val reboot: () -> Unit = {},
     val back: () -> Unit = {},
     /** A restart running late: try the TV again and wait another minute. */
@@ -287,7 +292,7 @@ fun RemoteScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (short) RoundKey(RemoteKey.MUTE, "Mute or unmute", live, actions.press, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
+                        if (short) RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), live, actions.press, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
                         BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                             val room = minOf(maxWidth, maxHeight)
                             val cramped = room < DPAD_MIN
@@ -302,11 +307,11 @@ fun RemoteScreen(
                             val (outer, inner) = 28.dp to 4.dp
                             val tall = Modifier.fillMaxWidth().height(72.dp)
                             KeySurface(
-                                RemoteKey.VOLUME_UP, "Volume up", live, actions.press, RoundedCornerShape(outer, outer, inner, inner),
+                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), live, actions.press, RoundedCornerShape(outer, outer, inner, inner),
                                 MaterialTheme.colorScheme.secondaryContainer, tall,
                             ) { Icon(RemoteIcons.VolumeUp, null) }
                             KeySurface(
-                                RemoteKey.VOLUME_DOWN, "Volume down", live, actions.press, RoundedCornerShape(inner, inner, outer, outer),
+                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), live, actions.press, RoundedCornerShape(inner, inner, outer, outer),
                                 MaterialTheme.colorScheme.secondaryContainer, tall,
                             ) { Icon(RemoteIcons.VolumeDown, null) }
                         }
@@ -314,25 +319,25 @@ fun RemoteScreen(
                     // While typing these shrink so the D-pad keeps its room; 48 dp is still a full touch target.
                     val side = if (typing) 48.dp else 64.dp
                     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        RoundKey(RemoteKey.BACK, "Back", live, actions.press, Modifier.align(Alignment.CenterStart), size = side) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
-                        RoundKey(RemoteKey.HOME, "Home", live, actions.press, size = if (typing) 56.dp else 80.dp) {
+                        RoundKey(RemoteKey.BACK, stringResource(R.string.remote_back), live, actions.press, Modifier.align(Alignment.CenterStart), size = side) { Icon(Icons.AutoMirrored.Filled.ArrowBack, null) }
+                        RoundKey(RemoteKey.HOME, stringResource(R.string.remote_home), live, actions.press, size = if (typing) 56.dp else 80.dp) {
                             Icon(Icons.Outlined.Home, null, Modifier.size(if (typing) 24.dp else 32.dp))
                         }
-                        RoundKey(RemoteKey.MENU, "Menu", live, actions.press, Modifier.align(Alignment.CenterEnd), size = side) { Icon(Icons.Default.Menu, null) }
+                        RoundKey(RemoteKey.MENU, stringResource(R.string.remote_menu), live, actions.press, Modifier.align(Alignment.CenterEnd), size = side) { Icon(Icons.Default.Menu, null) }
                     }
                     if (!typing && !short) {
                     Spacer(Modifier.height(rowGap))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RoundKey(RemoteKey.MUTE, "Mute or unmute", live, actions.press) { Icon(RemoteIcons.VolumeOff, null) }
+                        RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), live, actions.press) { Icon(RemoteIcons.VolumeOff, null) }
                         // One split pill: two halves of the same key, so the gap stays narrow.
                         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             val (outer, inner) = 32.dp to 4.dp
                             KeySurface(
-                                RemoteKey.VOLUME_DOWN, "Volume down", live, actions.press, RoundedCornerShape(outer, inner, inner, outer),
+                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), live, actions.press, RoundedCornerShape(outer, inner, inner, outer),
                                 MaterialTheme.colorScheme.secondaryContainer, Modifier.weight(1f).height(64.dp),
                             ) { Icon(RemoteIcons.VolumeDown, null) }
                             KeySurface(
-                                RemoteKey.VOLUME_UP, "Volume up", live, actions.press, RoundedCornerShape(inner, outer, outer, inner),
+                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), live, actions.press, RoundedCornerShape(inner, outer, outer, inner),
                                 MaterialTheme.colorScheme.secondaryContainer, Modifier.weight(1f).height(64.dp),
                             ) { Icon(RemoteIcons.VolumeUp, null) }
                         }
@@ -372,10 +377,10 @@ private fun RemoteHeader(state: UiState, device: Device, restart: Restart?, scre
             Text(name(device), style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
             when {
                 restart != null -> RestartStatus(late = restart.phase(state.clock()) != Restart.Phase.Waiting, onClick = onRestartTap)
-                screenOff -> StateLine(Copy.SCREEN_OFF, Copy.SCREEN_OFF_WAKE)
-                device.state != DeviceState.Online -> StateLine(Copy.state(device.state), Copy.REMOTE_OFFLINE_WAKE)
+                screenOff -> StateLine(Copy.SCREEN_OFF.resolve(), Copy.SCREEN_OFF_WAKE.resolve())
+                device.state != DeviceState.Online -> StateLine(Copy.state(device.state).resolve(), Copy.REMOTE_OFFLINE_WAKE.resolve())
                 else -> {
-                    val health = state.device.snapshot?.let { Copy.health(it, heaviest(it, state.device.apps)).text }
+                    val health = state.device.snapshot?.let { Copy.health(it, heaviest(it, state.device.apps)).text.resolve() }
                     val line = listOf(makerLine(device), health.orEmpty()).filter { it.isNotEmpty() }.joinToString(" · ")
                     if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
@@ -411,20 +416,20 @@ private fun DPad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, size: 
             val arrow = Modifier.size(80.dp * scale)
             val glyph = Modifier.size(40.dp * scale)
             val tint = MaterialTheme.colorScheme.onSurface
-            KeySurface(RemoteKey.UP, "Up", enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.TopCenter)) {
+            KeySurface(RemoteKey.UP, stringResource(R.string.remote_up), enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.TopCenter)) {
                 Icon(Icons.Default.KeyboardArrowUp, null, glyph, tint = tint)
             }
-            KeySurface(RemoteKey.DOWN, "Down", enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.BottomCenter)) {
+            KeySurface(RemoteKey.DOWN, stringResource(R.string.remote_down), enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.BottomCenter)) {
                 Icon(Icons.Default.KeyboardArrowDown, null, glyph, tint = tint)
             }
-            KeySurface(RemoteKey.LEFT, "Left", enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.CenterStart)) {
+            KeySurface(RemoteKey.LEFT, stringResource(R.string.remote_left), enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.CenterStart)) {
                 Icon(Icons.Default.KeyboardArrowLeft, null, glyph, tint = tint)
             }
-            KeySurface(RemoteKey.RIGHT, "Right", enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.CenterEnd)) {
+            KeySurface(RemoteKey.RIGHT, stringResource(R.string.remote_right), enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.CenterEnd)) {
                 Icon(Icons.Default.KeyboardArrowRight, null, glyph, tint = tint)
             }
             KeySurface(
-                RemoteKey.OK, "OK", enabled, press, CircleShape, MaterialTheme.colorScheme.primary,
+                RemoteKey.OK, stringResource(R.string.remote_ok), enabled, press, CircleShape, MaterialTheme.colorScheme.primary,
                 Modifier.size(112.dp * scale).align(Alignment.Center),
             ) {}
         }
@@ -501,23 +506,24 @@ private fun KeySurface(
 @OptIn(ExperimentalMaterial3Api::class)
 private fun Keyboard(
     enabled: Boolean,
-    type: (String) -> String?,
+    type: (String) -> UiText?,
     press: suspend (RemoteKey) -> Boolean,
     hint: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     fun send() {
-        error = type(text)
+        error = type(text)?.resolve(context)
         if (error == null) text = ""
     }
     OutlinedTextField(
         value = text,
         onValueChange = { text = it; error = null },
         enabled = enabled,
-        label = { Text("Type on the TV") },
-        supportingText = if (error != null || hint) ({ Text(error ?: Copy.TYPE_HINT) }) else null,
+        label = { Text(stringResource(R.string.remote_type_label)) },
+        supportingText = if (error != null || hint) ({ Text(error ?: Copy.TYPE_HINT.resolve()) }) else null,
         isError = error != null,
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -527,11 +533,11 @@ private fun Keyboard(
                 // A key, not a button: holding it repeats like the D-pad. It deletes on the TV only;
                 // the field above is the unsent draft, which the phone's keyboard edits.
                 KeySurface(
-                    RemoteKey.DEL, Copy.BACKSPACE, enabled, press,
+                    RemoteKey.DEL, Copy.BACKSPACE.resolve(), enabled, press,
                     CircleShape, Color.Transparent, Modifier.size(48.dp),
                 ) { Icon(RemoteIcons.Backspace, null, tint = LocalContentColor.current.copy(alpha = if (enabled) 1f else 0.38f)) }
                 IconButton(onClick = ::send, enabled = enabled && text.isNotEmpty()) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send to the TV")
+                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.remote_send))
                 }
             }
         },
@@ -543,10 +549,10 @@ private fun Keyboard(
 fun RebootDialog(onRestart: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(Copy.REBOOT_TITLE) },
-        text = { Text(Copy.REBOOT_TEXT) },
-        confirmButton = { Button(onClick = onRestart) { Text("Restart") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(Copy.REBOOT_TITLE.resolve()) },
+        text = { Text(Copy.REBOOT_TEXT.resolve()) },
+        confirmButton = { Button(onClick = onRestart) { Text(stringResource(R.string.remote_restart)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.remote_cancel)) } },
     )
 }
 
@@ -562,8 +568,8 @@ fun RestartingCard(restart: Restart, now: Long) {
             LoadingIndicator(Modifier.size(48.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text("Restarting", style = MaterialTheme.typography.titleSmall)
-                Text(Copy.restarting((now - restart.since) / 60_000), style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.remote_restarting), style = MaterialTheme.typography.titleSmall)
+                Text(Copy.restarting((now - restart.since) / 60_000).resolve(), style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
@@ -582,30 +588,30 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
             onDismissRequest = onHide,
             // Wavy, not the loading indicator: that one is for waits under a few seconds.
             icon = { CircularWavyProgressIndicator(Modifier.size(48.dp)) },
-            title = { Text(Copy.RESTARTING_TITLE) },
+            title = { Text(Copy.RESTARTING_TITLE.resolve()) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(Copy.RESTARTING_TEXT)
-                    Text(Copy.waitingFor(tvName, now - restart.since), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                    Text(Copy.RESTARTING_TEXT.resolve())
+                    Text(Copy.waitingFor(tvName, now - restart.since).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 }
             },
-            confirmButton = { TextButton(onClick = onHide) { Text("Hide") } },
+            confirmButton = { TextButton(onClick = onHide) { Text(stringResource(R.string.remote_hide)) } },
         )
         Restart.Phase.Late -> AlertDialog(
             onDismissRequest = onHide,
             icon = { StatusShape(RemoteIcons.HourglassTop, c.secondaryContainer, c.onSecondaryContainer) },
-            title = { Text(Copy.RESTART_LATE_TITLE) },
-            text = { Text(Copy.RESTART_LATE_TEXT) },
-            confirmButton = { Button(onClick = onRetry) { Text("Retry") } },
-            dismissButton = { TextButton(onClick = onHide) { Text("Close") } },
+            title = { Text(Copy.RESTART_LATE_TITLE.resolve()) },
+            text = { Text(Copy.RESTART_LATE_TEXT.resolve()) },
+            confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
+            dismissButton = { TextButton(onClick = onHide) { Text(stringResource(R.string.remote_close)) } },
         )
         Restart.Phase.Lost -> AlertDialog(
             onDismissRequest = onStop,
             icon = { StatusShape(RemoteIcons.LinkOff, c.errorContainer, c.onErrorContainer) },
-            title = { Text(Copy.restartLost(tvName)) },
-            text = { Text(Copy.RESTART_LOST_TEXT) },
-            confirmButton = { Button(onClick = onRetry) { Text("Retry") } },
-            dismissButton = { TextButton(onClick = onStop) { Text("Close") } },
+            title = { Text(Copy.restartLost(tvName).resolve()) },
+            text = { Text(Copy.RESTART_LOST_TEXT.resolve()) },
+            confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
+            dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.remote_close)) } },
         )
     }
 }
@@ -640,41 +646,41 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
             tooltip = {
                 PlainTooltip {
                     Column(Modifier.padding(vertical = 4.dp)) {
-                        Text(Copy.SCREEN_OFF, style = MaterialTheme.typography.labelLarge)
-                        Text(Copy.SCREEN_OFF_TIP)
+                        Text(Copy.SCREEN_OFF.resolve(), style = MaterialTheme.typography.labelLarge)
+                        Text(Copy.SCREEN_OFF_TIP.resolve())
                     }
                 }
             },
             state = tip,
             enableUserInput = false,
         ) {
-            IconButton(onClick = { open = true }) { Icon(Icons.Default.MoreVert, contentDescription = Copy.MORE) }
+            IconButton(onClick = { open = true }) { Icon(Icons.Default.MoreVert, contentDescription = Copy.MORE.resolve()) }
         }
         DropdownMenu(open, onDismissRequest = { open = false }, shape = MaterialTheme.shapes.large) {
             if (screenControl) {
                 // While the picture is off, the item turns it back on.
                 if (off) DropdownMenuItem(
-                    text = { Text(Copy.SCREEN_ON) },
+                    text = { Text(Copy.SCREEN_ON.resolve()) },
                     leadingIcon = { Icon(RemoteIcons.Tv, null) },
                     enabled = live,
                     onClick = { open = false; actions.screenOff(false) },
                 )
                 else DropdownMenuItem(
-                    text = { Text(Copy.SCREEN_OFF) },
+                    text = { Text(Copy.SCREEN_OFF.resolve()) },
                     leadingIcon = { Icon(RemoteIcons.TvOff, null) },
                     enabled = live,
                     onClick = { open = false; actions.screenOff(true) },
                 )
             }
             DropdownMenuItem(
-                text = { Text(Copy.REMOTE_RESTART) },
+                text = { Text(Copy.REMOTE_RESTART.resolve()) },
                 leadingIcon = { Icon(RemoteIcons.RestartAlt, null) },
                 enabled = live,
                 onClick = { open = false; onRestart() },
             )
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
             DropdownMenuItem(
-                text = { Text(Copy.REMOTE_BUTTONS) },
+                text = { Text(Copy.REMOTE_BUTTONS.resolve()) },
                 leadingIcon = { Icon(Icons.Default.Edit, null) },
                 onClick = { open = false; onButtons() },
             )
@@ -687,7 +693,7 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
 @Composable
 private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.clip(MaterialTheme.shapes.small).clickable(onClickLabel = "Show the restart", onClick = onClick),
+        Modifier.clip(MaterialTheme.shapes.small).clickable(onClickLabel = stringResource(R.string.remote_show_restart), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -696,7 +702,7 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
         } else {
             LoadingIndicator(Modifier.size(18.dp))
         }
-        Text(if (late) Copy.RESTART_LATE_STATUS else Copy.RESTARTING_TITLE, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+        Text(if (late) Copy.RESTART_LATE_STATUS.resolve() else Copy.RESTARTING_TITLE.resolve(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
         Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
     }
 }
@@ -735,8 +741,8 @@ private fun ServiceButton(s: StreamingService, enabled: Boolean, onOpen: () -> U
                 indication = null,
                 enabled = enabled,
                 role = Role.Button,
-                onClickLabel = Copy.OPEN_ON_TV,
-                onLongClickLabel = Copy.REMOTE_BUTTONS,
+                onClickLabel = Copy.OPEN_ON_TV.resolve(),
+                onLongClickLabel = Copy.REMOTE_BUTTONS.resolve(),
                 onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onHold() },
                 onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onOpen() },
             )
@@ -762,7 +768,7 @@ private fun AddButtons(enabled: Boolean, onClick: () -> Unit, modifier: Modifier
         Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Add, contentDescription = null, tint = c.primary, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(Copy.REMOTE_BUTTONS, style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
+            Text(Copy.REMOTE_BUTTONS.resolve(), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
         }
     }
 }
@@ -821,16 +827,16 @@ private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setD
     val rowPx = with(LocalDensity.current) { SHEET_ROW.toPx() }
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
-            Text(Copy.REMOTE_BUTTONS, style = MaterialTheme.typography.titleLarge)
-            Text(Copy.buttonsHint(cap), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(Copy.REMOTE_BUTTONS.resolve(), style = MaterialTheme.typography.titleLarge)
+            Text(Copy.buttonsHint(cap).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
             ticked.forEachIndexed { i, s ->
                 key(s.name) {
                     val up = lifted == s.name
                     val moves = listOfNotNull(
-                        CustomAccessibilityAction("Move up") { setDock(Dock.move(mine, i, i - 1)); true }.takeIf { i > 0 },
-                        CustomAccessibilityAction("Move down") { setDock(Dock.move(mine, i, i + 1)); true }.takeIf { i < ticked.lastIndex },
+                        CustomAccessibilityAction(stringResource(R.string.remote_move_up)) { setDock(Dock.move(mine, i, i - 1)); true }.takeIf { i > 0 },
+                        CustomAccessibilityAction(stringResource(R.string.remote_move_down)) { setDock(Dock.move(mine, i, i + 1)); true }.takeIf { i < ticked.lastIndex },
                     )
                     ServiceRow(
                         s, checked = true, enabled = true, onToggle = { toggle(s) },

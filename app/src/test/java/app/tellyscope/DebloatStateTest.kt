@@ -9,6 +9,7 @@ import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.ListGroup
 import app.tellyscope.data.ListPackage
 import app.tellyscope.data.Suggestions
+import app.tellyscope.data.UiText
 import app.tellyscope.data.suggest
 import app.tellyscope.ui.DeviceUi
 import app.tellyscope.ui.debloatState
@@ -23,7 +24,7 @@ class DebloatStateTest {
         groups = listOf(ListGroup("Junk", listOf("com.acme.a", "com.acme.b", "com.acme.c", "com.acme.keep").map { ListPackage(it, null, false) })),
     )
 
-    private fun app(pkg: String, enabled: Boolean, protected: String? = null) = AppInfo(pkg, pkg, null, true, enabled, protected, "1")
+    private fun app(pkg: String, enabled: Boolean, protected: UiText? = null) = AppInfo(pkg, pkg, null, true, enabled, protected, "1")
 
     private fun turnedOff(pkg: String) = HistoryEntry(1, "tv", 0, Action.Disable, pkg, pkg, Action.Enable, null)
 
@@ -56,7 +57,7 @@ class DebloatStateTest {
     }
 
     @Test fun `keep entries and protected apps are not suggestions`() {
-        val d = debloatState(ui(listOf(app("com.acme.keep", true), app("com.acme.a", true, protected = "system"))))
+        val d = debloatState(ui(listOf(app("com.acme.keep", true), app("com.acme.a", true, protected = UiText(R.string.data_protected_system)))))
         assertEquals(0, d.total)
         assertFalse(d.todo)
     }

@@ -2,6 +2,7 @@
 
 package app.tellyscope.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,15 +43,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.Proc
 import app.tellyscope.data.Snapshot
+import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
 import app.tellyscope.ui.theme.StatNumber
 
@@ -70,18 +75,20 @@ fun AdvancedScreen(
     val snap = ui.snapshot
     val offline = device.state != DeviceState.Online
     val procs = snap?.procs.orEmpty()
-    val byApp = remember(ui.apps, procs) {
+    val androidSystem = Copy.ANDROID_SYSTEM.resolve()
+    val byApp = remember(ui.apps, procs, androidSystem) {
         val labels = ui.apps.associate { it.packageName to it.label }
-        procs.groupBy { p -> p.packageName?.let { labels[it] ?: AppNames.fallback(it) } ?: Copy.ANDROID_SYSTEM }
+        procs.groupBy { p -> p.packageName?.let { labels[it] ?: AppNames.fallback(it) } ?: androidSystem }
     }
+    val res = LocalContext.current.resources
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
-                title = { Text(Copy.ADVANCED_MONITOR) },
+                title = { Text(Copy.ADVANCED_MONITOR.resolve()) },
                 navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to the TV's page") }
+                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.advanced_back)) }
                 },
             )
         },
@@ -94,12 +101,12 @@ fun AdvancedScreen(
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
                     Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text("This TV", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
+                        Text(stringResource(R.string.advanced_this_tv), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
                         listOfNotNull(
-                            "IP address" to device.hit.ip,
-                            "Port" to device.hit.port.toString(),
-                            (device.manufacturer ?: device.hit.maker)?.let { "Maker" to it },
-                            device.hit.hostname?.let { "Network name" to it },
+                            stringResource(R.string.advanced_ip_address) to device.hit.ip,
+                            stringResource(R.string.advanced_port) to device.hit.port.toString(),
+                            (device.manufacturer ?: device.hit.maker)?.let { stringResource(R.string.advanced_maker) to it },
+                            device.hit.hostname?.let { stringResource(R.string.advanced_network_name) to it },
                         ).forEach { (k, v) -> KeyValue(k, v) }
                     }
                 }
@@ -110,7 +117,7 @@ fun AdvancedScreen(
             } else {
                 item {
                     Text(
-                        if (offline) Copy.noStats(device.state) else "Loading stats…",
+                        if (offline) Copy.noStats(device.state).resolve() else stringResource(R.string.advanced_loading),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -118,11 +125,11 @@ fun AdvancedScreen(
             }
             // A TV that lists no processes gets no charts: no bars beats an empty card.
             if (byApp.isNotEmpty()) {
-                item { UsageCard("CPU by app", byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { "%.0f%%".format(it) }) }
-                item { UsageCard("RAM by app", byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()) }) }
-                item { Block("Processes") { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
+                item { UsageCard(stringResource(R.string.advanced_cpu_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { res.getString(R.string.advanced_percent_whole, it) }) }
+                item { UsageCard(stringResource(R.string.advanced_ram_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()).resolve(res) }) }
+                item { Block(stringResource(R.string.advanced_processes)) { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
             }
-            ui.network?.let { n -> item { Block("Network") { NetworkBlock(n) } } }
+            ui.network?.let { n -> item { Block(stringResource(R.string.advanced_network)) { NetworkBlock(n) } } }
         }
     }
 }
@@ -144,23 +151,22 @@ private fun Block(title: String, body: @Composable () -> Unit) {
 @Composable
 private fun Stats(s: Snapshot, staleSince: Long?) {
     val cells = listOf(
-        "CPU" to "${s.cpuPercent}%",
-        "Temperature" to s.tempC?.let { "$it°C" },
-        "On for" to Copy.uptime(s.uptimeSeconds),
-        "Screen" to s.screenOn?.let { if (it) "On" else "Off" },
+        stringResource(R.string.advanced_cpu) to stringResource(R.string.advanced_percent, s.cpuPercent),
+        stringResource(R.string.advanced_on_for) to Copy.uptime(s.uptimeSeconds).resolve(),
+        stringResource(R.string.advanced_screen) to s.screenOn?.let { stringResource(if (it) R.string.advanced_screen_on else R.string.advanced_screen_off) },
     )
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             if (staleSince != null) {
                 Text(
-                    "As of ${Copy.ago(s.at, staleSince)}",
+                    stringResource(R.string.advanced_as_of, Copy.ago(s.at, staleSince).resolve()),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Column(Modifier.alpha(if (staleSince != null) 0.5f else 1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Meter("Memory", s.ramUsedMb / 1024.0, s.ramTotalMb / 1024.0)
-                s.storageUsedGb?.let { u -> s.storageTotalGb?.let { t -> Meter("Storage", u, t) } }
+                Meter(stringResource(R.string.advanced_memory), s.ramUsedMb / 1024.0, s.ramTotalMb / 1024.0)
+                s.storageUsedGb?.let { u -> s.storageTotalGb?.let { t -> Meter(stringResource(R.string.advanced_storage), u, t) } }
                 Row(Modifier.fillMaxWidth()) {
                     cells.forEach { (label, value) ->
                         Column(Modifier.weight(1f)) {
@@ -181,9 +187,9 @@ private fun Meter(label: String, usedGb: Double, totalGb: Double) {
         Row(verticalAlignment = Alignment.Bottom) {
             Column(Modifier.weight(1f)) {
                 Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("${(frac * 100).toInt()}% used", style = StatNumber)
+                Text(stringResource(R.string.advanced_percent_used, (frac * 100).toInt()), style = StatNumber)
             }
-            Text(Copy.gbOf(usedGb, totalGb), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(Copy.gbOf(usedGb, totalGb).resolve(), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         LinearProgressIndicator(
             progress = { frac },
@@ -208,7 +214,8 @@ private fun UsageCard(title: String, rows: List<Pair<String, Double>>, fmt: (Dou
 private fun Bars(rows: List<Pair<String, Double>>, fmt: (Double) -> String, top: Int = 6) {
     val sorted = rows.sortedByDescending { it.second }
     val rest = sorted.drop(top).sumOf { it.second }
-    val shown = sorted.take(top) + if (rest > 0) listOf("Other" to rest) else emptyList()
+    val other = stringResource(R.string.advanced_other)
+    val shown = sorted.take(top) + if (rest > 0) listOf(other to rest) else emptyList()
     val max = shown.maxOfOrNull { it.second }?.coerceAtLeast(1.0) ?: 1.0
     shown.forEach { (name, v) ->
         val frac by animateFloatAsState((v / max).toFloat(), MaterialTheme.motionScheme.defaultSpatialSpec(), label = "bar")
@@ -228,14 +235,14 @@ private fun Bars(rows: List<Pair<String, Double>>, fmt: (Double) -> String, top:
 private fun ProcessTable(procs: List<Proc>, apps: List<AppInfo>) {
     val labels = apps.associate { it.packageName to it.label }
     val groups = procs
-        .groupBy { p -> p.packageName?.let { labels[it] ?: AppNames.fallback(it) } ?: Copy.ANDROID_SYSTEM }
+        .groupBy { p -> p.packageName?.let { labels[it] ?: AppNames.fallback(it) } ?: Copy.ANDROID_SYSTEM.resolve() }
         .toList()
         .sortedByDescending { (_, ps) -> ps.sumOf { it.cpuPercent } }
     if (groups.isEmpty()) return EmptyLine("")
     Row {
-        Text("App", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("CPU", Modifier.width(56.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
-        Text("RAM", Modifier.width(72.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+        Text(stringResource(R.string.advanced_app), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.advanced_cpu), Modifier.width(56.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+        Text(stringResource(R.string.advanced_ram), Modifier.width(72.dp), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
     }
     groups.forEach { (name, ps) ->
         var open by rememberSaveable(name) { mutableStateOf(false) }
@@ -245,14 +252,14 @@ private fun ProcessTable(procs: List<Proc>, apps: List<AppInfo>) {
                     if (ps.size > 1) "$name  ×${ps.size}" else name,
                     Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 )
-                Text("%.0f%%".format(ps.sumOf { it.cpuPercent }), Modifier.width(56.dp), style = SmallNumber, textAlign = TextAlign.End)
-                Text(Copy.mb(ps.sumOf { it.ramMb }), Modifier.width(72.dp), style = SmallNumber, textAlign = TextAlign.End)
+                Text(stringResource(R.string.advanced_percent_whole, ps.sumOf { it.cpuPercent }), Modifier.width(56.dp), style = SmallNumber, textAlign = TextAlign.End)
+                Text(Copy.mb(ps.sumOf { it.ramMb }).resolve(), Modifier.width(72.dp), style = SmallNumber, textAlign = TextAlign.End)
             }
             if (open) ps.forEach { p ->
                 Row(Modifier.padding(start = 12.dp, top = 2.dp)) {
                     Text("${p.pid}  ${p.name}", Modifier.weight(1f), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text("%.1f%%".format(p.cpuPercent), Modifier.width(56.dp), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
-                    Text(Copy.mb(p.ramMb), Modifier.width(72.dp), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+                    Text(stringResource(R.string.advanced_percent_tenths, p.cpuPercent), Modifier.width(56.dp), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
+                    Text(Copy.mb(p.ramMb).resolve(), Modifier.width(72.dp), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.End)
                 }
             }
         }
@@ -263,17 +270,18 @@ private fun ProcessTable(procs: List<Proc>, apps: List<AppInfo>) {
 private fun NetworkBlock(n: NetworkInfo) {
     // Already the technical screen: every fact shows, nothing behind a Details tap.
     listOfNotNull(
-        "Connection" to listOfNotNull(if (n.iface == "wifi" || n.iface.startsWith("wlan")) "Wi-Fi" else "Ethernet", n.ssid).joinToString(" · "),
-        n.rssi?.let { "Signal" to "${signalWord(it).replaceFirstChar(Char::uppercase)} ($it dBm)" },
-        "IP address" to n.ip,
-        n.mac?.let { "MAC" to it },
-        n.linkMbps?.let { "Link speed" to "$it Mbps" },
+        stringResource(R.string.advanced_connection) to listOfNotNull(stringResource(if (n.iface == "wifi" || n.iface.startsWith("wlan")) R.string.advanced_wifi else R.string.advanced_ethernet), n.ssid).joinToString(" · "),
+        n.rssi?.let { stringResource(R.string.advanced_signal) to stringResource(signalWord(it), it) },
+        stringResource(R.string.advanced_ip_address) to n.ip,
+        n.mac?.let { stringResource(R.string.advanced_mac) to it },
+        n.linkMbps?.let { stringResource(R.string.advanced_link_speed) to stringResource(R.string.advanced_mbps, it) },
     ).forEach { (k, v) -> KeyValue(k, v) }
     Spacer(Modifier.height(8.dp))
-    Text("Data used", style = MaterialTheme.typography.titleSmall)
-    Bars(n.traffic.map { it.app to (it.rxMb + it.txMb).toDouble() }, fmt = { Copy.mb(it.toInt()) })
+    Text(stringResource(R.string.advanced_data_used), style = MaterialTheme.typography.titleSmall)
+    val res = LocalContext.current.resources
+    Bars(n.traffic.map { it.app to (it.rxMb + it.txMb).toDouble() }, fmt = { Copy.mb(it.toInt()).resolve(res) })
     Spacer(Modifier.height(8.dp))
-    Text("Open connections", style = MaterialTheme.typography.titleSmall)
+    Text(stringResource(R.string.advanced_open_connections), style = MaterialTheme.typography.titleSmall)
     if (n.sockets.isEmpty()) EmptyLine("")
     n.sockets.forEach { s ->
         Row(Modifier.padding(vertical = 2.dp)) {
@@ -283,9 +291,12 @@ private fun NetworkBlock(n: NetworkInfo) {
     }
 }
 
+/** The signal in words, with its dBm as the resource's argument. */
+@StringRes
 private fun signalWord(rssi: Int) = when {
-    rssi >= -55 -> "strong"
-    rssi >= -67 -> "good"
-    rssi >= -75 -> "weak"
-    else -> "very weak"
+    rssi >= -55 -> R.string.advanced_signal_strong
+    rssi >= -67 -> R.string.advanced_signal_good
+    rssi >= -75 -> R.string.advanced_signal_weak
+    else -> R.string.advanced_signal_very_weak
 }
+

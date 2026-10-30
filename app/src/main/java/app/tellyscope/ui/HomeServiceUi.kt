@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.resolve
 
 /**
  * The separate yes for a launcher's accessibility service, which can see the screen, so it is
@@ -46,9 +47,9 @@ fun ServiceDialog(app: String, other: String, onTurnOn: () -> Unit, dismissLabel
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(DeviceIcons.Accessibility, contentDescription = null) },
-        title = { Text(Copy.serviceTitle(app)) },
-        text = { Text(Copy.explainService(app, other)) },
-        confirmButton = { Button(onClick = onTurnOn) { Text(Copy.TURN_IT_ON) } },
+        title = { Text(Copy.serviceTitle(app).resolve()) },
+        text = { Text(Copy.explainService(app, other).resolve()) },
+        confirmButton = { Button(onClick = onTurnOn) { Text(Copy.TURN_IT_ON.resolve()) } },
         dismissButton = { TextButton(onClick = onOther) { Text(dismissLabel) } },
     )
 }
@@ -62,14 +63,14 @@ fun ServiceOffCard(app: AppInfo, onTurnOn: () -> Unit, onDismiss: () -> Unit) {
     var asking by rememberSaveable { mutableStateOf(false) }
     if (asking) {
         ServiceDialog(
-            app.label, app.homeBack ?: Copy.TV_OWN_LAUNCHER,
+            app.label, app.homeBack ?: Copy.TV_OWN_LAUNCHER.resolve(),
             onTurnOn = { asking = false; onTurnOn() },
-            dismissLabel = Copy.NOT_NOW, onOther = { asking = false }, onDismiss = { asking = false },
+            dismissLabel = Copy.NOT_NOW.resolve(), onOther = { asking = false }, onDismiss = { asking = false },
         )
     }
     HomeNoteCard(
-        Icons.Default.Home, Copy.serviceOffTitle(app.homeBack), Copy.serviceOffText(app.label),
-        Copy.GOT_IT, onDismiss, Copy.TURN_ON, onAction = { asking = true },
+        Icons.Default.Home, Copy.serviceOffTitle(app.homeBack).resolve(), Copy.serviceOffText(app.label).resolve(),
+        Copy.GOT_IT.resolve(), onDismiss, Copy.TURN_ON.resolve(), onAction = { asking = true },
         modifier = Modifier.testTag("serviceOff"),
     )
 }

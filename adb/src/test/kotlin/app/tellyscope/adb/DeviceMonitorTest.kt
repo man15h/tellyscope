@@ -33,7 +33,7 @@ class DeviceMonitorTest {
             } else {
                 ok("[ro.product.model]: [XK03H]\n[ro.build.version.sdk]: [30]\n$sep" +
                     "Filesystem 1K-blocks Used Available Use% Mounted on\n/dev/x 16000 9800 6200 62% /data\n$sep" +
-                    "300.5 100.0\n$sep" + "cpu-thermal=52000\n")
+                    "300.5 100.0\n")
             }
         }
     }
@@ -44,7 +44,6 @@ class DeviceMonitorTest {
         assertEquals(Parsers.Memory(2000, 500), s.memory)
         assertEquals(Parsers.Storage(16000, 9800), s.storage)
         assertEquals(300L, s.uptimeSeconds)
-        assertEquals(52.0, s.temperatureC)
         assertEquals("XK03H", s.model)
         assertEquals(30, s.sdk)
     }
@@ -82,7 +81,7 @@ class DeviceMonitorTest {
                     "PID USER RES %CPU NAME\n2201 u0_a87 312M 3.5 com.google.android.youtube.tv\n512 system 120M 9.0 system_server\n" +
                         "$sep  mWakefulness=Asleep\n",
                 )
-                else -> ok("$sep$sep$sep${sep}package:com.google.android.youtube.tv uid:10087\n")
+                else -> ok("$sep$sep${sep}package:com.google.android.youtube.tv uid:10087\n")
             }
         }
         val s = DeviceMonitor(tv).stats().first()
@@ -189,7 +188,7 @@ class DeviceMonitorTest {
                 command.startsWith("cat /proc/stat") -> ok("cpu  25 0 0 75 0 0 0 0\n@@tellyscope@@\nMemTotal: 2000 kB\n")
                 command.startsWith("ps -A") -> ok(ps)
                 command == "ps" -> ok(plain)
-                command.startsWith("getprop") -> ok("${SEP.repeat(4)}package:com.google.android.youtube.tv uid:10087\n")
+                command.startsWith("getprop") -> ok("${SEP.repeat(3)}package:com.google.android.youtube.tv uid:10087\n")
                 else -> ok("")
             }
         }

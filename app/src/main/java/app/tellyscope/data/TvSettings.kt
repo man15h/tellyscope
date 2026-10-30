@@ -2,6 +2,7 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.R
 import app.tellyscope.adb.Tweak
 
 /** What each TV tweak writes, and how History names it afterwards. */
@@ -10,7 +11,7 @@ object TvSettings {
     const val ADGUARD = "dns.adguard-dns.com"
     const val FAST = "0.5"
     /** History's name for a cache clear: "Cleared app caches". */
-    const val CACHES = "app caches"
+    val CACHES: UiText = UiText(R.string.data_history_app_caches)
     /** Android 9, the first with Private DNS. */
     const val DNS_SDK = 28
 
@@ -29,25 +30,22 @@ object TvSettings {
     )
 
     /** History's line for a change that left the TV at [values]. */
-    fun label(tweak: Tweak, values: Map<String, String?>): String = when (tweak) {
+    fun label(tweak: Tweak, values: Map<String, String?>): UiText = when (tweak) {
         Tweak.PRIVATE_DNS -> when (values["private_dns_mode"]) {
-            "hostname" -> "Private DNS set to ${values["private_dns_specifier"]}"
-            "off" -> "Private DNS turned off"
-            else -> "Private DNS set to Automatic"
+            "hostname" -> UiText(R.string.data_history_dns_host, values["private_dns_specifier"].toString())
+            "off" -> UiText(R.string.data_history_dns_off)
+            else -> UiText(R.string.data_history_dns_automatic)
         }
         Tweak.ANIMATIONS -> when (val v = values["window_animation_scale"]?.toFloatOrNull()) {
-            null, 1f -> "Animations at normal speed"
-            0f -> "Animations turned off"
-            else -> "Animations at ${v.toString().removeSuffix(".0")}×"
+            null, 1f -> UiText(R.string.data_history_animations_normal)
+            0f -> UiText(R.string.data_history_animations_off)
+            else -> UiText(R.string.data_history_animations_scale, v.toString().removeSuffix(".0"))
         }
     }
 
-    const val DNS_TOO_OLD = "Private DNS needs Android 9 or newer, and this TV is older"
+    val DNS_TOO_OLD: UiText = UiText(R.string.data_dns_too_old)
 
-    fun dnsUnreachable(host: String?) =
-        "the TV couldn't look anything up through $host, so Private DNS was put back. The network may block encrypted DNS (port 853)"
+    fun dnsUnreachable(host: String?) = UiText(R.string.data_dns_unreachable, host.toString())
 
-    fun dnsStuck(host: String?) =
-        "the TV couldn't look anything up through $host, and putting the old Private DNS back failed. " +
-            "The TV may be offline until you undo it in History"
+    fun dnsStuck(host: String?) = UiText(R.string.data_dns_stuck, host.toString())
 }

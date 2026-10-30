@@ -2,6 +2,7 @@
 
 package app.tellyscope.ui
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -30,64 +31,79 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 
 /**
  * How to switch on debugging, per brand, because the menu names differ. [pair] is where the
  * pairing code lives on TVs with Wireless debugging; null where the brand only has the older switch.
- * `**…**` marks the words to find on the TV.
+ * `**…**` marks the words to find on the TV. [debugDone] is [debugTitle] once it's done.
  */
-class TvBrand(val name: String, val unlock: String, val debugTitle: String, val debug: String, val pair: String?)
+class TvBrand(
+    @StringRes val name: Int,
+    @StringRes val unlock: Int,
+    @StringRes val debugTitle: Int,
+    @StringRes val debugDone: Int,
+    @StringRes val debug: Int,
+    @StringRes val pair: Int?,
+)
 
-private const val ANDROID_TV_PAIR = "**Device Preferences → Developer options → Wireless debugging → Pair device with pairing code**"
+private val ANDROID_TV_PAIR = R.string.guide_pair_android_tv
 
 val brands = listOf(
     TvBrand(
-        "Google TV",
-        unlock = "On the TV: **Settings → System → About**. Press OK on **Android TV OS build** 7 times, until it says you're a developer.",
-        debugTitle = "Turn on Wireless debugging",
-        debug = "Back to **System → Developer options**. Turn on **Wireless debugging**. Older TVs call it **USB debugging**.",
-        pair = "**System → Developer options → Wireless debugging → Pair device with pairing code**",
+        R.string.guide_brand_google_tv,
+        unlock = R.string.guide_unlock_google_tv,
+        debugTitle = R.string.guide_debug_title_wireless,
+        debugDone = R.string.guide_debug_done_wireless,
+        debug = R.string.guide_debug_google_tv,
+        pair = R.string.guide_pair_google_tv,
     ),
     TvBrand(
-        "Android TV",
-        unlock = "On the TV: **Settings → Device Preferences → About**. Press OK on **Build** 7 times.",
-        debugTitle = "Turn on Wireless debugging",
-        debug = "Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older TVs have **USB debugging** and **Network debugging** instead: turn on both.",
+        R.string.guide_brand_android_tv,
+        unlock = R.string.guide_unlock_build,
+        debugTitle = R.string.guide_debug_title_wireless,
+        debugDone = R.string.guide_debug_done_wireless,
+        debug = R.string.guide_debug_android_tv,
         pair = ANDROID_TV_PAIR,
     ),
     TvBrand(
-        "Fire TV",
-        unlock = "On the TV: **Settings → My Fire TV → About**. Press OK on the first row, your Fire TV's name, 7 times.",
-        debugTitle = "Turn on ADB debugging",
-        debug = "Back to **My Fire TV → Developer options**. Turn on **ADB debugging**.",
+        R.string.guide_brand_fire_tv,
+        unlock = R.string.guide_unlock_fire_tv,
+        debugTitle = R.string.guide_debug_title_adb,
+        debugDone = R.string.guide_debug_done_adb,
+        debug = R.string.guide_debug_fire_tv,
         pair = null,
     ),
     TvBrand(
-        "Xiaomi",
-        unlock = "On the TV: **Settings → Device Preferences → About**. Press OK on **Build** 7 times.",
-        debugTitle = "Turn on Wireless debugging",
-        debug = "Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older TVs call it **USB debugging**.",
+        R.string.guide_brand_xiaomi,
+        unlock = R.string.guide_unlock_build,
+        debugTitle = R.string.guide_debug_title_wireless,
+        debugDone = R.string.guide_debug_done_wireless,
+        debug = R.string.guide_debug_xiaomi,
         pair = ANDROID_TV_PAIR,
     ),
     TvBrand(
-        "XGIMI",
-        unlock = "On the TV: **Settings → Device Preferences → About**. Press OK on **Build** 7 times.",
-        debugTitle = "Turn on Wireless debugging",
-        debug = "Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older projectors have **USB debugging**, then **Network debugging** if it's listed: turn on both.",
+        R.string.guide_brand_xgimi,
+        unlock = R.string.guide_unlock_build,
+        debugTitle = R.string.guide_debug_title_wireless,
+        debugDone = R.string.guide_debug_done_wireless,
+        debug = R.string.guide_debug_xgimi,
         pair = ANDROID_TV_PAIR,
     ),
     TvBrand(
-        "Other",
-        unlock = "On the TV, open **Settings**. Has **System**? It's Google TV: go to **System → About** and press OK on **Android TV OS build** 7 times. Has **Device Preferences**? It's Android TV: go to **Device Preferences → About** and press OK on **Build** 7 times.",
-        debugTitle = "Turn on Wireless debugging",
-        debug = "Back one level, open **Developer options**. Turn on **Wireless debugging**. Older TVs have **USB debugging**, and some **Network debugging** too: turn on what's there.",
-        pair = "**Developer options → Wireless debugging → Pair device with pairing code**",
+        R.string.guide_brand_other,
+        unlock = R.string.guide_unlock_other,
+        debugTitle = R.string.guide_debug_title_wireless,
+        debugDone = R.string.guide_debug_done_wireless,
+        debug = R.string.guide_debug_other,
+        pair = R.string.guide_pair_other,
     ),
 )
 
@@ -96,13 +112,13 @@ val brands = listOf(
 @Composable
 fun BrandChips(brand: TvBrand, onPick: (TvBrand) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Pick your TV", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.guide_pick_tv), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             brands.forEach { b ->
                 FilterChip(
                     selected = b == brand,
                     onClick = { onPick(b) },
-                    label = { Text(b.name) },
+                    label = { Text(stringResource(b.name)) },
                     leadingIcon = if (b == brand) ({ Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }) else null,
                 )
             }
@@ -117,9 +133,9 @@ fun BrandChips(brand: TvBrand, onPick: (TvBrand) -> Unit) {
 @Composable
 fun GuideSteps(brand: TvBrand, step: Int, onStep: (Int) -> Unit, findTvs: @Composable () -> Unit) {
     val steps = listOf(
-        Triple("Unlock developer options", brand.unlock, "Developer options unlocked"),
-        Triple(brand.debugTitle, brand.debug, brand.debugTitle.removePrefix("Turn on ") + " on"),
-        Triple("Find your TV", "", ""),
+        Triple(stringResource(R.string.guide_unlock_title), stringResource(brand.unlock), stringResource(R.string.guide_unlock_done)),
+        Triple(stringResource(brand.debugTitle), stringResource(brand.debug), stringResource(brand.debugDone)),
+        Triple(stringResource(R.string.guide_find_title), "", ""),
     )
     Column(Modifier.animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec())) {
         steps.forEachIndexed { i, (title, body, done) ->
@@ -144,8 +160,8 @@ fun GuideSteps(brand: TvBrand, step: Int, onStep: (Int) -> Unit, findTvs: @Compo
                         i == step -> {
                             Text(marked(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onStep(i + 1) }) { Text("Done, next") }
-                                if (i > 0) TextButton(onClick = { onStep(i - 1) }) { Text("Back") }
+                                Button(onClick = { onStep(i + 1) }) { Text(stringResource(R.string.guide_done_next)) }
+                                if (i > 0) TextButton(onClick = { onStep(i - 1) }) { Text(stringResource(R.string.guide_back)) }
                             }
                         }
                     }
@@ -165,7 +181,7 @@ private fun StepDot(n: Int, done: Boolean, current: Boolean) {
             .border(2.dp, if (filled) c.primary else c.outlineVariant, CircleShape),
         contentAlignment = Alignment.Center,
     ) {
-        if (done) Icon(Icons.Default.Check, contentDescription = "Done", Modifier.size(18.dp), tint = c.onPrimary)
+        if (done) Icon(Icons.Default.Check, contentDescription = stringResource(R.string.guide_done), Modifier.size(18.dp), tint = c.onPrimary)
         else Text("$n", style = MaterialTheme.typography.labelLarge, color = if (current) c.onPrimary else c.outline)
     }
 }
@@ -174,21 +190,22 @@ private fun StepDot(n: Int, done: Boolean, current: Boolean) {
 @Composable
 fun HelpDialog(brand: TvBrand, onAddByIp: () -> Unit, onDismiss: () -> Unit) {
     val tips = buildList {
-        add("Keep the phone and the TV on the same Wi-Fi. Guest networks often keep devices apart.")
-        add("Debugging switched itself off? Some TVs reset it after a restart. Turn it back on and this screen finds the TV again.")
-        if (brand.name == "Fire TV") add("No Developer options after 7 presses? Newer Fire TVs run Vega OS, which isn't Android, and Tellyscope can't reach them.")
-        add("Still nothing? Add the TV by its IP address, from the TV's network settings.")
+        add(R.string.guide_tip_same_wifi)
+        add(R.string.guide_tip_debugging_off)
+        if (brand.name == R.string.guide_brand_fire_tv) add(R.string.guide_tip_vega)
+        add(R.string.guide_tip_by_ip)
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Can't find your TV?") },
+        title = { Text(stringResource(R.string.guide_help_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                tips.forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+                tips.forEach { Text(stringResource(it), style = MaterialTheme.typography.bodyMedium) }
             }
         },
-        confirmButton = { Button(onClick = { onDismiss(); onAddByIp() }) { Text("Add by IP address") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { Button(onClick = { onDismiss(); onAddByIp() }) { Text(stringResource(R.string.guide_add_by_ip)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.guide_close)) } },
+
     )
 }
 

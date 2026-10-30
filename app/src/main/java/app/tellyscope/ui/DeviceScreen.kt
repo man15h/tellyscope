@@ -50,8 +50,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
@@ -63,6 +66,7 @@ import app.tellyscope.data.DeviceState
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.Proc
 import app.tellyscope.data.Snapshot
+import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
 
 data class DeviceActions(
@@ -139,7 +143,7 @@ data class DeviceActions(
 
 /**
  * The TV's vitals in one small card: internal storage as a full bar, since it decides whether an
- * install fits, then CPU, RAM, temperature and network speed as plain numbers.
+ * install fits, then CPU, RAM and network speed as plain numbers.
  */
 @Composable
 internal fun SystemWidget(s: Snapshot) = SystemWidget(s.storageUsedGb, s.storageTotalGb, s)
@@ -157,16 +161,16 @@ internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, as
     ) {
         Column(Modifier.padding(16.dp)) {
             if (asOf != null) {
-                Text("As of $asOf", Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.device_as_of, asOf), Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val used = usedGb
             val total = totalGb?.takeIf { it > 0 }
             if (used != null && total != null) {
                 Row {
-                    Text("Internal storage", Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("${Copy.gbOf(used, total)} used", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.device_internal_storage), Modifier.weight(1f), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.device_gb_used, Copy.gbOf(used, total).resolve()), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Copy.free(used, total)?.let { Text(it, style = MaterialTheme.typography.titleLarge) }
+                Copy.free(used, total)?.let { Text(it.resolve(), style = MaterialTheme.typography.titleLarge) }
                 val full = used / total
                 LinearProgressIndicator(
                     progress = { full.toFloat().coerceIn(0f, 1f) },
@@ -175,18 +179,17 @@ internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, as
                 )
             }
             Row {
-                Vital("CPU", live?.let { "${it.cpuPercent}%" } ?: dash, Modifier.weight(1f))
-                Vital("RAM", live?.takeIf { it.ramTotalMb > 0 }?.let { "${it.ramUsedMb * 100 / it.ramTotalMb}%" } ?: dash, Modifier.weight(1f))
-                Vital("Temp", live?.tempC?.let { "$it\u00b0C" } ?: dash, Modifier.weight(1f))
-                Vital("Network", live?.netBytesPerSec?.let(Copy::speed) ?: dash, Modifier.weight(1.3f))
+                Vital(stringResource(R.string.device_cpu), live?.let { stringResource(R.string.device_percent, it.cpuPercent) } ?: dash, Modifier.weight(1f))
+                Vital(stringResource(R.string.device_ram), live?.takeIf { it.ramTotalMb > 0 }?.let { stringResource(R.string.device_percent, it.ramUsedMb * 100 / it.ramTotalMb) } ?: dash, Modifier.weight(1f), Alignment.CenterHorizontally)
+                Vital(stringResource(R.string.device_network), live?.netBytesPerSec?.let { Copy.speed(it).resolve() } ?: dash, Modifier.weight(1f), Alignment.End)
             }
         }
     }
 }
 
 @Composable
-private fun Vital(label: String, value: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
+private fun Vital(label: String, value: String, modifier: Modifier = Modifier, align: Alignment.Horizontal = Alignment.Start) {
+    Column(modifier, horizontalAlignment = align) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"), maxLines = 1)
     }
@@ -197,10 +200,10 @@ private fun Vital(label: String, value: String, modifier: Modifier = Modifier) {
 fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Disable ${entry.label}?") },
-        text = { Text(Copy.explain(Action.Disable, entry.label, entry.packageName)) },
-        confirmButton = { Button(onClick = onDisable) { Text(Copy.confirm(Action.Disable)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(stringResource(R.string.device_disable_title, entry.label)) },
+        text = { Text(Copy.explain(Action.Disable, entry.label, entry.packageName).resolve()) },
+        confirmButton = { Button(onClick = onDisable) { Text(Copy.confirm(Action.Disable).resolve()) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -209,15 +212,12 @@ fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () 
 fun RestoreDialog(count: Int, onRestore: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Turn $count ${if (count == 1) "app" else "apps"} back on?") },
+        title = { Text(pluralStringResource(R.plurals.device_restore_title, count, count)) },
         text = {
-            Text(
-                "Turns back on every app Tellyscope disabled on this TV. " +
-                    "Apps that were already off before Tellyscope's first change stay off.",
-            )
+            Text(stringResource(R.string.device_restore_text))
         },
-        confirmButton = { Button(onClick = onRestore) { Text("Turn back on") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = onRestore) { Text(stringResource(R.string.device_restore_button)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -238,10 +238,10 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
     var text by rememberSaveable { mutableStateOf(current) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Rename this TV") },
+        title = { Text(stringResource(R.string.device_rename_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Only this phone sees the name. Nothing on the TV changes.")
+                Text(stringResource(R.string.device_rename_text))
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it.take(app.tellyscope.data.NameBook.MAX_LENGTH) },
@@ -250,8 +250,8 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
                 )
             }
         },
-        confirmButton = { Button(onClick = { onSave(text) }) { Text("Save") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        confirmButton = { Button(onClick = { onSave(text) }) { Text(stringResource(R.string.device_save)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -260,10 +260,10 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
 fun ForgetDialog(name: String, onForget: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Forget $name?") },
-        text = { Text("Tellyscope stops reconnecting to it and removes it from this phone. Nothing on the TV changes. You can add it again from a scan.") },
-        confirmButton = { Button(onClick = onForget) { Text("Forget") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        title = { Text(stringResource(R.string.device_forget_title, name)) },
+        text = { Text(stringResource(R.string.device_forget_text)) },
+        confirmButton = { Button(onClick = onForget) { Text(stringResource(R.string.device_forget)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -288,14 +288,14 @@ internal fun NotAllowedCard(onConnect: () -> Unit) {
         ),
     ) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            CardTitle(Icons.Default.Warning, "The TV didn't allow this phone")
+            CardTitle(Icons.Default.Warning, stringResource(R.string.device_not_allowed_title))
             Text(
-                "Its debugging access was turned off, reset, or denied. Tellyscope stopped asking so the TV isn't flooded with prompts.",
+                stringResource(R.string.device_not_allowed_text),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onConnect) { Text("Connect again") }
+            Button(onClick = onConnect) { Text(stringResource(R.string.device_connect_again)) }
             Text(
-                "Then press Allow on the TV, and tick \"Always allow from this computer\".",
+                stringResource(R.string.device_not_allowed_hint),
                 style = MaterialTheme.typography.bodySmall,
             )
         }
@@ -322,14 +322,14 @@ internal fun OfflineCard(device: Device, now: Long, onReconnect: () -> Unit) {
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                CardTitle(Icons.Default.Info, "Offline")
+                CardTitle(Icons.Default.Info, stringResource(R.string.device_offline))
                 Text(
-                    "Last seen ${device.lastSeen?.let { Copy.ago(it, now) } ?: "a while ago"}. It reconnects on its own when the TV is back on.",
+                    stringResource(R.string.device_offline_text, device.lastSeen?.let { Copy.ago(it, now).resolve() } ?: stringResource(R.string.device_a_while_ago)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
             Spacer(Modifier.width(12.dp))
-            FilledTonalButton(onClick = onReconnect) { Text("Reconnect") }
+            FilledTonalButton(onClick = onReconnect) { Text(stringResource(R.string.device_reconnect)) }
         }
     }
 }
@@ -346,7 +346,7 @@ internal fun heaviest(snap: Snapshot, apps: List<AppInfo>): List<String> {
 @Composable
 internal fun EmptyLine(q: String) {
     Text(
-        if (q.isEmpty()) "Nothing here yet." else "Nothing matches \"$q\".",
+        if (q.isEmpty()) stringResource(R.string.device_nothing_here) else stringResource(R.string.device_nothing_matches, q),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
@@ -381,20 +381,20 @@ fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-        title = { Text(Copy.uninstallTitle(app.label)) },
+        title = { Text(Copy.uninstallTitle(app.label).resolve()) },
         text = {
             // The launcher on Home: what happens before it goes, in order.
-            val what = app.homeBack?.let { Copy.uninstallHome(app.label, it, app.homeService) } ?: Copy.explain(Action.Uninstall, app.label, app.packageName)
-            Text(what + if (app.listKeep) "\n\n${Copy.KEEP_WARNING}" else "")
+            val what = (app.homeBack?.let { Copy.uninstallHome(app.label, it, app.homeService) } ?: Copy.explain(Action.Uninstall, app.label, app.packageName)).resolve()
+            Text(what + if (app.listKeep) "\n\n${Copy.KEEP_WARNING.resolve()}" else "")
         },
         confirmButton = {
             Button(
                 onClick = onUninstall,
                 enabled = enabled,
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
-            ) { Text(Copy.confirm(Action.Uninstall)) }
+            ) { Text(Copy.confirm(Action.Uninstall).resolve()) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -410,31 +410,37 @@ internal fun AppRow(
     locked: Boolean = false,
     /** Opens the Home screen card in Tweaks, where launchers are switched. */
     toHomeScreen: () -> Unit = {},
+    /** The TV is away: what the row last heard is stale, so it greys out, says nothing and won't open. */
+    offline: Boolean = false,
 ) {
     var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
     // A launcher can be protected and still open, for the way to the Home screen card.
     val launcher = app.answersHome || app.builtInLauncher
-    val changeable = app.protectedReason == null || launcher
+    val changeable = (app.protectedReason == null || launcher) && !offline
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
-    val status = when {
-        !app.enabled -> "Disabled"
-        ram > 0 -> "Running"
-        else -> "Not running"
-    }
-    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { open = !open }.padding(vertical = 8.dp)) {
+    val status = stringResource(
+        when {
+            !app.enabled -> R.string.device_app_disabled
+            ram > 0 -> R.string.device_app_running
+            else -> R.string.device_app_not_running
+        },
+    )
+    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { open = !open }.padding(vertical = 8.dp).alpha(if (offline) 0.38f else 1f)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AppIcon(app, Modifier.alpha(if (app.enabled) 1f else 0.4f))
+            AppIcon(app, Modifier.alpha(if (app.enabled || offline) 1f else 0.4f))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(
-                    app.protectedReason?.let { "Protected: $it" } ?: status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (app.homeServiceOff) Text(Copy.SERVICE_OFF, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (!offline) {
+                    Text(
+                        app.protectedReason?.let { stringResource(R.string.device_app_protected, it.resolve()) } ?: status,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    if (app.homeServiceOff) Text(Copy.SERVICE_OFF.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
-            if (busy) androidx.compose.material3.LoadingIndicator(Modifier.size(32.dp))
+            if (busy && !offline) androidx.compose.material3.LoadingIndicator(Modifier.size(32.dp))
         }
         // Home switches are asked for in the Home screen card, not here.
         val proposed = pending?.takeIf { it.first == app.packageName }?.second?.takeUnless { it == Action.Home || it == Action.HomeBack }
@@ -445,17 +451,17 @@ internal fun AppRow(
                 if (proposed == null) {
                     if (app.protectedReason == null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (app.enabled && ram > 0) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop)) }
-                            if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable)) }
-                            else FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable)) }
-                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall)) }
+                            if (app.enabled && ram > 0) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
+                            if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
+                            else FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
+                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
                     } else if (launcher && app.removable) {
                         // The launcher on Home: protected, but Uninstall still goes, Home moving first.
-                        OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall)) }
+                        OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {
-                        Text(Copy.HOME_SETTINGS)
+                        Text(Copy.HOME_SETTINGS.resolve())
                         Spacer(Modifier.width(8.dp))
                         Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null, Modifier.size(18.dp))
                     }
@@ -463,13 +469,14 @@ internal fun AppRow(
                     UninstallDialog(app, onUninstall = actions.confirm, onDismiss = actions.cancel, enabled = !locked)
                 } else {
                     Text(
-                        if (app.listKeep && proposed != Action.Enable) Copy.explain(proposed, app.label, app.packageName) + "\n\n" + Copy.KEEP_WARNING
-                        else Copy.explain(proposed, app.label, app.packageName),
+                        if (app.listKeep && proposed != Action.Enable) Copy.explain(proposed, app.label, app.packageName).resolve() + "\n\n" + Copy.KEEP_WARNING.resolve()
+                        else Copy.explain(proposed, app.label, app.packageName).resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed)) }
-                        TextButton(onClick = actions.cancel) { Text("Cancel") }
+                        Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed).resolve()) }
+                        TextButton(onClick = actions.cancel) { Text(stringResource(R.string.device_cancel)) }
+
                     }
                 }
             }

@@ -7,18 +7,14 @@ package app.tellyscope.adb
 internal object Commands {
     const val SEP = "@@tellyscope@@"
 
-    const val THERMAL =
-        "for z in /sys/class/thermal/thermal_zone*; do echo \"$(cat \$z/type 2>/dev/null)=$(cat \$z/temp 2>/dev/null)\"; done"
-
     /** Every 2 s: CPU counters, memory and the byte counters for network speed. */
     val FAST = listOf("cat /proc/stat", "cat /proc/meminfo", "cat /proc/net/dev").batch()
 
-    /** Every 60 s and on open: identity, storage, uptime, temperature. */
+    /** Every 60 s and on open: identity, storage, uptime, packages. */
     val SLOW = listOf(
         "getprop",
         "df -k /data",
         "cat /proc/uptime",
-        THERMAL,
         PACKAGES,
     ).batch()
 

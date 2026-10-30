@@ -3,6 +3,7 @@
 package app.tellyscope
 
 import androidx.compose.ui.text.font.FontWeight
+import app.tellyscope.data.RELEASES
 import app.tellyscope.data.UpdateCheck
 import app.tellyscope.data.compareVersions
 import app.tellyscope.data.newest
@@ -26,6 +27,8 @@ import java.io.IOException
 @Config(sdk = [35])
 class UpdateCheckTest {
     @get:Rule val tmp = TemporaryFolder()
+
+    private val MORE = Strings.string(R.string.update_more_notes)
 
     private val minute = 60 * 1000L
     private val hour = 60 * minute
@@ -70,6 +73,21 @@ class UpdateCheckTest {
         assertTrue(u!!.url.endsWith("/tellyscope/releases/tag/v0.2.0"))
     }
 
+    @Test fun `the release's one APK comes along, only from this repo's releases`() {
+        val base = RELEASES + "/download/v0.2.0/"
+        fun withAsset(url: String, size: Long) =
+            releases("""{"tag_name":"v0.2.0","prerelease":false,"draft":false,"body":"","assets":[{"name":"Tellyscope-0.2.0.apk","browser_download_url":"$url","size":$size}]}""")
+        val u = newest(withAsset(base + "Tellyscope-0.2.0.apk", 3_000_000), alpha = false)
+        assertEquals(base + "Tellyscope-0.2.0.apk", u?.apk)
+        assertNull(newest(withAsset("https://example.com/Tellyscope-0.2.0.apk", 3_000_000), alpha = false)?.apk)
+        assertNull(newest(withAsset(base + "Tellyscope-0.2.0.apk", 0), alpha = false)?.apk)
+        assertNull(newest(releases(release("v0.2.0")), alpha = false)?.apk)
+        // An alpha build is a different package: it's offered the release, but only its page.
+        val offered = newest(withAsset(base + "Tellyscope-0.2.0.apk", 3_000_000), alpha = true)
+        assertEquals("0.2.0", offered?.version)
+        assertNull(offered?.apk)
+    }
+
     @Test fun `nothing when the running version is the newest`() = runTest {
         val check = UpdateCheck(tmp.newFile(), "0.2.0", alpha = false, fetch = { releases(release("v0.2.0"), release("v0.1.0")).toByteArray() })
         assertNull(check.check())
@@ -111,18 +129,6 @@ class UpdateCheckTest {
         assertEquals("0.2.0", check.check()?.version)
     }
 
-    @Test fun `a skipped version stays skipped, a later one is offered`() = runTest {
-        val file = tmp.newFile()
-        var now = 0L
-        var latest = "v0.2.0"
-        val check = UpdateCheck(file, "0.1.0", alpha = false, clock = { now }) { releases(release(latest)).toByteArray() }
-        check.skip("0.2.0")
-        assertNull(check.check())
-        now += day
-        latest = "v0.2.1"
-        assertEquals("0.2.1", UpdateCheck(file, "0.1.0", alpha = false, clock = { now }) { releases(release(latest)).toByteArray() }.check()?.version)
-    }
-
     @Test fun `on by default, and off means no request`() = runTest {
         val file = tmp.newFile()
         var calls = 0
@@ -132,6 +138,19 @@ class UpdateCheckTest {
         assertFalse(UpdateCheck(file, "0.1.0", alpha = false).enabled)
         assertNull(check.check())
         assertEquals(0, calls)
+    }
+
+    @Test fun `newer reads main's CHANGELOG and keeps only releases past the installed one`() = runTest {
+        val urls = mutableListOf<String>()
+        val md = "# Changelog\n\n## Unreleased\n\n- **New:** Later.\n\n## 0.3.0 — 2026-10-30\n\n- **New:** Three.\n\n## 0.2.0 — 2026-10-29\n\n- **New:** Two.\n"
+        val newer = UpdateCheck(tmp.newFile(), "0.2.0", alpha = false) { urls += it; md.toByteArray() }.newer()
+        assertEquals(listOf("0.3.0"), newer?.map { it.version })
+        assertTrue(urls.single().endsWith("/main/CHANGELOG.md"))
+        // An alpha reads main too, and its own section is its base version's.
+        val alpha = UpdateCheck(tmp.newFile(), "0.2.0-alpha.4", alpha = true) { urls += it; md.toByteArray() }.newer()
+        assertEquals(listOf("0.3.0"), alpha?.map { it.version })
+        assertTrue(urls.last().endsWith("/main/CHANGELOG.md"))
+        assertNull(UpdateCheck(tmp.newFile(), "0.2.0", alpha = false) { throw IOException("offline") }.newer())
     }
 
     /** v0.1.0's body as release.yml wrote it, commit list cut short. */
@@ -172,7 +191,7 @@ class UpdateCheckTest {
     """.trimIndent()
 
     @Test fun `prod notes keep the changelog lines, plain, capped at twelve`() {
-        val lines = dialogNotes(prodBody).lines()
+        val lines = dialogNotes(prodBody, MORE).lines()
         assertEquals(13, lines.size)
         assertEquals("- **New:** A new app icon: a telescope with a TV screen for a lens.", lines.first())
         assertEquals("…and more on GitHub", lines.last())
@@ -182,18 +201,18 @@ class UpdateCheckTest {
     @Test fun `alpha notes are just the alpha line`() {
         assertEquals(
             "Alpha build v0.2.0-alpha.1 from abdb1a8 on dev. Untested and may break; it installs as a separate app, app.tellyscope.alpha.",
-            dialogNotes(alphaBody),
+            dialogNotes(alphaBody, MORE),
         )
     }
 
     @Test fun `short notes are not cut`() {
-        assertEquals("- **Fixed:** one thing.", dialogNotes("- **Fixed:** one thing. [#9](../../pull/9)\n\n### Commits since v1\n\n- x (abc)"))
+        assertEquals("- **Fixed:** one thing.", dialogNotes("- **Fixed:** one thing. [#9](../../pull/9)\n\n### Commits since v1\n\n- x (abc)", MORE))
     }
 
     @Test fun `New is bold with the stars gone`() {
-        val first = boldSpans(dialogNotes(prodBody)).let { it.subSequence(0, it.text.indexOf('\n')) }
+        val first = boldSpans(dialogNotes(prodBody, MORE)).let { it.subSequence(0, it.text.indexOf('\n')) }
         assertEquals("- New: A new app icon: a telescope with a TV screen for a lens.", first.text)
-        assertFalse('*' in boldSpans(dialogNotes(prodBody)).text)
+        assertFalse('*' in boldSpans(dialogNotes(prodBody, MORE)).text)
         val bold = first.spanStyles.single()
         assertEquals(FontWeight.Bold, bold.item.fontWeight)
         assertEquals("New:", first.text.substring(bold.start, bold.end))

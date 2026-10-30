@@ -1,5 +1,1396 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Tellyscope</string>
+
+    <!-- copy -->
+
+    <!-- App actions: button, confirm, explanation, result -->
+    <string name="copy_button_stop">Stop</string>
+    <string name="copy_button_disable">Disable</string>
+    <string name="copy_button_enable">Turn on</string>
+    <string name="copy_button_open">Open</string>
+    <string name="copy_button_uninstall">Uninstall</string>
+
+    <string name="copy_confirm_stop">Yes, stop it</string>
+    <string name="copy_confirm_disable">Yes, disable it</string>
+    <string name="copy_confirm_enable">Yes, turn it on</string>
+    <string name="copy_confirm_open">Yes, open it</string>
+    <string name="copy_confirm_uninstall">Yes, uninstall it</string>
+    <string name="copy_confirm_home">Yes, switch home screen</string>
+    <string name="copy_confirm_home_back">Yes, switch back</string>
+
+    <!-- %1$s is the app's label, %2$s its package id -->
+    <string name="copy_explain_stop">Stops %1$s (%2$s) until you open it again.</string>
+    <string name="copy_explain_disable">Hides %1$s (%2$s) and stops it running. Nothing is deleted; you can turn it back on here.</string>
+    <string name="copy_explain_enable">Turns %1$s (%2$s) back on.</string>
+    <string name="copy_explain_open">Opens %1$s (%2$s) on the TV.</string>
+    <string name="copy_explain_uninstall">Removes %1$s (%2$s) and everything saved in it. This can\'t be undone; to get it back, install it again.</string>
+
+    <string name="copy_done_stop">Stopped %1$s</string>
+    <string name="copy_done_disable">Disabled %1$s</string>
+    <string name="copy_done_enable">Turned on %1$s</string>
+    <string name="copy_done_open">Opened %1$s</string>
+    <string name="copy_done_uninstall">Uninstalled %1$s</string>
+    <string name="copy_done_clear_caches">Cleared %1$s</string>
+    <string name="copy_done_home">Made %1$s Home</string>
+    <string name="copy_done_home_back">Switched home back to %1$s</string>
+
+    <string name="copy_keep_warning">This TV\'s list says to keep this.</string>
+
+    <string name="copy_list_source_default">Lists from tellyscope-devices, built from cleanyourtv</string>
+    <!-- %1$s is where a custom list comes from, like a GitHub repo -->
+    <string name="copy_list_source_custom">Lists from %1$s</string>
+
+    <!-- Home screen card -->
+    <string name="copy_home_screen">Home screen</string>
+    <string name="copy_opens_on_home">%1$s opens when you press Home.</string>
+    <string name="copy_no_default">No default: pick one below.</string>
+    <string name="copy_added">Added</string>
+    <string name="copy_built_in">Built into the TV</string>
+    <string name="copy_built_in_off">Built into the TV · turned off</string>
+    <string name="copy_current">Current</string>
+    <string name="copy_keeps_home">Keeps Home with its accessibility service</string>
+    <string name="copy_make_home">Make Home</string>
+    <string name="copy_get_launcher">Get another launcher</string>
+    <string name="copy_get_launcher_text">Install one from the Play Store, like Projectivy or FLauncher. Switch back any time.</string>
+    <string name="copy_get_projectivy_text">Install Projectivy. Switch back any time.</string>
+    <string name="copy_home_settings">Home screen settings</string>
+    <string name="copy_make_home_title">Make %1$s the home screen?</string>
+
+    <!-- explainReplace paragraphs; %1$s the new launcher, %2$s the TV's built-in one -->
+    <string name="copy_explain_replace_opens">Home opens %1$s. To stop the TV switching back by itself, Tellyscope turns off %2$s, the TV\'s built-in launcher.</string>
+    <string name="copy_explain_replace_only">That\'s the only launcher it ever turns off. Launchers you added stay on, so you can switch between them any time.</string>
+    <string name="copy_explain_replace_undo">Undo in History turns %1$s back on.</string>
+    <!-- %1$s is the Google TV launcher being turned off -->
+    <string name="copy_google_features">Some Google TV features, like the Apps row and the Live tab, are part of %1$s and go away with it.</string>
+    <string name="copy_next_service">Next, you choose whether to turn on its accessibility service.</string>
+
+    <!-- explainLeave; %1$s the launcher Home switches to, the other arg the current one -->
+    <string name="copy_explain_leave_turns_on">Tellyscope turns %1$s back on and makes it open when you press Home.</string>
+    <string name="copy_explain_leave_makes">Tellyscope makes %1$s open when you press Home.</string>
+    <string name="copy_explain_leave_service">It also turns off %1$s\'s accessibility service, which would otherwise take Home straight back.</string>
+    <string name="copy_explain_leave_stays">%1$s stays installed and on, so you can make it Home again any time.</string>
+    <string name="copy_explain_leave_undo">Undo in History makes %1$s Home again.</string>
+    <string name="copy_explain_leave_undo_service">Undo in History makes %1$s Home again and turns its service back on.</string>
+
+    <!-- %1$s (%2$s) the new launcher and its package, %3$s (%4$s) the one it replaces -->
+    <string name="copy_explain_home">Makes %1$s (%2$s) open when you press Home, then disables %3$s (%4$s) so the TV can\'t switch back by itself. Undo in History turns %3$s back on and makes it Home again.</string>
+    <!-- Fire OS: %1$s (%2$s) the launcher and its package, %3$s Amazon's launcher; copy_next_service follows -->
+    <string name="copy_explain_fire_home">Makes Home open %1$s (%2$s) through its accessibility service. Fire OS won\'t let %3$s be turned off or replaced, so it stays on and nothing else changes. Undo in History turns the service off.</string>
+    <string name="copy_explain_first_home">Makes %1$s (%2$s) open when you press Home. The TV has no default home screen now, and nothing else is turned off.</string>
+
+    <string name="copy_service_title">Turn on %1$s\'s accessibility service?</string>
+    <!-- %1$s the launcher, %2$s the one Home may open without its service -->
+    <string name="copy_explain_service">It keeps the Home button opening %1$s. Without it, this TV\'s Home button may still open %2$s.\n\nAn accessibility service can see what\'s on screen. Turn it on only if you trust %1$s.\n\nUndo in History, or making another launcher Home, turns it off.</string>
+
+    <string name="copy_turn_it_on">Turn it on</string>
+    <string name="copy_switch_without">Switch without it</string>
+    <string name="copy_not_now">Not now</string>
+    <string name="copy_turn_on">Turn on</string>
+    <string name="copy_got_it">Got it</string>
+    <string name="copy_service_off">Accessibility service off</string>
+    <string name="copy_service_off_title">Home may open %1$s</string>
+    <string name="copy_tv_own_launcher">the TV\'s own launcher</string>
+
+    <!-- Installing a home screen -->
+    <string name="copy_better_home">Get a better home screen</string>
+    <!-- %1$s is the current launcher's name, or copy_the_tvs_home_screen -->
+    <string name="copy_better_home_text">Swap %1$s for a launcher without ads. Free on the Play Store; switch back any time.</string>
+    <!-- Fire OS: there's no Play Store and Tellyscope installs it. %1$s as in copy_better_home_text -->
+    <string name="copy_better_home_text_fire">Swap %1$s for a launcher without ads; switch back any time.</string>
+    <string name="copy_the_tvs_home_screen">the TV\'s home screen</string>
+    <string name="copy_choose_one">Choose one</string>
+    <string name="copy_install_one">Install it</string>
+    <string name="copy_choose_home">Choose a home screen</string>
+    <string name="copy_choose_home_text">Each one replaces the TV\'s home screen. Tellyscope opens it in the Play Store on the TV; you install it with the remote.</string>
+    <string name="copy_can_download">Some can also be downloaded directly.</string>
+    <string name="copy_no_launcher_list">Couldn\'t load the list of home screens. Check the phone\'s internet and try again.</string>
+    <string name="copy_recommended">Recommended</string>
+    <string name="copy_on_this_tv">On this TV</string>
+    <string name="copy_installed">Installed</string>
+    <string name="copy_home_now">Home now</string>
+    <string name="copy_open">Open</string>
+    <string name="copy_uses_service">Uses an accessibility service</string>
+    <string name="copy_no_service">Open source · no accessibility service</string>
+    <!-- %1$s is copy_on_this_tv -->
+    <string name="copy_other_launcher">Prefer another launcher? Install it from the Play Store on your TV, then come back here. It shows up under %1$s.</string>
+    <string name="copy_not_affiliated">Tellyscope isn\'t affiliated with any of these launchers or their developers.</string>
+    <string name="copy_get_from_store">Get it from Play Store</string>
+    <string name="copy_store_recommended">Play Store recommended: it updates itself</string>
+    <string name="copy_download_directly">Download directly</string>
+    <string name="copy_install_home">Install a home screen</string>
+    <string name="copy_install_it">Install it on your TV</string>
+    <string name="copy_install_it_text">The Play Store is open on the TV, on %1$s\'s page. Use the remote to select Install. Tellyscope moves on by itself once it\'s installed.</string>
+    <string name="copy_store_on">Play Store on %1$s</string>
+    <string name="copy_waiting_install">Waiting for install…</string>
+    <string name="copy_downloads_take">Downloads can take a minute. Tellyscope can\'t see the download, only when it\'s done.</string>
+    <string name="copy_open_store_again">Open Play Store again</string>
+    <string name="copy_make_it_home">Make it the home screen?</string>
+    <string name="copy_is_installed">%1$s is installed.</string>
+    <!-- %2$s is copy_make_home, %3$s is copy_home_screen -->
+    <string name="copy_launcher_later">%1$s is installed. To use it later, choose %2$s on it in Tweaks, under %3$s.</string>
+    <string name="copy_launcher_installed">%1$s is installed. Press Home on the remote to pick it.</string>
+    <string name="copy_launcher_is_home">%1$s is already your home screen.</string>
+    <string name="copy_no_store">The Play Store didn\'t open</string>
+    <!-- %1$s the TV's name, %2$s the launcher's -->
+    <string name="copy_no_store_text">%1$s didn\'t open the Play Store for Tellyscope. On the TV, open the Play Store yourself and search for %2$s. Tellyscope keeps watching and moves on once it\'s installed.</string>
+    <string name="copy_choose_another">Choose another</string>
+    <string name="copy_not_installed">%1$s isn\'t installed</string>
+    <string name="copy_wasnt_installed">%1$s wasn\'t installed</string>
+    <string name="copy_not_installed_text">The Play Store closed on the TV before it was installed. If the Store said it isn\'t available for this TV, choose another launcher.</string>
+
+    <!-- Installing Projectivy on Fire OS: downloaded from its developer's GitHub, installed over adb -->
+    <string name="copy_install_projectivy">Install Projectivy</string>
+    <string name="copy_fire_install_text">A home screen without ads. Tellyscope installs it on the TV for you; there\'s nothing to do on the TV.</string>
+    <!-- %1$s the app's name -->
+    <string name="copy_downloads_from">Tellyscope downloads %1$s from the developer\'s own release page:</string>
+    <!-- %1$s the version, %2$s its size (copy_size_*) -->
+    <string name="copy_release">Release %1$s · %2$s</string>
+    <string name="copy_where_from">Where it comes from</string>
+    <string name="copy_signed_check">Tellyscope checks it\'s signed by Projectivy\'s developer before installing it on the TV. Tellyscope isn\'t affiliated with Projectivy.</string>
+    <string name="copy_download_and_install">Download and install</string>
+    <!-- Download directly, on a TV with the Play Store; %1$s the app's name -->
+    <string name="copy_download_directly_title">Download %1$s directly?</string>
+    <string name="copy_direct_check">Tellyscope checks the app carries the developer\'s signature. It does not scan the app for malicious code, and the app won\'t update on its own.</string>
+    <string name="copy_store_safer">Getting it from Play Store is safer and keeps it updated.</string>
+    <string name="copy_download_anyway">Download anyway</string>
+    <string name="copy_store_instead">Get it from the Play Store on the TV instead.</string>
+    <string name="copy_installing">Installing %1$s</string>
+    <string name="copy_step_download">Download from GitHub</string>
+    <string name="copy_step_downloaded">Downloaded</string>
+    <!-- %1$d percent done, %2$s and %3$s sizes (copy_size_*) -->
+    <string name="copy_downloading">Downloading · %1$d%% · %2$s of %3$s</string>
+    <string name="copy_step_picked">Picked a file</string>
+    <string name="copy_step_check">Check it\'s Projectivy</string>
+    <string name="copy_step_checking">Checking it\'s Projectivy…</string>
+    <string name="copy_step_checked">It\'s Projectivy</string>
+    <string name="copy_step_checked_text">Signed by its developer</string>
+    <string name="copy_step_failed">Not Projectivy</string>
+    <string name="copy_step_failed_text">Package name or signature didn\'t match</string>
+    <string name="copy_install_on">Install on %1$s</string>
+    <string name="copy_stop_title">Stop the download?</string>
+    <string name="copy_stop_text">Nothing is on the TV yet. You can start again any time.</string>
+    <string name="copy_stop">Stop</string>
+    <string name="copy_keep_downloading">Keep downloading</string>
+    <!-- %1$s the TV's name -->
+    <string name="copy_installing_on">Installing on %1$s…</string>
+    <string name="copy_not_projectivy">That download isn\'t Projectivy</string>
+    <string name="copy_not_projectivy_text">The file from GitHub didn\'t match Projectivy\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
+    <string name="copy_not_projectivy_file">That file isn\'t Projectivy</string>
+    <string name="copy_not_projectivy_file_text">It didn\'t match Projectivy\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
+    <string name="copy_cant_read_file">Tellyscope couldn\'t read that file. Pick it again, or download it again.</string>
+    <string name="copy_cant_install">Couldn\'t install %1$s</string>
+    <string name="copy_no_download">Couldn\'t download Projectivy</string>
+    <string name="copy_no_download_offline">The phone can\'t reach GitHub. Check its internet, then try again.</string>
+    <!-- %1$s a clock time, like 18:44 -->
+    <string name="copy_no_download_limited_until">GitHub is limiting downloads from your network until %1$s. Try again then, or download it yourself.</string>
+    <string name="copy_no_download_limited">GitHub is limiting downloads from your network for a while. Try again then, or download it yourself.</string>
+    <string name="copy_or_yourself">Or download it yourself</string>
+    <string name="copy_yourself_page">Download the app file (.apk) from the release page in your browser.</string>
+    <!-- %1$s the release's file name, like Projectivy.apk -->
+    <string name="copy_yourself_pick_file">Come back and pick %1$s. Tellyscope checks it\'s Projectivy before installing it.</string>
+    <string name="copy_yourself_pick">Come back and pick it. Tellyscope checks it\'s Projectivy before installing it.</string>
+    <string name="copy_latest_release">Latest release</string>
+    <string name="copy_pick_downloaded">Pick the downloaded file</string>
+    <string name="copy_pick_another">Pick another file</string>
+    <string name="copy_try_download_again">Try download again</string>
+    <string name="copy_service_off_text">%1$s\'s accessibility service is off, so the TV can take Home back.</string>
+
+    <string name="copy_open_again">Open again</string>
+    <string name="copy_undo">Undo</string>
+
+    <!-- Time and sizes -->
+    <string name="copy_just_now">just now</string>
+    <plurals name="copy_seconds_ago">
+        <item quantity="one">%1$d s ago</item>
+        <item quantity="other">%1$d s ago</item>
+    </plurals>
+    <plurals name="copy_minutes_ago">
+        <item quantity="one">%1$d min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="copy_hours_ago">
+        <item quantity="one">%1$d h ago</item>
+        <item quantity="other">%1$d h ago</item>
+    </plurals>
+    <plurals name="copy_days_ago">
+        <item quantity="one">%1$d d ago</item>
+        <item quantity="other">%1$d d ago</item>
+    </plurals>
+
+    <!-- Compact uptime: days, hours, minutes -->
+    <string name="copy_uptime_days_hours">%1$dd %2$dh</string>
+    <string name="copy_uptime_hours_minutes">%1$dh %2$dm</string>
+    <string name="copy_uptime_minutes">%1$dm</string>
+
+    <plurals name="copy_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <plurals name="copy_hours">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="copy_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <!-- Uptime: %1$s days, %2$s hours -->
+    <string name="copy_days_hours">%1$s, %2$s</string>
+
+    <!-- A network speed; %1$s is a size like 1.5 MB -->
+    <string name="copy_speed">%1$s/s</string>
+    <string name="copy_size_gb">%1$.1f GB</string>
+    <string name="copy_size_mb">%1$.1f MB</string>
+    <string name="copy_size_gb_whole">%1$d GB</string>
+    <string name="copy_size_mb_whole">%1$d MB</string>
+    <string name="copy_size_kb">%1$d KB</string>
+    <plurals name="copy_size_bytes">
+        <item quantity="one">%1$d bytes</item>
+        <item quantity="other">%1$d bytes</item>
+    </plurals>
+
+    <string name="copy_uninstall_title">Uninstall %1$s?</string>
+    <!-- Uninstalling the launcher on Home: paragraphs; %1$s the launcher, the numbers are step numbers -->
+    <string name="copy_uninstall_home_intro">%1$s is your home screen. Before removing it, Tellyscope:</string>
+    <string name="copy_uninstall_home_back">1. Makes %1$s the home screen again, turning it back on if it\'s off.</string>
+    <string name="copy_uninstall_home_service">2. Turns off %1$s\'s accessibility service.</string>
+    <string name="copy_uninstall_home_remove">%1$d. Uninstalls it, with everything saved in it. This can\'t be undone.</string>
+    <string name="copy_uninstall_home_fails">If a step fails, Tellyscope stops there, says which one, and doesn\'t uninstall.</string>
+
+    <string name="copy_system">System</string>
+    <string name="copy_system_why">Needed by the TV · can\'t be changed</string>
+
+    <!-- Debloat with nothing left -->
+    <string name="copy_gate_title">Everything on the list is off</string>
+    <string name="copy_gate_done">All the apps the cleanyourtv list suggests for this TV are already off.</string>
+    <string name="copy_gate_launcher">To trim it further, switch to a minimal home screen. It replaces the TV\'s own, with its ads and suggestions.</string>
+    <string name="copy_gate_apps">You can still choose, app by app, what to keep or turn off in Apps.</string>
+    <string name="copy_go_to_apps">Go to Apps</string>
+    <string name="copy_dont_show_again">Don\'t show again</string>
+
+    <string name="copy_reading_apps">Reading the TV\'s apps…</string>
+    <string name="copy_reading_apps_line">This takes a few seconds.</string>
+    <string name="copy_tv_offline">TV offline</string>
+    <string name="copy_running_offline">Running apps show here once the TV is connected.</string>
+
+    <!-- Connection state, next to the status dot -->
+    <string name="copy_state_online">Connected</string>
+    <string name="copy_state_offline">Offline</string>
+    <string name="copy_state_not_allowed">Not allowed</string>
+    <string name="copy_state_waiting">Connecting</string>
+    <string name="copy_state_needs_pairing">Needs the pairing code</string>
+    <string name="copy_state_found">Not connected</string>
+
+    <!-- Storage: used of total -->
+    <string name="copy_gb_of_small">%1$.1f of %2$.1f GB</string>
+    <string name="copy_gb_of">%1$.1f of %2$.0f GB</string>
+    <string name="copy_free_gb_small">%1$.1f GB free</string>
+    <string name="copy_free_gb">%1$d GB free</string>
+
+    <string name="copy_no_stats_not_allowed">Stats show up once the TV allows this phone.</string>
+    <string name="copy_no_stats">No stats yet. They show up once the TV is back on.</string>
+
+    <string name="copy_wrong_code">That code didn\'t work. Check the 6 digits on the TV and try again.</string>
+    <string name="copy_unreachable">The TV didn\'t answer. Check it\'s on and on the same Wi-Fi as this phone, then try again.</string>
+    <string name="copy_pair_instead">The TV didn\'t let this phone in yet. Pair it once with the code from the TV.</string>
+    <string name="copy_logged_out">You were logged out</string>
+    <string name="copy_logged_out_why">The TV removed this phone\'s access. Tellyscope disconnected and stopped asking, so nothing pops up on the TV until you connect again.</string>
+    <!-- Names of options in the TV's Developer options menu -->
+    <string name="copy_logged_out_cause_revoke">Revoke USB debugging authorisations was chosen on the TV.</string>
+    <string name="copy_logged_out_cause_remove">Remove all other access was used from another phone, or from another Tellyscope build on this phone.</string>
+    <string name="copy_logged_out_of">Logged out of %1$s</string>
+    <string name="copy_logged_out_just_now">Logged out just now</string>
+    <!-- %1$s is a time of day, like 23:00 -->
+    <string name="copy_logged_out_today">Logged out today, %1$s</string>
+    <string name="copy_logged_out_yesterday">Logged out yesterday</string>
+    <plurals name="copy_logged_out_days_ago">
+        <item quantity="one">Logged out %1$d day ago</item>
+        <item quantity="other">Logged out %1$d days ago</item>
+    </plurals>
+
+    <!-- Health line at the top of a TV's page -->
+    <string name="copy_health_storage_full">Storage almost full</string>
+    <string name="copy_health_memory_full">Memory almost full</string>
+    <!-- %1$s is the app that uses the most memory -->
+    <string name="copy_health_memory_full_one">Memory almost full: %1$s use the most</string>
+    <string name="copy_health_memory_full_two">Memory almost full: %1$s and %2$s use the most</string>
+    <string name="copy_health_fine">Running fine</string>
+
+    <!-- TV folders -->
+    <string name="copy_folder_download">Download</string>
+    <string name="copy_folder_movies">Movies</string>
+
+    <!-- Sideload -->
+    <string name="copy_install_new">Install</string>
+    <string name="copy_install_update">Update</string>
+    <string name="copy_install_reinstall">Reinstall</string>
+    <string name="copy_install_downgrade">Install older version</string>
+    <string name="copy_install_kind_new">Not on this TV yet. This installs it.</string>
+    <!-- %1$s the version on the TV, %2$s the picked one -->
+    <string name="copy_install_kind_update_versions">Updates the TV\'s copy from %1$s to %2$s. Its settings stay.</string>
+    <string name="copy_install_kind_update">Updates the TV\'s copy. Its settings stay.</string>
+    <string name="copy_install_kind_reinstall_version">The TV already has this version (%1$s). This installs it again over itself.</string>
+    <string name="copy_install_kind_reinstall">The TV already has this version. This installs it again over itself.</string>
+    <!-- %1$s the picked version, %2$s the one on the TV -->
+    <string name="copy_install_kind_downgrade_versions">This is older than the one on the TV (%1$s here, %2$s on the TV). Android normally refuses that, and the app\'s saved data may not work with the older version.</string>
+    <string name="copy_install_kind_downgrade">This is older than the one on the TV. Android normally refuses that, and the app\'s saved data may not work with the older version.</string>
+    <string name="copy_allow_downgrade">Install the older version anyway</string>
+    <string name="copy_install_keep_open">Keep Tellyscope open until it\'s done.</string>
+    <string name="copy_installed_update">Updated %1$s.</string>
+    <string name="copy_installed_reinstall">Reinstalled %1$s.</string>
+    <string name="copy_installed_new">Installed %1$s.</string>
+
+    <!-- Why the TV refused an install; %1$s is the app -->
+    <string name="copy_install_refused_signature">The %1$s on the TV comes from a different developer, so Android won\'t replace it. If you\'re sure, uninstall it first: from Apps here if you installed it, or on the TV.</string>
+    <string name="copy_install_refused_downgrade">The TV has a newer %1$s and won\'t go back to an older one.</string>
+    <string name="copy_install_refused_no_space">The TV is out of space. Disable or uninstall something there, then try again.</string>
+    <string name="copy_install_refused_tv_said_no">The TV blocked the install. Look in the TV\'s security settings for installing apps from unknown sources, or for app verification, then try again.</string>
+    <string name="copy_install_refused_tv_too_old">%1$s needs a newer version of Android than this TV has.</string>
+    <string name="copy_install_refused_wrong_cpu">This %1$s is built for a different kind of processor. Look for a version made for this TV, often marked armeabi-v7a or arm64-v8a.</string>
+    <string name="copy_install_refused_app_too_old">%1$s was made for a very old version of Android, and this TV won\'t install it.</string>
+    <string name="copy_install_refused_missing_feature">%1$s needs something this TV doesn\'t have, like a touchscreen or a camera.</string>
+    <string name="copy_install_refused_missing_parts">%1$s comes in several parts and one is missing. Pick all of its .apk files together, or its .apks bundle.</string>
+    <string name="copy_install_refused_test_only">This is a developer test build of %1$s, which the TV won\'t install.</string>
+    <string name="copy_install_refused_conflict">Another app on the TV already uses something %1$s needs, so the TV refused it.</string>
+    <string name="copy_install_refused_broken">This file isn\'t a working app. It may be damaged or only half downloaded; try getting it again.</string>
+    <string name="copy_install_refused_unknown">The TV didn\'t install %1$s.</string>
+    <string name="copy_not_an_app">That file isn\'t an Android app. Pick an .apk, several split .apk files, or an .apks or .xapk bundle.</string>
+    <string name="copy_sideload_lost">Lost the TV partway through. Check it\'s still on and connected, then try again.</string>
+
+    <!-- Files; %2$s is a TV folder (copy_folder_*) -->
+    <string name="copy_sent">Sent %1$s to %2$s</string>
+    <!-- %1$s the folder, %2$s the name it was saved as, %3$s the original name -->
+    <string name="copy_sent_renamed">Sent to %1$s as %2$s, since %3$s was already there</string>
+    <string name="copy_saved">Saved %1$s to your phone</string>
+    <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
+    <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
+    <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
+    <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
+    <string name="copy_cant_read">Couldn\'t read that file on your phone.</string>
+    <string name="copy_cant_undo">This version of Tellyscope can\'t undo that setting.</string>
+    <string name="copy_files_lost">Couldn\'t read this folder. Check the TV is still connected.</string>
+
+    <!-- Remote -->
+    <string name="copy_key_refused">The TV didn\'t take that key.</string>
+    <string name="copy_type_refused">The TV didn\'t take the text. Select a text box on the TV first, then send again.</string>
+    <string name="copy_remote_lost">Lost the TV. Check it\'s still on and connected.</string>
+    <string name="copy_no_update_screen">This TV has no update screen Tellyscope can open. Look in its Settings, under System or About.</string>
+    <string name="copy_updates_opened">Opened the update screen on the TV. Look at the TV to check for updates.</string>
+    <string name="copy_reboot_refused">The TV said no to restarting. Use its own remote or power button instead.</string>
+    <string name="copy_reboot_ignored">The TV didn\'t restart. Use its own remote or power button instead.</string>
+    <!-- Lower case: shown after the TV's state -->
+    <string name="copy_remote_offline_wake">works again once it reconnects</string>
+    <string name="copy_type_hint">Select a text box on the TV, like a search box, then type here.</string>
+    <string name="copy_backspace">Delete the last letter you typed on the TV</string>
+    <string name="copy_screen_off">Screen off</string>
+    <string name="copy_screen_on">Screen on</string>
+    <!-- Lower case: shown after copy_screen_off -->
+    <string name="copy_screen_off_wake">tap any key to wake</string>
+    <string name="copy_screen_off_tip">Turns off the TV\'s picture. The app stays connected; any key wakes it.</string>
+    <string name="copy_screen_off_refused">This TV can\'t turn its picture off from Tellyscope.</string>
+    <string name="copy_screen_on_refused">The TV\'s picture didn\'t come back on. Try again, or restart the TV.</string>
+    <string name="copy_cant_type_empty">Type something first.</string>
+    <plurals name="copy_cant_type_too_long">
+        <item quantity="one">That\'s too long to send in one go. Send up to %1$d character at a time.</item>
+        <item quantity="other">That\'s too long to send in one go. Send up to %1$d characters at a time.</item>
+    </plurals>
+    <string name="copy_cant_type_one_line">The TV can only take one line at a time.</string>
+    <!-- %1$s is the one character the TV can't type -->
+    <string name="copy_cant_type_odd">The TV can only type plain letters, numbers and symbols, not “%1$s”.</string>
+    <!-- %s here is literal: the text the user typed contains it -->
+    <string name="copy_cant_type_percent_s" formatted="false">The TV reads “%s” as a space, so it can\'t type that.</string>
+
+    <string name="copy_remote_restart">Restart TV</string>
+    <string name="copy_reboot_title">Restart the TV?</string>
+    <string name="copy_reboot_text">The TV turns off and on again. Tellyscope reconnects by itself when it\'s back, usually within a minute.</string>
+    <string name="copy_restarting_title">Restarting…</string>
+    <string name="copy_restarting_text">The TV is restarting. Tellyscope will reconnect by itself.</string>
+    <string name="copy_restart_late_title">The TV hasn\'t come back yet</string>
+    <string name="copy_restart_late_status">Not back yet</string>
+    <string name="copy_restart_late_text">It\'s been a minute. Some TVs take longer to start; Retry waits another minute.</string>
+    <string name="copy_restart_lost_text">Use the TV\'s own remote to turn it on, then tap Retry.</string>
+    <!-- %1$s the TV, then minutes:seconds waited -->
+    <string name="copy_waiting_for">Waiting for %1$s · %2$d:%3$02d</string>
+    <string name="copy_restart_lost">Still can\'t reach %1$s</string>
+    <string name="copy_back_online">Back online. %1$s reconnected.</string>
+
+    <!-- Remote buttons -->
+    <string name="copy_remote_buttons">Remote buttons</string>
+    <string name="copy_more">More options</string>
+    <string name="copy_buttons_hint">Pick up to %1$d. Drag to set the order. To pick another, untick one first.</string>
+    <string name="copy_not_on_tv">%1$s isn\'t on this TV. Install it from the Play Store on the TV.</string>
+    <string name="copy_cant_open">The TV couldn\'t open %1$s. If it\'s turned off, turn it on in Apps.</string>
+    <string name="copy_left_dock_one">%1$s was uninstalled, so its button left the Remote.</string>
+    <plurals name="copy_left_dock">
+        <item quantity="one">%1$d app was uninstalled, so its button left the Remote.</item>
+        <item quantity="other">%1$d apps were uninstalled, so their buttons left the Remote.</item>
+    </plurals>
+    <string name="copy_restarting_soon">Tellyscope reconnects on its own when the TV is back, usually within a couple of minutes.</string>
+    <string name="copy_restarting_long">Taking a while. Some TVs turn network debugging off when they restart. If it doesn\'t come back, turn it on again in the TV\'s Developer options.</string>
+
+    <!-- TV tweaks -->
+    <string name="copy_tweaks">TV tweaks</string>
+    <string name="copy_dns_title">Block ads with Private DNS</string>
+    <!-- %1$s is the DNS hostname -->
+    <string name="copy_dns_state_on">On: %1$s</string>
+    <string name="copy_dns_state_off">Off. Turn on to block ads and trackers in every app on the TV.</string>
+    <string name="copy_dns_too_old">Needs Android 9 or newer. This TV is older.</string>
+    <string name="copy_dns_dialog">Block ads on the whole TV?</string>
+    <string name="copy_dns_text">The TV will look up every address through this ad-blocking DNS provider. AdGuard is free and needs no account. Tellyscope then checks the TV can still look addresses up, and puts it back if not. Undo is in History.</string>
+    <string name="copy_dns_field">DNS provider</string>
+    <string name="copy_dns_bad">Enter a hostname like dns.adguard-dns.com. An IP address won\'t work here.</string>
+    <string name="copy_dns_confirm">Turn on</string>
+    <string name="copy_animations_title">Faster animations</string>
+    <string name="copy_animations_state_on">On: menus move at twice the speed</string>
+    <string name="copy_animations_state_off">Off. Turn on to make menus feel snappier.</string>
+    <string name="copy_caches_title">Clear all app caches</string>
+    <string name="copy_caches_text">Frees space by clearing every app\'s temporary files. App data and sign-ins stay.</string>
+    <string name="copy_caches_button">Clear caches</string>
+    <string name="copy_caches_cleared">Cleared app caches</string>
+    <!-- %1$s is a size, like 120 MB -->
+    <string name="copy_caches_cleared_freed">Cleared app caches, freed %1$s</string>
+    <string name="copy_screenshot_title">Screenshot</string>
+    <string name="copy_screenshot_text">Saves what the TV shows to your phone. Protected video, like most streaming apps, shows as black.</string>
+    <string name="copy_screenshot_button">Take screenshot</string>
+    <string name="copy_screenshot_saved">Screenshot saved to your phone</string>
+    <string name="copy_screenshot_failed">Couldn\'t take a screenshot. Check the TV is still connected.</string>
+    <string name="copy_request_title">Another device wants to control this TV</string>
+    <string name="copy_request_text">The TV is asking whether to allow debugging from a device with this key fingerprint. Allow it only if you started this yourself and the fingerprint matches the one that device shows.</string>
+    <string name="copy_request_always">Always allow this device</string>
+    <string name="copy_request_allow">Allow</string>
+    <string name="copy_request_deny">Deny</string>
+    <string name="copy_request_allowed">Allowed. That device can control the TV now.</string>
+    <string name="copy_request_denied">Denied. That device can\'t connect.</string>
+    <string name="copy_request_gone">The TV\'s prompt had closed or changed, so nothing was pressed.</string>
+    <string name="copy_request_behind_alert">The TV\'s prompt is behind an Amazon alert, “Unable to Detect Your Remote”. Press OK on your TV remote to close it.</string>
+    <string name="copy_request_then">Then the prompt shows here, so you can check its fingerprint.</string>
+    <string name="copy_request_waiting">Waiting for the TV\'s prompt</string>
+    <string name="copy_press_ok">Press OK on the TV</string>
+
+    <!-- Who has access -->
+    <string name="copy_warning_title">Another computer is connected to this TV</string>
+    <string name="copy_warning_text">It can do everything Tellyscope can: install or remove apps, read files and control the screen.</string>
+    <string name="copy_its_mine">It\'s mine</string>
+    <string name="copy_remove_access">Remove all other access…</string>
+    <string name="copy_connected_now">Connected now</string>
+    <string name="copy_who_has_access">Who has access</string>
+    <string name="copy_history">History</string>
+    <string name="copy_advanced_monitor">Advanced monitor</string>
+    <string name="copy_share">Share Tellyscope</string>
+
+    <!-- Reset TV -->
+    <string name="copy_reset_tv">Reset TV to how it shipped</string>
+    <string name="copy_reset_keeps">Keeps apps\' data and sign-ins</string>
+    <plurals name="copy_apps">
+        <item quantity="one">%1$d app</item>
+        <item quantity="other">%1$d apps</item>
+    </plurals>
+    <plurals name="copy_reset_found">
+        <item quantity="one">%1$d change since this TV left the factory</item>
+        <item quantity="other">%1$d changes since this TV left the factory</item>
+    </plurals>
+    <string name="copy_reset_found_text">Your apps\' data and sign-ins stay. Nothing has changed yet.</string>
+    <plurals name="copy_turn_on_apps">
+        <item quantity="one">Turn on %1$d app</item>
+        <item quantity="other">Turn on %1$d apps</item>
+    </plurals>
+    <string name="copy_turn_on_text">Preinstalled apps turned off by hand, from any phone or tool</string>
+    <plurals name="copy_bring_back_apps">
+        <item quantity="one">Bring back %1$d app</item>
+        <item quantity="other">Bring back %1$d apps</item>
+    </plurals>
+    <string name="copy_bring_back_text">Preinstalled apps that were uninstalled. They\'re still on the TV.</string>
+    <string name="copy_reset_home">Make %1$s the home screen</string>
+    <!-- %1$s is the launcher Home moves away from -->
+    <string name="copy_reset_home_text">Instead of %1$s. %1$s stays installed.</string>
+    <string name="copy_reset_home_text_service">Instead of %1$s, with its accessibility service turned off. %1$s stays installed.</string>
+    <!-- %2$s is the TV's brand, or copy_the_maker -->
+    <plurals name="copy_reset_leaves_off">
+        <item quantity="one">%1$d app %2$s shipped switched off stay off.</item>
+        <item quantity="other">%1$d apps %2$s shipped switched off stay off.</item>
+    </plurals>
+    <string name="copy_reset_leaves">Apps and launchers you installed stay installed.</string>
+    <string name="copy_the_maker">the maker</string>
+    <string name="copy_nothing_to_reset_title">Nothing to reset</string>
+    <string name="copy_nothing_to_reset_on">Every preinstalled app is on.</string>
+    <string name="copy_nothing_to_reset_on_home">Every preinstalled app is on, and %1$s is the home screen.</string>
+    <!-- %1$s is the TV's brand, or copy_the_maker -->
+    <string name="copy_nothing_to_reset_maker">Apps %1$s shipped switched off stay off.</string>
+    <!-- Reset progress: done of total -->
+    <string name="copy_resetting_turn_on">Turning on apps: %1$d of %2$d.</string>
+    <string name="copy_resetting_bring_back">Bringing back apps: %1$d of %2$d.</string>
+    <string name="copy_resetting_home">Making %1$s the home screen.</string>
+    <string name="copy_keep_tv_on">Keep the TV on and connected.</string>
+    <string name="copy_resetting">Resetting…</string>
+    <string name="copy_reset_apps_stale">Reset done, but the app list didn\'t refresh. Open the TV again to see it.</string>
+    <string name="copy_reset_button">Reset TV</string>
+    <string name="copy_reset_done">TV reset to how it shipped</string>
+    <string name="copy_reset_partly">Reset partly done</string>
+    <!-- After a reset; %2$s is the launcher now on Home -->
+    <plurals name="copy_reset_done_apps_home">
+        <item quantity="one">%1$d preinstalled app is back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
+        <item quantity="other">%1$d preinstalled apps are back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
+    </plurals>
+    <plurals name="copy_reset_done_apps">
+        <item quantity="one">%1$d preinstalled app is back. Apps\' data and sign-ins stayed.</item>
+        <item quantity="other">%1$d preinstalled apps are back. Apps\' data and sign-ins stayed.</item>
+    </plurals>
+    <string name="copy_reset_done_home">%1$s is the home screen. Apps\' data and sign-ins stayed.</string>
+    <!-- Only reached when a reset changed nothing; the leading ". " is as the app always showed it -->
+    <string name="copy_reset_done_nothing">. Apps\' data and sign-ins stayed.</string>
+    <plurals name="copy_reset_partly_text">
+        <item quantity="one">One step didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
+        <item quantity="other">%1$d steps didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
+    </plurals>
+    <plurals name="copy_turned_on_all">
+        <item quantity="one">Turned on %1$d app</item>
+        <item quantity="other">Turned on %1$d apps</item>
+    </plurals>
+    <!-- %1$d done of %2$d apps -->
+    <plurals name="copy_turned_on_some">
+        <item quantity="one">Turned on %1$d of %2$d app</item>
+        <item quantity="other">Turned on %1$d of %2$d apps</item>
+    </plurals>
+    <plurals name="copy_brought_back_all">
+        <item quantity="one">Brought back %1$d app</item>
+        <item quantity="other">Brought back %1$d apps</item>
+    </plurals>
+    <plurals name="copy_brought_back_some">
+        <item quantity="one">Brought back %1$d of %2$d app</item>
+        <item quantity="other">Brought back %1$d of %2$d apps</item>
+    </plurals>
+    <string name="copy_is_home">%1$s is the home screen</string>
+    <string name="copy_still_home">%1$s is still the home screen</string>
+    <string name="copy_try_app_again">Try %1$s again</string>
+    <string name="copy_try_again">Try again</string>
+
+    <!-- Debloat -->
+    <string name="copy_disabling_apps">Turning off apps: %1$d of %2$d. Keep the TV on and connected.</string>
+    <string name="copy_disabling">Disabling…</string>
+    <string name="copy_disabling_note">Nothing is deleted. Turn any back on from History.</string>
+    <string name="copy_debloat_done">Debloat done</string>
+    <string name="copy_debloat_partly">Debloat partly done</string>
+    <string name="copy_debloat_result_text">Nothing was deleted; undo any of them from History.</string>
+    <plurals name="copy_turned_off_all">
+        <item quantity="one">Turned off %1$d app</item>
+        <item quantity="other">Turned off %1$d apps</item>
+    </plurals>
+    <plurals name="copy_turned_off_some">
+        <item quantity="one">Turned off %1$d of %2$d app</item>
+        <item quantity="other">Turned off %1$d of %2$d apps</item>
+    </plurals>
+    <string name="copy_still_on">%1$s is still on</string>
+
+    <plurals name="copy_still_off">
+        <item quantity="one">%1$d app still off</item>
+        <item quantity="other">%1$d apps still off</item>
+    </plurals>
+    <plurals name="copy_still_off_title">
+        <item quantity="one">%1$d app Tellyscope turned off is still off</item>
+        <item quantity="other">%1$d apps Tellyscope turned off are still off</item>
+    </plurals>
+    <string name="copy_still_off_text">Restore everything turns them back on. Apps that were off before Tellyscope\'s first change stay off.</string>
+    <plurals name="copy_others_connected">
+        <item quantity="one">%1$d other connected now</item>
+        <item quantity="other">%1$d others connected now</item>
+    </plurals>
+    <plurals name="copy_connections">
+        <item quantity="one">%1$d connection</item>
+        <item quantity="other">%1$d connections</item>
+    </plurals>
+    <!-- %1$s is an IP address -->
+    <plurals name="copy_connected_from">
+        <item quantity="one">From %1$s · %2$d connection</item>
+        <item quantity="other">From %1$s · %2$d connections</item>
+    </plurals>
+    <string name="copy_on_tv">An app on this TV</string>
+    <string name="copy_access_intro">Each computer allowed to use ADB can install or remove apps, read files and control the screen.</string>
+    <string name="copy_this_phone">This phone</string>
+    <string name="copy_not_this_phone">Not this phone</string>
+    <string name="copy_yours">Yours</string>
+    <string name="copy_waiting_chip">Waiting</string>
+    <string name="copy_waiting_line">Waiting for you to allow it on the TV</string>
+    <string name="copy_waiting_text">An Allow prompt for it is on the TV now. It can\'t do anything until you choose Allow there. Not yours? Choose Deny.</string>
+    <string name="copy_answer">Answer</string>
+    <string name="copy_new_chip">New</string>
+    <string name="copy_new_key_text">Allowed on the TV while Tellyscope wasn\'t watching. Not yours? Remove all other access.</string>
+    <string name="copy_allowed_computers">Allowed computers</string>
+    <string name="copy_unnamed_computer">Unnamed computer</string>
+    <string name="copy_cant_check_connected">This TV doesn\'t say who is connected.</string>
+    <string name="copy_cant_check_allowed">This TV doesn\'t list its allowed computers.</string>
+    <string name="copy_nobody_allowed">No computer is allowed. The next one to connect has to be allowed on the TV.</string>
+    <string name="copy_access_foot_link">The TV doesn\'t say which allowed computer is behind a connection. If you don\'t recognise an address, remove all other access.</string>
+    <string name="copy_access_foot_all">Android can\'t remove one computer on its own: this clears every computer, then you allow Tellyscope again.</string>
+    <string name="copy_never_seen">Never seen</string>
+    <string name="copy_last_seen_just_now">Last seen just now</string>
+    <!-- %1$s is a time of day, like 23:00 -->
+    <string name="copy_last_seen_today">Last seen today, %1$s</string>
+    <string name="copy_last_seen_yesterday">Last seen yesterday</string>
+    <plurals name="copy_last_seen_days_ago">
+        <item quantity="one">Last seen %1$d day ago</item>
+        <item quantity="other">Last seen %1$d days ago</item>
+    </plurals>
+    <string name="copy_last_seen_long_ago">Last seen over a month ago</string>
+
+    <!-- Remove all other access -->
+    <string name="copy_remove_title">Remove all other access</string>
+    <string name="copy_confirm_title">Remove all other access?</string>
+    <string name="copy_confirm_text">Every computer this TV has allowed loses access, your own computers too: they\'ll need allowing again.</string>
+    <string name="copy_confirm_remote">Tellyscope reconnects straight away. Keep the TV remote handy: the TV asks you to allow this phone.</string>
+    <string name="copy_confirm_button">Remove access</string>
+    <string name="copy_cancel">Cancel</string>
+    <string name="copy_revoking">Removing access…</string>
+    <string name="copy_allow_title">Allow this phone on the TV</string>
+    <!-- copy_allow_text_a, copy_allow_always (bold) and copy_allow_text_b make one sentence, in that order -->
+    <string name="copy_allow_text_a">"Other access is removed. The TV now asks “Allow USB debugging?”. Tick "</string>
+    <string name="copy_allow_always">Always allow from this computer</string>
+    <string name="copy_allow_text_b">", then choose "</string>
+    <string name="copy_allow_button">Allow</string>
+    <string name="copy_fingerprint_label">The TV should show this fingerprint</string>
+    <string name="copy_fingerprint_hint">If it shows a different one, choose Cancel on the TV.</string>
+    <string name="copy_stop_waiting">Stop waiting</string>
+    <string name="copy_refused">The TV didn\'t allow this phone. It may have timed out, or Cancel was chosen.</string>
+    <string name="copy_ask_again">Ask the TV again</string>
+    <string name="copy_checking">Checking the TV…</string>
+    <string name="copy_done_title">Only this phone has access</string>
+    <string name="copy_done_text">Tellyscope checked the TV again: this phone is the only allowed computer, and nothing else is connected.</string>
+    <string name="copy_trust_warning">Only allow computers and apps you trust. Anything you allow can install apps, read files and control the TV.</string>
+    <string name="copy_back_to">Back to %1$s</string>
+    <string name="copy_still_title">Another computer is still connected</string>
+    <!-- %1$s is copy_connection_from or a computer's name, %2$s the TV -->
+    <string name="copy_still_text">Tellyscope still sees %1$s on %2$s. It may have connected again straight away. Turn it off or unplug it from the network, then try again.</string>
+    <string name="copy_still_open_text">Tellyscope still sees %1$s on %2$s. Its access is gone, but the TV keeps a connection open until it ends. Restart the TV to end it.</string>
+    <string name="copy_check_again">Check again</string>
+    <string name="copy_restart_tv">Restart the TV</string>
+    <string name="copy_restarting_to_check">Restarting the TV…</string>
+    <!-- %1$s is an IP address -->
+    <string name="copy_connection_from">a connection from %1$s</string>
+    <string name="copy_unconfirmed_title">Revoked on the TV</string>
+    <string name="copy_unconfirmed_text">Tellyscope can\'t check the list on this TV. Look under Developer options to confirm.</string>
+    <string name="copy_done">Done</string>
+    <string name="copy_manual_intro">This TV didn\'t take Tellyscope\'s request, so it\'s two steps on the TV. Afterwards only this phone can use ADB on it; your own computers will need allowing again.</string>
+    <string name="copy_manual_step_1">Open Developer options on the TV</string>
+    <!-- Menu path in Android TV's settings -->
+    <string name="copy_manual_step_1_text">Tellyscope opens it for you. If nothing happens on the TV, go to Settings → Device Preferences → Developer options.</string>
+    <string name="copy_open_on_tv">Open on TV</string>
+    <string name="copy_manual_step_2">Choose “Revoke USB debugging authorisations”</string>
+    <string name="copy_manual_step_2_text">Then come back here, and Tellyscope asks the TV to allow this phone again.</string>
+    <string name="copy_manual_done">I\'ve revoked it</string>
+    <string name="copy_dev_options_failed">Couldn\'t open Developer options on the TV. Go to Settings → Device Preferences → Developer options.</string>
+
+    <!-- Connected devices -->
+    <string name="copy_devices_title">Connected devices</string>
+    <string name="copy_show_all">Show all (%1$d)</string>
+    <string name="copy_show_less">Show less</string>
+    <string name="copy_no_devices">Nothing plugged in or paired.</string>
+    <string name="copy_group_input">Input</string>
+    <string name="copy_group_storage">USB storage</string>
+    <string name="copy_group_audio">Audio output</string>
+    <!-- %1$s is a size, like 12 GB -->
+    <string name="copy_peripheral_free">%1$s free</string>
+    <!-- %1$s is the device's state, lower case, like paired -->
+    <string name="copy_peripheral_bluetooth">Bluetooth · %1$s</string>
+
+    <!-- vm -->
+
+    <!-- Scan screen: a TV's code row and Add by IP -->
+    <string name="vm_still_wants_code">The TV still wants a code. Check the number on screen and try again.</string>
+    <string name="vm_not_an_ip">That doesn\'t look like an IP address. It should look like four numbers with dots, like the one in your TV\'s network settings.</string>
+    <string name="vm_bad_port">The port after the colon should be a number from 1 to 65535, like 5555.</string>
+
+    <!-- Snackbar when an action failed and the TV gave no reason -->
+    <string name="vm_didnt_work">That didn\'t work.</string>
+    <string name="vm_nothing_to_turn_on">Nothing to turn back on.</string>
+    <plurals name="vm_turned_back_on">
+        <item quantity="one">Turned %1$d app back on.</item>
+        <item quantity="other">Turned %1$d apps back on.</item>
+    </plurals>
+
+    <!-- A reason shown mid-sentence after an app's name, so lower case -->
+    <string name="vm_tv_refused">the TV refused</string>
+    <!-- Reset TV couldn't read what it would change -->
+    <string name="vm_tv_didnt_answer">The TV didn\'t answer.</string>
+    <!-- A reason shown mid-sentence for each Reset step that failed, so lower case -->
+    <string name="vm_tv_didnt_answer_reason">the TV didn\'t answer</string>
+
+    <!-- Report a problem: the log's last line, %1$s is the TV's own words -->
+    <string name="vm_report_tv_said">The TV said: %1$s</string>
+    <!-- Report a problem: starts the user's details; %1$s app name, %2$s its version (may be empty) -->
+    <string name="vm_report_tried_install">Tried to install %1$s %2$s</string>
+
+    <!-- Snackbar action for another TV that logged out: opens its page -->
+    <string name="vm_logged_out_view">View</string>
+
+    <!-- data -->
+
+    <!-- Why an app is protected. Lowercase: shown after "Protected: " and inside other sentences. -->
+    <string name="data_protected_home_screen">this is your home screen</string>
+    <string name="data_protected_system">the TV needs this to work</string>
+    <string name="data_protected_settings">you need this to change TV settings</string>
+    <string name="data_protected_play_services">most apps stop working without it</string>
+    <string name="data_protected_keyboard">you\'d lose the on-screen keyboard</string>
+    <string name="data_protected_tv_inputs_remote">your remote or HDMI inputs could stop working</string>
+    <string name="data_protected_setup_wizard">the TV may get stuck on restart without it</string>
+    <string name="data_protected_updates">the TV gets its updates through this</string>
+    <string name="data_protected_unknown_home">this TV didn\'t say which app is its home screen, so Tellyscope won\'t change anything</string>
+    <string name="data_protected_came_with_tv">it came with the TV, so it can only be disabled</string>
+    <string name="data_protected_disabled_by_tv">the TV turned this off itself, so it can\'t be turned back on from here</string>
+
+    <!-- Errors below are lowercase reasons: the app capitalises them when shown on their own. %1$s is an app name. -->
+    <string name="data_failed_stop">the TV wouldn\'t stop %1$s</string>
+    <string name="data_failed_disable">the TV wouldn\'t turn %1$s off</string>
+    <string name="data_failed_enable">the TV wouldn\'t turn %1$s on</string>
+    <string name="data_failed_open">the TV wouldn\'t open %1$s</string>
+    <string name="data_failed_uninstall">the TV wouldn\'t uninstall %1$s</string>
+    <string name="data_tv_refused">the TV refused</string>
+    <!-- %1$s is the TV's address. -->
+    <string name="data_offline">%1$s is offline</string>
+
+    <string name="data_no_service">%1$s has no accessibility service</string>
+    <string name="data_service_not_on">%1$s is Home now, but its accessibility service didn\'t turn on, so the TV\'s Home button may still open its own launcher</string>
+    <string name="data_service_still_on">%1$s\'s accessibility service is still on. Turn it off in the TV\'s Settings → Accessibility</string>
+    <string name="data_fire_needs_service">on Fire TV, Home can only open %1$s through its accessibility service, so nothing changed</string>
+    <string name="data_fire_service_not_on">the TV didn\'t turn on %1$s\'s accessibility service, so nothing changed</string>
+    <string name="data_fire_service_not_off">the TV didn\'t turn off %1$s\'s accessibility service, so nothing changed</string>
+    <string name="data_service_not_off">switched back, but %1$s\'s accessibility service is still on. Turn it off in the TV\'s Settings → Accessibility</string>
+    <string name="data_home_not_back">turned %1$s back on, but the TV kept the other home screen. Press Home on the remote to pick %1$s</string>
+    <!-- %2$s is why: the old launcher didn't close or the new one didn't open, in the TV's words. -->
+    <string name="data_not_shown">%1$s is Home now, but %2$s</string>
+    <string name="data_no_home_to_switch_back">there\'s no home screen to switch back to</string>
+    <!-- %1$s is a reason starting "switched back, but …". -->
+    <string name="data_uninstall_after_service">%1$s. Nothing was uninstalled</string>
+    <!-- %1$s is a lowercase reason. -->
+    <string name="data_uninstall_home_not_back">Home didn\'t switch back: %1$s. Nothing was uninstalled</string>
+
+    <!-- %1$s is a lowercase reason. -->
+    <string name="data_restore_none">couldn\'t turn apps back on: %1$s</string>
+    <!-- %2$s is a lowercase reason. -->
+    <plurals name="data_restore_some">
+        <item quantity="one">turned %1$d app back on, then stopped: %2$s</item>
+        <item quantity="other">turned %1$d apps back on, then stopped: %2$s</item>
+    </plurals>
+
+    <string name="data_no_reset_to_undo">there\'s no reset to undo</string>
+    <string name="data_reset_already_undone">that reset is already undone</string>
+    <string name="data_reset_tv_kept_home">the TV kept %1$s as the home screen</string>
+    <!-- An app name, then why that app's step failed. -->
+    <string name="data_app_reason">%1$s: %2$s</string>
+    <!-- %1$s is a lowercase reason. -->
+    <string name="data_reset_undo_service_left">put back every change, but %1$s</string>
+    <!-- %1$d of %2$d changes; %3$s is the first reason, capitalised. -->
+    <plurals name="data_reset_undo_partial">
+        <item quantity="one">put back %1$d of %2$d change. %3$s. Undo again tries the rest</item>
+        <item quantity="other">put back %1$d of %2$d changes. %3$s. Undo again tries the rest</item>
+    </plurals>
+
+    <string name="data_tweak_refused">the TV didn\'t accept the change</string>
+    <string name="data_dns_too_old">Private DNS needs Android 9 or newer, and this TV is older</string>
+    <!-- %1$s is the Private DNS host. -->
+    <string name="data_dns_unreachable">the TV couldn\'t look anything up through %1$s, so Private DNS was put back. The network may block encrypted DNS (port 853)</string>
+    <string name="data_dns_stuck">the TV couldn\'t look anything up through %1$s, and putting the old Private DNS back failed. The TV may be offline until you undo it in History</string>
+
+    <string name="data_lists_not_https">the address has to start with https://</string>
+    <string name="data_lists_unreachable">couldn\'t reach that address. Check it and the phone\'s internet</string>
+    <string name="data_lists_not_a_list">this source isn\'t a Tellyscope list</string>
+
+    <!-- Listed in place of an app name for native daemons and system uids. -->
+    <string name="data_app_names_system">Android system</string>
+
+    <!-- History lines, saved with the entry in the language of the moment. -->
+    <string name="data_history_service_off">Turned off %1$s\'s accessibility service</string>
+    <string name="data_history_reset_undone">Put back what Reset TV changed</string>
+    <plurals name="data_history_reset">
+        <item quantity="one">Reset TV · %1$d change</item>
+        <item quantity="other">Reset TV · %1$d changes</item>
+    </plurals>
+    <!-- Shown as "Cleared app caches". -->
+    <string name="data_history_app_caches">app caches</string>
+    <!-- %1$s is the Private DNS host. -->
+    <string name="data_history_dns_host">Private DNS set to %1$s</string>
+    <string name="data_history_dns_off">Private DNS turned off</string>
+    <string name="data_history_dns_automatic">Private DNS set to Automatic</string>
+    <string name="data_history_animations_normal">Animations at normal speed</string>
+    <string name="data_history_animations_off">Animations turned off</string>
+    <!-- %1$s is a speed like 0.5. -->
+    <string name="data_history_animations_scale">Animations at %1$s×</string>
+
+    <!-- screens_a -->
+
+    <!-- DeviceTabs.kt -->
+    <string name="tabs_overview">Overview</string>
+    <string name="tabs_apps">Apps</string>
+    <string name="tabs_files">Files</string>
+    <string name="tabs_tweaks">Tweaks</string>
+    <string name="tabs_remote">Remote</string>
+    <string name="tabs_install_app">Install app</string>
+    <string name="tabs_upload_files">Upload files</string>
+    <!-- Fills "As of %1$s" on the storage card when the TV was never seen -->
+    <string name="tabs_last_visit">the last visit</string>
+    <string name="tabs_files_offline">Connect to the TV to see its files.</string>
+    <!-- %1$s is a folder name, like Downloads -->
+    <string name="tabs_folder_empty">Nothing in %1$s yet</string>
+    <string name="tabs_folder_empty_line">Files you send land here.</string>
+    <string name="tabs_tweaks_offline">Connect to the TV to change its settings.</string>
+    <string name="tabs_more_options">More options</string>
+    <string name="tabs_rename">Rename this TV</string>
+    <string name="tabs_settings">Settings</string>
+    <string name="tabs_about">About &amp; licences</string>
+    <string name="tabs_forget">Forget this TV</string>
+    <string name="tabs_search_apps">Search apps</string>
+    <string name="tabs_close_search">Close search</string>
+    <string name="tabs_clear_search">Clear search</string>
+    <!-- %1$s is the name of a debloat list, usually the TV model -->
+    <string name="tabs_suggested_none">Nothing from the %1$s list is on this TV</string>
+    <plurals name="tabs_suggested_all_off">
+        <item quantity="one">The suggested app is off</item>
+        <item quantity="other">All %1$d suggested apps are off</item>
+    </plurals>
+    <!-- %1$d apps off out of %2$d suggested; picked by %2$d -->
+    <plurals name="tabs_suggested_some_off">
+        <item quantity="one">%1$d of %2$d suggested apps are off</item>
+        <item quantity="other">%1$d of %2$d suggested apps are off</item>
+    </plurals>
+    <string name="tabs_suggested_no_list">No list for this TV yet</string>
+    <string name="tabs_suggested_unavailable">Couldn\'t load the device lists</string>
+    <string name="tabs_suggested_offline">Connect to the TV to see its suggestions</string>
+    <string name="tabs_suggested_loading">Looking up this TV\'s list…</string>
+    <string name="tabs_see_changes">See changes</string>
+    <!-- Bold, followed by tabs_came_back_on -->
+    <string name="tabs_action_required">Action required:</string>
+    <plurals name="tabs_came_back_on">
+        <item quantity="one">%1$d app came back on</item>
+        <item quantity="other">%1$d apps came back on</item>
+    </plurals>
+    <string name="tabs_note_unavailable">Check the phone\'s internet and open this TV again.</string>
+    <string name="tabs_note_no_list">Tap Debloat to pick the apps to turn off by hand.</string>
+    <!-- %1$s is a TV maker, like XGIMI -->
+    <string name="tabs_note_by_maker">No list for this exact model, so these come from %1$s\'s other TVs.</string>
+    <string name="tabs_note_gate">Debloat now opens Apps for one-off changes.</string>
+    <string name="tabs_lists_credit">Lists adapted from cleanyourtv (MIT).</string>
+    <!-- %1$s is the Android version, like 11 -->
+    <string name="tabs_android_version">Android %1$s</string>
+    <!-- %1$s is a month and year, like March 2026 -->
+    <string name="tabs_updated">Updated %1$s</string>
+    <string name="tabs_check_updates">Check for updates</string>
+
+    <!-- ListsCard.kt: the Debloat screen and About -->
+    <!-- Title of the group of the TV's own apps when no debloat list fits the TV -->
+    <string name="lists_apps_on_tv">Apps on this TV</string>
+    <string name="lists_which_tv">Which TV is this?</string>
+    <string name="lists_debloat">Debloat</string>
+    <string name="lists_back">Back</string>
+    <string name="lists_use_this">Use this list</string>
+    <plurals name="lists_disable_apps">
+        <item quantity="one">Disable %1$d app</item>
+        <item quantity="other">Disable %1$d apps</item>
+    </plurals>
+    <string name="lists_brand_or_model">Brand or model</string>
+    <string name="lists_clear_search">Clear search</string>
+    <!-- %1$s is what the user searched for -->
+    <string name="lists_no_match">No list for “%1$s”. Pick the closest model.</string>
+    <string name="lists_unavailable">Couldn\'t load that list. Check the phone\'s internet and try again.</string>
+    <string name="lists_loading">Loading the list…</string>
+    <string name="lists_this_tv">This TV</string>
+    <string name="lists_match_none">No list for this TV or its maker yet</string>
+    <!-- %1$s is a TV maker, like XGIMI -->
+    <string name="lists_match_by_maker">No list for this model, so these come from %1$s\'s other models</string>
+    <!-- %1$s is an Android version, like Android 11 -->
+    <string name="lists_match_exact">This model\'s list · tested on %1$s</string>
+    <string name="lists_match_other_android">This model\'s list, tested on %1$s, not this TV\'s Android</string>
+    <string name="lists_match_no_android">This model\'s list, with no Android it was tested on</string>
+    <!-- lists_intro_* are followed by lists_intro_undo in the same paragraph -->
+    <string name="lists_intro_by_hand">Tick the apps to turn off. Apps the TV needs to run aren\'t shown.</string>
+    <string name="lists_intro_ticked">These apps will be turned off. Untick any you use.</string>
+    <string name="lists_intro_unticked">Nothing is ticked: tick only the apps you know you don\'t use.</string>
+    <string name="lists_intro_undo">Nothing is deleted, and History can turn each one back on.</string>
+    <!-- %1$s is where the user's own list comes from, like a GitHub repository -->
+    <string name="lists_custom_source">This list comes from %1$s, not tellyscope-devices.</string>
+    <string name="lists_all_needed">Every app left on is one the TV needs.</string>
+    <string name="lists_all_off">Nothing on the list is still on here.</string>
+    <string name="lists_optional">optional: tick it if you don\'t use it</string>
+    <!-- Ticked apps in a group: "3 of 5" -->
+    <string name="lists_group_count">%1$d of %2$d</string>
+    <string name="lists_help_add_title">Not in the list? Help add this TV</string>
+    <string name="lists_help_add_text">Send its model and stock apps to cleanyourtv, where Tellyscope’s lists come from. You see the text first.</string>
+    <string name="lists_help_add_button">Help add this TV</string>
+    <string name="lists_not_this_tv">Not this TV?</string>
+    <plurals name="lists_disable_apps_confirm">
+        <item quantity="one">Disable %1$d app?</item>
+        <item quantity="other">Disable %1$d apps?</item>
+    </plurals>
+    <string name="lists_disable_text">Each one is hidden and stops running. Nothing is deleted; every one shows in History, where you can turn it back on.</string>
+    <string name="lists_disable_yes">Yes, disable them</string>
+    <string name="lists_cancel">Cancel</string>
+    <string name="lists_about_title">About Tellyscope</string>
+    <string name="lists_about_version">Version %1$s</string>
+    <string name="lists_about_website">Website</string>
+    <string name="lists_about_demo">Watch the demo on YouTube</string>
+    <string name="lists_about_licence">Free software under the GNU GPL v3.</string>
+    <!-- %1$s is the first 12 characters of a git commit -->
+    <string name="lists_about_lists_commit">Device lists are adapted from cleanyourtv by Gathin (MIT licence), commit %1$s.</string>
+    <string name="lists_about_lists_pending">Device lists are adapted from cleanyourtv by Gathin (MIT licence), once they have downloaded.</string>
+    <string name="lists_about_libraries">Uses Kadb (Apache 2.0) and spake2-java (GPL v3). Full licence texts are in the NOTICE file.</string>
+    <string name="lists_about_close">Close</string>
+
+    <!-- AdvancedScreen.kt: Advanced monitor -->
+    <string name="advanced_back">Back to the TV\'s page</string>
+    <string name="advanced_this_tv">This TV</string>
+    <string name="advanced_ip_address">IP address</string>
+    <string name="advanced_port">Port</string>
+    <string name="advanced_maker">Maker</string>
+    <string name="advanced_network_name">Network name</string>
+    <string name="advanced_loading">Loading stats…</string>
+    <string name="advanced_cpu_by_app">CPU by app</string>
+    <string name="advanced_ram_by_app">RAM by app</string>
+    <string name="advanced_processes">Processes</string>
+    <string name="advanced_network">Network</string>
+    <string name="advanced_cpu">CPU</string>
+    <string name="advanced_ram">RAM</string>
+    <string name="advanced_app">App</string>
+    <!-- How long the TV has been on, like "2d 4h" -->
+    <string name="advanced_on_for">On for</string>
+    <string name="advanced_screen">Screen</string>
+    <string name="advanced_screen_on">On</string>
+    <string name="advanced_screen_off">Off</string>
+    <string name="advanced_percent">%1$d%%</string>
+    <string name="advanced_percent_whole">%1$.0f%%</string>
+    <string name="advanced_percent_tenths">%1$.1f%%</string>
+    <!-- %1$s is how long ago, like "5 minutes ago" -->
+    <string name="advanced_as_of">As of %1$s</string>
+    <string name="advanced_memory">Memory</string>
+    <string name="advanced_storage">Storage</string>
+    <string name="advanced_percent_used">%1$d%% used</string>
+    <!-- The bar that sums every app outside the top 6 -->
+    <string name="advanced_other">Other</string>
+    <string name="advanced_connection">Connection</string>
+    <string name="advanced_wifi">Wi-Fi</string>
+    <string name="advanced_ethernet">Ethernet</string>
+    <string name="advanced_signal">Signal</string>
+    <string name="advanced_signal_strong">Strong (%1$d dBm)</string>
+    <string name="advanced_signal_good">Good (%1$d dBm)</string>
+    <string name="advanced_signal_weak">Weak (%1$d dBm)</string>
+    <string name="advanced_signal_very_weak">Very weak (%1$d dBm)</string>
+    <string name="advanced_mac">MAC</string>
+    <string name="advanced_link_speed">Link speed</string>
+    <string name="advanced_mbps">%1$d Mbps</string>
+    <string name="advanced_data_used">Data used</string>
+    <string name="advanced_open_connections">Open connections</string>
+
+    <!-- ReportScreen.kt: Report a problem, Help add this TV -->
+    <string name="report_title_new_tv">Help add this TV</string>
+    <string name="report_title_problem">Report a problem</string>
+    <string name="report_subtitle_new_tv">Opens cleanyourtv’s “My TV” form on GitHub</string>
+    <string name="report_subtitle_problem">Opens an issue on Tellyscope’s GitHub</string>
+    <string name="report_close">Close</string>
+    <!-- Followed by report_note_rest or report_note_nothing_sent -->
+    <string name="report_note_own_account">You post it from your own GitHub account.</string>
+    <string name="report_note_rest">What doesn’t fit the link can go in a comment after you post.</string>
+    <string name="report_note_nothing_sent">Tellyscope sends nothing by itself.</string>
+    <string name="report_open_github">Open GitHub</string>
+    <string name="report_reading_tv">Reading the TV…</string>
+    <string name="report_no_tv">No TV connected</string>
+    <string name="report_tv_model">TV model</string>
+    <string name="report_tv">TV</string>
+    <string name="report_android_build">Android version and firmware build</string>
+    <string name="report_how_far">How far did you get?</string>
+    <string name="report_how_connect">How did you connect?</string>
+    <string name="report_how_connect_help">Filled in from this connection; change it if it’s wrong.</string>
+    <string name="report_what_happened">What happened?</string>
+    <string name="report_details">Details (optional)</string>
+    <string name="report_details_new_tv">Anything else?</string>
+    <string name="report_details_problem">What were you doing?</string>
+    <string name="report_what_gets_sent">What gets sent</string>
+    <string name="report_connect_tv">Connect the TV to list its apps.</string>
+    <string name="report_pick_stage">Pick how far you got to see the report.</string>
+    <string name="report_pick_outcome">Pick what happened to see the report.</string>
+    <string name="report_add_rest">Add the rest</string>
+    <!-- %1$s is a GitHub repository name, like tellyscope -->
+    <string name="report_add_rest_subtitle">As a comment on your newest issue on %1$s</string>
+    <!-- %1$s is a GitHub repository, like owner/tellyscope -->
+    <string name="report_add_rest_note">Opens your newest issue on %1$s. If it’s not the right one, pick yours from the list there.</string>
+    <string name="report_copy_and_open">Copy and open your issue</string>
+    <string name="report_add_rest_text">This is the comment. GitHub can’t fill in a comment from a link, so Tellyscope copies it and opens your issue: tap the comment box there and paste.</string>
+    <string name="report_posted_title">Posted it? Add the rest as a comment</string>
+    <plurals name="report_posted_apps_cut">
+        <item quantity="one">%1$d apps didn’t fit in the link. Adding them helps cleanyourtv write the full list.</item>
+        <item quantity="other">%1$d apps didn’t fit in the link. Adding them helps cleanyourtv write the full list.</item>
+    </plurals>
+    <string name="report_posted_part_cut">Part of the report didn’t fit in the link. Adding it helps us find the problem.</string>
+    <string name="report_not_now">Not now</string>
+    <string name="report_choose_one">Choose one</string>
+    <string name="report_removed_first">Removed first: serial numbers, IP addresses, ADB keys and fingerprints.</string>
+    <string name="report_cancel">Cancel</string>
+
+    <!-- DeviceScreen.kt -->
+    <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
+    <string name="device_as_of">As of %1$s</string>
+    <string name="device_internal_storage">Internal storage</string>
+    <!-- %1$s is like "12.3 of 32 GB" -->
+    <string name="device_gb_used">%1$s used</string>
+    <string name="device_cpu">CPU</string>
+    <string name="device_ram">RAM</string>
+    <string name="device_network">Network</string>
+    <string name="device_percent">%1$d%%</string>
+    <!-- %1$s is an app name -->
+    <string name="device_disable_title">Disable %1$s?</string>
+    <string name="device_cancel">Cancel</string>
+    <plurals name="device_restore_title">
+        <item quantity="one">Turn %1$d app back on?</item>
+        <item quantity="other">Turn %1$d apps back on?</item>
+    </plurals>
+    <string name="device_restore_text">Turns back on every app Tellyscope disabled on this TV. Apps that were already off before Tellyscope\'s first change stay off.</string>
+    <string name="device_restore_button">Turn back on</string>
+    <string name="device_rename_title">Rename this TV</string>
+    <string name="device_rename_text">Only this phone sees the name. Nothing on the TV changes.</string>
+    <string name="device_save">Save</string>
+    <!-- %1$s is the TV's name -->
+    <string name="device_forget_title">Forget %1$s?</string>
+    <string name="device_forget_text">Tellyscope stops reconnecting to it and removes it from this phone. Nothing on the TV changes. You can add it again from a scan.</string>
+    <string name="device_forget">Forget</string>
+    <string name="device_not_allowed_title">The TV didn\'t allow this phone</string>
+    <string name="device_not_allowed_text">Its debugging access was turned off, reset, or denied. Tellyscope stopped asking so the TV isn\'t flooded with prompts.</string>
+    <string name="device_connect_again">Connect again</string>
+    <!-- "Always allow from this computer" is the TV's own wording -->
+    <string name="device_not_allowed_hint">Then press Allow on the TV, and tick \"Always allow from this computer\".</string>
+    <string name="device_offline">Offline</string>
+    <!-- %1$s is how long ago, like "5 minutes ago", or device_a_while_ago -->
+    <string name="device_offline_text">Last seen %1$s. It reconnects on its own when the TV is back on.</string>
+    <string name="device_a_while_ago">a while ago</string>
+    <string name="device_reconnect">Reconnect</string>
+    <string name="device_nothing_here">Nothing here yet.</string>
+    <!-- %1$s is what the user searched for -->
+    <string name="device_nothing_matches">Nothing matches \"%1$s\".</string>
+    <string name="device_app_disabled">Disabled</string>
+    <string name="device_app_running">Running</string>
+    <string name="device_app_not_running">Not running</string>
+    <!-- %1$s is why the app can't be changed -->
+    <string name="device_app_protected">Protected: %1$s</string>
+
+    <!-- GuideCard.kt: turning on debugging. **…** marks the TV's own menu names; keep the stars. -->
+    <string name="guide_brand_google_tv" translatable="false">Google TV</string>
+    <string name="guide_brand_android_tv" translatable="false">Android TV</string>
+    <string name="guide_brand_fire_tv" translatable="false">Fire TV</string>
+    <string name="guide_brand_xiaomi" translatable="false">Xiaomi</string>
+    <string name="guide_brand_xgimi" translatable="false">XGIMI</string>
+    <!-- A brand chip: any TV not listed -->
+    <string name="guide_brand_other">Other</string>
+    <string name="guide_unlock_google_tv">On the TV: **Settings → System → About**. Press OK on **Android TV OS build** 7 times, until it says you\'re a developer.</string>
+    <string name="guide_unlock_build">On the TV: **Settings → Device Preferences → About**. Press OK on **Build** 7 times.</string>
+    <string name="guide_unlock_fire_tv">On the TV: **Settings → My Fire TV → About**. Press OK on the first row, your Fire TV\'s name, 7 times.</string>
+    <string name="guide_unlock_other">On the TV, open **Settings**. Has **System**? It\'s Google TV: go to **System → About** and press OK on **Android TV OS build** 7 times. Has **Device Preferences**? It\'s Android TV: go to **Device Preferences → About** and press OK on **Build** 7 times.</string>
+    <string name="guide_debug_title_wireless">Turn on Wireless debugging</string>
+    <string name="guide_debug_done_wireless">Wireless debugging on</string>
+    <string name="guide_debug_title_adb">Turn on ADB debugging</string>
+    <string name="guide_debug_done_adb">ADB debugging on</string>
+    <string name="guide_debug_google_tv">Back to **System → Developer options**. Turn on **Wireless debugging**. Older TVs call it **USB debugging**.</string>
+    <string name="guide_debug_android_tv">Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older TVs have **USB debugging** and **Network debugging** instead: turn on both.</string>
+    <string name="guide_debug_fire_tv">Back to **My Fire TV → Developer options**. Turn on **ADB debugging**.</string>
+    <string name="guide_debug_xiaomi">Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older TVs call it **USB debugging**.</string>
+    <string name="guide_debug_xgimi">Back to **Device Preferences → Developer options**. Turn on **Wireless debugging**. Older projectors have **USB debugging**, then **Network debugging** if it\'s listed: turn on both.</string>
+    <string name="guide_debug_other">Back one level, open **Developer options**. Turn on **Wireless debugging**. Older TVs have **USB debugging**, and some **Network debugging** too: turn on what\'s there.</string>
+    <string name="guide_pair_google_tv">**System → Developer options → Wireless debugging → Pair device with pairing code**</string>
+    <string name="guide_pair_android_tv">**Device Preferences → Developer options → Wireless debugging → Pair device with pairing code**</string>
+    <string name="guide_pair_other">**Developer options → Wireless debugging → Pair device with pairing code**</string>
+    <string name="guide_pick_tv">Pick your TV</string>
+    <string name="guide_unlock_title">Unlock developer options</string>
+    <string name="guide_unlock_done">Developer options unlocked</string>
+    <string name="guide_find_title">Find your TV</string>
+    <string name="guide_done_next">Done, next</string>
+    <string name="guide_back">Back</string>
+    <string name="guide_done">Done</string>
+    <string name="guide_tip_same_wifi">Keep the phone and the TV on the same Wi-Fi. Guest networks often keep devices apart.</string>
+    <string name="guide_tip_debugging_off">Debugging switched itself off? Some TVs reset it after a restart. Turn it back on and this screen finds the TV again.</string>
+    <string name="guide_tip_vega">No Developer options after 7 presses? Newer Fire TVs run Vega OS, which isn\'t Android, and Tellyscope can\'t reach them.</string>
+    <string name="guide_tip_by_ip">Still nothing? Add the TV by its IP address, from the TV\'s network settings.</string>
+    <string name="guide_help_title">Can\'t find your TV?</string>
+    <string name="guide_add_by_ip">Add by IP address</string>
+    <string name="guide_close">Close</string>
+
+    <!-- AppsTabs.kt -->
+    <string name="apps_tab_running">Running</string>
+    <string name="apps_tab_installed">Installed</string>
+    <string name="apps_tab_built_in">Built-in</string>
+    <!-- Header over the apps the TV needs: "System (12)" -->
+    <string name="apps_system_count">%1$s (%2$d)</string>
+    <string name="apps_show_system">Show system apps</string>
+    <string name="apps_hide_system">Hide system apps</string>
+
+    <!-- Details.kt -->
+    <string name="details_title">Details</string>
+    <string name="details_show">Show details</string>
+    <string name="details_hide">Hide details</string>
+
+    <!-- DeviceIcons.kt: screen-reader names for the device icons -->
+    <string name="kind_tv">TV</string>
+    <string name="kind_projector">Projector</string>
+    <string name="kind_fire_tv" translatable="false">Fire TV</string>
+    <string name="kind_stick">Streaming device</string>
+
+    <!-- TvHeader.kt: the last TV chip. A screen reader reads the icon then the label: "Add a" + "Device". -->
+    <string name="header_add_device_icon">Add a</string>
+    <string name="header_add_device_label">Device</string>
+
+    <!-- screens_b -->
+
+    <!-- RemoteScreen: key names are what TalkBack reads -->
+    <string name="remote_mute">Mute or unmute</string>
+    <string name="remote_volume_up">Volume up</string>
+    <string name="remote_volume_down">Volume down</string>
+    <string name="remote_back">Back</string>
+    <string name="remote_home">Home</string>
+    <string name="remote_menu">Menu</string>
+    <string name="remote_up">Up</string>
+    <string name="remote_down">Down</string>
+    <string name="remote_left">Left</string>
+    <string name="remote_right">Right</string>
+    <string name="remote_ok">OK</string>
+    <string name="remote_type_label">Type on the TV</string>
+    <string name="remote_send">Send to the TV</string>
+    <!-- Confirms restarting the TV -->
+    <string name="remote_restart">Restart</string>
+    <string name="remote_cancel">Cancel</string>
+    <string name="remote_restarting">Restarting</string>
+    <string name="remote_hide">Hide</string>
+    <string name="remote_retry">Retry</string>
+    <string name="remote_close">Close</string>
+    <!-- TalkBack click label on the header line while a TV restarts -->
+    <string name="remote_show_restart">Show the restart</string>
+    <!-- TalkBack actions that reorder a remote button -->
+    <string name="remote_move_up">Move up</string>
+    <string name="remote_move_down">Move down</string>
+
+    <!-- AccessUi -->
+    <string name="access_show_less">Show less</string>
+    <string name="access_show_more">Show more</string>
+    <string name="access_back_to_tv">Back to the TV\'s page</string>
+    <string name="access_checking">Checking…</string>
+
+    <!-- SettingsScreen -->
+    <!-- Sent through the share sheet; %1$s is the project's web address -->
+    <string name="settings_share_text">I just found Tellyscope, an open-source app that cleans up your Android TV from your phone: turn off the bloat, install apps and send files, with no root and no PC. Free, no tracking. %1$s</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_back_to_tv">Back to the TV\'s page</string>
+    <string name="settings_check_updates">Check for updates</string>
+    <string name="settings_check_updates_alpha">Every 5 minutes on alpha builds, ask GitHub whether a newer Tellyscope is out. Nothing is downloaded.</string>
+    <string name="settings_check_updates_release">Every 30 minutes, ask GitHub whether a newer Tellyscope is out. Nothing is downloaded.</string>
+    <string name="settings_key_haptics">Vibrate on key press</string>
+    <string name="settings_key_haptics_text">A short tick for each key on the Remote.</string>
+    <string name="settings_report">Report a problem</string>
+    <string name="settings_report_text">Opens an issue on Tellyscope’s GitHub. You see the text first.</string>
+    <string name="settings_share_hint">Send someone the link to Tellyscope’s GitHub page.</string>
+    <string name="settings_whats_new">What’s new</string>
+    <string name="settings_whats_new_text">What changed in this version and the ones before it.</string>
+    <string name="whats_new_back">Back to Settings</string>
+    <string name="whats_new_installed">Installed</string>
+    <string name="whats_new_new">New</string>
+    <string name="whats_new_improved">Improved</string>
+    <string name="whats_new_fixed">Fixed</string>
+    <string name="whats_new_update_out">Tellyscope %1$s is out</string>
+    <string name="whats_new_you_have">You have %1$s.</string>
+    <string name="whats_new_update">Update</string>
+    <string name="whats_new_not_installed">Not installed</string>
+    <string name="whats_new_newer_failed">Couldn’t load newer versions.</string>
+    <string name="settings_advanced">Advanced</string>
+    <!-- Heading: how to change where the debloat lists come from -->
+    <string name="settings_change">Change</string>
+    <string name="settings_change_text">Paste the HTTPS raw folder that holds index.json, e.g. raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
+    <string name="settings_own_lists_guide">How to use your own lists</string>
+    <string name="settings_own_lists">Use your own debloat lists</string>
+    <!-- Above the name of the source of the debloat lists -->
+    <string name="settings_lists_from">Lists from</string>
+    <string name="settings_open_cleanyourtv">Open cleanyourtv on GitHub</string>
+    <string name="settings_source_title">Where the lists come from</string>
+    <string name="settings_source_text">To use your own lists, fork tellyscope-devices, edit it, and paste the address of the folder that holds index.json, like https://raw.githubusercontent.com/you/tellyscope-devices/main/. Protected apps stay protected whatever a list says.</string>
+    <string name="settings_use_lists">Use these lists</string>
+    <string name="settings_reset">Reset to default</string>
+    <string name="settings_cancel">Cancel</string>
+
+    <!-- ConnectScreen -->
+    <string name="connect_back">Back</string>
+    <string name="connect_back_to_tvs">Back to TVs</string>
+    <string name="connect_try_again">Try again</string>
+    <string name="connect_cancel">Cancel</string>
+    <string name="connect_pairing">Pairing…</string>
+    <string name="connect_pair">Pair</string>
+    <!-- On the Pair button while the code is incomplete -->
+    <plurals name="connect_more_digits">
+        <item quantity="one">%1$d more digit</item>
+        <item quantity="other">%1$d more digits</item>
+    </plurals>
+    <!-- A TV with no network name -->
+    <string name="connect_android_device">Android device</string>
+    <string name="connect_code_title">Type the pairing code</string>
+    <string name="connect_code_text">On the TV, open the pairing screen and type the 6 digits it shows.</string>
+    <!-- Label above the TV's own error message -->
+    <string name="connect_from_tv">From the TV</string>
+    <string name="connect_no_answer">No answer from the TV</string>
+    <string name="connect_not_accepted">The TV didn\'t accept the connection.</string>
+    <string name="connect_check_awake">Is the TV on and awake?</string>
+    <string name="connect_check_denied">Was the box on the TV closed, or Deny pressed? Try again and it asks once more.</string>
+    <string name="connect_check_restart">Some TVs switch debugging off after a restart. Turn it back on.</string>
+    <string name="connect_cant_reach">Can\'t reach the TV</string>
+    <string name="connect_off_wifi">This phone isn\'t on Wi-Fi. Join the same Wi-Fi as the TV, then try again.</string>
+    <string name="connect_off_wifi_waiting">This phone isn\'t on Wi-Fi. Join the same Wi-Fi as the TV. Tellyscope carries on as soon as you\'re on.</string>
+    <string name="connect_waiting_wifi">Waiting for Wi-Fi…</string>
+    <string name="connect_tv_silent">This phone is on Wi-Fi, but the TV didn\'t answer.</string>
+    <string name="connect_check_on">Is the TV on? Some TVs drop off Wi-Fi when they sleep.</string>
+    <string name="connect_check_same_wifi">Same Wi-Fi as the TV? A guest network keeps them apart.</string>
+    <string name="connect_check_new_address">Did the TV get a new address? Go back to TVs and tap Rescan.</string>
+    <!-- One item of a bulleted list -->
+    <string name="connect_bullet">•  %1$s</string>
+    <string name="connect_allow_title">Allow on your TV</string>
+    <!-- **…** marks bold text; keep the marks around the TV's button names -->
+    <string name="connect_allow_text_key">A box pops up on your TV. Check its key matches this phone\'s, tick **Always allow**, then select **Allow**.</string>
+    <string name="connect_allow_text">A box pops up on your TV. Tick **Always allow**, then select **Allow**.</string>
+    <string name="connect_phone_key">This phone\'s key</string>
+    <!-- %1$d is seconds waited so far -->
+    <string name="connect_waiting">Waiting for the TV… %1$d s</string>
+    <string name="connect_connecting">Connecting</string>
+    <string name="connect_reaching">Reaching the TV…</string>
+    <!-- A drawing of the box Android shows on the TV: use the wording Android uses in this language -->
+    <string name="connect_tv_allow_title">Allow USB debugging?</string>
+    <string name="connect_tv_fingerprint">The computer\'s RSA key fingerprint is:</string>
+    <string name="connect_tv_always">Always allow from this computer</string>
+    <string name="connect_tv_cancel">Cancel</string>
+    <string name="connect_tv_allow">Allow</string>
+    <string name="connect_code_description">Pairing code</string>
+
+    <!-- Transfers -->
+    <string name="transfers_install_app">Install app</string>
+    <string name="transfers_disabling">Disabling…</string>
+    <string name="transfers_debloat">Debloat</string>
+    <string name="transfers_send_file">Send file</string>
+    <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
+    <string name="transfers_to_folder">To %1$s</string>
+    <string name="transfers_tap_to_save">Tap a file to save a copy on your phone.</string>
+    <string name="transfers_save">Save</string>
+    <string name="transfers_reading">Reading the app</string>
+    <!-- %1$s is the app's name -->
+    <string name="transfers_install_failed">Couldn\'t install %1$s</string>
+    <string name="transfers_cant_install">Can\'t install that</string>
+    <string name="transfers_version">Version %1$s</string>
+    <!-- How many files the app comes in -->
+    <plurals name="transfers_parts">
+        <item quantity="one">%1$d part</item>
+        <item quantity="other">%1$d parts</item>
+    </plurals>
+    <string name="transfers_sending_percent">Sending to the TV · %1$d%%</string>
+    <string name="transfers_installing">Installing on the TV…</string>
+    <!-- %1$s is the TV's own message, untranslated -->
+    <string name="transfers_tv_said">The TV said: %1$s</string>
+    <string name="transfers_open_on_tv">Open on TV</string>
+    <string name="transfers_ok">OK</string>
+    <string name="transfers_cancel">Cancel</string>
+    <string name="transfers_done">Done</string>
+    <string name="transfers_report">Report a problem</string>
+    <!-- %1$s is a folder on the TV -->
+    <string name="transfers_sending_to">Sending to %1$s</string>
+    <string name="transfers_saving">Saving to your phone</string>
+    <!-- Bytes copied so far, of the file's size -->
+    <string name="transfers_progress">%1$s of %2$s</string>
+    <string name="transfers_starting">Starting…</string>
+
+    <!-- ScanScreen -->
+    <string name="scan_back">Back</string>
+    <string name="scan_title">Add your TV</string>
+    <string name="scan_no_lan">You\'re not on Wi-Fi, so only TVs that announce themselves show up. Join your TV\'s Wi-Fi.</string>
+    <string name="scan_same_wifi">Keep your phone and TV on the same Wi-Fi.</string>
+    <string name="scan_add_by_ip">Add by IP address</string>
+    <string name="scan_cant_find">Can\'t find your TV?</string>
     <string name="scan_rescan">Rescan</string>
     <string name="scan_none_yet_in">No TV yet. Looking again in %1$d s</string>
+    <!-- A TV with no network name -->
+    <string name="scan_android_device">Android device</string>
+    <string name="scan_connect">Connect</string>
+    <string name="scan_try_again">Try again</string>
+    <string name="scan_continue">Continue</string>
+    <string name="scan_looking_first">Looking for your TV…</string>
+    <string name="scan_looking_more">Looking for more TVs…</string>
+    <string name="scan_none_yet">No TV yet. Tellyscope looks again in a moment.</string>
+    <string name="scan_again">Scan again</string>
+    <string name="scan_off_wifi_title">This phone isn\'t on Wi-Fi</string>
+    <string name="scan_off_wifi_text">Join the same Wi-Fi as your TV. Tellyscope looks for it again as soon as you\'re on.</string>
+    <string name="scan_open_wifi">Open Wi-Fi settings</string>
+    <string name="scan_ip_hint">Find it on the TV under Settings → Network → your Wi-Fi.</string>
+    <!-- %1$s is the phone's address range, in CIDR form -->
+    <string name="scan_subnet">Your Wi-Fi: %1$s</string>
+    <string name="scan_cancel">Cancel</string>
+
+    <!-- screens_c -->
+
+    <!-- Shared by the screens in this group: buttons and screen-reader labels. -->
+    <string name="screen_done">Done</string>
+    <string name="screen_cancel">Cancel</string>
+    <string name="screen_try_again">Try again</string>
+    <string name="screen_continue">Continue</string>
+    <string name="screen_back">Back</string>
+    <string name="screen_back_to_tv">Back to the TV\'s page</string>
+    <!-- Screen-reader label for a step or app that hasn't started yet. -->
+    <string name="screen_waiting">Waiting</string>
+
+    <!-- A result row's reason, the TV's own words or ours, ended as a sentence. -->
+    <string name="result_reason">%1$s.</string>
+    <!-- The same, for one app: app name, then the reason. -->
+    <string name="result_reason_app">%1$s: %2$s.</string>
+
+    <!-- Another device asks to connect -->
+    <string name="request_close">Close</string>
+
+    <!-- Reset TV -->
+    <string name="reset_read_failed">Couldn\'t read the TV</string>
+    <string name="reset_reading">Reading the TV…</string>
+    <string name="reset_hide_list">Hide the list</string>
+    <string name="reset_show_list">Show the list</string>
+
+    <!-- Install a home screen -->
+    <string name="launcher_close">Close</string>
+    <!-- The Play Store's Install button, shown in bold where it appears in copy_install_it_text: must match that word exactly. -->
+    <string name="launcher_install_word">Install</string>
+    <string name="launcher_ok">OK</string>
+
+    <!-- History -->
+    <string name="history_empty_title">Nothing changed yet</string>
+    <string name="history_empty_text">Anything you stop, disable or turn on shows up here, with a way to undo it.</string>
+    <string name="history_restoring">Turning apps back on…</string>
+    <!-- Button; the number is how many apps are still off. -->
+    <string name="history_restore_all">Restore everything (%1$d)</string>
+    <string name="history_undone">Undone</string>
+
+    <!-- Debloat run -->
+    <string name="debloat_title">Debloat</string>
+    <!-- Screen-reader label for an app the TV refused to turn off. -->
+    <string name="debloat_failed">Didn\'t turn off</string>
+
+    <!-- Logged out -->
+    <string name="logged_out_back_to_tvs">Back to TVs</string>
+    <string name="logged_out_connect_again">Connect again</string>
+    <string name="logged_out_causes_title">Why this can happen</string>
+    <!-- One cause in the list under logged_out_causes_title. -->
+    <string name="logged_out_cause">•  %1$s</string>
+
+    <!-- Nearby devices permission (also shown on the welcome screen) -->
+    <string name="permission_title">Find TVs on your Wi-Fi</string>
+    <string name="permission_local_network_text">Android asks before an app talks to other devices on your Wi-Fi. Tellyscope only connects to the TVs you pick.</string>
+    <string name="permission_denied">Without it, Tellyscope can\'t see any TV. In Settings, open Permissions → Nearby devices and choose Allow.</string>
+    <string name="permission_open_settings">Open Settings</string>
+    <string name="permission_ask_again">Ask again</string>
+
+    <!-- Update dialog -->
+    <!-- The argument is the version, e.g. 0.3.0. -->
+    <string name="update_title">🎉 Tellyscope %1$s is out</string>
+    <string name="update_no_notes">No release notes.</string>
+    <!-- Last line when the release notes are cut short. -->
+    <string name="update_more_notes">…and more on GitHub</string>
+    <string name="update_download">Download APK</string>
+    <string name="update_release">Check release</string>
+    <string name="update_cancel">Cancel</string>
+
+    <!-- Welcome -->
+    <string name="welcome_skip">Skip</string>
+    <string name="welcome_title">Welcome to Tellyscope</string>
+    <string name="welcome_text">See what\'s running on your Android TV, and turn off the apps you don\'t need. All from your phone, over Wi-Fi.</string>
+    <string name="welcome_step_1">Turn on debugging on your TV. The next screen shows how for your brand.</string>
+    <string name="welcome_step_2">Tellyscope finds the TV on your Wi-Fi.</string>
+    <string name="welcome_step_3">Type the code the TV shows, or choose Allow when it asks.</string>
 </resources>

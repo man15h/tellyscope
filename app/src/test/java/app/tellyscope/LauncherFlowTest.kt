@@ -18,6 +18,7 @@ import app.tellyscope.data.ScanKind
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.StoreState
 import app.tellyscope.data.Suggestions
+import app.tellyscope.data.UiText
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.LauncherActions
 import app.tellyscope.ui.LauncherCard
@@ -58,7 +59,7 @@ private const val PROJECTIVY = "com.spocky.projengmenu"
 private const val FLAUNCHER = "me.efesser.flauncher"
 
 private val store = AppInfo(PLAY_STORE, "Google Play Store", null, true, true, null, "1.0")
-private val stock = AppInfo(TV_HOME, "Google TV Home", null, true, true, "this is your home screen", "1.0", home = true)
+private val stock = AppInfo(TV_HOME, "Google TV Home", null, true, true, UiText(R.string.data_protected_home_screen), "1.0", home = true)
 
 /** One online TV whose Play Store answers from a script. */
 private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
@@ -77,7 +78,7 @@ private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
 
     override suspend fun apps(deviceId: String) = listOf(store, stock) +
         when {
-            onHome -> listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, "this is your home screen", "1.0", home = true, listedLauncher = true))
+            onHome -> listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, UiText(R.string.data_protected_home_screen), "1.0", home = true, listedLauncher = true))
             installed -> listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", homeInstead = TV_HOME, homeService = true))
             else -> emptyList()
         }
@@ -265,7 +266,7 @@ class LauncherScreenTest {
     @Test fun anAddedLauncherOnHomeWithTheStockOneOffGetsNoCardButKeepsTheTweaksRow() {
         // Stock launcher disabled by hand or by Debloat: Projectivy is Home with no homeBack.
         val off = stock.copy(enabled = false, home = false)
-        val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, "this is your home screen", "1.0", home = true, listedLauncher = true)
+        val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, UiText(R.string.data_protected_home_screen), "1.0", home = true, listedLauncher = true)
         assertFalse(offerLauncher(listOf(store, off, projectivy), hidden = false))
         assertFalse(offerChoose(listOf(store, off, projectivy)))
         // Any user-installed launcher counts, listed or not.
@@ -279,7 +280,7 @@ class LauncherScreenTest {
 
     @Test fun anAddedLauncherThatIsNotHomeStillHidesTheCard() {
         // Installing a second launcher clears the default: nothing is Home, and both are on.
-        val noDefault = stock.copy(home = false, protectedReason = "this is your home screen")
+        val noDefault = stock.copy(home = false, protectedReason = UiText(R.string.data_protected_home_screen))
         val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", removable = true, listedLauncher = true, homeInstead = TV_HOME, answersHome = true)
         val flauncher = AppInfo("me.efesser.flauncher", "FLauncher", null, false, true, null, "1.0", removable = true, listedLauncher = true, homeInstead = TV_HOME, answersHome = true)
         assertFalse(offerChoose(listOf(store, noDefault, projectivy, flauncher)))
@@ -299,8 +300,8 @@ class LauncherScreenTest {
         var notNow = false
         var chose = false
         compose.setContent { LauncherCard("Google TV Home", onNotNow = { notNow = true }, onChoose = { chose = true }) }
-        compose.onNodeWithText(Copy.NOT_NOW).performClick()
-        compose.onNodeWithText(Copy.CHOOSE_ONE).performClick()
+        compose.onNodeWithText(Copy.NOT_NOW.text()).performClick()
+        compose.onNodeWithText(Copy.CHOOSE_ONE.text()).performClick()
         assertTrue(notNow && chose)
     }
 
@@ -308,7 +309,7 @@ class LauncherScreenTest {
         val installs = mutableListOf<String>()
         compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock), LauncherActions(install = { installs += it })) }
         compose.onNodeWithText("FLauncher").performScrollTo().performClick() // under the bottom bar on a small screen
-        compose.onNodeWithText(Copy.GET_FROM_STORE).performClick()
+        compose.onNodeWithText(Copy.GET_FROM_STORE.text()).performClick()
         assertEquals(listOf(FLAUNCHER), installs)
     }
 
@@ -318,20 +319,20 @@ class LauncherScreenTest {
         compose.setContent {
             LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions(install = { installs += it }, fireCheck = { downloads++ }), direct = true)
         }
-        compose.onNodeWithText(Copy.STORE_RECOMMENDED).assertExists()
-        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).performClick()
-        compose.onNodeWithText(Copy.GET_FROM_STORE).performClick()
+        compose.onNodeWithText(Copy.STORE_RECOMMENDED.text()).assertExists()
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY.text()).performClick()
+        compose.onNodeWithText(Copy.GET_FROM_STORE.text()).performClick()
         assertEquals(1, downloads)
         assertEquals(listOf(PROJECTIVY), installs)
         compose.onNodeWithText("FLauncher").performScrollTo().performClick()
-        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).assertDoesNotExist()
-        compose.onNodeWithText(Copy.GET_FROM_STORE).assertExists()
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY.text()).assertDoesNotExist()
+        compose.onNodeWithText(Copy.GET_FROM_STORE.text()).assertExists()
     }
 
     @Test fun withoutADownloadOnlyTheStoreIsOffered() {
         compose.setContent { LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions()) }
-        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY).assertDoesNotExist()
-        compose.onNodeWithText(Copy.STORE_RECOMMENDED).assertDoesNotExist()
+        compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY.text()).assertDoesNotExist()
+        compose.onNodeWithText(Copy.STORE_RECOMMENDED.text()).assertDoesNotExist()
     }
 
     @Test fun theStoreDidntOpenOffersAnotherOrARetry() {
@@ -340,9 +341,9 @@ class LauncherScreenTest {
         compose.setContent {
             LauncherScreen(tv, LauncherFlow(LauncherFlow.Step.NoStore, PROJECTIVY), listOf(store, stock), LauncherActions(install = { installs += it }, chooseAnother = { picks += it }))
         }
-        compose.onNodeWithText(Copy.NO_STORE).assertExists()
-        compose.onNodeWithText(Copy.TRY_AGAIN).performClick()
-        compose.onNodeWithText(Copy.CHOOSE_ANOTHER).performClick()
+        compose.onNodeWithText(Copy.NO_STORE.text()).assertExists()
+        compose.onNodeWithText(Copy.TRY_AGAIN.text()).performClick()
+        compose.onNodeWithText(Copy.CHOOSE_ANOTHER.text()).performClick()
         assertEquals(listOf(PROJECTIVY), installs)
         assertEquals(listOf(PROJECTIVY), picks)
     }
@@ -354,10 +355,10 @@ class LauncherScreenTest {
         compose.setContent {
             LauncherScreen(tv, LauncherFlow(pkg = FLAUNCHER), listOf(store, stock, flauncher), LauncherActions(makeHome = { p, s -> homes += p to s }, open = { opens += it }))
         }
-        compose.onNodeWithText(Copy.INSTALLED).assertExists()
-        compose.onNodeWithText(Copy.GET_FROM_STORE).assertDoesNotExist()
-        compose.onNodeWithText(Copy.OPEN).performClick()
-        compose.onNodeWithText(Copy.MAKE_HOME).performClick()
+        compose.onNodeWithText(Copy.INSTALLED.text()).assertExists()
+        compose.onNodeWithText(Copy.GET_FROM_STORE.text()).assertDoesNotExist()
+        compose.onNodeWithText(Copy.OPEN.text()).performClick()
+        compose.onNodeWithText(Copy.MAKE_HOME.text()).performClick()
         assertEquals(listOf(FLAUNCHER), opens)
         assertEquals(listOf(FLAUNCHER to false), homes)
     }
@@ -365,22 +366,22 @@ class LauncherScreenTest {
     @Test fun theLauncherOnHomeOffersOnlyOpen() {
         val flauncher = AppInfo(FLAUNCHER, "FLauncher", null, false, true, null, "1.0", removable = true, answersHome = true, home = true, homeBack = "Google TV Home")
         compose.setContent { LauncherScreen(tv, LauncherFlow(pkg = FLAUNCHER), listOf(store, stock.copy(home = false), flauncher), LauncherActions()) }
-        compose.onNodeWithText(Copy.HOME_NOW).assertExists()
-        compose.onNodeWithText(Copy.OPEN).assertExists()
-        compose.onNodeWithText(Copy.MAKE_HOME).assertDoesNotExist()
+        compose.onNodeWithText(Copy.HOME_NOW.text()).assertExists()
+        compose.onNodeWithText(Copy.OPEN.text()).assertExists()
+        compose.onNodeWithText(Copy.MAKE_HOME.text()).assertDoesNotExist()
     }
 
     @Test fun aLauncherNotRecommendedIsListedOnThisTv() {
         val wolf = AppInfo("com.wolf.firelauncher", "Wolf Launcher", null, false, true, null, "1.0", removable = true, answersHome = true, homeInstead = TV_HOME)
         compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock, wolf), LauncherActions()) }
-        compose.onNodeWithText(Copy.ON_THIS_TV).assertExists()
+        compose.onNodeWithText(Copy.ON_THIS_TV.text()).assertExists()
         compose.onNodeWithText("Wolf Launcher").performClick()
-        compose.onNodeWithText(Copy.MAKE_HOME).assertExists()
+        compose.onNodeWithText(Copy.MAKE_HOME.text()).assertExists()
     }
 
     @Test fun noOtherLauncherNoOnThisTv() {
         compose.setContent { LauncherScreen(tv, LauncherFlow(), listOf(store, stock), LauncherActions()) }
-        compose.onNodeWithText(Copy.ON_THIS_TV).assertDoesNotExist()
+        compose.onNodeWithText(Copy.ON_THIS_TV.text()).assertDoesNotExist()
     }
 
     @Test fun yesOnAServiceLauncherAsksAboutTheService() {
@@ -389,10 +390,10 @@ class LauncherScreenTest {
         compose.setContent {
             LauncherScreen(tv, LauncherFlow(LauncherFlow.Step.Installed, PROJECTIVY), listOf(store, stock, projectivy), LauncherActions(switch = { switches += it }))
         }
-        compose.onNodeWithText(Copy.MAKE_IT_HOME).assertExists()
-        compose.onNodeWithText(Copy.confirm(app.tellyscope.data.Action.Home)).performClick()
-        compose.onNodeWithText(Copy.serviceTitle("Projectivy Launcher")).assertExists()
-        compose.onNodeWithText(Copy.TURN_IT_ON).performClick()
+        compose.onNodeWithText(Copy.MAKE_IT_HOME.text()).assertExists()
+        compose.onNodeWithText(Copy.confirm(app.tellyscope.data.Action.Home).text()).performClick()
+        compose.onNodeWithText(Copy.serviceTitle("Projectivy Launcher").text()).assertExists()
+        compose.onNodeWithText(Copy.TURN_IT_ON.text()).performClick()
         assertEquals(listOf(true), switches)
     }
 }

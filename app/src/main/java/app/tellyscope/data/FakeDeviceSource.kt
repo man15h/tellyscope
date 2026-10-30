@@ -2,6 +2,8 @@
 
 package app.tellyscope.data
 
+import android.content.res.Resources
+import app.tellyscope.R
 import app.tellyscope.adb.AdbClient
 import app.tellyscope.adb.AllowedKey
 import app.tellyscope.adb.ApkInfo
@@ -30,13 +32,17 @@ import okio.Source
 
 /**
  * Stand-in [DeviceSource] for building the screens before the ADB module exists.
- * [Scenario] switches between the flows worth looking at.
+ * [Scenario] switches between the flows worth looking at. [resources] spell out History labels;
+ * without them a label is the [UiText] as data, which no test reads.
  */
 class FakeDeviceSource(
     private val scenario: Scenario = Scenario.Normal,
     private val clock: () -> Long = System::currentTimeMillis,
     private val random: Random = Random.Default,
+    private val resources: Resources? = null,
 ) : DeviceSource {
+
+    private fun UiText.text(): String = resources?.let { this.resolve(it) } ?: toString()
 
     enum class Scenario {
         Normal,
@@ -163,7 +169,6 @@ class FakeDeviceSource(
             ramTotalMb = 2048,
             storageUsedGb = 9.8,
             storageTotalGb = 16.0,
-            tempC = 52 + random.nextInt(-1, 2),
             uptimeSeconds = 3 * 86_400L + 4 * 3_600L,
             screenOn = true,
             procs = procs,
@@ -206,7 +211,7 @@ class FakeDeviceSource(
             val reset = book.entries(deviceId).first { it.id == undoing }
             val on = ResetRecord.list(reset.previous, ResetRecord.ON)
             list.replaceAll { if (it.packageName in on) it.copy(enabled = false) else it }
-            return book.record(deviceId, clock(), Action.Change, packageName, "Put back what Reset TV changed", null, undoing)
+            return book.record(deviceId, clock(), Action.Change, packageName, UiText(R.string.data_history_reset_undone).text(), null, undoing)
         }
         val i = list.indexOfFirst { it.packageName == packageName }
         val app = list[i]
@@ -252,7 +257,7 @@ class FakeDeviceSource(
         }
         if (plan.turnOn.isEmpty()) return into to emptyList()
         val on = plan.turnOn.joinToString(",") { it.packageName }
-        val entry = book.record(deviceId, clock(), Action.Reset, "reset", ResetRecord.label(plan.changes), Action.Reset, previous = mapOf(ResetRecord.ON to on))
+        val entry = book.record(deviceId, clock(), Action.Reset, "reset", ResetRecord.label(plan.changes).text(), Action.Reset, previous = mapOf(ResetRecord.ON to on))
         return entry.id to emptyList()
     }
 
@@ -327,7 +332,7 @@ class FakeDeviceSource(
     override suspend fun listSource() = listSource
 
     override suspend fun setListSource(url: String?) {
-        listSource = url?.let { normalize(it) ?: throw IllegalStateException("the address has to start with https://") }
+        listSource = url?.let { normalize(it) ?: throw UiTextException(UiText(R.string.data_lists_not_https)) }
     }
 
     override suspend fun press(deviceId: String, key: RemoteKey): Boolean {
@@ -383,12 +388,12 @@ class FakeDeviceSource(
         val s = settingsFor(deviceId)
         val before = values.keys.associateWith { s[it] }
         s.putAll(values)
-        return book.record(deviceId, clock(), Action.Change, tweak.name, TvSettings.label(tweak, s), Action.Change, undoing, before)
+        return book.record(deviceId, clock(), Action.Change, tweak.name, TvSettings.label(tweak, s).text(), Action.Change, undoing, before)
     }
 
     override suspend fun clearCaches(deviceId: String): Long {
         delay(800)
-        book.record(deviceId, clock(), Action.ClearCaches, "", TvSettings.CACHES, undo = null)
+        book.record(deviceId, clock(), Action.ClearCaches, "", TvSettings.CACHES.text(), undo = null)
         return 1_340_000
     }
 
@@ -474,17 +479,17 @@ class FakeDeviceSource(
 
 
         val baseApps = listOf(
-            AppInfo("com.spocky.projengmenu", "Projectivy Launcher", 0xFF3D5AFE, false, true, "this is your home screen", "4.52", launchable = true),
+            AppInfo("com.spocky.projengmenu", "Projectivy Launcher", 0xFF3D5AFE, false, true, UiText(R.string.data_protected_home_screen), "4.52", launchable = true),
             AppInfo("com.google.android.youtube.tv", "YouTube", 0xFFC4302B, false, true, null, "4.40.303", launchable = true),
             AppInfo("com.netflix.ninja", "Netflix", 0xFFB20710, false, true, null, "11.2.0", removable = true, launchable = true),
             AppInfo("org.jellyfin.androidtv", "Jellyfin", 0xFF7B5EA7, false, true, null, "0.17.4", removable = true, launchable = true),
             AppInfo("com.xgimi.assistant", "XGIMI Assistant", null, true, true, null, "2.1.8"),
             AppInfo("com.xgimi.ota", "XGIMI Updates", null, true, true, null, "1.4.0"),
             AppInfo("com.google.android.tvrecommendations", "TV Recommendations", null, true, false, null, "1.0"),
-            AppInfo("com.android.systemui", "System UI", null, true, true, "the TV needs this to draw the screen", "11"),
-            AppInfo("com.android.tv.settings", "Settings", null, true, true, "you need this to change TV settings", "11", launchable = true),
-            AppInfo("com.google.android.gms", "Google Play services", null, true, true, "most apps stop working without it", "24.38"),
-            AppInfo("com.google.android.inputmethod.latin", "Gboard", null, true, true, "you'd lose the on-screen keyboard", "14.1"),
+            AppInfo("com.android.systemui", "System UI", null, true, true, UiText.Raw("the TV needs this to draw the screen"), "11"),
+            AppInfo("com.android.tv.settings", "Settings", null, true, true, UiText(R.string.data_protected_settings), "11", launchable = true),
+            AppInfo("com.google.android.gms", "Google Play services", null, true, true, UiText(R.string.data_protected_play_services), "24.38"),
+            AppInfo("com.google.android.inputmethod.latin", "Gboard", null, true, true, UiText(R.string.data_protected_keyboard), "14.1"),
         )
 
         val baseProcs = listOf(

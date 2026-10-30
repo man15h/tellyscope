@@ -259,6 +259,9 @@ class Actions(private val shell: AdbShell) {
         return builtIn.maxByOrNull { priority[it.key] ?: 0 }?.value
     }
 
+    /** [pkg]'s home activity, or null when it isn't an enabled launcher. */
+    suspend fun homeActivity(pkg: String): String? = launchers()[pkg]
+
     /**
      * Every enabled launcher, package to its home activity. Apps protected for another reason
      * aren't launchers, though they may answer Home: TV Settings has a fallback home screen.

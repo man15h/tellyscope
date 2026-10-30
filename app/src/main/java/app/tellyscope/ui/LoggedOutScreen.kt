@@ -29,8 +29,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import app.tellyscope.R
 import app.tellyscope.data.Device
+import app.tellyscope.data.resolve
 
 /** "Projector · XGIMI": the TV's name and maker, as the connect and logged-out pages head them. */
 internal fun connectTitle(d: Device) = listOfNotNull(name(d), d.manufacturer ?: d.hit.maker).distinct().joinToString(" · ")
@@ -47,7 +50,7 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
         topBar = {
             TopAppBar(
                 title = {},
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") } },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back)) } },
             )
         },
         bottomBar = {
@@ -56,8 +59,8 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = onBack) { Text("Back to TVs") }
-                Button(onClick = onConnect) { Text("Connect again") }
+                TextButton(onClick = onBack) { Text(stringResource(R.string.logged_out_back_to_tvs)) }
+                Button(onClick = onConnect) { Text(stringResource(R.string.logged_out_connect_again)) }
             }
         },
     ) { pad ->
@@ -75,13 +78,13 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.LOGGED_OUT, style = MaterialTheme.typography.headlineMedium)
-                Text(Copy.LOGGED_OUT_WHY, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(Copy.loggedOutAt(loggedOutAt, now), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(Copy.LOGGED_OUT.resolve(), style = MaterialTheme.typography.headlineMedium)
+                Text(Copy.LOGGED_OUT_WHY.resolve(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(Copy.loggedOutAt(loggedOutAt, now).resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Why this can happen", style = MaterialTheme.typography.titleSmall)
-                Copy.LOGGED_OUT_CAUSES.forEach { Text("•  $it", style = MaterialTheme.typography.bodyMedium) }
+                Text(stringResource(R.string.logged_out_causes_title), style = MaterialTheme.typography.titleSmall)
+                Copy.LOGGED_OUT_CAUSES.forEach { Text(stringResource(R.string.logged_out_cause, it.resolve()), style = MaterialTheme.typography.bodyMedium) }
             }
         }
     }
