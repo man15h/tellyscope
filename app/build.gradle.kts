@@ -36,7 +36,7 @@ android {
     // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
     // Material ship (about 440 KB). A new values-xx/strings.xml adds its code here too.
     androidResources {
-        localeFilters += listOf("en", "es", "zh-rCN", "ja", "ru")
+        localeFilters += listOf("en", "es", "zh-rCN", "ja", "ru", "hi")
         // Lists them for Android 13+'s per-app language setting (default locale: res/resources.properties).
         generateLocaleConfig = true
     }

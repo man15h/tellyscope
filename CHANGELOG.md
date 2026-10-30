@@ -15,6 +15,7 @@ until this file has a section for its version.
 ## 0.14.0 — 2026-10-30
 
 - **New:** Spanish, Chinese, Japanese and Russian translations, machine-made; corrections welcome. [#272](../../pull/272)
+- **New:** Hindi translation, machine-made too. [#283](../../pull/283)
 - **New:** Settings › What's new shows each version's changes, and what an update brings. [#271](../../pull/271)
 - **Improved:** The update dialog offers Download APK, which gets the new version straight from its release. [#271](../../pull/271)
 - **Improved:** Tweaks shows the same TV-offline screen as Files. [#273](../../pull/273)
