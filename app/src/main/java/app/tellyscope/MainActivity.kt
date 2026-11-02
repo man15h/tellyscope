@@ -463,6 +463,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     screenOff = vm::setScreenOff,
                     screenOffTipSeen = vm::screenOffTipSeen,
                     checkVolume = vm::checkVolume,
+                    touchpad = vm::setTouchpad,
                 ),
             )
         }

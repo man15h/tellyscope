@@ -42,6 +42,14 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.semantics.selected
+import android.view.accessibility.AccessibilityManager
+import kotlin.math.abs
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -184,6 +192,8 @@ data class RemoteActions(
     val screenOffTipSeen: () -> Unit = {},
     /** Read whether the TV's volume is fixed over HDMI, into [UiState.volumeFixed]. */
     val checkVolume: () -> Unit = {},
+    /** The touchpad (true) or the D-pad in the D-pad's place, kept for this phone. */
+    val touchpad: (Boolean) -> Unit = {},
 )
 
 /** A held key repeats after this, then every [REPEAT_EVERY_MS], or slower if the TV is slower. */
@@ -266,6 +276,15 @@ fun RemoteScreen(
     val short = LocalConfiguration.current.screenHeightDp < SHORT_PHONE_DP
     val cap = RemoteButtons.cap(LocalConfiguration.current.screenWidthDp)
     var editing by rememberSaveable { mutableStateOf(false) }
+    // The text box shows only once the keyboard key opens it, and goes again with the phone's keyboard.
+    var keyboard by rememberSaveable { mutableStateOf(false) }
+    var keyboardShown by remember { mutableStateOf(false) }
+    LaunchedEffect(typing) {
+        if (typing) keyboardShown = true
+        else if (keyboardShown) { keyboardShown = false; keyboard = false }
+    }
+    // A swipe pad can't be explored by touch, so TalkBack always gets the D-pad.
+    val pad = state.touchpad && !talkBackOn()
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
 
     ModalBottomSheet(
@@ -300,14 +319,18 @@ fun RemoteScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null }) {
-                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBackOn()) null else pad, onRestart = { confirmReboot = true }, onButtons = { editing = true })
                 }
                 CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) { Column(
                     Modifier.weight(1f).alpha(if (live) 1f else 0.38f),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (short) RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press, volumeAlpha, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
+                        // Mute over the keyboard key, matching the rocker on the other side.
+                        if (short) Column(Modifier.width(56.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                            RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press, volumeAlpha, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
+                            KeyboardKey(live, size = 56.dp) { keyboard = true }
+                        }
                         BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                             val room = minOf(maxWidth, maxHeight)
                             val cramped = room < DPAD_MIN
@@ -315,7 +338,8 @@ fun RemoteScreen(
                             LaunchedEffect(cramped, hintFits) { if (cramped) tight = true else if (hintFits) tight = false }
                             // 12 dp clear above and below while there's room; the gap gives way before the pad does,
                             // and the pad never outgrows its box, so it can't overlap the header or the keys.
-                            DPad(live, actions.press, (room - 24.dp).coerceIn(DPAD_MIN, DPAD_MAX).coerceAtMost(room))
+                            if (pad) Touchpad(live, actions.press, Modifier.fillMaxSize().padding(vertical = 12.dp))
+                            else DPad(live, actions.press, (room - 24.dp).coerceIn(DPAD_MIN, DPAD_MAX).coerceAtMost(room))
                         }
                         // Up above down, like the rocker on the side of a real remote.
                         if (short) Column(Modifier.width(56.dp).then(volumeAlpha), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -344,10 +368,10 @@ fun RemoteScreen(
                     if (volumeFixed && short && !typing) VolumeFixedLine()
                     if (!typing && !short) {
                     Spacer(Modifier.height(rowGap))
-                    Row(Modifier.fillMaxWidth().then(volumeAlpha), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press) { Icon(RemoteIcons.VolumeOff, null) }
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press, volumeAlpha) { Icon(RemoteIcons.VolumeOff, null) }
                         // One split pill: two halves of the same key, so the gap stays narrow.
-                        Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(Modifier.weight(1f).then(volumeAlpha), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             val (outer, inner) = 32.dp to 4.dp
                             KeySurface(
                                 RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), volume, actions.press, RoundedCornerShape(outer, inner, inner, outer),
@@ -358,15 +382,19 @@ fun RemoteScreen(
                                 MaterialTheme.colorScheme.secondaryContainer, Modifier.weight(1f).height(64.dp),
                             ) { Icon(RemoteIcons.VolumeUp, null) }
                         }
+                        // Typing still works where volume is fixed, so this key never grays with them.
+                        KeyboardKey(live) { keyboard = true }
                     }
                     if (volumeFixed) VolumeFixedLine()
                     }
-                    // Twice the usual gap, so a thumb aiming at a volume key doesn't land in the text box.
-                    Spacer(Modifier.height(if (typing) rowGap else 24.dp))
-                    Keyboard(
-                        live, actions.type, actions.press, hint = !tight && !typing,
-                        modifier = Modifier.onGloballyPositioned { field = it.boundsInWindow() },
-                    )
+                    if (keyboard) {
+                        Spacer(Modifier.height(rowGap))
+                        Keyboard(
+                            live, actions.type, actions.press, onClose = { keyboard = false },
+                            modifier = Modifier.onGloballyPositioned { field = it.boundsInWindow() },
+                        )
+                        DisposableEffect(Unit) { onDispose { field = Rect.Zero } }
+                    }
                 } }
                 // Under the keys, out of a thumb's way.
                 if (!typing) {
@@ -528,19 +556,26 @@ private fun KeySurface(
     }
 }
 
-/** [hint] off on a screen too short for it; an error still shows. */
+/**
+ * The text box the keyboard key opens: focused at once, so the phone's keyboard comes up under it.
+ * [onClose] once it loses focus, a tap outside. The hint shows under it until something is typed;
+ * as a placeholder it would be cut to half its length.
+ */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun Keyboard(
     enabled: Boolean,
     type: (String) -> UiText?,
     press: suspend (RemoteKey) -> Boolean,
-    hint: Boolean = true,
+    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var text by rememberSaveable { mutableStateOf("") }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val focus = remember { FocusRequester() }
+    var focused by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { focus.requestFocus() }
     fun send() {
         error = type(text)?.resolve(context)
         if (error == null) text = ""
@@ -550,7 +585,7 @@ private fun Keyboard(
         onValueChange = { text = it; error = null },
         enabled = enabled,
         label = { Text(stringResource(R.string.remote_type_label)) },
-        supportingText = if (error != null || hint) ({ Text(error ?: Copy.TYPE_HINT.resolve()) }) else null,
+        supportingText = if (error != null || text.isEmpty()) ({ Text(error ?: Copy.TYPE_HINT.resolve()) }) else null,
         isError = error != null,
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -568,8 +603,100 @@ private fun Keyboard(
                 }
             }
         },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().focusRequester(focus).onFocusChanged {
+            if (it.isFocused) focused = true else if (focused) onClose()
+        },
     )
+}
+
+/** TalkBack, or any service that explores by touch, is on; follows it being turned on or off. */
+@Composable
+private fun talkBackOn(): Boolean {
+    val manager = LocalContext.current.getSystemService(AccessibilityManager::class.java) ?: return false
+    var on by remember { mutableStateOf(manager.isTouchExplorationEnabled) }
+    DisposableEffect(manager) {
+        val listener = AccessibilityManager.TouchExplorationStateChangeListener { on = it }
+        manager.addTouchExplorationStateChangeListener(listener)
+        onDispose { manager.removeTouchExplorationStateChangeListener(listener) }
+    }
+    return on
+}
+
+/** Opens the text box, and with it the phone's keyboard. Not a [RemoteKey]: it sends nothing to the TV. */
+@Composable
+private fun KeyboardKey(enabled: Boolean, size: Dp = 64.dp, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalKeyHaptics.current
+    Surface(
+        onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onClick() },
+        enabled = enabled,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.size(size),
+    ) {
+        Box(contentAlignment = Alignment.Center) { Icon(RemoteIcons.Keyboard, stringResource(R.string.remote_type_label)) }
+    }
+}
+
+/** Swipes past this send an arrow; under the touch slop a lift is a tap, and in between nothing. */
+private val SWIPE = 40.dp
+
+/** The arrow a swipe of [dx], [dy] sends: whichever way it went furthest. */
+internal fun swipeKey(dx: Float, dy: Float): RemoteKey =
+    if (abs(dx) >= abs(dy)) (if (dx > 0) RemoteKey.RIGHT else RemoteKey.LEFT) else (if (dy > 0) RemoteKey.DOWN else RemoteKey.UP)
+
+/**
+ * The touchpad, in the D-pad's place: a swipe sends one arrow and, held, repeats it like a held
+ * D-pad key; a tap sends OK. No pointer: TV apps move a focus highlight, not a cursor. Every
+ * change is consumed, so a downward swipe never drags the sheet closed.
+ */
+@Composable
+private fun Touchpad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalKeyHaptics.current
+    val c = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = c.surfaceContainerHigh,
+        modifier = modifier.pointerInput(enabled, haptics) {
+            if (!enabled) return@pointerInput
+            val swipe = SWIPE.toPx()
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                down.consume()
+                var key: RemoteKey? = null
+                var held = true
+                var moved = Offset.Zero
+                var tapped = false
+                while (true) {
+                    val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                    moved = change.position - down.position
+                    // Read before consuming: changedToUp() is false for a consumed change.
+                    val up = change.changedToUp()
+                    change.consume()
+                    if (!change.pressed) { tapped = up; break }
+                    if (key == null && moved.getDistance() >= swipe) {
+                        val k = swipeKey(moved.x, moved.y).also { key = it }
+                        if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                        scope.launch { repeatWhileHeld(k, { held }, press = press) }
+                    }
+                }
+                held = false
+                if (tapped && key == null && moved.getDistance() < viewConfiguration.touchSlop) {
+                    if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    scope.launch { press(RemoteKey.OK) }
+                }
+            }
+        },
+    ) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(RemoteIcons.TouchApp, null, tint = c.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.remote_touchpad_swipe), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            Text(stringResource(R.string.remote_touchpad_tap), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+        }
+    }
 }
 
 @Composable
@@ -658,7 +785,7 @@ private fun StatusShape(icon: ImageVector, container: Color, content: Color) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, onRestart: () -> Unit, onButtons: () -> Unit) {
+private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, pad: Boolean?, onRestart: () -> Unit, onButtons: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     val tip = rememberTooltipState(isPersistent = true)
     LaunchedEffect(showTip, screenControl) {
@@ -705,6 +832,19 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
                 enabled = live,
                 onClick = { open = false; onRestart() },
             )
+            // D-pad or touchpad, the current one checked; left out while TalkBack keeps the D-pad.
+            if (pad != null) {
+                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+                for ((touch, label, glyph) in listOf(Triple(false, R.string.remote_dpad, RemoteIcons.Gamepad), Triple(true, R.string.remote_touchpad, RemoteIcons.TouchApp))) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(label)) },
+                        leadingIcon = { Icon(glyph, null) },
+                        trailingIcon = { if (pad == touch) Icon(Icons.Default.Check, null) },
+                        modifier = Modifier.semantics { selected = pad == touch },
+                        onClick = { open = false; actions.touchpad(touch) },
+                    )
+                }
+            }
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
             DropdownMenuItem(
                 text = { Text(Copy.REMOTE_BUTTONS.resolve()) },
@@ -986,6 +1126,10 @@ private object RemoteIcons {
             "L19.73 21L21 19.73L12 10.73L4.27 3Z M12 4L9.91 6.09L12 8.18L12 4Z",
     )
     val DragHandle = icon("DragHandle", "M20 9L4 9L4 11L20 11L20 9Z M4 15L20 15L20 13L4 13L4 15Z")
+
+    val Keyboard = icon("Keyboard", "M20 5L4 5C2.9 5 2.01 5.9 2.01 7L2 17C2 18.1 2.9 19 4 19L20 19C21.1 19 22 18.1 22 17L22 7C22 5.9 21.1 5 20 5ZM11 8L13 8L13 10L11 10L11 8ZM11 11L13 11L13 13L11 13L11 11ZM8 8L10 8L10 10L8 10L8 8ZM8 11L10 11L10 13L8 13L8 11ZM7 13L5 13L5 11L7 11L7 13ZM7 10L5 10L5 8L7 8L7 10ZM16 17L8 17L8 15L16 15L16 17ZM16 13L14 13L14 11L16 11L16 13ZM16 10L14 10L14 8L16 8L16 10ZM19 13L17 13L17 11L19 11L19 13ZM19 10L17 10L17 8L19 8L19 10Z")
+    val Gamepad = icon("Gamepad", "M15 7.5L15 2L9 2L9 7.5L12 10.5L15 7.5ZM7.5 9L2 9L2 15L7.5 15L10.5 12L7.5 9ZM9 16.5L9 22L15 22L15 16.5L12 13.5L9 16.5ZM16.5 9L13.5 12L16.5 15L22 15L22 9L16.5 9Z")
+    val TouchApp = icon("TouchApp", "M9 11.24L9 7.5C9 6.12 10.12 5 11.5 5C12.88 5 14 6.12 14 7.5L14 11.24C15.21 10.43 16 9.06 16 7.5C16 5.01 13.99 3 11.5 3C9.01 3 7 5.01 7 7.5C7 9.06 7.79 10.43 9 11.24ZM18.84 15.87L14.3 13.61C14.13 13.54 13.95 13.5 13.76 13.5L13 13.5L13 7.5C13 6.67 12.33 6 11.5 6C10.67 6 10 6.67 10 7.5L10 18.24L6.57 17.52C6.49 17.51 6.42 17.49 6.33 17.49C6.02 17.49 5.74 17.62 5.54 17.82L4.75 18.62L9.69 23.56C9.96 23.83 10.34 24 10.75 24L17.54 24C18.29 24 18.87 23.45 18.98 22.72L19.73 17.45C19.74 17.38 19.75 17.31 19.75 17.25C19.75 16.63 19.37 16.09 18.84 15.87Z")
 
     private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         .addPath(PathParser().parsePathString(path).toNodes(), pathFillType = PathFillType.NonZero, fill = SolidColor(Color.Black))

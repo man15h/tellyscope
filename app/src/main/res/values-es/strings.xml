@@ -958,6 +958,10 @@
     <string name="remote_volume_up">Subir volumen</string>
     <string name="remote_volume_down">Bajar volumen</string>
     <string name="remote_volume_fixed">El volumen es fijo por HDMI. Usa el control remoto de la TV.</string>
+    <string name="remote_dpad">Cruceta</string>
+    <string name="remote_touchpad">Panel táctil</string>
+    <string name="remote_touchpad_swipe">Desliza para moverte</string>
+    <string name="remote_touchpad_tap">Toca para OK</string>
     <string name="remote_back">Atrás</string>
     <string name="remote_home">Inicio</string>
     <string name="remote_menu">Menú</string>
