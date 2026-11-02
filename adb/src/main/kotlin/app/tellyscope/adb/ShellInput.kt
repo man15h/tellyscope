@@ -28,9 +28,12 @@ object ShellInput {
      * because Shell runs aren't in History and have no one-tap undo.
      */
     private val CHANGES = listOf(
-        "pm uninstall", "pm disable", "pm disable-user", "pm clear",
+        "pm uninstall", "pm disable", "pm disable-user", "pm clear", "pm hide", "pm suspend", "pm set-home-activity",
         "cmd package uninstall", "cmd package disable", "cmd package disable-user", "cmd package clear",
+        "cmd package hide", "cmd package suspend", "cmd package set-home-activity",
         "settings put", "settings delete",
+        // These cut the Wi-Fi that Tellyscope reaches the TV over.
+        "svc wifi disable", "cmd wifi set-wifi-enabled disabled",
         "wm size", "wm density",
         "reboot", "svc power reboot", "rm",
     ).map { it.split(' ') }
@@ -65,10 +68,17 @@ object ShellInput {
             ?.joinToString(" ")
     }
 
-    /** Each simple command's words, with `su -c`, `exec`-like wrappers and `VAR=x` prefixes skipped. */
+    /**
+     * Each simple command's words: `su -c`, `sh -c`, `exec`-like wrappers and `VAR=x` prefixes
+     * skipped, and a full path cut to the program's name (`/system/bin/pm` is `pm`).
+     */
     private fun segments(command: String): List<List<String>> = command.split(SEGMENTS).map { seg ->
-        seg.trim().split(Regex("""\s+""")).filter { it.isNotEmpty() }
-            .dropWhile { it == "su" || it == "-c" || it == "0" || it == "exec" || it == "command" || it == "nohup" || it.matches(Regex("""\w+=\S*""")) }
+        val words = seg.trim().split(Regex("""\s+""")).filter { it.isNotEmpty() }
             .map { it.trim('\'', '"', '(', ')', '{', '}') }
+            .filter { it.isNotEmpty() }
+            .dropWhile { it in WRAPPERS || it.matches(Regex("""\w+=\S*""")) }
+        if (words.isEmpty()) words else listOf(words[0].substringAfterLast('/')) + words.drop(1)
     }
+
+    private val WRAPPERS = setOf("su", "sh", "-c", "0", "exec", "command", "nohup", "toybox", "busybox")
 }
