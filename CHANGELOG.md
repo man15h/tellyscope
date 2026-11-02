@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Fixed:** Off Wi-Fi, the TV tabs and failed sends blame the phone, not the TV. [#313](../../pull/313)
+- **Fixed:** Off Wi-Fi, the TV tabs and failed sends blame the phone, not the TV, and Reconnect on Overview opens the Wi-Fi panel. [#313](../../pull/313)
 - **Fixed:** On a Fire TV or another HDMI box whose volume is fixed, the Remote's mute and volume keys are grayed out, with a line saying to use the TV's own remote. [#307](../../pull/307)
 - **Fixed:** On the Remote, a perfectly still tap on empty space now closes the keyboard. [#300](../../pull/300)
 - **Fixed:** Sending or installing a file picked from phone storage no longer drops the TV. [#301](../../pull/301)
