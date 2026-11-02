@@ -708,12 +708,16 @@ class TellyscopeViewModel(
         }
         // Only an online TV gets its old lists back: the offline card stays as it was.
         val online = _state.value.devices.firstOrNull { it.id == id }?.state == DeviceState.Online
-        // A removal survives the reconnect it causes; the TV coming back reselects it.
+        // A removal survives the reconnect it causes; the TV coming back reselects it. So does the
+        // install dialog: the link drops behind the file picker, and its return reselected the TV
+        // a few seconds after the dialog opened, closing it (#290).
         _state.update {
-            val removal = it.device.removal.takeIf { _ -> it.selectedId == id }
+            val same = it.selectedId == id
+            val removal = it.device.removal.takeIf { _ -> same }
+            val sideload = it.device.sideload.takeIf { _ -> same }
             val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
             val lists = if (online) id?.let(lastLists::get) else null
-            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal), query = "")
+            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload), query = "")
         }
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.

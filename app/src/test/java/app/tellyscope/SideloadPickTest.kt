@@ -26,6 +26,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
@@ -38,12 +39,13 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** One online TV whose version check fails when [unreachable]; [asked] counts the checks. */
+/** One TV, online until [state] says otherwise, whose version check fails when [unreachable]; [asked] counts the checks. */
 private class VersionCheckTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     var unreachable = false
     var asked = 0
+    var state = DeviceState.Online
 
-    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
+    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), state, null, null, null, 0L))
 
     override fun live(deviceId: String) = emptyFlow<Snapshot>()
 
@@ -107,5 +109,16 @@ class SideloadPickTest {
     @Test fun aReadableFileOnAnAnsweringTvIsReady() = with(test) {
         val ui = pick(Picked(readable = true))
         assertEquals(SideloadUi.Step.Ready, ui?.step)
+    }
+
+    /** Back from the picker the link drops and returns, which reselects the TV: the dialog stays (#290). */
+    @Test fun theDialogOutlivesTheLinkDroppingAndComingBack() = with(test) {
+        pick(Picked(readable = true))
+        tv.state = DeviceState.Offline
+        advanceTimeBy(3_100)
+        tv.state = DeviceState.Online
+        advanceTimeBy(3_100)
+        assertEquals(DeviceState.Online, vm.state.value.selected?.state)
+        assertEquals(SideloadUi.Step.Ready, vm.state.value.device.sideload?.step)
     }
 }
