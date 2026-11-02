@@ -142,4 +142,26 @@ class TvShellTest {
         assertNull(ShellInput.changesTv("rmdir empty"))
         assertNull(ShellInput.changesTv("wm size"))
     }
+
+    @Test fun fullPathsAndShDashCAreSeenThrough() {
+        assertEquals("pm uninstall", ShellInput.changesTv("/system/bin/pm uninstall com.example"))
+        assertEquals("pm uninstall", ShellInput.changesTv("sh -c 'pm uninstall com.example'"))
+        assertEquals("rm", ShellInput.changesTv("sh -c \"/system/bin/rm -rf /sdcard/Download\""))
+        assertEquals("cmd package clear", ShellInput.changesTv("/system/bin/cmd package clear com.example"))
+        assertNull(ShellInput.changesTv("sh -c 'pm list packages'"))
+    }
+
+    @Test fun wifiOffAndHidingAppsAreFound() {
+        assertEquals("svc wifi disable", ShellInput.changesTv("svc wifi disable"))
+        assertEquals("cmd wifi set-wifi-enabled disabled", ShellInput.changesTv("cmd wifi set-wifi-enabled disabled"))
+        assertEquals("pm hide", ShellInput.changesTv("pm hide com.example"))
+        assertEquals("pm suspend", ShellInput.changesTv("pm suspend com.example"))
+        assertEquals("pm set-home-activity", ShellInput.changesTv("pm set-home-activity com.example/.Home"))
+        assertEquals("cmd package hide", ShellInput.changesTv("cmd package hide com.example"))
+        assertEquals("cmd package suspend", ShellInput.changesTv("cmd package suspend com.example"))
+        assertEquals("cmd package set-home-activity", ShellInput.changesTv("cmd package set-home-activity com.example/.Home"))
+        assertNull(ShellInput.changesTv("svc wifi enable"))
+        assertNull(ShellInput.changesTv("cmd wifi set-wifi-enabled enabled"))
+        assertNull(ShellInput.changesTv("cmd wifi status"))
+    }
 }
