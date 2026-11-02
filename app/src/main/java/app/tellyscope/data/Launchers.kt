@@ -2,6 +2,8 @@
 
 package app.tellyscope.data
 
+import app.tellyscope.adb.Protected
+import app.tellyscope.adb.ProtectedReason
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -65,18 +67,44 @@ fun parseLabels(text: String): Map<String, String> = try {
     emptyMap()
 }
 
-/** The launcher, app name and streaming lists, as [SharedLists] holds them. */
+/** The reasons `protected.json` may give; a list can't claim the home screen or the TV's own states. */
+private val LIST_REASONS = listOf(
+    ProtectedReason.SYSTEM, ProtectedReason.SETTINGS, ProtectedReason.PLAY_SERVICES, ProtectedReason.KEYBOARD,
+    ProtectedReason.TV_INPUTS_REMOTE, ProtectedReason.SETUP_WIZARD, ProtectedReason.UPDATES,
+).associateBy { it.name.lowercase() }
+
+/**
+ * Package to why it stays on, from `protected.json`; its groups (one per maker) are only there for
+ * people reading the file. A reason this app doesn't know still protects, as [ProtectedReason.SYSTEM].
+ * Empty unless it is schema 1; anything under a name that isn't a package is dropped.
+ */
+fun parseProtected(text: String): Map<String, ProtectedReason> = try {
+    val o = jsonObject(text)
+    if (o.optInt("schema") != 1) emptyMap() else buildMap {
+        o.getJSONArray("groups").objectsOrSkip { it.getJSONObject("packages") }.forEach { packages ->
+            for (pkg in packages.keys()) {
+                if (PACKAGE.matches(pkg)) put(pkg, LIST_REASONS[packages.optString(pkg)] ?: ProtectedReason.SYSTEM)
+            }
+        }
+    }
+} catch (_: org.json.JSONException) {
+    emptyMap()
+}
+
+/** The launcher, app name, streaming and protected lists, as [SharedLists] holds them. */
 data class Shared(
     val launchers: List<KnownLauncher> = emptyList(),
     val labels: Map<String, String> = emptyMap(),
     val streaming: List<StreamingService> = emptyList(),
+    val protected: Map<String, ProtectedReason> = emptyMap(),
 )
 
 /**
  * The lists anyone can change without an app release, from the list source next to the debloat
  * lists ([DeviceLists]): the last cached copy at launch, then the source's. A list the source
  * can't give keeps what was there. The app bundles none, so before the first fetch they are empty;
- * a build with `fixtures/` among its Java resources (the tests) starts from those instead.
+ * a build with `fixtures/` among its Java resources (the tests) starts from those instead. The
+ * protected list goes on to [Protected.extra], on top of the built-in one.
  */
 object SharedLists {
     private val _state = MutableStateFlow(seed())
@@ -90,7 +118,7 @@ object SharedLists {
     /** The cached lists from [lists], then the source's; [fresh] drops the old ones first, for a new source. */
     suspend fun load(lists: DeviceLists, fresh: Boolean = false) {
         source = lists
-        if (fresh) _state.value = seed() else apply(lists.cachedShared())
+        if (fresh) reset(seed()) else apply(lists.cachedShared())
         apply(lists.shared())
     }
 
@@ -108,8 +136,15 @@ object SharedLists {
                 launchers = f.launchers?.let(::parseLaunchers)?.ifEmpty { null } ?: now.launchers,
                 labels = f.labels?.let(::parseLabels)?.ifEmpty { null } ?: now.labels,
                 streaming = f.streaming?.let(::parseStreaming)?.ifEmpty { null } ?: now.streaming,
+                protected = f.protected?.let(::parseProtected)?.ifEmpty { null } ?: now.protected,
             )
         }
+        Protected.extra = _state.value.protected
+    }
+
+    private fun reset(shared: Shared) {
+        _state.value = shared
+        Protected.extra = shared.protected
     }
 
     private fun seed() = Shared(
