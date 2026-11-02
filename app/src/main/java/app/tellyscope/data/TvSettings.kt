@@ -14,6 +14,8 @@ object TvSettings {
     val CACHES: UiText = UiText(R.string.data_history_app_caches)
     /** Android 9, the first with Private DNS. */
     const val DNS_SDK = 28
+    /** Android 8, the first whose shell may clear app caches. */
+    const val CACHES_SDK = 26
 
     /** Off goes back to Automatic, Android's default, rather than turning encrypted DNS off. */
     fun dns(host: String?): Map<String, String?> =
@@ -27,6 +29,7 @@ object TvSettings {
         animationScale = animations["window_animation_scale"],
         // A TV that doesn't say is let through: the lookup check after the change still guards it.
         dnsSupported = sdk == null || sdk >= DNS_SDK,
+        cachesSupported = sdk == null || sdk >= CACHES_SDK,
     )
 
     /** History's line for a change that left the TV at [values]. */

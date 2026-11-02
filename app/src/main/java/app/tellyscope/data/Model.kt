@@ -209,4 +209,6 @@ data class TvTweaks(
     val animationScale: String?,
     /** Private DNS came in Android 9: older TVs accept the setting and ignore it. */
     val dnsSupported: Boolean = true,
+    /** Clearing caches over ADB came in Android 8: before it, the shell lacks CLEAR_APP_CACHE (#286). */
+    val cachesSupported: Boolean = true,
 )

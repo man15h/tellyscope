@@ -344,6 +344,7 @@
     <string name="copy_animations_state_off">已关闭。开启后菜单响应更灵敏。</string>
     <string name="copy_caches_title">清除所有应用缓存</string>
     <string name="copy_caches_text">清除所有应用的临时文件以释放空间。应用数据和登录信息会保留。</string>
+    <string name="copy_caches_too_old">需要 Android 8 或更高版本。此电视版本较旧。</string>
     <string name="copy_caches_button">清除缓存</string>
     <string name="copy_caches_cleared">已清除应用缓存</string>
     <string name="copy_caches_cleared_freed">已清除应用缓存，释放了 %1$s</string>

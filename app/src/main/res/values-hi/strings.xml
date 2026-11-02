@@ -355,6 +355,7 @@
     <string name="copy_animations_state_off">बंद। मेन्यू को तेज़ बनाने के लिए चालू करें।</string>
     <string name="copy_caches_title">सभी ऐप का कैश साफ़ करें</string>
     <string name="copy_caches_text">हर ऐप की अस्थायी फ़ाइलें साफ़ करके जगह खाली करता है। ऐप का डेटा और साइन-इन बने रहते हैं।</string>
+    <string name="copy_caches_too_old">Android 8 या उसके बाद का वर्शन चाहिए। यह TV पुराना है।</string>
     <string name="copy_caches_button">कैश साफ़ करें</string>
     <string name="copy_caches_cleared">ऐप का कैश साफ़ हो गया</string>
     <string name="copy_caches_cleared_freed">ऐप का कैश साफ़ हो गया, %1$s जगह खाली हुई</string>
