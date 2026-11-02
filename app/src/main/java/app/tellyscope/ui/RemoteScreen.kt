@@ -2,6 +2,8 @@
 
 package app.tellyscope.ui
 
+import android.os.SystemClock
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -35,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -42,14 +45,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.semantics.selected
-import android.view.accessibility.AccessibilityManager
-import kotlin.math.abs
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -81,6 +76,7 @@ import androidx.compose.material3.ripple
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -97,6 +93,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.Shape
@@ -119,6 +118,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -158,6 +158,7 @@ import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import kotlin.math.roundToInt
+import kotlin.math.abs
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -284,7 +285,8 @@ fun RemoteScreen(
         else if (keyboardShown) { keyboardShown = false; keyboard = false }
     }
     // A swipe pad can't be explored by touch, so TalkBack always gets the D-pad.
-    val pad = state.touchpad && !talkBackOn()
+    val talkBack = talkBackOn()
+    val pad = state.touchpad && !talkBack
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
 
     ModalBottomSheet(
@@ -319,7 +321,7 @@ fun RemoteScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null }) {
-                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBackOn()) null else pad, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBack) null else pad, onRestart = { confirmReboot = true }, onButtons = { editing = true })
                 }
                 CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) { Column(
                     Modifier.weight(1f).alpha(if (live) 1f else 0.38f),
@@ -390,7 +392,7 @@ fun RemoteScreen(
                     if (keyboard) {
                         Spacer(Modifier.height(rowGap))
                         Keyboard(
-                            live, actions.type, actions.press, onClose = { keyboard = false },
+                            live, actions.type, actions.press, hint = !tight, onClose = { keyboard = false },
                             modifier = Modifier.onGloballyPositioned { field = it.boundsInWindow() },
                         )
                         DisposableEffect(Unit) { onDispose { field = Rect.Zero } }
@@ -558,8 +560,8 @@ private fun KeySurface(
 
 /**
  * The text box the keyboard key opens: focused at once, so the phone's keyboard comes up under it.
- * [onClose] once it loses focus, a tap outside. The hint shows under it until something is typed;
- * as a placeholder it would be cut to half its length.
+ * [onClose] once it loses focus, a tap outside. The hint shows under it until something is typed,
+ * unless [hint] is off on a screen too short for it; as a placeholder it would be cut to half its length.
  */
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
@@ -567,6 +569,7 @@ private fun Keyboard(
     enabled: Boolean,
     type: (String) -> UiText?,
     press: suspend (RemoteKey) -> Boolean,
+    hint: Boolean,
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -585,7 +588,7 @@ private fun Keyboard(
         onValueChange = { text = it; error = null },
         enabled = enabled,
         label = { Text(stringResource(R.string.remote_type_label)) },
-        supportingText = if (error != null || text.isEmpty()) ({ Text(error ?: Copy.TYPE_HINT.resolve()) }) else null,
+        supportingText = if (error != null || (hint && text.isEmpty())) ({ Text(error ?: Copy.TYPE_HINT.resolve()) }) else null,
         isError = error != null,
         singleLine = true,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
@@ -638,6 +641,24 @@ private fun KeyboardKey(enabled: Boolean, size: Dp = 64.dp, onClick: () -> Unit)
     }
 }
 
+/**
+ * A touchpad swipe's arrow: one press, then repeats while [held], but only once the finger has been
+ * still for [REPEAT_AFTER_MS]. A slow swipe still moving past the threshold sends just the one.
+ */
+internal suspend fun repeatWhileStill(
+    key: RemoteKey,
+    held: () -> Boolean,
+    stillFor: () -> Long,
+    press: suspend (RemoteKey) -> Boolean,
+) {
+    if (!press(key)) return
+    while (true) {
+        delay(REPEAT_EVERY_MS)
+        if (!held()) return
+        if (stillFor() >= REPEAT_AFTER_MS && !press(key)) return
+    }
+}
+
 /** Swipes past this send an arrow; under the touch slop a lift is a tap, and in between nothing. */
 private val SWIPE = 40.dp
 
@@ -669,9 +690,16 @@ private fun Touchpad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, mo
                 var held = true
                 var moved = Offset.Zero
                 var tapped = false
+                // Where the finger last settled, and when it last moved past the slop from there.
+                var anchor = down.position
+                var movedAt = 0L
                 while (true) {
                     val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                     moved = change.position - down.position
+                    if ((change.position - anchor).getDistance() > viewConfiguration.touchSlop) {
+                        anchor = change.position
+                        movedAt = change.uptimeMillis
+                    }
                     // Read before consuming: changedToUp() is false for a consumed change.
                     val up = change.changedToUp()
                     change.consume()
@@ -679,7 +707,7 @@ private fun Touchpad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, mo
                     if (key == null && moved.getDistance() >= swipe) {
                         val k = swipeKey(moved.x, moved.y).also { key = it }
                         if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                        scope.launch { repeatWhileHeld(k, { held }, press = press) }
+                        scope.launch { repeatWhileStill(k, { held }, stillFor = { SystemClock.uptimeMillis() - movedAt }, press = press) }
                     }
                 }
                 held = false
