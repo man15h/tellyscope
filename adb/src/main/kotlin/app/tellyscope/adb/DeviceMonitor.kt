@@ -35,6 +35,18 @@ data class Stats(
     /** Bytes in and out per second over the whole TV, between the last two fast readings. */
     val netBytesPerSec: Long? = null,
     val softwareMonth: YearMonth? = null,
+    /** Each online core's use, 0..100, in core order. */
+    val cores: List<Double> = emptyList(),
+    val cpuSplit: Parsers.CpuSplit? = null,
+    /** The chip's name, from `getprop`. */
+    val chip: String? = null,
+    /** The fastest core's clock now; Advanced only. */
+    val clockKhz: Long? = null,
+    /** [netBytesPerSec] split into received and sent. */
+    val rxBytesPerSec: Long? = null,
+    val txBytesPerSec: Long? = null,
+    /** Received and sent since boot. */
+    val netTotal: Parsers.NetBytes? = null,
 )
 
 /** One process and the package it belongs to; null for native daemons. */
@@ -137,7 +149,7 @@ class DeviceMonitor(
     override fun stats(): Flow<Stats> = flow {
         var slowStats = Stats(cpuPercent = null, memory = null)
         var lastSlow: TimeMark? = null
-        var procStats: Pair<List<AppProcess>, Boolean?> = emptyList<AppProcess>() to null
+        var procStats = Medium(emptyList(), null, null)
         var lastProcs: TimeMark? = null
         var lastLevel = ProcessLevel.NONE
         var seenChanged = gate.changed.value
@@ -163,7 +175,7 @@ class DeviceMonitor(
             }
             val level = profile.processes
             if (level != ProcessLevel.NONE && (level != lastLevel || lastProcs.due(profile.processEvery) || fresh)) {
-                readProcesses(level, slowStats.packages, procStats.second)?.let { procStats = it }
+                readProcesses(level, slowStats.packages, procStats)?.let { procStats = it }
                 lastProcs = started
                 lastLevel = level
             }
@@ -171,13 +183,22 @@ class DeviceMonitor(
             val last = prev
             if (now != null && last != null) {
                 val pct = if (last.cpu != null && now.cpu != null) Parsers.cpuPercent(last.cpu, now.cpu) else null
+                val rx = rate(last, now) { it.rx }
+                val tx = rate(last, now) { it.tx }
                 emit(
                     slowStats.copy(
                         cpuPercent = pct,
                         memory = now.memory,
-                        processes = procStats.first,
-                        screenOn = procStats.second,
-                        netBytesPerSec = rate(last, now),
+                        processes = procStats.procs,
+                        screenOn = procStats.screenOn,
+                        netBytesPerSec = if (rx != null && tx != null) rx + tx else null,
+                        // A core switched off between the two readings drops out rather than reading 0.
+                        cores = now.cores.mapNotNull { (n, t) -> last.cores[n]?.let { Parsers.cpuPercent(it, t) } },
+                        cpuSplit = if (last.cpu != null && now.cpu != null) Parsers.cpuSplit(last.cpu, now.cpu) else null,
+                        clockKhz = procStats.clockKhz,
+                        rxBytesPerSec = rx,
+                        txBytesPerSec = tx,
+                        netTotal = now.netBytes,
                     ),
                 )
             }
@@ -223,30 +244,35 @@ class DeviceMonitor(
         withTimeoutOrNull(pingTimeout) { shell.shell("echo") } ?: throw IOException("no answer to echo in $pingTimeout")
     }
 
-    private class Fast(val cpu: Parsers.CpuTimes?, val memory: Parsers.Memory?, val netBytes: Long?, val at: ComparableTimeMark)
+    private class Fast(
+        val cpu: Parsers.CpuTimes?,
+        val cores: Map<Int, Parsers.CpuTimes>,
+        val memory: Parsers.Memory?,
+        val netBytes: Parsers.NetBytes?,
+        val at: ComparableTimeMark,
+    )
 
     private suspend fun readFast(): Fast? {
         val (stat, meminfo, netDev) = Commands.split(run(Commands.FAST) ?: return null, 3)
-        return Fast(Parsers.cpuTimes(stat), Parsers.memory(meminfo), Parsers.netBytes(netDev), clock.markNow())
+        return Fast(Parsers.cpuTimes(stat), Parsers.coreTimes(stat), Parsers.memory(meminfo), Parsers.netBytes(netDev), clock.markNow())
     }
 
     /** Null across a counter reset (an interface going down and up), never a negative speed. */
-    private fun rate(prev: Fast, now: Fast): Long? {
-        val bytes = (now.netBytes ?: return null) - (prev.netBytes ?: return null)
+    private fun rate(prev: Fast, now: Fast, of: (Parsers.NetBytes) -> Long): Long? {
+        val bytes = of(now.netBytes ?: return null) - of(prev.netBytes ?: return null)
         val ms = (now.at - prev.at).inWholeMilliseconds
         return if (bytes < 0 || ms <= 0) null else bytes * 1000 / ms
     }
 
-    /** The light read keeps [screenOn] from the last full one; only Advanced shows it. */
-    private suspend fun readProcesses(level: ProcessLevel, packages: Map<Int, List<String>>, screenOn: Boolean?): Pair<List<AppProcess>, Boolean?>? {
-        val (procs, screen) = if (level == ProcessLevel.FULL) {
-            val (top, power) = Commands.split(run(Commands.MEDIUM) ?: return null, 2)
-            Parsers.processes(top) to Parsers.screenOn(power)
-        } else {
-            (readPs() ?: return null) to screenOn
-        }
+    /** The process read: the light one keeps [screenOn] and [clockKhz] from the last full one; only Advanced shows them. */
+    private class Medium(val procs: List<AppProcess>, val screenOn: Boolean?, val clockKhz: Long?)
+
+    private suspend fun readProcesses(level: ProcessLevel, packages: Map<Int, List<String>>, last: Medium): Medium? {
         val known = packages.values.flatten().toSet()
-        return procs.map { p -> AppProcess(p.pid, p.name, Parsers.owner(p, packages, known), p.cpuPercent, p.rssKb) } to screen
+        fun owned(procs: List<Parsers.Process>) = procs.map { p -> AppProcess(p.pid, p.name, Parsers.owner(p, packages, known), p.cpuPercent, p.rssKb) }
+        if (level != ProcessLevel.FULL) return Medium(owned(readPs() ?: return null), last.screenOn, last.clockKhz)
+        val (top, power, freqs) = Commands.split(run(Commands.MEDIUM) ?: return null, 3)
+        return Medium(owned(Parsers.processes(top)), Parsers.screenOn(power), Parsers.clockKhz(freqs))
     }
 
     /** Set once `ps -o` answered without a single process row; plain `ps` from then on. */
@@ -279,6 +305,7 @@ class DeviceMonitor(
             androidVersion = props["ro.build.version.release"],
             sdk = props["ro.build.version.sdk"]?.toIntOrNull(),
             softwareMonth = Parsers.softwareMonth(props),
+            chip = Parsers.chip(props),
             packages = Parsers.byUid(Parsers.packages(pm)),
         )
     }

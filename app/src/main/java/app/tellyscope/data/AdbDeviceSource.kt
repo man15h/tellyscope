@@ -73,6 +73,7 @@ import java.io.IOException
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.seconds
 import app.tellyscope.adb.Action as AdbAction
 import app.tellyscope.adb.ConnectResult as AdbConnectResult
@@ -377,6 +378,20 @@ class AdbDeviceSource(
                     procs = s.processes.map { Proc(it.pid, it.name, it.packageName, it.cpuPercent ?: 0.0, (it.rssKb / 1024).toInt()) },
                     netBytesPerSec = s.netBytesPerSec,
                     softwareMonth = s.softwareMonth,
+                    cores = s.cores.map { it.roundToInt() },
+                    cpuApps = s.cpuSplit?.apps?.roundToInt(),
+                    cpuSystem = s.cpuSplit?.system?.roundToInt(),
+                    cpuWaiting = s.cpuSplit?.ioWait?.roundToInt(),
+                    chip = s.chip,
+                    clockMhz = s.clockKhz?.let { (it / 1000).toInt() },
+                    ramCachedMb = mem?.let { ((it.availableKb - it.freeKb) / 1024).toInt() } ?: 0,
+                    ramFreeMb = mem?.let { (it.freeKb / 1024).toInt() } ?: 0,
+                    swapUsedMb = mem?.let { ((it.swapTotalKb - it.swapFreeKb) / 1024).toInt() } ?: 0,
+                    swapTotalMb = mem?.let { (it.swapTotalKb / 1024).toInt() } ?: 0,
+                    rxBytesPerSec = s.rxBytesPerSec,
+                    txBytesPerSec = s.txBytesPerSec,
+                    rxTotalBytes = s.netTotal?.rx,
+                    txTotalBytes = s.netTotal?.tx,
                 )
             }
     }
@@ -471,14 +486,12 @@ class AdbDeviceSource(
 
     override suspend fun network(deviceId: String): NetworkInfo {
         val shell = session(deviceId)
-        val out = shell.shell("ip -o -4 addr show").output
-        val line = out.lineSequence().firstOrNull { "inet " in it && " lo " !in it }
-        val f = line?.trim()?.split(Regex("\\s+")).orEmpty()
+        val (address, wifi) = NetworkStats(shell).address()
         val packages = links[deviceId]?.stats?.value?.packages.orEmpty()
         return NetworkInfo(
-            iface = f.getOrElse(1) { "" },
-            ip = f.getOrNull(3)?.substringBefore('/') ?: deviceId,
-            mac = null, ssid = null, rssi = null, linkMbps = null,
+            iface = address?.iface.orEmpty(),
+            ip = address?.ip ?: deviceId,
+            mac = address?.mac, ssid = wifi?.ssid, rssi = wifi?.rssi, linkMbps = wifi?.linkMbps,
             sockets = NetworkStats(shell).connections().map { Socket(uidLabel(it.uid, packages), it.remote, tcpState(it.state)) },
             traffic = traffic(deviceId, packages),
         )

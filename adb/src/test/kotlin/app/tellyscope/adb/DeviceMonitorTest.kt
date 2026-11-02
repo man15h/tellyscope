@@ -62,6 +62,28 @@ class DeviceMonitorTest {
         }
         val s = DeviceMonitor(tv, clock = testScheduler.timeSource).stats().first()
         assertEquals(2500L, s.netBytesPerSec) // 5000 bytes over the default 2 s
+        assertEquals(2000L, s.rxBytesPerSec)
+        assertEquals(500L, s.txBytesPerSec)
+        assertEquals(Parsers.NetBytes(8000, 2000), s.netTotal)
+    }
+
+    @Test fun eachCoreAndTheClockAreRead() = runTest {
+        var tick = 0L
+        val tv = AdbShell { cmd ->
+            when {
+                cmd.startsWith("cat /proc/stat") -> {
+                    tick++
+                    // Core 0 is busy for 40 of every 100 ticks, core 1 for 10.
+                    ok("cpu  ${tick * 50} 0 0 ${tick * 150} 0 0 0 0\ncpu0 ${tick * 40} 0 0 ${tick * 60} 0 0 0 0\n" +
+                        "cpu1 ${tick * 10} 0 0 ${tick * 90} 0 0 0 0\n${sep}MemTotal: 2000 kB\n")
+                }
+                cmd.startsWith("top") -> ok("PID USER RES %CPU NAME\n$sep  mWakefulness=Awake\n${sep}1200000\n1800000\n")
+                else -> ok("")
+            }
+        }
+        val s = DeviceMonitor(tv).stats().first()
+        assertEquals(listOf(40.0, 10.0), s.cores)
+        assertEquals(1_800_000L, s.clockKhz)
     }
 
     @Test fun keepsEmitting() = runTest {

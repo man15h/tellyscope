@@ -938,15 +938,10 @@
 
     <!-- AdvancedScreen.kt: Advanced monitor -->
     <string name="advanced_back">Back to the TV\'s page</string>
-    <string name="advanced_ip_address">IP address</string>
     <string name="advanced_loading">Loading stats…</string>
-    <string name="advanced_cpu_by_app">CPU by app</string>
-    <string name="advanced_ram_by_app">RAM by app</string>
-    <string name="advanced_processes">Processes</string>
     <string name="advanced_network">Network</string>
     <string name="advanced_cpu">CPU</string>
     <string name="advanced_ram">RAM</string>
-    <string name="advanced_app">App</string>
     <!-- How long the TV has been on, like "2d 4h" -->
     <string name="advanced_on_for">On for</string>
     <string name="advanced_screen">Screen</string>
@@ -954,14 +949,8 @@
     <string name="advanced_screen_off">Off</string>
     <string name="advanced_percent">%1$d%%</string>
     <string name="advanced_percent_whole">%1$.0f%%</string>
-    <string name="advanced_percent_tenths">%1$.1f%%</string>
-    <!-- %1$s is how long ago, like "5 minutes ago" -->
-    <string name="advanced_as_of">As of %1$s</string>
     <string name="advanced_memory">Memory</string>
     <string name="advanced_storage">Storage</string>
-    <string name="advanced_percent_used">%1$d%% used</string>
-    <!-- The bar that sums every app outside the top 6 -->
-    <string name="advanced_other">Other</string>
     <string name="advanced_connection">Connection</string>
     <string name="advanced_wifi">Wi-Fi</string>
     <string name="advanced_ethernet">Ethernet</string>
@@ -971,10 +960,7 @@
     <string name="advanced_signal_weak">Weak (%1$d dBm)</string>
     <string name="advanced_signal_very_weak">Very weak (%1$d dBm)</string>
     <string name="advanced_mac">MAC</string>
-    <string name="advanced_link_speed">Link speed</string>
     <string name="advanced_mbps">%1$d Mbps</string>
-    <string name="advanced_data_used">Data used</string>
-    <string name="advanced_open_connections">Open connections</string>
     <string name="advanced_address" translatable="false">%1$s:%2$d</string>
     <string name="shell_prompt" translatable="false">tv:%1$s $</string>
     <string name="shell_offline_prompt" translatable="false">tv offline $</string>
@@ -987,7 +973,58 @@
     <string name="advanced_copy_address">Copy address</string>
     <string name="advanced_android">Android</string>
     <string name="advanced_updated">Updated</string>
-    <string name="advanced_your_apps">Your apps</string>
+    <string name="advanced_this_tv">This TV</string>
+    <string name="advanced_offline_as_of">Offline · as of %1$s</string>
+    <string name="advanced_busiest">Busiest</string>
+    <string name="advanced_copy_mac">Copy MAC address</string>
+    <string name="advanced_signal_strong_word">Strong</string>
+    <string name="advanced_signal_good_word">Good</string>
+    <string name="advanced_signal_weak_word">Weak</string>
+    <string name="advanced_signal_very_weak_word">Very weak</string>
+    <string name="advanced_not_running">Not running</string>
+    <string name="advanced_split_apps">Apps</string>
+    <string name="advanced_split_system">System</string>
+    <string name="advanced_split_waiting">Waiting on storage</string>
+    <string name="advanced_core">Core %1$d</string>
+    <string name="advanced_ghz">%1$.1f GHz</string>
+    <string name="advanced_in_use">In use</string>
+    <string name="advanced_cached">Cached</string>
+    <string name="advanced_free">Free</string>
+    <string name="advanced_swap">Swap %1$s of %2$s</string>
+    <string name="advanced_wifi_on">Wi-Fi · %1$s</string>
+    <string name="advanced_since_boot">Since boot ↓ %1$s ↑ %2$s</string>
+    <string name="advanced_minute_ago">60 s ago</string>
+    <string name="advanced_now">now</string>
+    <string name="advanced_cpu_share">%1$.0f%% CPU</string>
+    <string name="advanced_since_boot_short">%1$s since boot</string>
+    <string name="advanced_processes_n">Processes · %1$d</string>
+    <string name="advanced_connections_n">Open connections · %1$d</string>
+    <string name="advanced_established">Established</string>
+    <string name="advanced_connecting">Connecting</string>
+    <string name="advanced_closing">Closing</string>
+    <string name="advanced_down" translatable="false">↓ %1$s</string>
+    <string name="advanced_up" translatable="false">↑ %1$s</string>
+    <string name="advanced_down_up" translatable="false">↓ %1$s ↑ %2$s</string>
+    <plurals name="advanced_cores">
+        <item quantity="one">%1$d core</item>
+        <item quantity="other">%1$d cores</item>
+    </plurals>
+    <plurals name="advanced_processes">
+        <item quantity="one">%1$d process</item>
+        <item quantity="other">%1$d processes</item>
+    </plurals>
+    <plurals name="advanced_connections">
+        <item quantity="one">%1$d connection</item>
+        <item quantity="other">%1$d connections</item>
+    </plurals>
+    <plurals name="advanced_open_connections">
+        <item quantity="one">%1$d open connection</item>
+        <item quantity="other">%1$d open connections</item>
+    </plurals>
+    <plurals name="advanced_apps_running">
+        <item quantity="one">%1$d app running</item>
+        <item quantity="other">%1$d apps running</item>
+    </plurals>
     <string name="shell_open">Shell</string>
     <string name="shell_close">Close Shell</string>
     <string name="shell_title">%1$s · %2$s</string>
