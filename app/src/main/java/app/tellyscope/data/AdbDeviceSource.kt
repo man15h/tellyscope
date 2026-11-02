@@ -81,7 +81,10 @@ import app.tellyscope.adb.ScanHit as AdbHit
  * [DeviceSource] on real TVs through `:adb`. Device id is the TV's IP. Wi-Fi name, signal, MAC and
  * link speed are empty for now. App names and icons come from the label helper through [AppNames].
  */
-class AdbDeviceSource(context: Context) : DeviceSource {
+class AdbDeviceSource(
+    context: Context,
+    private val connector: suspend (String, Int) -> AdbConnectResult = { h, p -> Connector.connect(h, p) },
+) : DeviceSource {
     private val appContext = context.applicationContext
     /** Our text in the app's language now, for what's saved: History labels, names stored with data. */
     private fun UiText.text(): String = this.resolve(appContext.resources)
@@ -150,7 +153,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     private fun link(host: String, port: Int, first: AdbConnectResult?, knownGood: Boolean, loggedOutAt: Long? = null) {
         var pending = first
         val link = DeviceLink(host, port, scope, knownGood = knownGood, open = { h, p ->
-            pending?.also { pending = null } ?: Connector.connect(h, p)
+            pending?.also { pending = null } ?: connector(h, p)
         })
         link.gate.profile.value = statsFor?.takeIf { it.first == host }?.second ?: StatsProfile.OTHER
         link.gate.paused.value = paused
@@ -314,7 +317,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         emit(ScanEvent.Done)
     }
 
-    override suspend fun connect(hit: ScanHit): ConnectResult = when (val r = Connector.connect(hit.ip, hit.port)) {
+    override suspend fun connect(hit: ScanHit): ConnectResult = when (val r = connector(hit.ip, hit.port)) {
         is AdbConnectResult.Online -> {
             hits[hit.ip] = hit
             restoring -= hit.ip
@@ -1109,7 +1112,7 @@ class AdbDeviceSource(context: Context) : DeviceSource {
     private suspend fun disabledPackages(deviceId: String) =
         Parsers.packages(session(deviceId).shell("pm list packages -d").output).map { it.name }.toSet()
 
-    override suspend fun installed(deviceId: String, packageName: String) = Sideload(session(deviceId)).installed(packageName)
+    override suspend fun installed(deviceId: String, packageName: String) = Sideload(liveSession(deviceId)).installed(packageName)
 
     override suspend fun install(
         deviceId: String,
@@ -1139,7 +1142,8 @@ class AdbDeviceSource(context: Context) : DeviceSource {
      * The session for a file the user just picked. While the system picker is up the app is in the
      * background, where Android cuts its network after a few seconds and no stats read notices: back
      * in the app, the old session is dead (#290, #296). A quick shell call tells; a dead link starts
-     * over and the transfer waits for the new session.
+     * over and the transfer waits for the new session. The install's version check is the first call
+     * after the picker, so it goes through here too.
      */
     private suspend fun liveSession(deviceId: String): AdbSession {
         val link = links[deviceId] ?: return session(deviceId)

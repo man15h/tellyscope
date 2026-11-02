@@ -1278,15 +1278,22 @@ class TellyscopeViewModel(
         if (uris.isEmpty()) return
         setSideload(SideloadUi())
         sideloadJob = viewModelScope.launch {
-            val ui = try {
-                val app = storage.readApp(uris)
-                SideloadUi(SideloadUi.Step.Ready, app, source.installed(id, app.info.packageName))
+            // The phone's file and the TV fail apart: nothing has been sent yet, so neither is "lost partway".
+            val app = try {
+                storage.readApp(uris)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: NotAnApp) {
-                SideloadUi(SideloadUi.Step.Failed, error = Copy.NOT_AN_APP)
+                return@launch updateDevice(id) { it.copy(sideload = SideloadUi(SideloadUi.Step.Failed, error = Copy.NOT_AN_APP)) }
             } catch (_: Exception) {
-                SideloadUi(SideloadUi.Step.Failed, error = Copy.SIDELOAD_LOST)
+                return@launch updateDevice(id) { it.copy(sideload = SideloadUi(SideloadUi.Step.Failed, error = Copy.CANT_READ)) }
+            }
+            val ui = try {
+                SideloadUi(SideloadUi.Step.Ready, app, source.installed(id, app.info.packageName))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                SideloadUi(SideloadUi.Step.Failed, error = Copy.UNREACHABLE)
             }
             updateDevice(id) { it.copy(sideload = ui) }
         }
