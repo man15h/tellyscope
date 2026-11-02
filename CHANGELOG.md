@@ -12,6 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Fixed:** On a Fire TV or another box on HDMI, the Remote's mute and volume keys are grayed out with the reason, instead of doing nothing: the box's volume is fixed there, so use the TV's own remote. [#307](../../pull/307)
 - **Fixed:** On the Remote, a perfectly still tap on empty space now closes the keyboard. [#300](../../pull/300)
 - **Fixed:** Sending or installing a file picked from phone storage no longer drops the TV. [#301](../../pull/301)
 - **Fixed:** Apps without a name no longer show a Java class name. [#303](../../pull/303)
