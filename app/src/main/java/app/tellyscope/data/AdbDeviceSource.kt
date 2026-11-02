@@ -44,6 +44,7 @@ import app.tellyscope.adb.PairResult
 import app.tellyscope.adb.pairOnFreshPort
 import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.Tweaks
+import app.tellyscope.adb.TvShell
 import com.flyfishxu.kadb.mdns.KadbMdnsAndroid
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -68,6 +69,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import okio.Sink
 import okio.Source
 import java.io.File
+import java.io.IOException
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
@@ -967,6 +969,12 @@ class AdbDeviceSource(
     override suspend fun screen(deviceId: String, on: Boolean) = busy(deviceId) { remote(deviceId).screen(on) }
 
     override suspend fun reboot(deviceId: String) = Remote(session(deviceId)).reboot()
+
+    // An offline TV is a lost link to the terminal, which prints that rather than an error.
+    override fun shell(deviceId: String): TvShell {
+        fun live() = links[deviceId]?.session ?: throw IOException("offline")
+        return TvShell({ live().shell(it) }) { live().openShell() }
+    }
 
     override suspend fun openUpdates(deviceId: String) = Remote(session(deviceId)).openUpdates()
 

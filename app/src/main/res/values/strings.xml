@@ -938,11 +938,7 @@
 
     <!-- AdvancedScreen.kt: Advanced monitor -->
     <string name="advanced_back">Back to the TV\'s page</string>
-    <string name="advanced_this_tv">This TV</string>
     <string name="advanced_ip_address">IP address</string>
-    <string name="advanced_port">Port</string>
-    <string name="advanced_maker">Maker</string>
-    <string name="advanced_network_name">Network name</string>
     <string name="advanced_loading">Loading stats…</string>
     <string name="advanced_cpu_by_app">CPU by app</string>
     <string name="advanced_ram_by_app">RAM by app</string>
@@ -979,6 +975,36 @@
     <string name="advanced_mbps">%1$d Mbps</string>
     <string name="advanced_data_used">Data used</string>
     <string name="advanced_open_connections">Open connections</string>
+    <string name="advanced_address" translatable="false">%1$s:%2$d</string>
+    <string name="shell_prompt" translatable="false">tv:%1$s $</string>
+    <string name="shell_offline_prompt" translatable="false">tv offline $</string>
+    <string name="shell_key_tab" translatable="false">Tab</string>
+    <string name="shell_key_ctrl_c" translatable="false">Ctrl-C</string>
+    <string name="shell_answer_yes" translatable="false">y</string>
+    <string name="shell_answer_no" translatable="false">N</string>
+    <string name="shell_exit_code" translatable="false">[exit %1$d]</string>
+    <string name="shell_stopped" translatable="false">^C</string>
+    <string name="advanced_copy_address">Copy address</string>
+    <string name="advanced_android">Android</string>
+    <string name="advanced_updated">Updated</string>
+    <string name="advanced_your_apps">Your apps</string>
+    <string name="shell_open">Shell</string>
+    <string name="shell_close">Close Shell</string>
+    <string name="shell_title">%1$s · %2$s</string>
+    <string name="shell_banner">Connected to %1$s (%2$s).\nType exit or tap ✕ to close.</string>
+    <string name="shell_trimmed">Earlier lines dropped: showing the last %1$d.</string>
+    <string name="shell_offline_hint">Commands run again once the TV is back.</string>
+    <string name="shell_key_paste">Paste</string>
+    <string name="shell_key_up">Previous command</string>
+    <string name="shell_key_down">Next command</string>
+    <string name="shell_confirm">This changes the TV. Run it? [y/N]</string>
+    <string name="shell_confirm_answered">This changes the TV. Run it? [y/N] %1$s</string>
+    <string name="shell_no_history">Shell runs don\'t go in History, so there\'s no one-tap undo.</string>
+    <string name="shell_not_run">Not run.</string>
+    <string name="shell_not_shell">Only adb shell commands run here.</string>
+    <string name="shell_full_screen">%1$s needs a full-screen terminal. It isn\'t supported here.</string>
+    <string name="shell_dropped_prefix">(dropped \"adb shell\")</string>
+    <string name="shell_lost">Lost the TV before the command finished. It may have run only partly.</string>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Help add this TV</string>

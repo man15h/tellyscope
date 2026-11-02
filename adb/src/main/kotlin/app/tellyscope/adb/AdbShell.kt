@@ -39,6 +39,9 @@ interface AdbSession : AdbShell, AdbTransfer, AutoCloseable {
 
     /** Starts [command] with its stdin and stdout left open, for a helper that stays up. Throws [java.io.IOException] if the link is gone. */
     suspend fun exec(command: String): AdbPipe
+
+    /** A shell-v2 `sh` for [TvShell], or null when the TV has no shell v2. Throws [java.io.IOException] if the link is gone. */
+    suspend fun openShell(): ShellChannel? = null
 }
 
 /** A running command's stdin and stdout, with no terminal in between. Closing it ends the command's stdin. */

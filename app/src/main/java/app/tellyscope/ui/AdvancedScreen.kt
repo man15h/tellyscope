@@ -18,6 +18,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -68,6 +78,7 @@ import app.tellyscope.ui.theme.StatNumber
 fun AdvancedScreen(
     state: UiState,
     back: () -> Unit,
+    terminal: ShellTerminal? = null,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val device = state.selected ?: return
@@ -81,55 +92,123 @@ fun AdvancedScreen(
         procs.groupBy { p -> p.packageName?.let { labels[it] ?: AppNames.fallback(it) } ?: androidSystem }
     }
     val res = LocalContext.current.resources
+    var shellOpen by rememberSaveable { mutableStateOf(false) }
+    var shellFrom by remember { mutableStateOf(Offset.Zero) }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = {
-            TopAppBar(
-                title = { Text(Copy.ADVANCED_MONITOR.resolve()) },
-                navigationIcon = {
-                    IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.advanced_back)) }
-                },
+    Box(Modifier.fillMaxSize()) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbar) },
+            topBar = {
+                TopAppBar(
+                    title = { Text(Copy.ADVANCED_MONITOR.resolve()) },
+                    navigationIcon = {
+                        IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.advanced_back)) }
+                    },
+                )
+            },
+        ) { pad ->
+            LazyColumn(
+                Modifier.fillMaxSize().padding(pad),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item {
+                    Header(state, snap, onShell = { shellFrom = it; shellOpen = true })
+                }
+                if (snap != null) {
+                    // Offline: the last stats this phone saw, greyed and dated, rather than a grid of blanks.
+                    item { Stats(snap, if (offline) state.clock() else null) }
+                } else {
+                    item {
+                        Text(
+                            if (offline) Copy.noStats(device.state).resolve() else stringResource(R.string.advanced_loading),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+                // A TV that lists no processes gets no charts: no bars beats an empty card.
+                if (byApp.isNotEmpty()) {
+                    item { UsageCard(stringResource(R.string.advanced_cpu_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { res.getString(R.string.advanced_percent_whole, it) }) }
+                    item { UsageCard(stringResource(R.string.advanced_ram_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()).resolve(res) }) }
+                    item { Block(stringResource(R.string.advanced_processes)) { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
+                }
+                ui.network?.let { n -> item { Block(stringResource(R.string.advanced_network)) { NetworkBlock(n) } } }
+            }
+        }
+        terminal?.let { t -> ShellOverlay(shellOpen, shellFrom, device, !offline, t, onClose = { shellOpen = false }) }
+    }
+}
+
+/**
+ * Which TV this is, at the top: its cookie, name and maker with the Shell button, then where it is
+ * on the network, then the facts the app already has. [onShell] gets the button's centre in the
+ * root, where Shell grows from.
+ */
+@Composable
+private fun Header(state: UiState, snap: Snapshot?, onShell: (Offset) -> Unit) {
+    val device = state.selected ?: return
+    val c = MaterialTheme.colorScheme
+    val clipboard = LocalClipboardManager.current
+    val address = stringResource(R.string.advanced_address, device.hit.ip, device.hit.port)
+    var center by remember { mutableStateOf(Offset.Zero) }
+    Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainer)) {
+        Column(Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Cookie(device, 48.dp)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(name(device), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    makerLine(device).takeIf { it.isNotEmpty() }?.let {
+                        Text(it, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+                Spacer(Modifier.width(8.dp))
+                Button(
+                    onClick = { onShell(center) },
+                    modifier = Modifier.onGloballyPositioned { center = it.boundsInRoot().center },
+                ) {
+                    Icon(TerminalIcon, null, Modifier.size(ButtonDefaults.IconSize))
+                    Spacer(Modifier.width(ButtonDefaults.IconSpacing))
+                    Text(stringResource(R.string.shell_open))
+                }
+            }
+            HorizontalDivider(Modifier.padding(vertical = 12.dp), color = c.outlineVariant)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // The name the TV gives itself on the Wi-Fi; left out when it's the name above already.
+                val network = device.hit.hostname?.takeIf { it != name(device) }
+                Text(
+                    network.orEmpty(),
+                    Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = c.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(address, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), maxLines = 1)
+                IconButton(onClick = { clipboard.setText(AnnotatedString(address)) }) {
+                    Icon(CopyIcon, stringResource(R.string.advanced_copy_address), Modifier.size(18.dp), tint = c.onSurfaceVariant)
+                }
+            }
+            val dash = "—"
+            val facts = listOf(
+                stringResource(R.string.advanced_android) to ((device.android ?: device.lastKnown?.android)?.let { stringResource(R.string.tabs_android_version, it) } ?: dash),
+                stringResource(R.string.advanced_updated) to ((snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let(Copy::shortMonth) ?: dash),
+                stringResource(R.string.advanced_your_apps) to (state.device.apps.takeIf { it.isNotEmpty() }?.count { !it.system }?.toString() ?: dash),
+                stringResource(R.string.device_network) to (snap?.netBytesPerSec?.takeIf { device.state == DeviceState.Online }?.let { Copy.speed(it).resolve() } ?: dash),
             )
-        },
-    ) { pad ->
-        LazyColumn(
-            Modifier.fillMaxSize().padding(pad),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(stringResource(R.string.advanced_this_tv), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 4.dp))
-                        listOfNotNull(
-                            stringResource(R.string.advanced_ip_address) to device.hit.ip,
-                            stringResource(R.string.advanced_port) to device.hit.port.toString(),
-                            (device.manufacturer ?: device.hit.maker)?.let { stringResource(R.string.advanced_maker) to it },
-                            device.hit.hostname?.let { stringResource(R.string.advanced_network_name) to it },
-                        ).forEach { (k, v) -> KeyValue(k, v) }
+            Spacer(Modifier.height(8.dp))
+            facts.chunked(2).forEach { pair ->
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    pair.forEach { (label, value) ->
+                        Column(Modifier.weight(1f)) {
+                            Text(label, style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
+                            Text(value, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
                     }
                 }
             }
-            if (snap != null) {
-                // Offline: the last stats this phone saw, greyed and dated, rather than a grid of blanks.
-                item { Stats(snap, if (offline) state.clock() else null) }
-            } else {
-                item {
-                    Text(
-                        if (offline) Copy.noStats(device.state).resolve() else stringResource(R.string.advanced_loading),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-            }
-            // A TV that lists no processes gets no charts: no bars beats an empty card.
-            if (byApp.isNotEmpty()) {
-                item { UsageCard(stringResource(R.string.advanced_cpu_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.cpuPercent } }, fmt = { res.getString(R.string.advanced_percent_whole, it) }) }
-                item { UsageCard(stringResource(R.string.advanced_ram_by_app), byApp.map { (n, ps) -> n to ps.sumOf { it.ramMb }.toDouble() }, fmt = { Copy.mb(it.toInt()).resolve(res) }) }
-                item { Block(stringResource(R.string.advanced_processes)) { ProcessTable(snap?.procs.orEmpty(), ui.apps) } }
-            }
-            ui.network?.let { n -> item { Block(stringResource(R.string.advanced_network)) { NetworkBlock(n) } } }
         }
     }
 }

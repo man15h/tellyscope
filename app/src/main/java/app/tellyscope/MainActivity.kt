@@ -308,7 +308,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             vm.showStats(StatsProfile.ADVANCED)
             onDispose { vm.showStats(StatsProfile.OTHER) }
         }
-        AdvancedScreen(state, back = { advanced = false }, snackbar = snackbar)
+        AdvancedScreen(state, back = { advanced = false }, terminal = remember(state.selectedId) { vm.terminal() }, snackbar = snackbar)
     } else if (history) {
         BackHandler { history = false }
         // Seen on the way in, and again on the way out for changes made here, so ⋮ has no dot for them.
