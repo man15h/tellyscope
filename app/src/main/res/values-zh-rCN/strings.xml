@@ -871,6 +871,7 @@
     <string name="remote_mute">静音或取消静音</string>
     <string name="remote_volume_up">音量加</string>
     <string name="remote_volume_down">音量减</string>
+    <string name="remote_volume_fixed">通过 HDMI 时音量是固定的。请使用电视的遥控器。</string>
     <string name="remote_back">返回</string>
     <string name="remote_home">主页</string>
     <string name="remote_menu">菜单</string>

@@ -164,6 +164,12 @@ interface DeviceSource {
     /** The remote screen closed: stop anything [press] left running on the TVs. */
     fun closeRemote() {}
 
+    /**
+     * The TV can't change volume from here: a box on HDMI whose own volume is fixed, so the
+     * Remote's volume keys do nothing (see [app.tellyscope.adb.Remote.musicFixed]). Throws when it's gone.
+     */
+    suspend fun volumeFixed(deviceId: String): Boolean = false
+
     /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.typeable] first. */
     suspend fun type(deviceId: String, text: String): Boolean
 

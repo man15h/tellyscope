@@ -959,6 +959,8 @@ class AdbDeviceSource(
         keyHelpers.keys.toList().forEach { keyHelpers.remove(it)?.close() }
     }
 
+    override suspend fun volumeFixed(deviceId: String) = Remote(session(deviceId)).volumeFixed()
+
     override suspend fun type(deviceId: String, text: String) = busy(deviceId) { remote(deviceId).type(text) }
 
 

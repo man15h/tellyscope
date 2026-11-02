@@ -913,6 +913,7 @@
     <string name="remote_mute">म्यूट या अनम्यूट करें</string>
     <string name="remote_volume_up">आवाज़ बढ़ाएं</string>
     <string name="remote_volume_down">आवाज़ कम करें</string>
+    <string name="remote_volume_fixed">HDMI पर आवाज़ तय रहती है। TV का रिमोट इस्तेमाल करें।</string>
     <string name="remote_back">वापस जाएं</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">मेन्यू</string>
