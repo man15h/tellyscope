@@ -224,6 +224,7 @@
     <string name="copy_reading_apps">Leyendo las apps de la TV…</string>
     <string name="copy_reading_apps_line">Esto tarda unos segundos.</string>
     <string name="copy_tv_offline">TV sin conexión</string>
+    <string name="copy_off_wifi_line">Conéctate a la misma Wi-Fi que la TV. Tellyscope se reconecta en cuanto estés conectado.</string>
     <string name="copy_running_offline">Las apps en ejecución aparecen aquí cuando la TV está conectada.</string>
     <string name="copy_state_online">Conectada</string>
     <string name="copy_state_offline">Sin conexión</string>
@@ -295,6 +296,7 @@
     <string name="copy_sent_renamed">Enviado a %1$s como %2$s, porque %3$s ya estaba allí</string>
     <string name="copy_saved">%1$s guardado en tu teléfono</string>
     <string name="copy_send_failed">No se pudo enviar %1$s. Comprueba que la TV siga conectada y tenga espacio.</string>
+    <string name="copy_send_failed_off_wifi">No se pudo enviar %1$s. Este teléfono no está en Wi-Fi.</string>
     <string name="copy_save_failed">No se pudo guardar %1$s. Comprueba que la TV siga conectada y que el teléfono tenga espacio.</string>
     <string name="copy_cancelled_send">Cancelado. No quedó nada en la TV.</string>
     <string name="copy_cancelled_save">Cancelado. No se guardó nada.</string>

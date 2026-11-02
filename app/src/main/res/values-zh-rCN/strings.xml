@@ -208,6 +208,7 @@
     <string name="copy_reading_apps">正在读取电视上的应用…</string>
     <string name="copy_reading_apps_line">这需要几秒钟。</string>
     <string name="copy_tv_offline">电视离线</string>
+    <string name="copy_off_wifi_line">连接到电视所在的 Wi-Fi。一连上，Tellyscope 就会重新连接。</string>
     <string name="copy_running_offline">电视连接后，这里会显示正在运行的应用。</string>
     <string name="copy_state_online">已连接</string>
     <string name="copy_state_offline">离线</string>
@@ -277,6 +278,7 @@
     <string name="copy_sent_renamed">由于 %3$s 已存在，已以 %2$s 为名发送到 %1$s</string>
     <string name="copy_saved">已将 %1$s 保存到你的手机</string>
     <string name="copy_send_failed">无法发送 %1$s。请检查电视是否仍连接并有足够空间。</string>
+    <string name="copy_send_failed_off_wifi">无法发送 %1$s。这部手机没有连接 Wi-Fi。</string>
     <string name="copy_save_failed">无法保存 %1$s。请检查电视是否仍连接，以及手机是否有足够空间。</string>
     <string name="copy_cancelled_send">已取消。电视上没有留下任何内容。</string>
     <string name="copy_cancelled_save">已取消。没有保存任何内容。</string>

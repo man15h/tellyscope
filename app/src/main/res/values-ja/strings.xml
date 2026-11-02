@@ -208,6 +208,7 @@
     <string name="copy_reading_apps">テレビのアプリを読み込んでいます…</string>
     <string name="copy_reading_apps_line">数秒かかります。</string>
     <string name="copy_tv_offline">テレビがオフライン</string>
+    <string name="copy_off_wifi_line">テレビと同じ Wi-Fi につないでください。つながるとすぐに Tellyscope が再接続します。</string>
     <string name="copy_running_offline">テレビに接続すると、実行中のアプリがここに表示されます。</string>
     <string name="copy_state_online">接続済み</string>
     <string name="copy_state_offline">オフライン</string>
@@ -277,6 +278,7 @@
     <string name="copy_sent_renamed">%3$s がすでにあるため、%2$s という名前で %1$s に送信しました</string>
     <string name="copy_saved">%1$s をスマートフォンに保存しました</string>
     <string name="copy_send_failed">%1$s を送信できませんでした。テレビが接続されていて、空き容量があることを確認してください。</string>
+    <string name="copy_send_failed_off_wifi">%1$s を送信できませんでした。このスマホは Wi-Fi につながっていません。</string>
     <string name="copy_save_failed">%1$s を保存できませんでした。テレビが接続されていて、スマートフォンに空き容量があることを確認してください。</string>
     <string name="copy_cancelled_send">キャンセルしました。テレビには何も残っていません。</string>
     <string name="copy_cancelled_save">キャンセルしました。何も保存されていません。</string>
