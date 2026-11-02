@@ -15,6 +15,7 @@ until this file has a section for its version.
 - **Fixed:** On the Remote, a perfectly still tap on empty space now closes the keyboard. [#300](../../pull/300)
 - **Fixed:** Sending or installing a file picked from phone storage no longer drops the TV. [#301](../../pull/301)
 - **Fixed:** Apps without a name no longer show a Java class name. [#303](../../pull/303)
+- **Fixed:** Philips Help stays on; turning it off broke the HDMI input picker. [#299](../../pull/299)
 
 ## 0.14.0 — 2026-10-30
 
