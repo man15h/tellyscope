@@ -8,16 +8,31 @@ import java.time.ZoneOffset
 /** Parsers for raw shell output. Pure functions; every one returns null rather than guessing. */
 object Parsers {
 
-    /** Aggregate `cpu` line of /proc/stat. */
-    data class CpuTimes(val busy: Long, val total: Long)
+    /**
+     * One `cpu` line of /proc/stat. [busy] leaves out time waiting on storage, which is idle to the
+     * CPU; [user], [system] and [ioWait] split the ticks for the CPU tab.
+     */
+    data class CpuTimes(val busy: Long, val total: Long, val user: Long = 0, val system: Long = 0, val ioWait: Long = 0)
 
-    fun cpuTimes(procStat: String): CpuTimes? {
-        val line = procStat.lineSequence().firstOrNull { it.startsWith("cpu ") } ?: return null
+    /** The aggregate `cpu` line. */
+    fun cpuTimes(procStat: String): CpuTimes? =
+        procStat.lineSequence().firstOrNull { it.startsWith("cpu ") }?.let(::cpuLine)
+
+    /** Each core's `cpuN` line by N. A core the kernel has switched off has no line. */
+    fun coreTimes(procStat: String): Map<Int, CpuTimes> = procStat.lineSequence().mapNotNull { line ->
+        val n = CORE.find(line)?.groupValues?.get(1)?.toIntOrNull() ?: return@mapNotNull null
+        cpuLine(line)?.let { n to it }
+    }.toMap()
+
+    private val CORE = Regex("""^cpu(\d+)\s""")
+
+    private fun cpuLine(line: String): CpuTimes? {
         val f = line.trim().split(Regex("\\s+")).drop(1).mapNotNull(String::toLongOrNull)
         if (f.size < 4) return null
+        fun at(i: Int) = f.getOrElse(i) { 0 }
         val total = f.take(8).sum() // user nice system idle iowait irq softirq steal; guest is already in user
-        val idle = f[3] + f.getOrElse(4) { 0 }
-        return CpuTimes(total - idle, total)
+        val idle = at(3) + at(4)
+        return CpuTimes(total - idle, total, user = at(0) + at(1), system = at(2) + at(5) + at(6) + at(7), ioWait = at(4))
     }
 
     /** CPU use between two samples, 0..100, or null if the counters didn't move. */
@@ -27,7 +42,36 @@ object Parsers {
         return ((now.busy - prev.busy).toDouble() / dt * 100).coerceIn(0.0, 100.0)
     }
 
-    data class Memory(val totalKb: Long, val availableKb: Long)
+    /** Where the CPU's time went between two samples, each 0..100 of all of it. */
+    data class CpuSplit(val apps: Double, val system: Double, val ioWait: Double)
+
+    fun cpuSplit(prev: CpuTimes, now: CpuTimes): CpuSplit? {
+        val dt = (now.total - prev.total).takeIf { it > 0 }?.toDouble() ?: return null
+        fun pct(a: Long, b: Long) = ((b - a) / dt * 100).coerceIn(0.0, 100.0)
+        return CpuSplit(pct(prev.user, now.user), pct(prev.system, now.system), pct(prev.ioWait, now.ioWait))
+    }
+
+    /**
+     * The chip by name: `ro.soc.*` from Android 12 (`Amlogic S905X4`), else the board's platform
+     * code (`mt5867`), which is still what a search finds.
+     */
+    fun chip(props: Map<String, String>): String? {
+        val model = props["ro.soc.model"]?.takeIf { it.isNotBlank() }
+        if (model != null) {
+            val maker = props["ro.soc.manufacturer"]?.takeIf { it.isNotBlank() && !model.startsWith(it, ignoreCase = true) }
+            return listOfNotNull(maker, model).joinToString(" ")
+        }
+        return (props["ro.board.platform"] ?: props["ro.hardware"])?.takeIf { it.isNotBlank() }
+    }
+
+    /** The fastest core's clock now, in kHz, from each core's `scaling_cur_freq`; null where cpufreq is hidden. */
+    fun clockKhz(freqs: String): Long? = freqs.lineSequence().mapNotNull { it.trim().toLongOrNull() }.filter { it > 0 }.maxOrNull()
+
+    /**
+     * [availableKb] is what apps could still get; of that, [freeKb] holds nothing and the rest is
+     * cache the TV gives back when asked. Swap is zram on TVs, 0 where there's none.
+     */
+    data class Memory(val totalKb: Long, val availableKb: Long, val freeKb: Long = 0, val swapTotalKb: Long = 0, val swapFreeKb: Long = 0)
 
     fun memory(meminfo: String): Memory? {
         val kv = meminfo.lineSequence().mapNotNull { line ->
@@ -36,8 +80,9 @@ object Parsers {
         }.toMap()
         val total = kv["MemTotal"] ?: return null
         // MemAvailable exists since kernel 3.14; older TVs get a rough free+cached.
-        val avail = kv["MemAvailable"] ?: ((kv["MemFree"] ?: return null) + (kv["Cached"] ?: 0))
-        return Memory(total, avail)
+        val free = kv["MemFree"]
+        val avail = kv["MemAvailable"] ?: ((free ?: return null) + (kv["Cached"] ?: 0))
+        return Memory(total, avail, (free ?: 0).coerceAtMost(avail), kv["SwapTotal"] ?: 0, kv["SwapFree"] ?: 0)
     }
 
     data class Storage(val totalKb: Long, val usedKb: Long)
@@ -265,18 +310,73 @@ object Parsers {
         m.groupValues[1] to m.groupValues[2]
     }.toMap()
 
+    /** Bytes received and sent since boot. */
+    data class NetBytes(val rx: Long, val tx: Long)
+
     /**
-     * Bytes in plus out since boot over every interface but loopback, from `/proc/net/dev`; null
+     * Bytes in and out since boot over every interface but loopback, from `/proc/net/dev`; null
      * when nothing readable. Loopback is the TV talking to itself, not network traffic.
      */
-    fun netBytes(procNetDev: String): Long? {
+    fun netBytes(procNetDev: String): NetBytes? {
         val totals = procNetDev.lineSequence().mapNotNull { line ->
             val iface = line.substringBefore(':', "").trim().takeIf { it.isNotEmpty() && it != "lo" } ?: return@mapNotNull null
             val f = line.substringAfter(':').trim().split(Regex("\\s+")).mapNotNull(String::toLongOrNull)
-            if (f.size < 9) null else f[0] + f[8] // rx bytes, tx bytes
+            if (f.size < 9) null else NetBytes(f[0], f[8])
         }.toList()
-        return totals.takeIf { it.isNotEmpty() }?.sum()
+        return totals.takeIf { it.isNotEmpty() }?.let { t -> NetBytes(t.sumOf { it.rx }, t.sumOf { it.tx }) }
     }
+
+    /** The interface the TV is on, its IPv4 address and its hardware address. */
+    data class Address(val iface: String, val ip: String, val mac: String?)
+
+    /**
+     * `ip addr show`: the first interface with an IPv4 address that isn't loopback. Apps can't
+     * read `/sys/class/net/<iface>/address` on newer TVs, but `ip` still prints the `link/ether` line.
+     */
+    fun address(ipAddr: String): Address? {
+        var iface: String? = null
+        var mac: String? = null
+        var ip: String? = null
+        for (line in ipAddr.lineSequence() + sequenceOf("0: end:")) {
+            val head = IFACE.find(line)
+            if (head != null) {
+                if (ip != null && iface != null && iface != "lo") return Address(iface, ip, mac)
+                iface = head.groupValues[1]
+                mac = null
+                ip = null
+                continue
+            }
+            val f = line.trim().split(Regex("\\s+"))
+            when (f.firstOrNull()) {
+                "link/ether" -> mac = f.getOrNull(1)?.takeIf { it != "00:00:00:00:00:00" }
+                "inet" -> if (ip == null) ip = f.getOrNull(1)?.substringBefore('/')
+            }
+        }
+        return null
+    }
+
+    private val IFACE = Regex("""^\d+:\s+([^:@\s]+)""")
+
+    /** What the TV's Wi-Fi is joined to; null fields where the TV doesn't say. */
+    data class Wifi(val ssid: String?, val rssi: Int?, val linkMbps: Int?)
+
+    /**
+     * `cmd wifi status` (Android 11 and later), or the `mWifiInfo` line of `dumpsys wifi` on older
+     * TVs. Newer TVs print `SSID: XXX` to apps, so the name comes from `Wifi is connected to "…"`
+     * where there is one. Null when the TV isn't on Wi-Fi.
+     */
+    fun wifi(status: String): Wifi? {
+        val ssid = (CONNECTED_TO.find(status) ?: SSID.find(status))?.groupValues?.get(1)?.trim()?.removeSurrounding("\"")
+            ?.takeIf { it.isNotEmpty() && it != "XXX" && it != "<unknown ssid>" }
+        val rssi = RSSI.find(status)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it in -126..-1 }
+        val link = LINK.find(status)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }
+        return if (ssid == null && rssi == null) null else Wifi(ssid, rssi, link)
+    }
+
+    private val CONNECTED_TO = Regex("""connected to "(.*)"""")
+    private val SSID = Regex("""\bSSID: (.*?), BSSID""")
+    private val RSSI = Regex("""\bRSSI: (-?\d+)""")
+    private val LINK = Regex("""(?<!Tx |Rx |Supported )Link speed: (-?\d+)\s*Mbps""")
 
     /**
      * When the TV's software was last updated: the security patch month, which an update moves,
