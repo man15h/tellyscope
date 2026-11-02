@@ -189,6 +189,9 @@ class RemoteTest {
         val mask = dump("hdmi").replace("0x1000,0x800,0x400,0x200000,0x40000,0x40001,0x80000", "0x2c400")
         assertTrue(Remote.musicFixed(mask))
         assertFalse(Remote.musicFixed(mask.replace("0x2c400", "0x2c000")))
+        // In a list, 0x40001 is its own device, not bit 0x1 (here the code of "earpiece").
+        val earpiece = dump("earpiece").replace("400 (hdmi)", "1 (earpiece)")
+        assertFalse(Remote.musicFixed(earpiece))
     }
 
     @Test fun volumeFixedReadsTheAudioDump() = runTest {

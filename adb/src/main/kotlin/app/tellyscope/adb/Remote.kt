@@ -124,7 +124,11 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
             val devices = Regex("""^\s*Devices:\s*(.+)$""", RegexOption.MULTILINE).find(block)?.groupValues?.get(1).orEmpty()
                 .split(Regex("""[\s,]+""")).filter { it.isNotEmpty() }
             val codes = Regex("""([0-9a-fA-F]+) \(([^)]+)\)""").findAll(block).associate { it.groupValues[2] to it.groupValues[1].toLong(16) }
-            return devices.isNotEmpty() && devices.all { d -> codes[d]?.let { c -> c != 0L && fixed.any { (it and c) == c } } == true }
+            // A list names each device exactly; a lone value is the old bitmask, tested bit by bit.
+            val listed = fixed.size > 1
+            return devices.isNotEmpty() && devices.all { d ->
+                codes[d]?.let { c -> c != 0L && fixed.any { if (listed) it == c else (it and c) == c } } == true
+            }
         }
 
         /** Volume keys per tap: 1 on a 15-step TV, 3 on 50, 7 on 100. Never under 1. */
