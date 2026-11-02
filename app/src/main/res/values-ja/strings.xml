@@ -344,6 +344,7 @@
     <string name="copy_animations_state_off">オフ。オンにすると、メニューの動きがきびきびします。</string>
     <string name="copy_caches_title">すべてのアプリのキャッシュを削除</string>
     <string name="copy_caches_text">すべてのアプリの一時ファイルを削除して、空き容量を増やします。アプリのデータとログイン情報は残ります。</string>
+    <string name="copy_caches_too_old">Android 8 以降が必要です。このテレビはそれより古いバージョンです。</string>
     <string name="copy_caches_button">キャッシュを削除</string>
     <string name="copy_caches_cleared">アプリのキャッシュを削除しました</string>
     <string name="copy_caches_cleared_freed">アプリのキャッシュを削除し、%1$s を解放しました</string>

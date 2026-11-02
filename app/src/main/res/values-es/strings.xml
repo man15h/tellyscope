@@ -366,6 +366,7 @@
     <string name="copy_animations_state_off">Desactivado. Actívalo para que los menús respondan más rápido.</string>
     <string name="copy_caches_title">Borrar la caché de todas las apps</string>
     <string name="copy_caches_text">Libera espacio borrando los archivos temporales de todas las apps. Los datos de las apps y los inicios de sesión se conservan.</string>
+    <string name="copy_caches_too_old">Necesita Android 8 o posterior. Esta TV es más antigua.</string>
     <string name="copy_caches_button">Borrar caché</string>
     <string name="copy_caches_cleared">Se borró la caché de las apps</string>
     <string name="copy_caches_cleared_freed">Se borró la caché de las apps y se liberaron %1$s</string>

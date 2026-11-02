@@ -648,6 +648,7 @@ object Copy {
         else UiText(R.string.copy_animations_state_off)
     val CACHES_TITLE = UiText(R.string.copy_caches_title)
     val CACHES_TEXT = UiText(R.string.copy_caches_text)
+    val CACHES_TOO_OLD = UiText(R.string.copy_caches_too_old)
     val CACHES_BUTTON = UiText(R.string.copy_caches_button)
     fun cachesCleared(freedKb: Long?) =
         if (freedKb == null || freedKb <= 0) UiText(R.string.copy_caches_cleared) else UiText(R.string.copy_caches_cleared_freed, bytes(freedKb * 1024))

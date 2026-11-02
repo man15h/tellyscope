@@ -377,6 +377,7 @@
     <string name="copy_animations_state_off">Выкл. Включите, чтобы меню реагировали быстрее.</string>
     <string name="copy_caches_title">Очистить кеш всех приложений</string>
     <string name="copy_caches_text">Освобождает место, удаляя временные файлы всех приложений. Данные приложений и входы в аккаунты сохраняются.</string>
+    <string name="copy_caches_too_old">Нужен Android 8 или новее. На этом телевизоре более старая версия.</string>
     <string name="copy_caches_button">Очистить кеш</string>
     <string name="copy_caches_cleared">Кеш приложений очищен</string>
     <string name="copy_caches_cleared_freed">Кеш приложений очищен, освобождено %1$s</string>

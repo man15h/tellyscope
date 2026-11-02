@@ -446,6 +446,7 @@
     <string name="copy_animations_state_off">Off. Turn on to make menus feel snappier.</string>
     <string name="copy_caches_title">Clear all app caches</string>
     <string name="copy_caches_text">Frees space by clearing every app\'s temporary files. App data and sign-ins stay.</string>
+    <string name="copy_caches_too_old">Needs Android 8 or newer. This TV is older.</string>
     <string name="copy_caches_button">Clear caches</string>
     <string name="copy_caches_cleared">Cleared app caches</string>
     <!-- %1$s is a size, like 120 MB -->
