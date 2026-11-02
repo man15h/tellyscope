@@ -874,6 +874,10 @@
     <string name="remote_volume_up">音量加</string>
     <string name="remote_volume_down">音量减</string>
     <string name="remote_volume_fixed">通过 HDMI 时音量是固定的。请使用电视的遥控器。</string>
+    <string name="remote_dpad">方向键</string>
+    <string name="remote_touchpad">触控板</string>
+    <string name="remote_touchpad_swipe">滑动以移动</string>
+    <string name="remote_touchpad_tap">轻点即确定</string>
     <string name="remote_back">返回</string>
     <string name="remote_home">主页</string>
     <string name="remote_menu">菜单</string>

@@ -916,6 +916,10 @@
     <string name="remote_volume_up">आवाज़ बढ़ाएं</string>
     <string name="remote_volume_down">आवाज़ कम करें</string>
     <string name="remote_volume_fixed">HDMI पर आवाज़ तय रहती है। TV का रिमोट इस्तेमाल करें।</string>
+    <string name="remote_dpad">D-पैड</string>
+    <string name="remote_touchpad">टचपैड</string>
+    <string name="remote_touchpad_swipe">हिलाने के लिए स्वाइप करें</string>
+    <string name="remote_touchpad_tap">OK के लिए टैप करें</string>
     <string name="remote_back">वापस जाएं</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">मेन्यू</string>

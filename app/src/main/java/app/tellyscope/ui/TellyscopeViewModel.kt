@@ -313,6 +313,8 @@ data class UiState(
     val screenOffTip: Boolean = false,
     /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
     val volumeFixed: Set<String> = emptySet(),
+    /** The Remote shows the touchpad instead of the D-pad. Per phone, not per TV. */
+    val touchpad: Boolean = false,
     /** Debloat with nothing left on the list explains why it opens Apps, until Don't show again. */
     val debloatGate: Boolean = true,
     /** The Apps tabs whose System section the user folded away. */
@@ -496,7 +498,7 @@ class TellyscopeViewModel(
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(checkUpdates = u.enabled, alphaBuild = u.alpha) } }
         }
         keyHaptics?.let { k ->
-            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen) } }
+            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, touchpad = k.touchpad) } }
         }
         gates?.let { g ->
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(debloatGate = DEBLOAT_GATE !in g.folded()) } }
@@ -1842,6 +1844,12 @@ class TellyscopeViewModel(
     fun setKeyHaptics(on: Boolean) {
         _state.update { it.copy(keyHaptics = on) }
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.on = on }
+    }
+
+    /** The touchpad (true) or the D-pad on the Remote, kept for this phone. */
+    fun setTouchpad(on: Boolean) {
+        _state.update { it.copy(touchpad = on) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.touchpad = on }
     }
 
     /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */

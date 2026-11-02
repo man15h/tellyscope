@@ -1141,6 +1141,10 @@
     <string name="remote_volume_up">Volume up</string>
     <string name="remote_volume_down">Volume down</string>
     <string name="remote_volume_fixed">Volume is fixed over HDMI. Use the TV\'s remote.</string>
+    <string name="remote_dpad">D-pad</string>
+    <string name="remote_touchpad">Touchpad</string>
+    <string name="remote_touchpad_swipe">Swipe to move</string>
+    <string name="remote_touchpad_tap">Tap for OK</string>
     <string name="remote_back">Back</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">Menu</string>
