@@ -871,6 +871,7 @@
     <string name="remote_mute">ミュート / ミュート解除</string>
     <string name="remote_volume_up">音量を上げる</string>
     <string name="remote_volume_down">音量を下げる</string>
+    <string name="remote_volume_fixed">HDMI 接続では音量が固定されています。テレビのリモコンを使ってください。</string>
     <string name="remote_back">戻る</string>
     <string name="remote_home">ホーム</string>
     <string name="remote_menu">メニュー</string>

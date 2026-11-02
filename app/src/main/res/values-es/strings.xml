@@ -955,6 +955,7 @@
     <string name="remote_mute">Silenciar o activar sonido</string>
     <string name="remote_volume_up">Subir volumen</string>
     <string name="remote_volume_down">Bajar volumen</string>
+    <string name="remote_volume_fixed">El volumen es fijo por HDMI. Usa el control remoto de la TV.</string>
     <string name="remote_back">Atrás</string>
     <string name="remote_home">Inicio</string>
     <string name="remote_menu">Menú</string>

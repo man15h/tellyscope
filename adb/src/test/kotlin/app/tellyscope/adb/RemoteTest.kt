@@ -167,6 +167,44 @@ class RemoteTest {
         assertEquals(null, Remote.musicMax("Error: dumpsys not allowed"))
     }
 
+    @Test fun hdmiOutputIsFixedVolume() {
+        // A Fire TV stick: on the TV over HDMI, and on its own (TV off, no HDMI) its speaker stream.
+        fun dump(devices: String) = """
+            - STREAM_MUSIC:
+               Min: 0
+               Max: 15
+               Current: 2 (speaker): 0, 400 (hdmi): 15, 40000000 (default): 3
+               Devices: $devices
+            - STREAM_ALARM:
+               Max: 7
+            --
+              mFixedVolumeDevices=0x1000,0x800,0x400,0x200000,0x40000,0x40001,0x80000
+              mExtVolumeController=null
+        """.trimIndent()
+        assertTrue(Remote.musicFixed(dump("hdmi")))
+        assertFalse(Remote.musicFixed(dump("speaker")))
+        assertFalse(Remote.musicFixed(dump("hdmi").substringBefore("--")))
+        assertFalse(Remote.musicFixed("Error: dumpsys not allowed"))
+        // Android 10 and older: one bitmask, here 0x20000|0x8000|0x4000|0x400.
+        val mask = dump("hdmi").replace("0x1000,0x800,0x400,0x200000,0x40000,0x40001,0x80000", "0x2c400")
+        assertTrue(Remote.musicFixed(mask))
+        assertFalse(Remote.musicFixed(mask.replace("0x2c400", "0x2c000")))
+    }
+
+    @Test fun volumeFixedReadsTheAudioDump() = runTest {
+        val dump = """
+            - STREAM_MUSIC:
+               Max: 15
+               Current: 2 (speaker): 0, 400 (hdmi): 15
+               Devices: hdmi
+            --
+              mFixedVolumeDevices=0x400
+        """.trimIndent()
+        val read = "dumpsys audio 2>/dev/null | grep -e mFixedVolumeDevices -e '^- STREAM_MUSIC:' -A12"
+        assertTrue(Remote(FakeShell(mapOf(read to ShellResult(dump, 0)))).volumeFixed())
+        assertFalse(Remote(FakeShell(mapOf(read to ShellResult(dump.replace("Devices: hdmi", "Devices: speaker"), 0)))).volumeFixed())
+    }
+
     @Test fun volumeTapsCoverAboutFifteenSteps() {
         assertEquals(1, Remote.volumeKeys(15))
         assertEquals(1, Remote.volumeKeys(7))

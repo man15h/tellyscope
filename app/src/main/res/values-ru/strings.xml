@@ -997,6 +997,7 @@
     <string name="remote_mute">Включить или выключить звук</string>
     <string name="remote_volume_up">Громче</string>
     <string name="remote_volume_down">Тише</string>
+    <string name="remote_volume_fixed">По HDMI громкость фиксирована. Используйте пульт телевизора.</string>
     <string name="remote_back">Назад</string>
     <string name="remote_home">Домой</string>
     <string name="remote_menu">Меню</string>

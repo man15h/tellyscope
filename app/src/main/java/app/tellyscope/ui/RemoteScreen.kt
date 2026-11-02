@@ -41,6 +41,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -181,6 +182,8 @@ data class RemoteActions(
     val screenOff: (Boolean) -> Unit = {},
     /** The first-visit tip on Screen off was shown. */
     val screenOffTipSeen: () -> Unit = {},
+    /** Read whether the TV's volume is fixed over HDMI, into [UiState.volumeFixed]. */
+    val checkVolume: () -> Unit = {},
 )
 
 /** A held key repeats after this, then every [REPEAT_EVERY_MS], or slower if the TV is slower. */
@@ -233,6 +236,11 @@ fun RemoteScreen(
     val screenOff = device.id in state.screenOff
     // Android 14 moved the call that turns the picture off out of the shell's reach.
     val screenControl = (device.android?.substringBefore('.')?.toIntOrNull() ?: 0) < 14 || screenOff
+    // A box on HDMI with its volume fixed ignores mute and volume: they gray out, with the reason under them.
+    LaunchedEffect(device.id, live) { if (live) actions.checkVolume() }
+    val volumeFixed = live && device.id in state.volumeFixed
+    val volume = live && !volumeFixed
+    val volumeAlpha = if (volumeFixed) Modifier.alpha(0.38f) else Modifier
     var confirmReboot by rememberSaveable { mutableStateOf(false) }
     if (confirmReboot) RebootDialog(onRestart = { confirmReboot = false; actions.reboot() }, onDismiss = { confirmReboot = false })
     // Hide keeps a restart in the header; the dialog comes back when the wait moves on, or on a tap there.
@@ -299,7 +307,7 @@ fun RemoteScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (short) RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), live, actions.press, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
+                        if (short) RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press, volumeAlpha, size = 56.dp) { Icon(RemoteIcons.VolumeOff, null) }
                         BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                             val room = minOf(maxWidth, maxHeight)
                             val cramped = room < DPAD_MIN
@@ -310,15 +318,15 @@ fun RemoteScreen(
                             DPad(live, actions.press, (room - 24.dp).coerceIn(DPAD_MIN, DPAD_MAX).coerceAtMost(room))
                         }
                         // Up above down, like the rocker on the side of a real remote.
-                        if (short) Column(Modifier.width(56.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        if (short) Column(Modifier.width(56.dp).then(volumeAlpha), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             val (outer, inner) = 28.dp to 4.dp
                             val tall = Modifier.fillMaxWidth().height(72.dp)
                             KeySurface(
-                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), live, actions.press, RoundedCornerShape(outer, outer, inner, inner),
+                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), volume, actions.press, RoundedCornerShape(outer, outer, inner, inner),
                                 MaterialTheme.colorScheme.secondaryContainer, tall,
                             ) { Icon(RemoteIcons.VolumeUp, null) }
                             KeySurface(
-                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), live, actions.press, RoundedCornerShape(inner, inner, outer, outer),
+                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), volume, actions.press, RoundedCornerShape(inner, inner, outer, outer),
                                 MaterialTheme.colorScheme.secondaryContainer, tall,
                             ) { Icon(RemoteIcons.VolumeDown, null) }
                         }
@@ -332,23 +340,26 @@ fun RemoteScreen(
                         }
                         RoundKey(RemoteKey.MENU, stringResource(R.string.remote_menu), live, actions.press, Modifier.align(Alignment.CenterEnd), size = side) { Icon(Icons.Default.Menu, null) }
                     }
+                    // Beside the D-pad on a short phone, the volume keys have no row of their own: the reason goes under this one.
+                    if (volumeFixed && short && !typing) VolumeFixedLine()
                     if (!typing && !short) {
                     Spacer(Modifier.height(rowGap))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), live, actions.press) { Icon(RemoteIcons.VolumeOff, null) }
+                    Row(Modifier.fillMaxWidth().then(volumeAlpha), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RoundKey(RemoteKey.MUTE, stringResource(R.string.remote_mute), volume, actions.press) { Icon(RemoteIcons.VolumeOff, null) }
                         // One split pill: two halves of the same key, so the gap stays narrow.
                         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             val (outer, inner) = 32.dp to 4.dp
                             KeySurface(
-                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), live, actions.press, RoundedCornerShape(outer, inner, inner, outer),
+                                RemoteKey.VOLUME_DOWN, stringResource(R.string.remote_volume_down), volume, actions.press, RoundedCornerShape(outer, inner, inner, outer),
                                 MaterialTheme.colorScheme.secondaryContainer, Modifier.weight(1f).height(64.dp),
                             ) { Icon(RemoteIcons.VolumeDown, null) }
                             KeySurface(
-                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), live, actions.press, RoundedCornerShape(inner, outer, outer, inner),
+                                RemoteKey.VOLUME_UP, stringResource(R.string.remote_volume_up), volume, actions.press, RoundedCornerShape(inner, outer, outer, inner),
                                 MaterialTheme.colorScheme.secondaryContainer, Modifier.weight(1f).height(64.dp),
                             ) { Icon(RemoteIcons.VolumeUp, null) }
                         }
                     }
+                    if (volumeFixed) VolumeFixedLine()
                     }
                     // Twice the usual gap, so a thumb aiming at a volume key doesn't land in the text box.
                     Spacer(Modifier.height(if (typing) rowGap else 24.dp))
@@ -395,6 +406,15 @@ private fun RemoteHeader(state: UiState, device: Device, restart: Restart?, scre
         }
         // Out by the button's own padding, so the glyph's edge lines up with the keys and buttons below.
         Box(Modifier.offset(x = 12.dp)) { menu() }
+    }
+}
+
+/** Why mute and volume are gray: the box's volume is fixed over HDMI. Plain text, so TalkBack reads it after the keys. */
+@Composable
+private fun VolumeFixedLine() {
+    Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Outlined.Info, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.remote_volume_fixed), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

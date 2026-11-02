@@ -309,6 +309,8 @@ data class UiState(
     val screenOff: Set<String> = emptySet(),
     /** The Remote's Screen off button explains itself, the first time only. */
     val screenOffTip: Boolean = false,
+    /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
+    val volumeFixed: Set<String> = emptySet(),
     /** Debloat with nothing left on the list explains why it opens Apps, until Don't show again. */
     val debloatGate: Boolean = true,
     /** The Apps tabs whose System section the user folded away. */
@@ -1934,6 +1936,24 @@ class TellyscopeViewModel(
                     _notice.value = Copy.REMOTE_LOST
                 }
             }
+        }
+    }
+
+    /**
+     * Reads whether the selected TV's volume is fixed over HDMI, for the Remote. Read each time it
+     * opens or the TV comes back, as the box's output changes with the TV it's plugged into.
+     */
+    fun checkVolume() {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch {
+            val fixed = try {
+                source.volumeFixed(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch
+            }
+            _state.update { it.copy(volumeFixed = if (fixed) it.volumeFixed + id else it.volumeFixed - id) }
         }
     }
 
