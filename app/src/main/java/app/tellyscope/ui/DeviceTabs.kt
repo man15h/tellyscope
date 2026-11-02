@@ -311,7 +311,7 @@ fun DeviceTabsScreen(
                         } else if (device.state == DeviceState.NotAllowed) {
                             item { NotAllowedCard(actions.reconnect) }
                         } else if (offline) {
-                            item { OfflineCard(device, state.clock(), offWifi, actions.reconnect) }
+                            item { OfflineCard(device, state.clock(), offWifi, if (offWifi) actions.openWifi else actions.reconnect) }
                         }
                         // A switch that left the launcher's service off: Home may go back to the TV's own.
                         ui.apps.firstOrNull { it.homeServiceNote }?.takeIf { !offline }?.let { a ->

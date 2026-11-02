@@ -91,6 +91,8 @@ data class DeviceActions(
     val debloatGateOff: () -> Unit = {},
     val undo: (HistoryEntry) -> Unit = {},
     val reconnect: () -> Unit = {},
+    /** Opens the system Wi-Fi panel: Reconnect does this while the phone is off Wi-Fi. */
+    val openWifi: () -> Unit = {},
     val forget: (String) -> Unit = {},
     val rename: (String, String?) -> Unit = { _, _ -> },
     val restoreAll: () -> Unit = {},
