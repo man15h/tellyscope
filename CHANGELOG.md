@@ -18,6 +18,7 @@ until this file has a section for its version.
 - **Fixed:** Philips Help stays on; turning it off broke the HDMI input picker. [#299](../../pull/299)
 - **Fixed:** On Android 7 and older, Clear caches says it needs Android 8 instead of erroring. [#304](../../pull/304)
 - **Fixed:** Picking an app to install right after the TV's link dropped no longer fails with "Lost the TV partway through"; a file the phone can't read, or a TV that doesn't answer, now says which. [#305](../../pull/305)
+- **Fixed:** The install dialog no longer closes by itself after picking an app. [#311](../../pull/311)
 
 ## 0.14.0 — 2026-10-30
 
