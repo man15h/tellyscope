@@ -312,7 +312,7 @@ private fun CardTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, tex
 }
 
 @Composable
-internal fun OfflineCard(device: Device, now: Long, onReconnect: () -> Unit) {
+internal fun OfflineCard(device: Device, now: Long, offWifi: Boolean, onReconnect: () -> Unit) {
     // Material 3 has no warning role; tertiary is the standard stand-in, kept apart from error.
     Card(
         colors = CardDefaults.cardColors(
@@ -322,9 +322,10 @@ internal fun OfflineCard(device: Device, now: Long, onReconnect: () -> Unit) {
     ) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                CardTitle(Icons.Default.Info, stringResource(R.string.device_offline))
+                CardTitle(Icons.Default.Info, if (offWifi) Copy.PHONE_OFF_WIFI.resolve() else stringResource(R.string.device_offline))
                 Text(
-                    stringResource(R.string.device_offline_text, device.lastSeen?.let { Copy.ago(it, now).resolve() } ?: stringResource(R.string.device_a_while_ago)),
+                    if (offWifi) Copy.OFF_WIFI_LINE.resolve()
+                    else stringResource(R.string.device_offline_text, device.lastSeen?.let { Copy.ago(it, now).resolve() } ?: stringResource(R.string.device_a_while_ago)),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
