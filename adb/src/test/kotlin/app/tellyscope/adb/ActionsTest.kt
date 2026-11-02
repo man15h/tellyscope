@@ -31,6 +31,19 @@ class ActionsTest {
         assertEquals(ActionResult.Done(Action.OPEN), Actions(sh).run(Action.STOP, "com.google.android.youtube.tv"))
     }
 
+    /** The list source's protected packages hold for a hand-picked Stop or Disable too, not only Debloat. */
+    @Test fun refusesAPackageTheListProtects() = runTest {
+        val sh = FakeShell(mapOf(home))
+        try {
+            Protected.extra = mapOf("org.droidtv.eum" to ProtectedReason.TV_INPUTS_REMOTE)
+            assertEquals(ActionResult.Refused(ProtectedReason.TV_INPUTS_REMOTE), Actions(sh).run(Action.STOP, "org.droidtv.eum"))
+            assertEquals(ActionResult.Refused(ProtectedReason.TV_INPUTS_REMOTE), Actions(sh).run(Action.DISABLE, "org.droidtv.eum"))
+            assertTrue(sh.ran.none { it.startsWith("pm ") || it.startsWith("am ") })
+        } finally {
+            Protected.extra = emptyMap()
+        }
+    }
+
     @Test fun refusesCurrentLauncherWhateverItsName() = runTest {
         val sh = FakeShell(mapOf("cmd package resolve-activity" to ok("com.example.customhome/.Home\n")))
         assertEquals(ActionResult.Refused(ProtectedReason.HOME_SCREEN), Actions(sh).run(Action.DISABLE, "com.example.customhome"))

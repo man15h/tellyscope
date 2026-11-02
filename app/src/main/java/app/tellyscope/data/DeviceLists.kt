@@ -102,7 +102,7 @@ fun merge(maker: String, lists: List<DeviceList>): DeviceList = DeviceList(
 /** A file the index names outside `devices/`, checked against [sha256] like a device file. */
 data class ListFile(val file: String, val sha256: String)
 
-/** [lists] by name (`launchers`, `labels`, `streaming`) and [logos] by logo name; empty on an index from before they moved here. */
+/** [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index from before they moved here. */
 data class ListIndex(
     val commit: String?,
     val devices: List<ListEntry>,
@@ -318,20 +318,20 @@ class DeviceLists(
         file(entry.file, entry.sha256)?.let { parseList(it.decodeToString(), entry.id) }
 
     /**
-     * The launcher, app name and streaming lists the index names, each from cache or the network.
+     * The launcher, app name, streaming and protected lists the index names, each from cache or the network.
      * One that can't be had is null in [SharedFiles], so the caller keeps what it has.
      */
     suspend fun shared(): SharedFiles {
         val lists = index()?.lists.orEmpty()
         suspend fun get(name: String) = lists[name]?.let { file(it.file, it.sha256) }?.decodeToString()
-        return SharedFiles(get("launchers"), get("labels"), get("streaming"))
+        return SharedFiles(get("launchers"), get("labels"), get("streaming"), get("protected"))
     }
 
     /** The lists as last cached, without the network, for the moment before [shared] answers; each only while it matches the cached index. */
     suspend fun cachedShared(): SharedFiles = withContext(Dispatchers.IO) {
         val lists = File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex)?.lists.orEmpty()
         fun read(name: String) = lists[name]?.let { f -> cached(f.file)?.takeIf { sha256(it) == f.sha256 } }?.decodeToString()
-        SharedFiles(read("launchers"), read("labels"), read("streaming"))
+        SharedFiles(read("launchers"), read("labels"), read("streaming"), read("protected"))
     }
 
     /**
@@ -403,7 +403,7 @@ class DeviceLists(
 }
 
 /** The raw text of each shared list; null for one not available. */
-data class SharedFiles(val launchers: String?, val labels: String?, val streaming: String?)
+data class SharedFiles(val launchers: String?, val labels: String?, val streaming: String?, val protected: String? = null)
 
 enum class SourceResult { Ok, NotHttps, Unreachable, NotAList }
 
