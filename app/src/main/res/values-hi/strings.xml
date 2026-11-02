@@ -216,6 +216,7 @@
     <string name="copy_reading_apps">TV के ऐप पढ़े जा रहे हैं…</string>
     <string name="copy_reading_apps_line">इसमें कुछ सेकंड लगते हैं।</string>
     <string name="copy_tv_offline">TV ऑफ़लाइन है</string>
+    <string name="copy_off_wifi_line">TV वाले Wi-Fi से जुड़ें। जुड़ते ही Tellyscope फिर से कनेक्ट हो जाएगा।</string>
     <string name="copy_running_offline">TV कनेक्ट होने पर चल रहे ऐप यहां दिखेंगे।</string>
     <string name="copy_state_online">कनेक्ट है</string>
     <string name="copy_state_offline">ऑफ़लाइन</string>
@@ -286,6 +287,7 @@
     <string name="copy_sent_renamed">%1$s में %2$s नाम से भेजा गया, क्योंकि %3$s पहले से वहाँ था</string>
     <string name="copy_saved">%1$s आपके फ़ोन में सेव हो गया</string>
     <string name="copy_send_failed">%1$s नहीं भेजा जा सका। देखें कि TV अब भी कनेक्ट है और उसमें जगह है।</string>
+    <string name="copy_send_failed_off_wifi">%1$s नहीं भेजा जा सका। यह फ़ोन Wi-Fi पर नहीं है।</string>
     <string name="copy_save_failed">%1$s सेव नहीं हो सका। देखें कि TV अब भी कनेक्ट है और फ़ोन में जगह है।</string>
     <string name="copy_cancelled_send">रद्द किया गया। TV पर कुछ नहीं छोड़ा गया।</string>
     <string name="copy_cancelled_save">रद्द किया गया। कुछ भी सेव नहीं हुआ।</string>
