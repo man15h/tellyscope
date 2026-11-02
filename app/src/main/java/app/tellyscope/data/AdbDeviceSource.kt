@@ -50,10 +50,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
@@ -61,12 +63,15 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.Sink
 import okio.Source
 import java.io.File
 import java.net.Inet4Address
 import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.seconds
 import app.tellyscope.adb.Action as AdbAction
 import app.tellyscope.adb.ConnectResult as AdbConnectResult
 import app.tellyscope.adb.DeviceState as AdbState
@@ -1112,18 +1117,57 @@ class AdbDeviceSource(context: Context) : DeviceSource {
         apk: ApkInfo,
         allowDowngrade: Boolean,
         onProgress: (Progress) -> Unit,
-    ): InstallResult = busy(deviceId, reread = true) { Sideload(session(deviceId)).install(apks, apk, allowDowngrade, onProgress) }
+    ): InstallResult {
+        val session = liveSession(deviceId)
+        return busy(deviceId, reread = true) { Sideload(session).install(apks, apk, allowDowngrade, onProgress) }
+    }
 
     override suspend fun files(deviceId: String, folder: TvFolder) = Files(session(deviceId)).list(folder)
 
-    override suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit) =
-        busy(deviceId, reread = true) { Files(session(deviceId)).push(source, size, name, folder, onProgress) }
+    override suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit): String {
+        val session = liveSession(deviceId)
+        return busy(deviceId, reread = true) { Files(session).push(source, size, name, folder, onProgress) }
+    }
 
     override suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit) =
         busy(deviceId) { Files(session(deviceId)).pull(folder, file, sink, onProgress) }
 
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw UiTextException(UiText(R.string.data_offline, deviceId))
+
+    /**
+     * The session for a file the user just picked. While the system picker is up the app is in the
+     * background, where Android cuts its network after a few seconds and no stats read notices: back
+     * in the app, the old session is dead (#290, #296). A quick shell call tells; a dead link starts
+     * over and the transfer waits for the new session.
+     */
+    private suspend fun liveSession(deviceId: String): AdbSession {
+        val link = links[deviceId] ?: return session(deviceId)
+        val old = link.session
+        if (old != null && alive(old)) return old
+        // Another caller may have started over already; its new session is the one to wait for.
+        if (old != null && link.session === old) link.connect()
+        // Polled: a reconnect from ONLINE stays ONLINE, so the state never says when the new session is in.
+        return withTimeoutOrNull(RECONNECT_WAIT) {
+            var next = link.session
+            while (next == null || next === old) {
+                delay(250)
+                next = link.session
+            }
+            next
+        } ?: session(deviceId)
+    }
+
+    private suspend fun alive(s: AdbSession) = try {
+        withTimeout(PROBE_WAIT) { s.shell("echo") }
+        true
+    } catch (_: TimeoutCancellationException) {
+        false
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
+    }
 
     private fun device(id: String): Device {
         val link = links[id]
@@ -1320,6 +1364,12 @@ internal suspend fun undoHomeSwitch(actions: Actions, switch: HistoryEntry): Boo
     switch.previous?.get("fromService")?.let { actions.grant(it) }
     return back != false
 }
+
+/** How long a picked file's session gets to answer before it counts as dropped. */
+private val PROBE_WAIT = 3.seconds
+
+/** How long a picked file waits for a dropped link to come back: one retry interval plus a connect. */
+private val RECONNECT_WAIT = 20.seconds
 
 /** The package name a reset's History entries carry: it changes the TV, not one app. */
 internal const val RESET = "reset"
