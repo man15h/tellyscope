@@ -289,6 +289,8 @@ data class UiState(
     val query: String = "",
     /** When this state was made; it doesn't tick. Screens read the time with [clock]. */
     val now: Long = System.currentTimeMillis(),
+    /** This phone is on no Wi-Fi or Ethernet, so an offline TV is out of reach rather than off. */
+    val offWifi: Boolean = false,
     /** TVs asked to restart, by id. */
     val restarting: Map<String, Restart> = emptyMap(),
     /** The user's own debloat-list source; null for tellyscope-devices. */
@@ -527,6 +529,7 @@ class TellyscopeViewModel(
             while (true) {
                 delay(1_000)
                 _now.value = clock()
+                _state.update { it.copy(offWifi = !source.onLan()) }
                 if (++tick % 3 == 0) refreshDevices()
             }
         }
@@ -1424,7 +1427,7 @@ class TellyscopeViewModel(
                 _notice.value = Copy.CANCELLED_SEND
                 throw e
             } catch (_: Exception) {
-                _notice.value = Copy.sendFailed(file.name)
+                _notice.value = if (source.onLan()) Copy.sendFailed(file.name) else Copy.sendFailedOffWifi(file.name)
             } finally {
                 setTransfer(id, null)
             }

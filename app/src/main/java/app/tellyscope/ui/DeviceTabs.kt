@@ -168,6 +168,10 @@ fun DeviceTabsScreen(
     var appsTab by rememberSaveable { mutableStateOf(AppsTab.Running) }
     val q = state.query.trim().lowercase()
     val offline = device.state != DeviceState.Online
+    // Off Wi-Fi the phone is what's cut off, so the empty tabs say so rather than blame the TV.
+    val offWifi = offline && state.offWifi
+    val awayIcon = if (offWifi) DeviceIcons.WifiOff else DeviceIcons.Tv
+    val awayTitle = (if (offWifi) Copy.PHONE_OFF_WIFI else Copy.TV_OFFLINE).resolve()
     val list = rememberLazyListState()
     val closeSearch = { searching = false; actions.query("") }
     BackHandler(enabled = searching, onBack = closeSearch)
@@ -307,7 +311,7 @@ fun DeviceTabsScreen(
                         } else if (device.state == DeviceState.NotAllowed) {
                             item { NotAllowedCard(actions.reconnect) }
                         } else if (offline) {
-                            item { OfflineCard(device, state.clock(), actions.reconnect) }
+                            item { OfflineCard(device, state.clock(), offWifi, actions.reconnect) }
                         }
                         // A switch that left the launcher's service off: Home may go back to the TV's own.
                         ui.apps.firstOrNull { it.homeServiceNote }?.takeIf { !offline }?.let { a ->
@@ -374,7 +378,7 @@ fun DeviceTabsScreen(
                                     // Away, the TV can't say what's running, rather than nothing is.
                                     when {
                                         loading -> AppsLoading()
-                                        appsTab == AppsTab.Running && live == null -> EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), Copy.RUNNING_OFFLINE.resolve())
+                                        appsTab == AppsTab.Running && live == null -> EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else Copy.RUNNING_OFFLINE.resolve())
                                         else -> EmptyLine(q)
                                     }
                                 }
@@ -396,7 +400,7 @@ fun DeviceTabsScreen(
                         }
                         val folder = ui.files.folder
                         when {
-                            offline -> item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), stringResource(R.string.tabs_files_offline)) }
+                            offline -> item { EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else stringResource(R.string.tabs_files_offline)) }
                             ui.files.error == null && ui.files.list?.isEmpty() == true -> item {
                                 EmptyState(
                                     if (folder == TvFolder.MOVIES) TileIcons.Movie else TabIcons.Folder,
@@ -408,7 +412,7 @@ fun DeviceTabsScreen(
                         }
                     }
                     TvTab.Tweaks -> {
-                        if (offline) item { EmptyState(DeviceIcons.Tv, Copy.TV_OFFLINE.resolve(), stringResource(R.string.tabs_tweaks_offline)) }
+                        if (offline) item { EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else stringResource(R.string.tabs_tweaks_offline)) }
                         else {
                             if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN.resolve()) { HomeScreenBlock(ui, actions, fire) } }
                             item { Panel(Copy.TWEAKS.resolve()) { TweaksBlock(ui, actions) } }

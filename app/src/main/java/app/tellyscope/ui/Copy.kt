@@ -399,6 +399,8 @@ object Copy {
 
     /** Running, with no word from the TV. */
     val TV_OFFLINE = UiText(R.string.copy_tv_offline)
+    val PHONE_OFF_WIFI = UiText(R.string.scan_off_wifi_title)
+    val OFF_WIFI_LINE = UiText(R.string.copy_off_wifi_line)
     val RUNNING_OFFLINE = UiText(R.string.copy_running_offline)
 
     val ANDROID_SYSTEM = AppNames.SYSTEM
@@ -559,6 +561,7 @@ object Copy {
 
     fun saved(name: String) = UiText(R.string.copy_saved, name)
     fun sendFailed(name: String) = UiText(R.string.copy_send_failed, name)
+    fun sendFailedOffWifi(name: String) = UiText(R.string.copy_send_failed_off_wifi, name)
     fun saveFailed(name: String) = UiText(R.string.copy_save_failed, name)
 
     val CANCELLED_SEND = UiText(R.string.copy_cancelled_send)
