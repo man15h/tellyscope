@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Fixed:** On the Remote, a perfectly still tap on empty space now closes the keyboard. [#300](../../pull/300)
+
 ## 0.14.0 — 2026-10-30
 
 - **New:** Hindi, Chinese, Japanese, Russian and Spanish support, machine-made; corrections welcome. [#272](../../pull/272)
