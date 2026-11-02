@@ -14,11 +14,13 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.TvShell
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import okio.Sink
 import okio.Source
 import java.io.File
+import java.io.IOException
 
 /**
  * Everything the screens need from a TV. The UI only talks to this; an
@@ -181,6 +183,9 @@ interface DeviceSource {
 
     /** Restarts the TV. The link drops and reconnects on its own once the TV is back. False if the TV refused. */
     suspend fun reboot(deviceId: String): Boolean
+
+    /** A shell session on the TV, for Advanced's Shell; each command reaches the TV over whatever link is up then. */
+    fun shell(deviceId: String): TvShell = TvShell({ throw IOException("no shell") }) { throw IOException("no shell") }
 
     /** Opens [packageName] on the TV, the way its launcher icon would. False when it has nothing to open. Not history. */
     suspend fun launch(deviceId: String, packageName: String): Boolean

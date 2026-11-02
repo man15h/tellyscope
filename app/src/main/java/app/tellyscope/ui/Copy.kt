@@ -362,6 +362,9 @@ object Copy {
     /** "May 2023", in the phone's language. */
     fun month(m: YearMonth): String = m.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
 
+    /** "Sep 2025", for a half-width cell. */
+    fun shortMonth(m: YearMonth): String = m.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+
     /** Network speed in the same units as [bytes], so a download's size and speed line up. */
     fun speed(bytesPerSec: Long) = UiText(R.string.copy_speed, bytes(bytesPerSec))
 

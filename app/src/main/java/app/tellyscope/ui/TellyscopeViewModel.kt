@@ -702,6 +702,19 @@ class TellyscopeViewModel(
     /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
     fun showStats(profile: StatsProfile) = source.showStats(_state.value.selectedId, profile)
 
+    private val terminals = mutableMapOf<String, ShellTerminal>()
+
+    /** The selected TV's Shell. Its lines and recent commands stay while the app runs, so closing Shell and opening it again picks up where it was. */
+    fun terminal(): ShellTerminal? {
+        val id = _state.value.selectedId ?: return null
+        return terminals.getOrPut(id) { ShellTerminal(source.shell(id), viewModelScope) }
+    }
+
+    override fun onCleared() {
+        terminals.values.forEach(ShellTerminal::close)
+        super.onCleared()
+    }
+
     fun select(id: String?) {
         stopWatching()
         launcherJob?.cancel()
