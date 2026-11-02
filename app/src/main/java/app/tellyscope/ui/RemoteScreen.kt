@@ -96,6 +96,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -275,8 +276,14 @@ fun RemoteScreen(
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                         if (field.contains(origin + down.position)) return@awaitEachGesture
-                        // Null when something else took the lift (a key, a button, a drag of the sheet): leave the keyboard be.
-                        if (waitForUpOrCancellation(PointerEventPass.Final) != null) focus.clearFocus()
+                        // Read the lift ourselves: waitForUpOrCancellation(Final) awaits one more Final event as its
+                        // consume check, so on a still tap it swallows the up and never returns.
+                        // Consumed means something else took it (a key, a button, a drag of the sheet): leave the keyboard be.
+                        while (true) {
+                            val change = awaitPointerEvent(PointerEventPass.Final).changes.firstOrNull { it.id == down.id } ?: continue
+                            if (change.isConsumed) break
+                            if (change.changedToUp()) { focus.clearFocus(); break }
+                        }
                     }
                 },
         ) {
