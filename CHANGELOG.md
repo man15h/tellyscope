@@ -13,6 +13,7 @@ until this file has a section for its version.
 ## Unreleased
 
 - **Fixed:** On the Remote, a perfectly still tap on empty space now closes the keyboard. [#300](../../pull/300)
+- **Fixed:** Sending or installing a file picked from phone storage no longer drops the TV. [#301](../../pull/301)
 
 ## 0.14.0 — 2026-10-30
 
