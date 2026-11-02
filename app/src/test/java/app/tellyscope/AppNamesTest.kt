@@ -68,6 +68,10 @@ class AppNamesTest {
         assertEquals("Amazon Firehomestarter", AppNames.named("com.amazon.firehomestarter", "com.amazon.firehomestarter.FireHomeStarterApplication"))
         assertEquals("Example Weatherbox", AppNames.named("com.example.weatherbox", "com.example.weatherbox"))
         assertEquals("Fire TV Home", AppNames.named("com.amazon.tv.launcher", "Fire TV Home"))
+        // A class from another package (#260).
+        val config = "com.android.networkstack.permissionconfig"
+        assertEquals(AppNames.fallback(config), AppNames.named(config, "com.android.server.NetworkPermissionConfig"))
+        assertEquals("Dr.Fone", AppNames.named("com.wondershare.drfone", "Dr.Fone"))
     }
 
     @Test fun fallbackWhenTheHelperFails() = runBlocking {
