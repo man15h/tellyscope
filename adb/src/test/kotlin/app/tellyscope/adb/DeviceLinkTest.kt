@@ -2,11 +2,14 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -151,6 +154,27 @@ class DeviceLinkTest {
         assertEquals(null, link.session)
         advanceTimeBy(5_001)
         assertTrue(link.session != null && link.session != first)
+    }
+
+    @Test fun theOldLoopStoppingLateLeavesTheNewSessionAlone() = runTest {
+        // The cancelled loop's cleanup can run after the new one is online, as on a real thread pool (#290).
+        val second = FakeShell()
+        var opens = 0
+        val link = DeviceLink("tv", 5555, backgroundScope,
+            monitorFor = { _, _ -> if (opens == 1) slowToStop() else fakeMonitor(failFirst = false) },
+            open = { _, _ -> ConnectResult.Online(if (opens++ == 0) FakeShell() else second) })
+        link.connect(); runCurrent()
+        link.connect(); runCurrent()
+        assertEquals(second, link.session)
+        advanceTimeBy(1_001)
+        assertEquals(second, link.session)
+    }
+
+    private fun slowToStop() = MonitorSource {
+        flow {
+            emit(reading)
+            try { awaitCancellation() } finally { withContext(NonCancellable) { delay(1_000) } }
+        }
     }
 
     private fun fakeMonitor(failFirst: Boolean) = object : MonitorSource {
