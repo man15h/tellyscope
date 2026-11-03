@@ -483,15 +483,35 @@
         <item quantity="other">%2$d में से %1$d ऐप बंद किए</item>
     </plurals>
     <string name="copy_still_on">%1$s अब भी चालू है</string>
-    <plurals name="copy_still_off">
-        <item quantity="one">%1$d ऐप अब भी बंद है</item>
-        <item quantity="other">%1$d ऐप अब भी बंद हैं</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d बदलाव वापस करना है</item>
+        <item quantity="other">%1$d बदलाव वापस करने हैं</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="one">Tellyscope का बंद किया %1$d ऐप अब भी बंद है</item>
-        <item quantity="other">Tellyscope के बंद किए %1$d ऐप अब भी बंद हैं</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">Tellyscope का किया %1$d बदलाव अब भी लागू है</item>
+        <item quantity="other">Tellyscope के किए %1$d बदलाव अब भी लागू हैं</item>
     </plurals>
-    <string name="copy_still_off_text">सब कुछ रीस्टोर करें इन्हें फिर से चालू कर देता है। जो ऐप Tellyscope के पहले बदलाव से पहले ही बंद थे, वे बंद रहेंगे।</string>
+    <string name="copy_put_back_text">सब कुछ पहले जैसा करें इस TV को वैसा कर देता है जैसा यह Tellyscope के पहले बदलाव से पहले था:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">%1$d ऐप फिर से चालू करता है</item>
+        <item quantity="other">%1$d ऐप फिर से चालू करता है</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">%1$d ऐप फिर से बंद करता है</item>
+        <item quantity="other">%1$d ऐप फिर से बंद करता है</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">TV रीसेट से वापस आया %1$d ऐप हटाता है</item>
+        <item quantity="other">TV रीसेट से वापस आए %1$d ऐप हटाता है</item>
+    </plurals>
+    <string name="copy_restore_home">Home पहले जैसा करता है</string>
+    <string name="copy_restore_dns">निजी DNS पहले जैसा करता है</string>
+    <string name="copy_restore_animations">ऐनिमेशन स्पीड पहले जैसी करता है</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d ऐप अनइंस्टॉल हो चुका है और वापस नहीं आ सकता</item>
+        <item quantity="other">%1$d ऐप अनइंस्टॉल हो चुके हैं और वापस नहीं आ सकते</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="one">अभी %1$d और कनेक्ट है</item>
         <item quantity="other">अभी %1$d और कनेक्ट हैं</item>
@@ -584,10 +604,14 @@
     <string name="vm_not_an_ip">यह IP पता नहीं लगता। इसमें बिंदुओं से अलग चार संख्याएं होनी चाहिए, जैसा आपके TV की नेटवर्क सेटिंग्स में दिखता है।</string>
     <string name="vm_bad_port">कोलन के बाद का पोर्ट 1 से 65535 के बीच की कोई संख्या होनी चाहिए, जैसे 5555.</string>
     <string name="vm_didnt_work">यह काम नहीं किया।</string>
-    <string name="vm_nothing_to_turn_on">फिर से चालू करने के लिए कुछ नहीं है।</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="one">%1$d ऐप फिर से चालू किया।</item>
-        <item quantity="other">%1$d ऐप फिर से चालू किए।</item>
+    <string name="vm_nothing_to_put_back">पहले जैसा करने के लिए कुछ नहीं है।</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">%1$d बदलाव वापस किया।</item>
+        <item quantity="other">%1$d बदलाव वापस किए।</item>
+    </plurals>
+    <plurals name="vm_put_back_partly">
+        <item quantity="one">%2$d में से %1$d बदलाव वापस किए। %4$s वापस नहीं हुआ: %5$s</item>
+        <item quantity="other">%2$d में से %1$d बदलाव वापस किए। %3$d वापस नहीं हुए, इनमें %4$s: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">TV ने मना कर दिया</string>
     <string name="vm_tv_didnt_answer">TV ने जवाब नहीं दिया।</string>
@@ -625,11 +649,9 @@
     <string name="data_no_home_to_switch_back">वापस जाने के लिए कोई होम स्क्रीन नहीं है</string>
     <string name="data_uninstall_after_service">%1$s. कुछ भी अनइंस्टॉल नहीं हुआ</string>
     <string name="data_uninstall_home_not_back">Home वापस नहीं बदला: %1$s. कुछ भी अनइंस्टॉल नहीं हुआ</string>
-    <string name="data_restore_none">ऐप फिर से चालू नहीं हो सके: %1$s</string>
-    <plurals name="data_restore_some">
-        <item quantity="one">%1$d ऐप फिर से चालू किया, फिर रुक गया: %2$s</item>
-        <item quantity="other">%1$d ऐप फिर से चालू किए, फिर रुक गया: %2$s</item>
-    </plurals>
+    <string name="data_restore_home">Home</string>
+    <string name="data_restore_dns">निजी DNS</string>
+    <string name="data_restore_animations">ऐनिमेशन स्पीड</string>
     <string name="data_no_reset_to_undo">पहले जैसा करने के लिए कोई रीसेट नहीं है</string>
     <string name="data_reset_already_undone">वह रीसेट पहले ही वापस लिया जा चुका है</string>
     <string name="data_reset_tv_kept_home">TV ने %1$s को होम स्क्रीन बनाए रखा</string>
@@ -648,6 +670,7 @@
     <string name="data_lists_not_a_list">यह सोर्स Tellyscope सूची नहीं है</string>
     <string name="data_app_names_system">Android सिस्टम</string>
     <string name="data_history_service_off">%1$s की सुलभता सेवा बंद की</string>
+    <string name="data_history_service_on">%1$s की सुलभता सेवा चालू की</string>
     <string name="data_history_reset_undone">TV रीसेट से हुए बदलाव वापस किए</string>
     <plurals name="data_history_reset">
         <item quantity="one">TV रीसेट · %1$d बदलाव</item>
@@ -898,11 +921,11 @@
     <string name="device_disable_title">%1$s बंद करें?</string>
     <string name="device_cancel">रद्द करें</string>
     <plurals name="device_restore_title">
-        <item quantity="one">%1$d ऐप फिर से चालू करें?</item>
-        <item quantity="other">%1$d ऐप फिर से चालू करें?</item>
+        <item quantity="one">%1$d बदलाव वापस करें?</item>
+        <item quantity="other">%1$d बदलाव वापस करें?</item>
     </plurals>
-    <string name="device_restore_text">Tellyscope ने इस TV पर जो भी ऐप बंद किए थे, वे सब फिर से चालू हो जाएंगे। जो ऐप Tellyscope के पहले बदलाव से पहले ही बंद थे, वे बंद ही रहेंगे।</string>
-    <string name="device_restore_button">फिर से चालू करें</string>
+    <string name="device_restore_text">यह TV वैसा हो जाएगा जैसा Tellyscope के पहले बदलाव से पहले था:</string>
+    <string name="device_restore_button">वापस करें</string>
     <string name="device_rename_title">इस TV का नाम बदलें</string>
     <string name="device_rename_text">यह नाम सिर्फ़ इस फ़ोन पर दिखेगा। TV पर कुछ नहीं बदलेगा।</string>
     <string name="device_save">सेव करें</string>
@@ -1145,7 +1168,7 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">अभी तक कुछ नहीं बदला</string>
     <string name="history_empty_text">आप जो भी ऐप रोकेंगे, बंद करेंगे या चालू करेंगे, वह यहां दिखेगा, और उसे पहले जैसा करने का विकल्प भी।</string>
-    <string name="history_restoring">ऐप फिर से चालू हो रहे हैं…</string>
+    <string name="history_restoring">पहले जैसा कर रहे हैं…</string>
     <string name="history_restore_all">सब कुछ पहले जैसा करें (%1$d)</string>
     <string name="history_undone">पहले जैसा कर दिया</string>
     <string name="debloat_title">डीब्लोट</string>

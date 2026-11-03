@@ -611,9 +611,7 @@ class AdbDeviceSource(
     private suspend fun actNow(deviceId: String, action: Action, packageName: String, undoing: Long?, service: Boolean = true): HistoryEntry {
         fireHomes -= deviceId // undoing a home switch moves Home back
         val shell = session(deviceId)
-        // Before the first change on a TV, note what was already off: Restore must leave those alone.
         val key = key(deviceId)
-        if (!book.hasBaseline(key)) book.setBaseline(key, disabledPackages(deviceId))
         // The list's keep entries only warn, in the confirm; Actions.run holds the hard locks.
         if (action == Action.Home) {
             // Undoing a switch back turns the service on again only if that switch turned it off.
@@ -754,7 +752,7 @@ class AdbDeviceSource(
 
     override suspend fun history(deviceId: String): List<HistoryEntry> = book.entries(key(deviceId))
 
-    override suspend fun restorable(deviceId: String): List<String> = book.restorable(key(deviceId))
+    override suspend fun restorable(deviceId: String): Restorable = book.restorable(key(deviceId))
 
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
         // Only a launcher the list names: the Store link is the one thing this opens.
@@ -775,16 +773,55 @@ class AdbDeviceSource(
 
     override suspend fun hideLauncherCard(deviceId: String) = launcherCards.set(key(deviceId), true)
 
-    override suspend fun restoreAll(deviceId: String): List<HistoryEntry> {
-        // Only what is still off now: the user may have turned some back on from the TV itself.
-        val off = disabledPackages(deviceId)
+    /**
+     * Puts back, as it was before Tellyscope's first change to it, everything History says it
+     * changed and the TV doesn't already show that way: apps on first, as turning on a launcher a
+     * switch turned off makes it Home again; then Home and its services; then apps off; then apps
+     * Reset TV brought back; then settings. A step the TV refuses doesn't stop the rest.
+     */
+    override suspend fun restoreAll(deviceId: String): RestoreResult = batch(deviceId) {
         val key = key(deviceId)
-        // One change for them all: the stats are read again once, after the last app.
-        return batch(deviceId) {
-            restoreEach(restorable(deviceId).filter { it in off }) { pkg ->
-                act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg))
+        val target = book.restorable(key)
+        val shell = session(deviceId)
+        val actions = Actions(shell)
+        // `pm list packages` lists off apps too; an app it doesn't list isn't installed for the user.
+        val listed = Parsers.packages(shell.shell("pm list packages").output).map { it.name }.toSet()
+        val off = disabledPackages(deviceId)
+        val plan = target.plan { if (it !in listed) Was.Gone else if (it in off) Was.Off else Was.On }
+        val run = RestoreRun()
+        fun app(pkg: String) = labelOf(pkg).asUiText()
+        for (pkg in plan.turnOn) run.step(app(pkg)) { act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg)) }
+        // Home and its services, one step: turning a launcher on may have put them back already.
+        val home = target.home?.takeIf { it.substringBefore('/') in listed }
+        val homeNow = home?.let { actions.currentHome() }
+        val moveTo = home?.takeIf { homeNow?.substringBefore('/') != it.substringBefore('/') }
+        val services = target.services.filter { (service, wasOn) -> service.substringBefore('/') in listed && actions.serviceOn(service) != wasOn }
+        if (moveTo != null || services.isNotEmpty()) run.step(UiText(R.string.data_restore_home)) {
+            moveTo?.let { to ->
+                if (!actions.setHome(to)) throw UiTextException(UiText(R.string.data_tv_refused))
+                // Its Undo makes the launcher it left Home again, as a switch back's does.
+                val left = homeNow?.substringBefore('/')
+                book.record(key, System.currentTimeMillis(), Action.HomeBack, left ?: to.substringBefore('/'), labelOf(to.substringBefore('/')),
+                    undo = left?.let { Action.Home }, previous = listOfNotNull(homeNow?.let { "from" to it }, "to" to to).toMap())
+            }
+            for ((service, wasOn) in services) {
+                val pkg = service.substringBefore('/')
+                if (!(if (wasOn) actions.grant(service) else actions.setService(service, false))) throw UiTextException(UiText(R.string.data_tv_refused))
+                val label = UiText(if (wasOn) R.string.data_history_service_on else R.string.data_history_service_off, labelOf(pkg)).text()
+                book.record(key, System.currentTimeMillis(), Action.Change, pkg, label, undo = null)
             }
         }
+        for (pkg in plan.turnOff) run.step(app(pkg)) { act(deviceId, Action.Disable, pkg, undoing = book.openEnable(key, pkg)) }
+        for (pkg in plan.remove) run.step(app(pkg)) {
+            TvReset(shell).remove(pkg)
+            book.record(key, System.currentTimeMillis(), Action.Uninstall, pkg, labelOf(pkg), undo = null)
+        }
+        val tweaks = Tweaks(shell)
+        for ((tweak, before) in target.settings) {
+            if (tweaks.read(tweak).filterKeys { it in before } == before) continue
+            run.step(TvSettings.name(tweak)) { changeNow(deviceId, tweak, before, null) }
+        }
+        run.result()
     }
 
     override suspend fun resetPlan(deviceId: String): ResetPlan = busy(deviceId) {
@@ -815,8 +852,6 @@ class AdbDeviceSource(
     override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
         fireHomes -= deviceId
         val key = key(deviceId)
-        // Like any first change: what was off before stays out of Restore everything.
-        if (!book.hasBaseline(key)) book.setBaseline(key, disabledPackages(deviceId))
         val shell = session(deviceId)
         val tv = TvReset(shell)
         val failed = mutableListOf<ResetFailure>()

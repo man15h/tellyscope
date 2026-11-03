@@ -64,6 +64,10 @@ import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.AppBefore
+import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreSummary
+import app.tellyscope.data.Was
 import app.tellyscope.data.TvSettings
 import app.tellyscope.data.TvAccess
 import app.tellyscope.data.TvTweaks
@@ -316,7 +320,7 @@ class ScreenshotTest {
     // History's disables as the TV shows them: those apps off, and Restore's list naming them.
     private fun DeviceUi.leftOff(vararg pkgs: String) = copy(
         apps = apps.map { if (it.packageName in pkgs) it.copy(enabled = false) else it },
-        restorable = pkgs.toList(),
+        restorable = Restorable(apps = pkgs.associateWith { AppBefore(Was.On, Was.Off) }),
     )
 
     // The 0.5.0 Overview: three TVs, one offline with saved facts.
@@ -1230,7 +1234,7 @@ class ScreenshotTest {
         }
     }
 
-    @Test fun restore() = shot("11_restore", screen = true) { RestoreDialog(2, {}, {}) }
+    @Test fun restore() = shot("11_restore", screen = true) { RestoreDialog(RestoreSummary(turnOn = 2, home = true), {}, {}) }
 
     private val docked = listOf(Docked("com.google.android.youtube.tv", "YouTube"), Docked("com.netflix.ninja", "Netflix"))
 

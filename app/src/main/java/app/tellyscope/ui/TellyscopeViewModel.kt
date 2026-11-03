@@ -49,6 +49,8 @@ import app.tellyscope.data.ResetFailure
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
@@ -66,6 +68,7 @@ import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
+import app.tellyscope.data.summary
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -129,7 +132,7 @@ data class DeviceUi(
     val network: NetworkInfo? = null,
     val history: List<HistoryEntry> = emptyList(),
     /** [DeviceSource.restorable], read with [history]. */
-    val restorable: List<String> = emptyList(),
+    val restorable: Restorable = Restorable(),
     /** Package whose action row is open, and the action awaiting confirmation. */
     val pending: Pair<String, Action>? = null,
     val busy: String? = null,
@@ -161,12 +164,9 @@ data class DeviceUi(
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
 ) {
-    /**
-     * How many apps Restore everything would turn on: [restorable] less any the last read of [apps]
-     * shows on or gone, as Restore skips them. Before the first read, all of [restorable].
-     */
-    val restoreCount: Int
-        get() = if (apps.isEmpty()) restorable.size else restorable.count { p -> apps.any { it.packageName == p && !it.enabled } }
+    /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
+    val restore: RestoreSummary
+        get() = restorable.summary(apps, tweaks)
 }
 
 /**
@@ -1596,22 +1596,28 @@ class TellyscopeViewModel(
         _notice.value = null
     }
 
-    /** Turns back on everything Tellyscope disabled on the selected TV. */
+    /** Puts the selected TV back as it was before Tellyscope's first change. */
     fun restoreAll() {
         val id = _state.value.selectedId ?: return
         _state.update { it.copy(device = it.device.copy(busy = RESTORING)) }
         viewModelScope.launch {
             _notice.value = try {
-                val n = source.restoreAll(id).size
-                if (n == 0) UiText(R.string.vm_nothing_to_turn_on) else UiText.plural(R.plurals.vm_turned_back_on, n)
+                val r = source.restoreAll(id)
+                val first = r.failed.firstOrNull()
+                when {
+                    first != null -> UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, first.what, first.why)
+                    r.done == 0 -> UiText(R.string.vm_nothing_to_put_back)
+                    else -> UiText.plural(R.plurals.vm_put_back, r.done)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 UiText.Capitalized(e.why(R.string.vm_didnt_work))
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
+            val tweaks = runCatching { source.tweaks(id) }.getOrNull()
             val (history, restorable) = historyOf(id)
-            updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history, restorable = restorable) }
+            updateDevice(id) { it.copy(apps = apps ?: it.apps, tweaks = tweaks ?: it.tweaks, busy = null, history = history, restorable = restorable) }
         }
     }
 

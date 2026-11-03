@@ -2,20 +2,17 @@
 
 package app.tellyscope.data
 
-import app.tellyscope.R
 import java.io.File
 import java.net.URLDecoder
 import java.net.URLEncoder
-import kotlinx.coroutines.CancellationException
 
 /**
- * Every change Tellyscope made, per TV, plus the TV's disabled-apps list from before the first
- * one. Kept in a tab-separated file so undo and "Restore everything" survive an app restart;
- * with no file (screenshots, the fake source) it lives in memory only.
+ * Every change Tellyscope made, per TV. Kept in a tab-separated file so undo and "Restore
+ * everything" survive an app restart; with no file (screenshots, the fake source) it lives in
+ * memory only.
  */
 class HistoryBook(private val file: File? = null) {
     private val entries = mutableListOf<HistoryEntry>()
-    private val baselines = mutableMapOf<String, Set<String>>()
 
     init {
         file?.takeIf { it.exists() }?.readLines()?.forEach(::parse)
@@ -24,17 +21,6 @@ class HistoryBook(private val file: File? = null) {
     /** Newest first. */
     @Synchronized
     fun entries(deviceId: String): List<HistoryEntry> = entries.filter { it.deviceId == deviceId }.sortedByDescending { it.id }
-
-    @Synchronized
-    fun hasBaseline(deviceId: String) = deviceId in baselines
-
-    /** What was already disabled before Tellyscope changed anything; written once per TV. */
-    @Synchronized
-    fun setBaseline(deviceId: String, disabled: Set<String>) {
-        if (deviceId in baselines) return
-        baselines[deviceId] = disabled
-        save()
-    }
 
     @Synchronized
     fun record(
@@ -79,15 +65,9 @@ class HistoryBook(private val file: File? = null) {
         save()
     }
 
-    /**
-     * Apps Tellyscope left disabled on this TV: the last disable/enable it ran was a disable, and
-     * the app wasn't already off before Tellyscope's first change. Restore turns on only these.
-     */
+    /** Everything Tellyscope changed on this TV, as it was before its first change to each. */
     @Synchronized
-    fun restorable(deviceId: String): List<String> {
-        val before = baselines[deviceId].orEmpty()
-        return leftDisabled(entries.filter { it.deviceId == deviceId }).filter { it !in before }
-    }
+    fun restorable(deviceId: String): Restorable = Restorable.of(entries.filter { it.deviceId == deviceId })
 
     /** The newest disable of [packageName] that nothing has undone yet: what Restore reverses. */
     @Synchronized
@@ -95,48 +75,30 @@ class HistoryBook(private val file: File? = null) {
         .filter { it.deviceId == deviceId && it.packageName == packageName && it.disables && it.undoneAt == null }
         .maxOfOrNull { it.id }
 
-    /**
-     * Moves history recorded under [from] (a TV's address, before its serial was known) to [to].
-     * A baseline already under [to] wins: it was taken earlier, before any change.
-     */
+    /** The newest Enable of [packageName] that nothing has undone yet: what Restore reverses when it was off before. */
+    @Synchronized
+    fun openEnable(deviceId: String, packageName: String): Long? = entries
+        .filter { it.deviceId == deviceId && it.packageName == packageName && it.action == Action.Enable && it.undo != null && it.undoneAt == null }
+        .maxOfOrNull { it.id }
+
+    /** Moves history recorded under [from] (a TV's address, before its serial was known) to [to]. */
     @Synchronized
     fun rekey(from: String, to: String) {
         if (from == to) return
         var changed = false
         entries.replaceAll { if (it.deviceId == from) it.copy(deviceId = to).also { changed = true } else it }
-        baselines.remove(from)?.let { old -> baselines.putIfAbsent(to, old); changed = true }
         if (changed) save()
-    }
-
-    companion object {
-        /**
-         * Packages whose last disable/enable in [history] was a disable (a home switch disables the
-         * old launcher); an uninstall clears it. Newest disable first: undoing a switch makes Home
-         * the launcher it replaced, so after L→A→B, Restore undoes A→B, then L→A, and ends on L.
-         * A reset nothing has undone counts as turning on each app it turned on.
-         */
-        fun leftDisabled(history: List<HistoryEntry>): List<String> =
-            history.flatMap { e ->
-                if (e.action == Action.Reset && e.undoneAt == null) ResetRecord.list(e.previous, ResetRecord.ON).map { e.copy(action = Action.Enable, packageName = it) }
-                else listOf(e)
-            }.filter { it.disables || it.action == Action.Enable || it.action == Action.Uninstall }
-                .sortedBy { it.id }
-                .associate { it.packageName to it }
-                .filterValues { it.disables }
-                .values.sortedByDescending { it.id }
-                .map { it.packageName }
     }
 
     private fun save() {
         val f = file ?: return
         f.parentFile?.mkdirs()
-        val lines = baselines.map { (id, pkgs) -> listOf(VERSION, "b", id, pkgs.sorted().joinToString(",")) } +
-            entries.map { e ->
-                listOf(
-                    VERSION, "e", e.deviceId, e.id.toString(), e.at.toString(), e.action.name, e.packageName,
-                    clean(e.label), e.undo?.name.orEmpty(), e.undoneAt?.toString().orEmpty(),
-                ) + listOfNotNull(e.previous?.let(::encode))
-            }
+        val lines = entries.map { e ->
+            listOf(
+                VERSION, "e", e.deviceId, e.id.toString(), e.at.toString(), e.action.name, e.packageName,
+                clean(e.label), e.undo?.name.orEmpty(), e.undoneAt?.toString().orEmpty(),
+            ) + listOfNotNull(e.previous?.let(::encode))
+        }
         val tmp = File(f.path + ".tmp")
         tmp.writeText(lines.joinToString("") { it.joinToString("\t") + "\n" })
         if (!tmp.renameTo(f)) {
@@ -150,7 +112,8 @@ class HistoryBook(private val file: File? = null) {
         val f = line.split('\t')
         if (f.size < 4 || f[0] != VERSION) return
         when (f[1]) {
-            "b" -> baselines[f[2]] = f[3].split(',').filter { it.isNotEmpty() }.toSet()
+            // Older files also hold "b" lines, the apps off before the first change. Restore reads
+            // that from each app's first change now, so they're skipped.
             // An 11th field carries a setting's previous values; older entries have 10.
             "e" -> if (f.size == 10 || f.size == 11) {
                 entries += HistoryEntry(
@@ -215,35 +178,12 @@ fun builtInTarget(pkg: String, history: List<HistoryEntry>): HomeBackTarget {
  * Undo, when it turned a service on, is for that service alone. An entry without [previous]
  * predates that record and keeps counting.
  */
-private val HistoryEntry.disables get() =
+internal val HistoryEntry.disables get() =
     action == Action.Disable || (action == Action.Home && undo != null && previous?.get("kept") == null && previous?.let { it["from"] != null } != false)
 
 /** The service a switch with no launcher to replace turned on: its Undo turns that off, and nothing else. */
 val HistoryEntry.firstHomeService: String?
     get() = previous?.takeIf { action == Action.Home && it["from"] == null }?.get("service")
-
-/**
- * Turns apps back on one at a time and stops at the first refusal, saying how far it got so the
- * user knows what already changed. [enable] records each step.
- */
-suspend fun restoreEach(packages: List<String>, enable: suspend (String) -> HistoryEntry): List<HistoryEntry> {
-    val done = mutableListOf<HistoryEntry>()
-    for (pkg in packages) {
-        try {
-            done += enable(pkg)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            // A dropped connection counts too: the user still needs to know what already changed.
-            val why = e.why(R.string.data_tv_refused)
-            throw UiTextException(
-                if (done.isEmpty()) UiText(R.string.data_restore_none, why)
-                else UiText.plural(R.plurals.data_restore_some, done.size, done.size, why),
-            ).apply { initCause(e) }
-        }
-    }
-    return done
-}
 
 /**
  * Which TV a history belongs to, stable across DHCP changes: the serial number, or the Android ID
