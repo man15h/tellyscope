@@ -335,17 +335,6 @@ object Copy {
         }
     }
 
-    fun uptime(s: Long): UiText {
-        val d = s / 86_400
-        val h = (s % 86_400) / 3600
-        val m = (s % 3600) / 60
-        return when {
-            d > 0 -> UiText(R.string.copy_uptime_days_hours, d, h)
-            h > 0 -> UiText(R.string.copy_uptime_hours_minutes, h, m)
-            else -> UiText(R.string.copy_uptime_minutes, m)
-        }
-    }
-
     /** Uptime for people: the largest unit or two, spelled out. */
     fun upFor(s: Long): UiText {
         val d = UiText.plural(R.plurals.copy_days, (s / 86_400).toInt())

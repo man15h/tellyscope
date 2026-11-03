@@ -177,9 +177,6 @@
         <item quantity="many">hace %1$d d</item>
         <item quantity="other">hace %1$d d</item>
     </plurals>
-    <string name="copy_uptime_days_hours">%1$d d %2$d h</string>
-    <string name="copy_uptime_hours_minutes">%1$d h %2$d min</string>
-    <string name="copy_uptime_minutes">%1$d min</string>
     <plurals name="copy_days">
         <item quantity="one">%1$d día</item>
         <item quantity="many">%1$d días</item>

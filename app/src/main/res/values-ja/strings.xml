@@ -169,9 +169,6 @@
     <plurals name="copy_days_ago">
         <item quantity="other">%1$d 日前</item>
     </plurals>
-    <string name="copy_uptime_days_hours">%1$d日 %2$d時間</string>
-    <string name="copy_uptime_hours_minutes">%1$d時間 %2$d分</string>
-    <string name="copy_uptime_minutes">%1$d分</string>
     <plurals name="copy_days">
         <item quantity="other">%1$d 日</item>
     </plurals>
@@ -763,7 +760,7 @@
     <string name="advanced_cpu_share">CPU %1$.0f%%</string>
     <string name="advanced_since_boot_short">起動から %1$s</string>
     <string name="advanced_processes_n">プロセス · %1$d</string>
-    <string name="advanced_connections_n">接続中 · %1$d</string>
+    <string name="advanced_connections_n">開いている接続 · %1$d</string>
     <string name="advanced_established">確立</string>
     <string name="advanced_connecting">接続中</string>
     <string name="advanced_closing">終了中</string>

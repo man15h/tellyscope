@@ -177,10 +177,10 @@ class FakeDeviceSource(
             procs = procs,
             netBytesPerSec = rx + 200_000,
             softwareMonth = YearMonth.of(2023, 5),
-            // Four cores around the average, and the split adding up to it.
+            // Four cores around the average; apps and system add up to it, as on a real TV.
             cores = listOf(6, -2, 4, -8).map { (cpu + it).coerceIn(0, 100) },
             cpuApps = cpu * 2 / 3,
-            cpuSystem = cpu - cpu * 2 / 3 - cpu / 15,
+            cpuSystem = cpu - cpu * 2 / 3,
             cpuWaiting = cpu / 15,
             chip = "Amlogic S905X4",
             clockMhz = 1800,

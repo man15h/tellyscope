@@ -181,9 +181,6 @@
         <item quantity="many">%1$d дн. назад</item>
         <item quantity="other">%1$d дн. назад</item>
     </plurals>
-    <string name="copy_uptime_days_hours">%1$d д %2$d ч</string>
-    <string name="copy_uptime_hours_minutes">%1$d ч %2$d мин</string>
-    <string name="copy_uptime_minutes">%1$d мин</string>
     <plurals name="copy_days">
         <item quantity="one">%1$d день</item>
         <item quantity="few">%1$d дня</item>
@@ -869,7 +866,7 @@
     <string name="advanced_not_running">Не запущено</string>
     <string name="advanced_split_apps">Приложения</string>
     <string name="advanced_split_system">Система</string>
-    <string name="advanced_split_waiting">Ожидание памяти</string>
+    <string name="advanced_split_waiting">Ожидание накопителя</string>
     <string name="advanced_core">Ядро %1$d</string>
     <string name="advanced_ghz">%1$.1f ГГц</string>
     <string name="advanced_in_use">Занято</string>

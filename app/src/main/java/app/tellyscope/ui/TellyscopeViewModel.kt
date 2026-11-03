@@ -112,6 +112,9 @@ data class ScanUi(
     val offWifi get() = noLan && hits.isEmpty()
 }
 
+/** Readings in [DeviceUi.recent] and across Advanced's graphs: a minute at one every 2 s. */
+const val RECENT_READINGS = 30
+
 data class DeviceUi(
     val snapshot: Snapshot? = null,
     /** The last minute of readings, oldest first, for Advanced's graphs. */
@@ -355,9 +358,6 @@ data class Restart(val since: Long, val down: Boolean = false, val waitFrom: Lon
 
 /** The newest messages a report's log keeps. */
 private const val LOG_LINES = 200
-
-/** Readings in [DeviceUi.recent]: a minute at Advanced's one every 2 s. */
-private const val RECENT = 30
 
 /** The gates book's key once the user said Don't show again on the Debloat gate. */
 private const val DEBLOAT_GATE = "debloat"
@@ -773,7 +773,7 @@ class TellyscopeViewModel(
         liveJob = viewModelScope.launch {
             source.live(id).collect { snap ->
                 lastSnapshot[id] = snap
-                _state.update { it.copy(device = it.device.copy(snapshot = snap, recent = (it.device.recent + snap).takeLast(RECENT))) }
+                _state.update { it.copy(device = it.device.copy(snapshot = snap, recent = (it.device.recent + snap).takeLast(RECENT_READINGS))) }
             }
         }
         // One read of the app list per open: Apps and the TV's list both use it. The list
