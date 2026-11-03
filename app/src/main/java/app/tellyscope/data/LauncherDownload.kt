@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.pm.PackageInfoCompat
+import app.tellyscope.BuildConfig
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.Progress
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +101,8 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
      * Throws [RateLimited] only when the page didn't answer either.
      */
     override suspend fun latest(launcher: KnownLauncher): LauncherRelease = withContext(Dispatchers.IO) {
+        // The Play build downloads no code from outside Play; R8 drops the rest.
+        if (BuildConfig.PLAY) throw IOException("not in the Play build")
         val releases = launcher.releases ?: throw IOException("no releases page for ${launcher.pkg}")
         val limited = try {
             return@withContext parseRelease(api(releases), launcher) ?: throw IOException("no release of ${launcher.pkg}")
@@ -150,6 +153,7 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
     }
 
     override suspend fun fetch(launcher: KnownLauncher, release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp = withContext(Dispatchers.IO) {
+        if (BuildConfig.PLAY) throw IOException("not in the Play build")
         dir.deleteRecursively()
         dir.mkdirs()
         val file = File(dir, apkName(launcher))

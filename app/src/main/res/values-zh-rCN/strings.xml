@@ -108,6 +108,7 @@
     <string name="copy_not_installed_text">安装完成前，电视上的 Play 商店已关闭。如果商店提示此电视无法使用该应用，请选择其他启动器。</string>
     <string name="copy_install_launcher">安装 %1$s</string>
     <string name="copy_fire_install_text">没有广告的主屏幕。Tellyscope 会为你在电视上安装，无需在电视上进行任何操作。</string>
+    <string name="copy_fire_pick_text">没有广告的主屏幕。先在浏览器中下载，然后在这里选择该文件。Tellyscope 会将其安装到电视上。</string>
     <string name="copy_downloads_from">Tellyscope 从开发者自己的发布页面下载 %1$s：</string>
     <string name="copy_release">版本 %1$s · %2$s</string>
     <string name="copy_where_from">来源</string>

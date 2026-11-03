@@ -118,8 +118,10 @@ Modules: `:app` (the phone app, Kotlin and Jetpack Compose), `:adb` (pure Kotlin
 
 ```sh
 ./gradlew build          # assemble, unit tests and lint
-./gradlew :app:installDebug
+./gradlew :app:installGithubDebug
 ```
+
+There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The Play build has no update check (Play updates it) and downloads nothing from GitHub: on Fire OS you download Projectivy in your browser and pick the file. The code checks `BuildConfig.PLAY`.
 
 ## Contributing
 

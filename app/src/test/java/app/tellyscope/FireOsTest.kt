@@ -239,10 +239,10 @@ class FireOsTest {
         assertFalse(projectivy.copy(signers = emptySet()).accepts(PROJECTIVY, setOf(SIGNER)))
     }
 
-    /** [list]: the launcher list's address, as one that failed its check. */
-    private fun TestScope.opened(list: String? = null): TellyscopeViewModel {
+    /** [list]: the launcher list's address, as one that failed its check. [play]: the Play build. */
+    private fun TestScope.opened(list: String? = null, play: Boolean = false): TellyscopeViewModel {
         unverified = list
-        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download, unverified = { unverified })
+        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download, unverified = { unverified }, play = play)
         vm = v
         runCurrent()
         v.openLauncherFlow()
@@ -418,6 +418,35 @@ class FireOsTest {
         val fire = v.state.value.device.launcher?.fire
         assertEquals(UNVERIFIED, fire?.list)
         assertEquals(true, fire?.gated)
+    }
+
+    @Test fun thePlayBuildPicksAFileFromTheStartAndDownloadsNothing() = with(test) {
+        val v = opened(play = true)
+        assertNull(v.state.value.device.launcher?.fire?.step)
+        v.pickedLauncherApk(Uri.parse("content://downloads/1"))
+        runCurrent()
+        assertEquals(0, download.fetched)
+        assertEquals(listOf(PROJECTIVY), source.installs.map { it.packageName })
+        assertEquals(LauncherFlow.Step.Installed, v.state.value.device.launcher?.step)
+    }
+
+    @Test fun thePlayBuildOffersNoDownloadDirectly() = with(test) {
+        source = FireTv(androidTv, listOf(store, tvHome))
+        assertFalse(opened(play = true).directDownload)
+    }
+
+    @Test fun inThePlayBuildFromAnUnverifiedListThePickWaitsForTheTick() = with(test) {
+        val v = opened(list = UNVERIFIED, play = true)
+        assertEquals(true, v.state.value.device.launcher?.fire?.gated)
+        v.pickedLauncherApk(Uri.parse("content://downloads/1"))
+        runCurrent()
+        assertTrue(source.installs.isEmpty())
+
+        v.trustLauncherList(true)
+        v.pickedLauncherApk(Uri.parse("content://downloads/1"))
+        runCurrent()
+        assertEquals(0, download.fetched)
+        assertEquals(listOf(PROJECTIVY), source.installs.map { it.packageName })
     }
 
     @Test fun failingTheCheckUnderConfirmChecksAgainFirst() = with(test) {

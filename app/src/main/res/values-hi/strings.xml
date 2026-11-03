@@ -108,6 +108,7 @@
     <string name="copy_not_installed_text">इंस्टॉल होने से पहले ही TV पर Play Store बंद हो गया। अगर Store ने बताया कि यह इस TV के लिए उपलब्ध नहीं है, तो कोई दूसरा लॉन्चर चुनें।</string>
     <string name="copy_install_launcher">%1$s इंस्टॉल करें</string>
     <string name="copy_fire_install_text">बिना विज्ञापन वाली होम स्क्रीन। Tellyscope इसे आपके लिए TV पर इंस्टॉल कर देता है; TV पर आपको कुछ नहीं करना है।</string>
+    <string name="copy_fire_pick_text">बिना विज्ञापन वाली होम स्क्रीन। इसे अपने ब्राउज़र में डाउनलोड करें, फिर यहाँ फ़ाइल चुनें। Tellyscope इसे TV पर इंस्टॉल कर देता है।</string>
     <string name="copy_downloads_from">Tellyscope %1$s को डेवलपर के अपने रिलीज़ पेज से डाउनलोड करता है:</string>
     <string name="copy_release">रिलीज़ %1$s · %2$s</string>
     <string name="copy_where_from">यह कहां से आता है</string>

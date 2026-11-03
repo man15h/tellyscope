@@ -247,6 +247,7 @@ object Copy {
     /** Install a launcher on Fire OS: Tellyscope downloads it from its developer's GitHub and installs it over adb. */
     fun installLauncher(name: String) = UiText(R.string.copy_install_launcher, name)
     val FIRE_INSTALL_TEXT = UiText(R.string.copy_fire_install_text)
+    val FIRE_PICK_TEXT = UiText(R.string.copy_fire_pick_text)
 
     fun downloadsFrom(name: String) = UiText(R.string.copy_downloads_from, name)
 

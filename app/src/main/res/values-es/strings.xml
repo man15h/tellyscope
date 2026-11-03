@@ -108,6 +108,7 @@
     <string name="copy_not_installed_text">Play Store se cerró en la TV antes de terminar la instalación. Si la tienda dijo que no está disponible para esta TV, elige otro launcher.</string>
     <string name="copy_install_launcher">Instalar %1$s</string>
     <string name="copy_fire_install_text">Una pantalla de inicio sin anuncios. Tellyscope la instala en la TV por ti; no tienes que hacer nada en la TV.</string>
+    <string name="copy_fire_pick_text">Una pantalla de inicio sin anuncios. Descárgala en tu navegador y luego elige el archivo aquí. Tellyscope la instala en la TV.</string>
     <string name="copy_downloads_from">Tellyscope descarga %1$s de la página de versiones del propio desarrollador:</string>
     <string name="copy_release">Versión %1$s · %2$s</string>
     <string name="copy_where_from">De dónde viene</string>

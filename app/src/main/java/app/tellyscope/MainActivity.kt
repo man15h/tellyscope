@@ -126,13 +126,15 @@ class MainActivity : ComponentActivity() {
                                     TellyscopeViewModel(
                                         scenario?.let(::FakeDeviceSource) ?: AdbDeviceSource(applicationContext),
                                         AndroidPhoneStorage(applicationContext),
-                                        updates = if (scenario != null) null else updateCheck(),
+                                        // Play updates the Play build itself, so it has no update check of its own.
+                                        updates = if (scenario != null || BuildConfig.PLAY) null else updateCheck(),
                                         folds = FoldBook(File(filesDir, "folds.properties")),
                                         keyHaptics = KeyHaptics(File(filesDir, "remote.properties")),
                                         gates = FoldBook(File(filesDir, "gates.properties")),
                                         historySeen = SeenBook(File(filesDir, "history-seen.properties")),
                                         appFacts = AppFacts(installedVersion(), "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"),
                                         launcherDownload = if (scenario != null) null else AndroidLauncherDownload(applicationContext),
+                                        play = BuildConfig.PLAY,
                                     )
                                 }
                             },
@@ -222,7 +224,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), vm::saveTo)
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
 
-    state.update?.let { u ->
+    // Never in the Play build: the constant lets R8 drop the dialog from it.
+    if (!BuildConfig.PLAY) state.update?.let { u ->
         UpdateDialog(
             u,
             onDownload = { vm.updateLater(); u.apk?.let { runCatching { browser.openUri(it) } } },
@@ -368,6 +371,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             ),
             snackbar = snackbar,
             direct = vm.directDownload,
+            play = BuildConfig.PLAY,
         )
     } else if (debloat && state.device.debloat != null) {
         // Leaving mid-run only closes the screen; the run goes on, and History has each app.

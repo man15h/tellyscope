@@ -177,6 +177,7 @@ fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, f
  * A TV that didn't open the Store says so; a Store closed without installing goes back to the picker.
  * On Fire OS ([LauncherFlow.fireOs]) the picker is the list's Fire OS launcher alone, which Tellyscope downloads and installs.
  * [direct]: a launcher that is [downloadable] also offers Download directly, under the Store and after a warning.
+ * [play]: the Play build, where Fire OS's launcher is a file the user downloads in the browser and picks.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -187,6 +188,7 @@ fun LauncherScreen(
     actions: LauncherActions,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     direct: Boolean = false,
+    play: Boolean = false,
 ) {
     var chosen by rememberSaveable(flow.step, flow.pkg) { mutableStateOf(flow.pkg) }
     var askService by rememberSaveable(flow.step) { mutableStateOf(false) }
@@ -246,7 +248,7 @@ fun LauncherScreen(
             ) {
                 when (flow.step) {
                     LauncherFlow.Step.Pick -> if (fire != null) {
-                        FireButtons(fire, flow.pkg, actions, Modifier.weight(1f))
+                        FireButtons(fire, flow.pkg, actions, play, Modifier.weight(1f))
                     } else {
                         val have = installedLauncher(apps, chosen)
                         when {
@@ -301,7 +303,7 @@ fun LauncherScreen(
             }
             val c = MaterialTheme.colorScheme
             when (flow.step) {
-                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, actions) else Picker(chosen, apps, direct) { chosen = it }
+                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, play, actions) else Picker(chosen, apps, direct) { chosen = it }
                 LauncherFlow.Step.Waiting -> {
                     Hero(LauncherIcons.Download, c.secondaryContainer, c.onSecondaryContainer)
                     Headed(Copy.INSTALL_IT.resolve(), bold(Copy.installItText(label).resolve(), label, stringResource(R.string.launcher_install_word)))
@@ -392,11 +394,11 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
     }
 }
 
-/** Fire OS's picker: [l] alone, about it as the picker says it, and nothing to do on the TV. */
+/** Fire OS's picker: [l] alone, about it as the picker says it, and nothing to do on the TV ([play]: pick the file here). */
 @Composable
-private fun FirePick(l: Recommended?) {
+private fun FirePick(l: Recommended?, play: Boolean = false) {
     val c = MaterialTheme.colorScheme
-    Text(Copy.FIRE_INSTALL_TEXT.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
+    Text((if (play) Copy.FIRE_PICK_TEXT else Copy.FIRE_INSTALL_TEXT).resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
     l ?: return
     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
@@ -416,12 +418,12 @@ private fun FirePick(l: Recommended?) {
  * source row opening that release page on the phone), the download, the check and the install, then what
  * went wrong. Couldn't download offers the release page and Pick the downloaded file, checked the same way.
  * After Download directly ([FireInstall.store]) the confirm is a warning, and it and a wrong signature offer
- * the Play Store instead.
+ * the Play Store instead. In the Play build ([play]) nothing downloads: the start is the picker with those two steps.
  * While the launcher list fails its check ([FireInstall.list]) each step that can install it opens on [UnverifiedCard].
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: LauncherActions) {
+private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean, actions: LauncherActions) {
     val c = MaterialTheme.colorScheme
     val uri = LocalUriHandler.current
     val l = RECOMMENDED.firstOrNull { it.pkg == pkg }
@@ -440,6 +442,9 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: Launc
             release?.let { SourceRow(source, it, openPage) }
             Text(Copy.DIRECT_CHECK.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             Text(Copy.STORE_SAFER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+        } else if (play) {
+            FirePick(l, play = true)
+            Yourself(f, label, source, openPage, actions)
         } else {
             FirePick(l)
             if (release != null) {
@@ -481,8 +486,8 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: Launc
 }
 
 /**
- * Download it in the browser, then pick it: after Couldn't download. While the list fails its check, picking waits
- * for the tick ([TrustRow]).
+ * Download it in the browser, then pick it: after Couldn't download, and the Play build's only way. While the list
+ * fails its check, picking waits for the tick ([TrustRow]).
  */
 @Composable
 private fun Yourself(f: FireInstall, label: String, source: String?, openPage: () -> Unit, actions: LauncherActions) {
@@ -504,16 +509,16 @@ private fun Yourself(f: FireInstall, label: String, source: String?, openPage: (
 
 /**
  * The bottom of each Fire OS step, for [pkg]: full width, so the confirm reads the same as Download directly's.
- * While the list fails its check, the download waits for the tick ([TrustRow]).
+ * While the list fails its check, the download waits for the tick ([TrustRow]). [play]: nothing to download.
  */
 @Composable
-private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, modifier: Modifier) {
+private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, play: Boolean, modifier: Modifier) {
     val store = { actions.install(pkg) }
     val check = { actions.fireCheck(pkg) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
-            null, FireInstall.Step.Checking -> IconButtonText(LauncherIcons.Download, Copy.installLauncher(launcherName(pkg)).resolve(), wide, enabled = f.step == null, onClick = check)
+            null, FireInstall.Step.Checking -> if (!play) IconButtonText(LauncherIcons.Download, Copy.installLauncher(launcherName(pkg)).resolve(), wide, enabled = f.step == null, onClick = check)
             // The safe way first and filled; the download only as the outlined second.
             FireInstall.Step.Confirm -> if (f.store) {
                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
@@ -525,6 +530,9 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, m
             }
             FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> Unit
             FireInstall.Step.WrongApk -> when {
+                f.picked && play -> Row(wide, horizontalArrangement = Arrangement.End) {
+                    Button(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
+                }
                 f.picked -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                     TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
                     Button(onClick = check) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }

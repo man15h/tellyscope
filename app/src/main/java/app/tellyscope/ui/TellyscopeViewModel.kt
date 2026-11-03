@@ -431,6 +431,8 @@ class TellyscopeViewModel(
     private val launcherDownload: LauncherDownload? = null,
     /** `data/`'s address while the launcher list fails its check, or null once it passes. */
     private val unverified: () -> String? = { SharedLists.unverified },
+    /** The Play build: nothing comes from GitHub, so on Fire OS the launcher is only ever a file the user picks. */
+    private val play: Boolean = false,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState(now = clock()))
@@ -971,8 +973,8 @@ class TellyscopeViewModel(
     private fun setFire(id: String, f: (FireInstall) -> FireInstall) =
         updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.fire?.let { l.copy(fire = f(it)) } }) }
 
-    /** Download directly is offered beside the Play Store: there's a way to download, as on Fire OS. */
-    val directDownload get() = launcherDownload != null
+    /** Download directly is offered beside the Play Store: there's a way to download, as on Fire OS. Never in the Play build. */
+    val directDownload get() = launcherDownload != null && !play
 
     /** [pkg]'s entry on the launcher list, when it says how to check its APK: the only launchers installed from one. */
     private fun apkLauncher(pkg: String?): KnownLauncher? =
@@ -1006,13 +1008,13 @@ class TellyscopeViewModel(
 
     /**
      * The list's check changed since the flow read it ([FireInstall.list]), so the signers may not be what the user
-     * saw or ticked: back to Checking against the list as it is now, and nothing installs.
+     * saw or ticked: back to Checking against the list as it is now (in the Play build, to the pick), and nothing installs.
      */
     private fun listChanged(id: String, flow: LauncherFlow): Boolean {
         val fire = flow.fire ?: return false
         val list = unverified()
         if (list == fire.list) return false
-        checkLauncherApk(flow.pkg)
+        if (play) setFire(id) { FireInstall(list = list) } else checkLauncherApk(flow.pkg)
         return true
     }
 
@@ -1061,7 +1063,9 @@ class TellyscopeViewModel(
         // The picker answers on its own timing: only from a step that offers it, never over a running install.
         val fire = flow.fire ?: return
         val step = fire.step
-        if (step != FireInstall.Step.NoDownload && step != FireInstall.Step.WrongApk && step != FireInstall.Step.Refused) return
+        // The Play build offers it from the start.
+        val start = play && step == null
+        if (!start && step != FireInstall.Step.NoDownload && step != FireInstall.Step.WrongApk && step != FireInstall.Step.Refused) return
         if (fire.gated || listChanged(id, flow)) return
         launcherJob?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Reading, picked = true, progress = null, size = null) }

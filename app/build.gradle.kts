@@ -40,6 +40,21 @@ android {
         buildConfigField("String", "DATA_BASE", "\"$data\"")
     }
 
+    // Two builds of one app: the same app ID and release key. github is the APK on GitHub releases;
+    // play is the Play Store's AAB, with no in-app update and nothing downloaded from GitHub
+    // (BuildConfig.PLAY, a constant, so R8 drops that code from it).
+    flavorDimensions += "store"
+    productFlavors {
+        create("github") {
+            dimension = "store"
+            buildConfigField("boolean", "PLAY", "false")
+        }
+        create("play") {
+            dimension = "store"
+            buildConfigField("boolean", "PLAY", "true")
+        }
+    }
+
     // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
     // Material ship (about 440 KB). A new values-xx/strings.xml adds its code here too.
     androidResources {
