@@ -295,6 +295,8 @@ class AdbDeviceSource(
         }
     }
 
+    override fun lanLost() = links.values.forEach(DeviceLink::lanLost)
+
     override fun lanUp(): Flow<Unit> = callbackFlow {
         val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: run { close(); return@callbackFlow }
         val callback = object : ConnectivityManager.NetworkCallback() {

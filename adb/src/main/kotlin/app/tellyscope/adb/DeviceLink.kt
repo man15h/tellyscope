@@ -85,6 +85,21 @@ class DeviceLink(
         _state.value = DeviceState.NOT_ALLOWED
     }
 
+    /**
+     * The phone left the network, so an online TV is out of reach now, though a read on the old
+     * connection can take its socket timeout to fail. Offline at once; the loop retries as usual.
+     */
+    fun lanLost() {
+        if (_state.value != DeviceState.ONLINE) return
+        job?.cancel()
+        current.getAndSet(null)?.close()
+        _state.value = _state.value.on(DeviceEvent.Lost)
+        job = scope.launch {
+            delay(retryEvery)
+            loop()
+        }
+    }
+
     fun disconnect() {
         job?.cancel()
         job = null

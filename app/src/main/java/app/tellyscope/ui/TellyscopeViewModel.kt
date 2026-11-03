@@ -552,8 +552,12 @@ class TellyscopeViewModel(
             while (true) {
                 delay(1_000)
                 _now.value = clock()
-                _state.update { it.copy(offWifi = !source.onLan()) }
-                if (++tick % 3 == 0) refreshDevices()
+                val offWifi = !source.onLan()
+                val lost = offWifi && !_state.value.offWifi
+                _state.update { it.copy(offWifi = offWifi) }
+                // Just off Wi-Fi: the TVs show offline now, not after the old connection's read times out.
+                if (lost) source.lanLost()
+                if (++tick % 3 == 0 || lost) refreshDevices()
             }
         }
     }

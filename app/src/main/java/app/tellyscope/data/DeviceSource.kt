@@ -38,6 +38,9 @@ interface DeviceSource {
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
 
+    /** The phone just left Wi-Fi: every online TV goes offline now rather than when a read times out. */
+    fun lanLost() {}
+
     /** Classic connect. Suspends while the TV shows the Allow prompt; the caller owns the timeout. */
     suspend fun connect(hit: ScanHit): ConnectResult
 

@@ -103,6 +103,42 @@ class DeviceLinkTest {
         assertEquals(2, sessions.size)
     }
 
+    @Test fun lanLostGoesOfflineAtOnce() = runTest {
+        // The read on the old connection never fails, as on a phone that just lost Wi-Fi.
+        val sessions = mutableListOf<FakeShell>()
+        var reachable = true
+        val link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ -> fakeMonitor(failFirst = false) },
+            open = { _, _ ->
+                if (reachable) ConnectResult.Online(FakeShell().also { sessions += it }) else ConnectResult.Unreachable("no route")
+            },
+        )
+        link.connect(); runCurrent()
+        assertEquals(DeviceState.ONLINE, link.state.value)
+
+        reachable = false
+        link.lanLost(); runCurrent()
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        assertEquals(reading, link.stats.value)
+        assertTrue(sessions[0].closed)
+
+        reachable = true
+        advanceTimeBy(5_001)
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(2, sessions.size)
+    }
+
+    @Test fun lanLostLeavesAnOfflineLinkAlone() = runTest {
+        var calls = 0
+        val link = DeviceLink("tv", 5555, backgroundScope, open = { _, _ -> calls++; ConnectResult.NotAllowed })
+        link.connect(); runCurrent()
+        link.lanLost()
+        advanceTimeBy(60_000)
+        assertEquals(DeviceState.NOT_ALLOWED, link.state.value)
+        assertEquals(1, calls)
+    }
+
     @Test fun needsPairingStopsRetrying() = runTest {
         var calls = 0
         val link = DeviceLink("tv", 37011, backgroundScope, open = { _, _ -> calls++; ConnectResult.NeedsPairing })
