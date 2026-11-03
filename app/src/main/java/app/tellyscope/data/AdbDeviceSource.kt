@@ -129,12 +129,14 @@ class AdbDeviceSource(
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
     private val appNames = AppNames(File(appContext.filesDir, "app-names"))
     private val lists = DeviceLists(File(appContext.filesDir, "lists"))
+    /** `data/`'s launcher, app name and streaming lists and logos; never the user's source. */
+    private val data = DeviceLists(File(appContext.filesDir, "data"), default = DATA_BASE)
     /** [historyKey] → the keep entries of that TV's list, once it has been looked up. */
     private val keep = ConcurrentHashMap<String, Set<String>>()
 
     init {
         Connector.init(File(appContext.filesDir, "adbkey.pem"))
-        scope.launch(Dispatchers.IO) { SharedLists.load(lists) }
+        scope.launch(Dispatchers.IO) { SharedLists.load(data, lists) }
     }
 
     /** Remembered TVs reconnect in the background from launch; [known] waits for the file read. */
@@ -909,7 +911,7 @@ class AdbDeviceSource(
         when (lists.setSource(url)) {
             SourceResult.Ok -> {
                 keep.clear() // the old source's keep entries
-                scope.launch(Dispatchers.IO) { SharedLists.load(lists, fresh = true) }
+                scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
             }
             SourceResult.NotHttps -> throw UiTextException(UiText(R.string.data_lists_not_https))
             SourceResult.Unreachable -> throw UiTextException(UiText(R.string.data_lists_unreachable))

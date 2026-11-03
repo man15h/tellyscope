@@ -31,6 +31,11 @@ android {
             applicationIdSuffix = ".alpha"
             versionNameSuffix = "-alpha.$run"
         }
+
+        // Where the launcher, app name and streaming lists are downloaded from (DATA_BASE). Before
+        // data/ is on main, -Ptellyscope.data=<raw folder URL ending in /> tries it from a branch.
+        val data = providers.gradleProperty("tellyscope.data").orNull ?: "https://raw.githubusercontent.com/man15h/tellyscope/main/data/"
+        buildConfigField("String", "DATA_BASE", "\"$data\"")
     }
 
     // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
@@ -79,6 +84,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // The helpers' pure parts (BannerColors) are unit-tested like app code.

@@ -100,11 +100,13 @@ data class Shared(
 )
 
 /**
- * The lists anyone can change without an app release, from the list source next to the debloat
- * lists ([DeviceLists]): the last cached copy at launch, then the source's. A list the source
- * can't give keeps what was there. The app bundles none, so before the first fetch they are empty;
- * a build with `fixtures/` among its Java resources (the tests) starts from those instead. The
- * protected list goes on to [Protected.extra], on top of the built-in one.
+ * The lists anyone can change without an app release: launchers, app names, streaming services and
+ * the Remote's logos from `data/` ([DATA_BASE]), and the protected list from the list source next to
+ * the debloat lists ([DeviceLists]), which may be the user's own. Each is the last cached copy at
+ * launch, then the downloaded one; a list that can't be had keeps what was there. The app bundles
+ * none, so before the first fetch they are empty; a build with `fixtures/` among its Java resources
+ * (the tests) starts from those instead. The protected list goes on to [Protected.extra], on top of
+ * the built-in one.
  */
 object SharedLists {
     private val _state = MutableStateFlow(seed())
@@ -113,33 +115,50 @@ object SharedLists {
     val labels get() = _state.value.labels
     val streaming get() = _state.value.streaming
 
+    @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
 
-    /** The cached lists from [lists], then the source's; [fresh] drops the old ones first, for a new source. */
-    suspend fun load(lists: DeviceLists, fresh: Boolean = false) {
+    /** The cached lists from [data] and [lists], then downloaded; [fresh] drops the old protected list first, for a new source. */
+    suspend fun load(data: DeviceLists, lists: DeviceLists, fresh: Boolean = false) {
+        this.data = data
         source = lists
-        if (fresh) reset(seed()) else apply(lists.cachedShared())
-        apply(lists.shared())
+        if (fresh) reset(_state.value.copy(protected = emptyMap()))
+        apply(data::cachedShared, lists::cachedShared)
+        refresh()
     }
 
-    /** The source's lists again; one already downloaded is read from the cache, so this is cheap once online. */
+    /** The lists again; one already downloaded is read from the cache, so this is cheap once online. */
     suspend fun refresh() {
-        source?.let { apply(it.shared()) }
+        val data = data ?: return
+        val source = source ?: return
+        apply(data::shared, source::shared)
     }
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
-    suspend fun logo(name: String): ByteArray? = source?.logo(name)
+    suspend fun logo(name: String): ByteArray? = data?.logo(name)
 
-    private fun apply(f: SharedFiles) {
+    /** Launchers, labels and streaming from [data]; only the protected list from [source]. */
+    private suspend fun apply(data: suspend (String) -> String?, source: suspend (String) -> String?) {
+        val launchers = data("launchers")?.let(::parseLaunchers)
+        val labels = data("labels")?.let(::parseLabels)
+        val streaming = data("streaming")?.let(::parseStreaming)
+        val protected = source("protected")?.let(::parseProtected)
         _state.update { now ->
             Shared(
-                launchers = f.launchers?.let(::parseLaunchers)?.ifEmpty { null } ?: now.launchers,
-                labels = f.labels?.let(::parseLabels)?.ifEmpty { null } ?: now.labels,
-                streaming = f.streaming?.let(::parseStreaming)?.ifEmpty { null } ?: now.streaming,
-                protected = f.protected?.let(::parseProtected)?.ifEmpty { null } ?: now.protected,
+                launchers = launchers?.ifEmpty { null } ?: now.launchers,
+                labels = labels?.ifEmpty { null } ?: now.labels,
+                streaming = streaming?.ifEmpty { null } ?: now.streaming,
+                protected = protected?.ifEmpty { null } ?: now.protected,
             )
         }
         Protected.extra = _state.value.protected
+    }
+
+    /** Back to the lists it starts with, and no list sources; for tests. */
+    internal fun reseed() {
+        data = null
+        source = null
+        reset(seed())
     }
 
     private fun reset(shared: Shared) {

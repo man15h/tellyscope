@@ -43,7 +43,8 @@ code { font-size: .9em; overflow-wrap: anywhere; }
 <h2>What it downloads from GitHub</h2>
 <p>Tellyscope reads public files from GitHub. These requests send nothing about you or your TV; like any website, GitHub sees your IP address and which file was asked for, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>.</p>
 <ul>
-  <li><strong>Debloat lists, app names and streaming-app logos</strong>, from the public <code>tellyscope-devices</code> repository. If you set your own list address under Settings &rsaquo; Advanced, it reads from that address instead.</li>
+  <li><strong>Debloat lists and extra protected apps</strong>, from the public <code>tellyscope-devices</code> repository. If you set your own list address under Settings &rsaquo; Advanced, it reads from that address instead.</li>
+  <li><strong>Launchers, app names and streaming-app logos</strong>, from the <code>data/</code> folder of Tellyscope's own public repository.</li>
   <li><strong>Update check (GitHub build only).</strong> The build from GitHub asks GitHub every 30 minutes whether a newer Tellyscope is out, and reads its release notes. You can turn this off in Settings. The Google Play build has no update check; Google Play updates it.</li>
   <li><strong>Projectivy Launcher download (GitHub build only).</strong> When you choose Download directly, the GitHub build downloads Projectivy from its developer's GitHub releases and installs it on your TV. The Google Play build downloads nothing: it opens the Play Store on the TV, or on a Fire TV, Projectivy's GitHub page in your phone's browser, so you can pick the file you downloaded.</li>
 </ul>

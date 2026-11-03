@@ -5,6 +5,7 @@ package app.tellyscope
 import app.tellyscope.adb.Protected
 import app.tellyscope.adb.ProtectedReason
 import app.tellyscope.data.ACCESSIBILITY_LAUNCHERS
+import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.KnownLauncher
@@ -98,19 +99,40 @@ class LaunchersTest {
         assertTrue(parseProtected("{").isEmpty())
     }
 
+    private fun sha(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }
+
     /** The source's `protected.json` reaches [Protected] on top of the built-in list. */
     @Test fun theProtectedListAddsToTheBuiltInOne() = runTest {
         val file = """{"schema":1,"groups":[{"name":"Philips","packages":{"org.droidtv.eum":"tv_inputs_remote","com.android.settings":"updates"}}]}""".toByteArray()
-        val sha = MessageDigest.getInstance("SHA-256").digest(file).joinToString("") { "%02x".format(it) }
-        val index = """{"schema":1,"devices":[],"lists":{"protected":{"file":"lists/protected.json","sha256":"$sha"}}}""".toByteArray()
+        val index = """{"schema":1,"devices":[],"lists":{"protected":{"file":"lists/protected.json","sha256":"${sha(file)}"}}}""".toByteArray()
         val served = mapOf("index.json" to index, "lists/protected.json" to file)
         try {
-            SharedLists.load(DeviceLists(tmp.newFolder()) { url -> served[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") }, fresh = true)
+            SharedLists.load(DeviceLists(tmp.newFolder(), { throw IOException("offline") }, DATA_BASE), DeviceLists(tmp.newFolder()) { url -> served[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") }, fresh = true)
             assertEquals(ProtectedReason.TV_INPUTS_REMOTE, Protected.reason("org.droidtv.eum"))
             assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.android.settings"))
         } finally {
-            // Back to the seed lists, for the tests after this one.
-            SharedLists.load(DeviceLists(tmp.newFolder()) { throw IOException("offline") }, fresh = true)
+            SharedLists.reseed() // the seed lists, for the tests after this one
+        }
+    }
+
+    /** Launchers come from `data/` only: a list source that names its own, like a fork's, isn't read for them. */
+    @Test fun launchersComeFromDataNotTheListSource() = runTest {
+        val theirs = """{"schema":1,"launchers":[{"package":"com.evil.home","name":"Evil","about":"x"}]}""".toByteArray()
+        val ours = """{"schema":1,"launchers":[{"package":"com.good.home","name":"Good","about":"x"}]}""".toByteArray()
+        fun index(f: ByteArray, file: String) = """{"schema":1,"devices":[],"lists":{"launchers":{"file":"$file","sha256":"${sha(f)}"}}}""".toByteArray()
+        val asked = mutableListOf<String>()
+        val source = mapOf("index.json" to index(theirs, "lists/launchers.json"), "lists/launchers.json" to theirs)
+        val data = mapOf("index.json" to index(ours, "launchers.json"), "launchers.json" to ours)
+        try {
+            SharedLists.load(
+                DeviceLists(tmp.newFolder(), { url -> data[url.removePrefix(DATA_BASE)] ?: throw IOException("404 $url") }, DATA_BASE),
+                DeviceLists(tmp.newFolder()) { url -> asked += url; source[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") },
+                fresh = true,
+            )
+            assertEquals(listOf("com.good.home"), SharedLists.launchers.map { it.pkg })
+            assertEquals(listOf(LISTS_BASE + "index.json"), asked)
+        } finally {
+            SharedLists.reseed() // the seed lists, for the tests after this one
         }
     }
 }

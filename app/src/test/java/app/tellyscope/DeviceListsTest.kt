@@ -278,24 +278,32 @@ class DeviceListsTest {
         val index = parseIndex(sharedIndex(bad = true).decodeToString())!!
         assertEquals(setOf("launchers"), index.lists.keys)
         assertEquals(setOf("netflix"), index.logos.keys)
-        // An index from before they moved here still reads.
+        // An index without them still reads.
         assertTrue(parseIndex(index().decodeToString())!!.lists.isEmpty())
+    }
+
+    /** `data/`'s index: no devices, lists at the top of the folder, but never one named like the index itself. */
+    @Test fun theDataIndexHasNoDevicesAndTopLevelLists() {
+        val zero = "0".repeat(64)
+        val index = parseIndex("""{"schema": 1, "lists": {"labels": {"file": "labels.json", "sha256": "$zero"}, "index": {"file": "index.json", "sha256": "$zero"}}}""")!!
+        assertTrue(index.devices.isEmpty())
+        assertEquals(setOf("labels"), index.lists.keys)
     }
 
     @Test fun listsAndLogosAreCheckedCachedAndReadOffline() = runTest {
         val lists = DeviceLists(tmp.root, served("index.json" to sharedIndex(), "lists/launchers.json" to launchers, "logos/netflix.png" to logo))
-        assertEquals(launchers.decodeToString(), lists.shared().launchers)
-        assertNull(lists.shared().streaming) // the index names none
+        assertEquals(launchers.decodeToString(), lists.shared("launchers"))
+        assertNull(lists.shared("streaming")) // the index names none
         assertTrue(logo.contentEquals(lists.logo("netflix")))
         assertNull(lists.logo("hulu"))
 
         val offline = DeviceLists(tmp.root) { throw IOException("offline") }
-        assertEquals(launchers.decodeToString(), offline.cachedShared().launchers)
-        assertEquals(launchers.decodeToString(), offline.shared().launchers)
+        assertEquals(launchers.decodeToString(), offline.cachedShared("launchers"))
+        assertEquals(launchers.decodeToString(), offline.shared("launchers"))
         assertTrue(logo.contentEquals(offline.logo("netflix")))
 
         val wrong = DeviceLists(tmp.newFolder(), served("index.json" to sharedIndex(launchersSha = "f".repeat(64)), "lists/launchers.json" to launchers))
-        assertNull(wrong.shared().launchers)
+        assertNull(wrong.shared("launchers"))
     }
 
     private val fork = "https://raw.githubusercontent.com/someone/my-lists/main/"
