@@ -151,7 +151,7 @@ fun AdvancedScreen(
                         }
                     }
                     when (tab) {
-                        0 -> thisTv(device, snap, ui.recent, staleSince, rows, ui.network, onCpu = { tab = 1 }, onApp = { sheet = it })
+                        0 -> thisTv(device, snap, ui.recent, staleSince, rows, ui.network, onCpu = { tab = 1 }, onRam = { tab = 2 }, onNetwork = { tab = 3 }, onApp = { sheet = it })
                         1 -> snap?.let { cpuTab(it, ui.recent, staleSince, rows, onApp = { n -> sheet = n }) }
                         2 -> snap?.let { ramTab(it, ui.recent, staleSince, rows, onApp = { n -> sheet = n }) }
                         else -> networkTab(snap, ui.recent, staleSince, rows, ui.network, onApp = { sheet = it })
@@ -252,21 +252,23 @@ private fun LazyListScope.thisTv(
     rows: List<AppRow>,
     network: NetworkInfo?,
     onCpu: () -> Unit,
+    onRam: () -> Unit,
+    onNetwork: () -> Unit,
     onApp: (String) -> Unit,
 ) {
-    snap?.let { s -> item { Stats(s, recent, staleSince, rows, onCpu, onApp) } }
+    snap?.let { s -> item { Stats(s, recent, staleSince, rows, onCpu, onRam, onNetwork, onApp) } }
     item { Facts(device, snap, network) }
 }
 
 /** CPU, memory and storage as rings, the network's last minute, and what's busy when the CPU is. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: List<AppRow>, onCpu: () -> Unit, onApp: (String) -> Unit) {
+private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: List<AppRow>, onCpu: () -> Unit, onRam: () -> Unit, onNetwork: () -> Unit, onApp: (String) -> Unit) {
     val res = LocalContext.current.resources
     SummaryCard(staleSince, s.at) {
         Row(Modifier.fillMaxWidth()) {
             Gauge(stringResource(R.string.advanced_cpu), s.cpuPercent / 100f, chipLine(s), Modifier.weight(1f).clickable(onClick = onCpu))
-            Gauge(stringResource(R.string.advanced_memory), fraction(s.ramUsedMb.toDouble(), s.ramTotalMb.toDouble()), Copy.gbOf(s.ramUsedMb / 1024.0, s.ramTotalMb / 1024.0).resolve(), Modifier.weight(1f))
+            Gauge(stringResource(R.string.advanced_memory), fraction(s.ramUsedMb.toDouble(), s.ramTotalMb.toDouble()), Copy.gbOf(s.ramUsedMb / 1024.0, s.ramTotalMb / 1024.0).resolve(), Modifier.weight(1f).clickable(onClick = onRam))
             val used = s.storageUsedGb
             val total = s.storageTotalGb
             Gauge(
@@ -276,8 +278,11 @@ private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: 
                 Modifier.weight(1f),
             )
         }
-        Speeds(s, MaterialTheme.typography.titleSmall)
-        Graph(recent.map { it.at }, recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
+        // Speeds and graph are one tap target for the Network tab, spaced as they were in the card.
+        Column(Modifier.fillMaxWidth().clickable(onClick = onNetwork), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Speeds(s, MaterialTheme.typography.titleSmall)
+            Graph(recent.map { it.at }, recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
+        }
         // The busiest apps only when the CPU is busy enough for them to matter.
         val busiest = rows.filter { it.cpu >= 1 }.sortedByDescending { it.cpu }.take(3).takeIf { s.cpuPercent > 33 }.orEmpty()
         if (busiest.isNotEmpty()) {
