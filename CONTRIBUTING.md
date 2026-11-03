@@ -57,30 +57,39 @@ line 2 cut out. Nothing parses and rewrites the JSON to check it, so a file refo
 fails, and `index` puts it right. A checker skips tags it doesn't know and passes if any `p256` entry
 verifies against any key, so a new key or algorithm can sign next to the old one. The public keys
 are built into the app and kept in [`tools/data-keys/`](tools/data-keys/) for the `Data` check: a primary,
-used for every update, and a backup kept offline, so losing the primary doesn't lock apps out. The
-private keys stay on the maintainer's machine, never in this repo or in CI. Make each one once:
+used for every update, and a backup, so losing or leaking the primary doesn't lock apps out.
+
+**Nobody signs locally.** The `Data` workflow signs after merge, on every push to `dev` that changes the
+index:
+
+1. Contributors run `python3 tools/data.py index` and `python3 tools/data.py check --unsigned`, which is
+   also what `Data` checks on a pull request into `dev`.
+2. After the merge, `Data`'s `needs-sign` job runs `index` and `check` without secrets. When the index
+   needs a signature, the `sign` job waits for the maintainer's approval in the `data-signing`
+   environment, signs with its `DATA_SIGNING_KEY` secret, and commits the signed `data/index.json` to
+   `dev`. Alpha builds read that.
+3. The `dev` → `main` release carries the signed index; `Data` runs the full `check` on pull requests
+   into `main` and on `main` itself.
+
+Signing only after merge matters: once a signed `data/index.json` is on GitHub it stays fetchable by its
+commit forever, and anyone serving it gets it treated as signed.
+
+The keys are made once, by the maintainer:
 
 ```sh
 openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out tellyscope-data-primary.pem
 openssl pkey -in tellyscope-data-primary.pem -pubout -outform DER | openssl base64 -A > tools/data-keys/primary.pub
-# the same with tellyscope-data-backup.pem > tools/data-keys/backup.pub, then store the backup offline
+# the same with tellyscope-data-backup.pem > tools/data-keys/backup.pub
 ```
 
-Changing a public key needs an app release. To rotate, sign with both private keys
+- The primary `.pem` goes, whole, into the secret `DATA_SIGNING_KEY` of the `data-signing` environment
+  (deployment branches `dev` and `main`, the maintainer as required reviewer), and no copy stays anywhere
+  else.
+- The backup `.pem` stays offline and is used only to rotate after the primary is lost or leaked.
+- Neither ever goes in this repository.
+
+Changing a public key needs an app release. To rotate, the `sign` job signs with both keys
 (`sign --key old.pem --key new.pem`) until no app that knows only the old key is in use.
-
-**Sign last, after review, and only a branch you'll merge.** Once a signed `data/index.json` is on
-GitHub it stays fetchable by its commit forever, and anyone serving it gets it treated as signed, even
-if the pull request was rejected.
-
-Every change to `data/`:
-
-1. Contributors run `python3 tools/data.py index` and `python3 tools/data.py check --unsigned`. The
-   `Data` check fails on the signature until the maintainer signs.
-2. After review, on the pull request's branch, the maintainer runs
-   `python3 tools/data.py sign --key ~/path/to/tellyscope-data-primary.pem`. It refuses a key that
-   `tools/data-keys/` doesn't verify.
-3. Commit `data/index.json`, let `Data` pass, merge.
 
 `index` leaves `data/index.json` alone, signature included, while nothing changes. Otherwise it raises
 `version` (`YYYYMMDDNN`, UTC) and writes it unsigned; the app refuses an index older than the one it has.
