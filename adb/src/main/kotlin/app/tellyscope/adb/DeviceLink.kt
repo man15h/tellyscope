@@ -92,9 +92,11 @@ class DeviceLink(
     fun lanLost() {
         if (_state.value != DeviceState.ONLINE) return
         job?.cancel()
-        current.getAndSet(null)?.close()
+        val old = current.getAndSet(null)
         _state.value = _state.value.on(DeviceEvent.Lost)
         job = scope.launch {
+            // Closing a TLS session sends close_notify: network I/O, so not on the caller's (main) thread.
+            old?.close()
             delay(retryEvery)
             loop()
         }
