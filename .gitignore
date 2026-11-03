@@ -18,3 +18,4 @@ keystore.properties
 
 # OS
 .DS_Store
+__pycache__/
