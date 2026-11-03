@@ -141,6 +141,26 @@ class AdbDeviceSource(
     init {
         Connector.init(File(appContext.filesDir, "adbkey.pem"))
         scope.launch(Dispatchers.IO) { SharedLists.load(data, lists) }
+        refreshListsOnNetwork()
+    }
+
+    /**
+     * Each new network that reaches the internet gives the lists another go, so ones that couldn't be
+     * downloaded at launch (the phone offline, nothing cached) arrive without a restart. Cheap once
+     * they have: the index is kept and the files come from the cache.
+     */
+    private fun refreshListsOnNetwork() {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return
+        cm.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
+            private var last: Network? = null
+            // Validated comes after onAvailable, so wait for it here; the network's other changes don't count.
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                if (network == last || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return
+                last = network
+                // Paused, [pause] refreshes on the way back.
+                if (!paused) scope.launch(Dispatchers.IO) { SharedLists.refresh() }
+            }
+        })
     }
 
     /** Remembered TVs reconnect in the background from launch; [known] waits for the file read. */
