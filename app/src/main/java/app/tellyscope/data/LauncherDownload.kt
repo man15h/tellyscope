@@ -52,6 +52,14 @@ private fun LauncherRelease.valid(launcher: KnownLauncher): Boolean {
 fun latestTag(location: String?, releases: String): String? =
     location?.removePrefix("$releases/tag/")?.takeIf { it != location && it.isNotEmpty() && '/' !in it && '?' !in it }
 
+/**
+ * The file [launcher] is saved as: its list name with spaces as `-` and only `[A-Za-z0-9._-]` kept,
+ * so no `/` or `..` path, at most 64 characters; its package name when nothing is left.
+ */
+fun apkName(launcher: KnownLauncher): String =
+    launcher.name.replace(' ', '-').filter { it.isLetterOrDigit() && it.code < 128 || it in "._-" }.take(64)
+        .ifEmpty { launcher.pkg } + ".apk"
+
 /** The release page's one APK, from its asset list's links: the full URL, or null unless there is exactly one. */
 fun pageApk(html: String, tag: String, releases: String): String? {
     val path = releases.removePrefix("https://github.com") + "/download/$tag/"
@@ -144,7 +152,7 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
     override suspend fun fetch(launcher: KnownLauncher, release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp = withContext(Dispatchers.IO) {
         dir.deleteRecursively()
         dir.mkdirs()
-        val file = File(dir, "launcher.apk")
+        val file = File(dir, apkName(launcher))
         val c = URL(release.apk).openConnection() as HttpURLConnection
         c.connectTimeout = 10_000
         c.readTimeout = 30_000
@@ -174,7 +182,7 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
     override suspend fun open(uri: Uri, launcher: KnownLauncher): PickedApp = withContext(Dispatchers.IO) {
         dir.deleteRecursively()
         dir.mkdirs()
-        val file = File(dir, "launcher.apk")
+        val file = File(dir, apkName(launcher))
         val input = ctx.contentResolver.openInputStream(uri) ?: throw IOException("can't read $uri")
         input.use { s ->
             file.outputStream().use { out ->

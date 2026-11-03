@@ -26,6 +26,7 @@ import app.tellyscope.data.Suggestions
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
 import app.tellyscope.data.isFireOs
+import app.tellyscope.data.apkName
 import app.tellyscope.data.latestTag
 import app.tellyscope.data.pageApk
 import app.tellyscope.data.parseLaunchers
@@ -310,6 +311,13 @@ class FireOsTest {
         assertEquals(LauncherFlow.Step.Pick, v.state.value.device.launcher?.step)
         assertNull(v.state.value.device.launcher?.fire)
         assertEquals(0, download.fetched)
+    }
+
+    @Test fun theApkIsSavedUnderItsCleanedName() {
+        assertEquals("Projectivy-Launcher.apk", apkName(projectivy.copy(name = "Projectivy Launcher")))
+        assertEquals("....Evil-Home.apk", apkName(projectivy.copy(name = "../../Evil Home")))
+        assertEquals("$PROJECTIVY.apk", apkName(projectivy.copy(name = "//?")))
+        assertEquals("a".repeat(64) + ".apk", apkName(projectivy.copy(name = "a".repeat(80))))
     }
 
     @Test fun whenTheApiIsLimitedTheReleasePageGivesTheTagAndItsOneApk() {
