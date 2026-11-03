@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Improved:** On This TV, tap the memory ring or the network graph to open its tab. [#PR](../../pull/PR)
+- **Improved:** On This TV, tap the memory ring or the network graph to open its tab. [#334](../../pull/334)
 - **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline", and it changes the moment Wi-Fi drops, not after reopening the app. [#333](../../pull/333)
 - **Fixed:** With the TV offline, Installed and Built-in say why they're empty instead of "Nothing here yet." [#333](../../pull/333)
 
