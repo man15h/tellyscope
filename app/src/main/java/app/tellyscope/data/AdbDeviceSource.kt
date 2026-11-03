@@ -99,8 +99,8 @@ class AdbDeviceSource(
     @Volatile private var paused = false
     private val hits = ConcurrentHashMap<String, ScanHit>()
     private val store = DeviceStore(File(appContext.filesDir, "devices.tsv"))
-    /** Launchers whose accessibility service a switch may turn on: only the built-in ones. */
-    private val serviceLaunchers = ACCESSIBILITY_LAUNCHERS.keys
+    /** Launchers whose accessibility service a switch may turn on: only from a `data/` that passes its check. */
+    private val serviceLaunchers get() = SharedLists.serviceLaunchers
     private val saved = ConcurrentHashMap<String, SavedDevice>()
     /** Remembered TVs that haven't answered since launch: shown offline, not "connecting". */
     private val restoring = ConcurrentHashMap.newKeySet<String>()
@@ -1380,12 +1380,12 @@ internal suspend fun fireHomeBack(
 }
 
 /**
- * Turns accessibility [service] on, only for a launcher in [ACCESSIBILITY_LAUNCHERS]. Every path that
- * turns one on comes here, so neither a fetched list nor a saved record can name another; false
- * for any other, as for a TV that refused.
+ * Turns accessibility [service] on, only for a launcher in [SharedLists.serviceLaunchers]. Every path
+ * that turns one on comes here, so neither an unsigned list nor a saved record can name another;
+ * false for any other, as for a TV that refused.
  */
 internal suspend fun Actions.grant(service: String): Boolean =
-    service.substringBefore('/') in ACCESSIBILITY_LAUNCHERS && setService(service, true)
+    service.substringBefore('/') in SharedLists.serviceLaunchers && setService(service, true)
 
 /**
  * The rest of [switch]'s Undo once its old launcher is on again: Home back to that launcher, the

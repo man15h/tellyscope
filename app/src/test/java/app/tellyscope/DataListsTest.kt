@@ -32,6 +32,7 @@ class DataListsTest {
     private val signer = Regex("[0-9a-f]{64}")
     // "." and ".." are not repo names; they would walk the URL out of the repo.
     private val releases = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
+    private val checked = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
@@ -51,8 +52,7 @@ class DataListsTest {
         val entries = schema1("launchers.json").getJSONArray("launchers").objects()
         entries.forEachIndexed { i, l ->
             val where = "launchers.json: launcher ${i + 1}"
-            // Install details only: a list never asks for an accessibility service.
-            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "fire_os")
+            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "fire_os", "accessibility")
             if (unknown.isNotEmpty()) errors += "$where: unknown keys ${unknown.sorted()}"
             val pkg = l.optString("package")
             if (!package_.matches(pkg)) errors += "$where: not a package name: $pkg"
@@ -64,6 +64,9 @@ class DataListsTest {
             }
             if (l.has("max_mb") && (l.opt("max_mb") as? Int)?.takeIf { it in 1..256 } == null) errors += "$where: 'max_mb' must be a whole number from 1 to 256"
             if (l.has("releases") && !releases.matches(l.optString("releases"))) errors += "$where: 'releases' must be https://github.com/<owner>/<repo>/releases"
+            if (l.has("accessibility") && (l.opt("accessibility") as? String)?.takeIf(checked::matches) == null) {
+                errors += "$where: 'accessibility' must be the version whose manifest you checked, like \"4.72\""
+            }
             if (l.has("fire_os") && l.opt("fire_os") != true) errors += "$where: 'fire_os' can only be true; leave it out otherwise"
             if (l.opt("fire_os") == true) {
                 fire += pkg
@@ -74,6 +77,15 @@ class DataListsTest {
         if (fire.size > 1) errors += "launchers.json: 'fire_os' is on ${fire.size} launchers; Fire OS installs one"
         if (errors.isEmpty()) assertEquals("launchers.json: the app drops none", entries.size, parseLaunchers(text("launchers.json")).size)
         assertNone(errors)
+    }
+
+    /**
+     * Named here on purpose, so a reviewer sees any launcher that gets to turn on an accessibility service,
+     * which can read the screen. Adding one means adding it here too.
+     */
+    @Test fun theLaunchersWithAnAccessibilityServiceAreNamed() {
+        val named = parseLaunchers(text("launchers.json")).filter { it.accessibility != null }.associate { it.pkg to it.accessibility }
+        assertEquals(mapOf("com.spocky.projengmenu" to "4.72", "com.overdevs.at4k" to "1.2", "com.spauldhaliwal.dispatch" to "1.0.175"), named)
     }
 
     @Test fun labels() {

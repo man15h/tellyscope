@@ -4,7 +4,6 @@ package app.tellyscope
 
 import app.tellyscope.adb.Protected
 import app.tellyscope.adb.ProtectedReason
-import app.tellyscope.data.ACCESSIBILITY_LAUNCHERS
 import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
@@ -39,9 +38,10 @@ class LaunchersTest {
         assertEquals(launchers.size, launchers.map { it.pkg }.toSet().size)
     }
 
-    /** Named here on purpose, so a reviewer sees any launcher that gets to turn on an accessibility service. */
-    @Test fun onlyTheBuiltInLaunchersMayTurnOnAnAccessibilityService() {
-        assertEquals(setOf("com.spocky.projengmenu", "com.overdevs.at4k", "com.spauldhaliwal.dispatch"), ACCESSIBILITY_LAUNCHERS.keys)
+    /** The real list's are named in [DataListsTest.theLaunchersWithAnAccessibilityServiceAreNamed]. */
+    @Test fun aLauncherWithAccessibilityMayTurnItsServiceOn() {
+        assertEquals(setOf("com.spocky.projengmenu"), SharedLists.serviceLaunchers)
+        assertEquals("4.72", SharedLists.launchers.first { it.pkg == "com.spocky.projengmenu" }.accessibility)
     }
 
     @Test fun theRecommendedOnesAreTheLaunchersWithAnAboutLineInFileOrder() {
@@ -70,7 +70,7 @@ class LaunchersTest {
         assertTrue(parseLabels("{").isEmpty())
     }
 
-    /** A list from someone's fork can't grant an accessibility service: only [ACCESSIBILITY_LAUNCHERS] can. */
+    /** `accessibility` is the version checked, so `true` is no answer; whether it counts is [SharedLists]' call. */
     @Test fun badEntriesAreDroppedAndOnlySchemaOneCounts() {
         val text = """{"schema":1,"launchers":[
             {"package":"com.good.launcher","name":"Good","accessibility":true},
@@ -79,7 +79,7 @@ class LaunchersTest {
             "not an object"
         ]}"""
         assertEquals(listOf(KnownLauncher("com.good.launcher", "Good")), parseLaunchers(text))
-        assertTrue(parseLaunchers(text).none { it.accessibility })
+        assertTrue(parseLaunchers(text).none { it.accessibility != null })
         assertTrue(parseLaunchers(text.replace("\"schema\":1", "\"schema\":2")).isEmpty())
         assertTrue(parseLaunchers("{").isEmpty())
     }
