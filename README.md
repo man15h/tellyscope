@@ -121,7 +121,7 @@ Modules: `:app` (the phone app, Kotlin and Jetpack Compose), `:adb` (pure Kotlin
 ./gradlew :app:installGithubDebug
 ```
 
-There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The Play build has no update check (Play updates it) and downloads nothing from GitHub: on Fire OS you download Projectivy in your browser and pick the file. The code checks `BuildConfig.PLAY`.
+There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The Play build has no update check (Play updates it) and downloads nothing from GitHub: on Fire OS you download Projectivy in your browser and pick the file. The update check and the Projectivy download live in `app/src/github` only, with stubs in `app/src/play`, and every Play build fails if its code names `api.github.com`. What differs on screen checks `BuildConfig.PLAY`. Unit tests run on the `github` build.
 
 ## Contributing
 

@@ -44,7 +44,6 @@ import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.Connector
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.data.AdbDeviceSource
-import app.tellyscope.data.AndroidLauncherDownload
 import app.tellyscope.data.AndroidPhoneStorage
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
@@ -53,7 +52,6 @@ import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
 import app.tellyscope.data.UiText
 import app.tellyscope.data.KeyHaptics
-import app.tellyscope.data.UpdateCheck
 import app.tellyscope.ui.AccessActions
 import app.tellyscope.ui.AccessScreen
 import app.tellyscope.ui.AdvancedScreen
@@ -126,15 +124,14 @@ class MainActivity : ComponentActivity() {
                                     TellyscopeViewModel(
                                         scenario?.let(::FakeDeviceSource) ?: AdbDeviceSource(applicationContext),
                                         AndroidPhoneStorage(applicationContext),
-                                        // Play updates the Play build itself, so it has no update check of its own.
-                                        updates = if (scenario != null || BuildConfig.PLAY) null else updateCheck(),
+                                        // The Play build has none: Play updates it (Store.kt, per flavor).
+                                        updates = if (scenario != null) null else updates(applicationContext, installedVersion()),
                                         folds = FoldBook(File(filesDir, "folds.properties")),
                                         keyHaptics = KeyHaptics(File(filesDir, "remote.properties")),
                                         gates = FoldBook(File(filesDir, "gates.properties")),
                                         historySeen = SeenBook(File(filesDir, "history-seen.properties")),
                                         appFacts = AppFacts(installedVersion(), "${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE}"),
-                                        launcherDownload = if (scenario != null) null else AndroidLauncherDownload(applicationContext),
-                                        play = BuildConfig.PLAY,
+                                        launcherDownload = if (scenario != null) null else launcherPick(applicationContext),
                                     )
                                 }
                             },
@@ -149,12 +146,6 @@ class MainActivity : ComponentActivity() {
 
     @Suppress("DEPRECATION") // the flags overload is API 33+
     private fun installedVersion() = packageManager.getPackageInfo(packageName, 0).versionName.orEmpty()
-
-    private fun updateCheck(): UpdateCheck {
-        val version = installedVersion()
-        // Alpha builds install as app.tellyscope.alpha (app/build.gradle.kts).
-        return UpdateCheck(File(filesDir, "updates.properties"), version, alpha = packageName.endsWith(".alpha"))
-    }
 
     /**
      * Android 17 blocks LAN connections and mDNS for apps targeting 37 until the user grants
@@ -224,8 +215,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), vm::saveTo)
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
 
-    // Never in the Play build: the constant lets R8 drop the dialog from it.
-    if (!BuildConfig.PLAY) state.update?.let { u ->
+    state.update?.let { u ->
         UpdateDialog(
             u,
             onDownload = { vm.updateLater(); u.apk?.let { runCatching { browser.openUri(it) } } },

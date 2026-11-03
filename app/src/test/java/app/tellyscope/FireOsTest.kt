@@ -17,6 +17,7 @@ import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
+import app.tellyscope.data.LauncherPick
 import app.tellyscope.data.LauncherRelease
 import app.tellyscope.data.PickedApp
 import app.tellyscope.data.ScanHit
@@ -239,10 +240,11 @@ class FireOsTest {
         assertFalse(projectivy.copy(signers = emptySet()).accepts(PROJECTIVY, setOf(SIGNER)))
     }
 
-    /** [list]: the launcher list's address, as one that failed its check. [play]: the Play build. */
-    private fun TestScope.opened(list: String? = null, play: Boolean = false): TellyscopeViewModel {
+    /** [list]: the launcher list's address, as one that failed its check. [pickOnly]: the Play build's, which checks a picked file and downloads nothing. */
+    private fun TestScope.opened(list: String? = null, pickOnly: Boolean = false): TellyscopeViewModel {
         unverified = list
-        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download, unverified = { unverified }, play = play)
+        val pick = if (pickOnly) object : LauncherPick by download {} else download
+        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = pick, unverified = { unverified })
         vm = v
         runCurrent()
         v.openLauncherFlow()
@@ -421,7 +423,7 @@ class FireOsTest {
     }
 
     @Test fun thePlayBuildPicksAFileFromTheStartAndDownloadsNothing() = with(test) {
-        val v = opened(play = true)
+        val v = opened(pickOnly = true)
         assertNull(v.state.value.device.launcher?.fire?.step)
         v.pickedLauncherApk(Uri.parse("content://downloads/1"))
         runCurrent()
@@ -432,11 +434,11 @@ class FireOsTest {
 
     @Test fun thePlayBuildOffersNoDownloadDirectly() = with(test) {
         source = FireTv(androidTv, listOf(store, tvHome))
-        assertFalse(opened(play = true).directDownload)
+        assertFalse(opened(pickOnly = true).directDownload)
     }
 
     @Test fun inThePlayBuildFromAnUnverifiedListThePickWaitsForTheTick() = with(test) {
-        val v = opened(list = UNVERIFIED, play = true)
+        val v = opened(list = UNVERIFIED, pickOnly = true)
         assertEquals(true, v.state.value.device.launcher?.fire?.gated)
         v.pickedLauncherApk(Uri.parse("content://downloads/1"))
         runCurrent()
