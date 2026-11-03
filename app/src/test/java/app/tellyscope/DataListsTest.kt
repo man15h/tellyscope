@@ -65,7 +65,7 @@ class DataListsTest {
             if (l.has("max_mb") && (l.opt("max_mb") as? Int)?.takeIf { it in 1..256 } == null) errors += "$where: 'max_mb' must be a whole number from 1 to 256"
             if (l.has("releases") && !releases.matches(l.optString("releases"))) errors += "$where: 'releases' must be https://github.com/<owner>/<repo>/releases"
             if (l.has("accessibility") && (l.opt("accessibility") as? String)?.takeIf(checked::matches) == null) {
-                errors += "$where: 'accessibility' must be the version whose manifest you checked, like \"4.72\""
+                errors += "$where: 'accessibility' must be the minimum version that has the service, like \"4.72\""
             }
             if (l.has("fire_os") && l.opt("fire_os") != true) errors += "$where: 'fire_os' can only be true; leave it out otherwise"
             if (l.opt("fire_os") == true) {

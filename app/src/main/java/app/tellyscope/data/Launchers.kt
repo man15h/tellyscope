@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.update
  *
  * [accessibility]: it keeps Home with its own accessibility service, for TVs whose Home button opens
  * their own launcher whatever the default is, so Make Home turns that service on, and Undo or a switch
- * away from it turns it off. The value is the version whose manifest was read. An accessibility service
+ * away from it turns it off. The value is the minimum version that has the service: an older copy, or
+ * one whose versionName can't be read, isn't offered it ([hasServiceFrom]). An accessibility service
  * can read the screen, so only while `data/` passes its signature check may it go on
  * ([SharedLists.serviceLaunchers]); off works either way ([SharedLists.listedServiceLaunchers]).
  *
@@ -45,6 +46,26 @@ private val SIGNER = Regex("[0-9a-f]{64}")
 private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
 private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
+
+/**
+ * Whether [installed], a launcher's versionName on the TV, is [minimum] or newer: [minimum] is its
+ * [KnownLauncher.accessibility], the first version with the service. Compared by their leading
+ * numbers, so `4.72-beta` counts as `4.72`; false when either has none, as for a TV that names no version.
+ */
+fun hasServiceFrom(minimum: String, installed: String?): Boolean {
+    val need = versionParts(minimum) ?: return false
+    val have = installed?.let(::versionParts) ?: return false
+    for (i in 0 until maxOf(need.size, have.size)) {
+        val c = have.getOrElse(i) { 0 }.compareTo(need.getOrElse(i) { 0 })
+        if (c != 0) return c > 0
+    }
+    return true
+}
+
+private val VERSION_PARTS = Regex("^\\d+(?:\\.\\d+)*")
+
+private fun versionParts(v: String): List<Long>? =
+    VERSION_PARTS.find(v)?.value?.split('.')?.map { it.toLongOrNull() ?: return null }
 
 /** Empty unless it is schema 1; entries that can't be read or aren't package names are dropped. */
 fun parseLaunchers(text: String): List<KnownLauncher> = try {
@@ -148,6 +169,8 @@ object SharedLists {
      * turning that service off. Unsigned, the worst a list can do with it is turn off the service of a launcher that was Home.
      */
     val listedServiceLaunchers: Set<String> get() = launchers.filter { it.accessibility != null }.mapTo(HashSet()) { it.pkg }
+    /** [pkg]'s [KnownLauncher.accessibility], the minimum version that has the service; null when it has none. */
+    fun serviceFrom(pkg: String): String? = launchers.firstOrNull { it.pkg == pkg }?.accessibility
 
     @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
