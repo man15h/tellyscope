@@ -1,0 +1,23 @@
+name: Data
+
+# data/ is downloaded by every installed app straight from main, so it may only change with a valid signature.
+on:
+  pull_request:
+    paths: ["data/**", "tools/data.py", "tools/test_data.py", "tools/data-keys/**", ".github/workflows/data.yml"]
+  push:
+    branches: [main, dev]
+    paths: ["data/**", "tools/data.py", "tools/test_data.py", "tools/data-keys/**", ".github/workflows/data.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: data/ index and signature
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Tests
+        run: python3 -m unittest discover -s tools -p 'test_data.py' -v
+      - name: data/index.json is fresh and data/index.json.sig verifies
+        run: python3 tools/data.py check

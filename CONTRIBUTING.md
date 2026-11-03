@@ -40,6 +40,38 @@ Which launchers may turn on an accessibility service is not on any list: it's `A
 
 The tests use small fixtures in [`app/src/test/resources/fixtures/`](app/src/test/resources/fixtures/) that only check the code: change the real debloat lists in tellyscope-devices and the others in `data/`, not there. The app itself bundles none.
 
+### Signing `data/`
+
+The app trusts `data/` only when `data/index.json.sig` verifies: an ECDSA P-256 / SHA-256 signature over
+the exact bytes of `data/index.json`, which holds the sha256 of every file in `data/`. The public keys
+are built into the app and kept in [`tools/data-keys/`](tools/data-keys/) for the `Data` check: a primary,
+used for every update, and a backup kept offline, so losing the primary doesn't lock apps out. The
+private keys stay on the maintainer's machine, never in this repo or in CI. Make each one once:
+
+```sh
+openssl genpkey -algorithm EC -pkeyopt ec_paramgen_curve:P-256 -out tellyscope-data-primary.pem
+openssl pkey -in tellyscope-data-primary.pem -pubout -outform DER | openssl base64 -A > tools/data-keys/primary.pub
+# the same with tellyscope-data-backup.pem > tools/data-keys/backup.pub, then store the backup offline
+```
+
+Changing a public key needs an app release.
+
+**Sign last, after review, and only a branch you'll merge.** Once a signed `data/index.json` is on
+GitHub it stays fetchable by its commit forever, and anyone serving it gets it treated as signed, even
+if the pull request was rejected.
+
+Every change to `data/`:
+
+1. Contributors run `python3 tools/data.py index` and `python3 tools/data.py check --unsigned`. The
+   `Data` check fails on the signature until the maintainer signs.
+2. After review, on the pull request's branch, the maintainer runs
+   `python3 tools/data.py sign --key ~/path/to/tellyscope-data-primary.pem`. It refuses a key that
+   `tools/data-keys/` doesn't verify.
+3. Commit `data/index.json.sig`, let `Data` pass, merge.
+
+`index` keeps `version` (`YYYYMMDDNN`, UTC) while nothing else changes and raises it otherwise; the app
+refuses an index older than the one it has.
+
 ## README screenshots
 
 They come from the screenshot tests, so they always show the current UI with sample data. To refresh them, render the tests, then put them in phone frames (needs Python 3 with Pillow):
