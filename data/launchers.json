@@ -1,7 +1,9 @@
 {
   "schema": 1,
   "launchers": [
-    { "package": "com.spocky.projengmenu", "name": "Projectivy Launcher", "about": "The most popular. Rows, wallpapers and icons you can change." },
+    { "package": "com.spocky.projengmenu", "name": "Projectivy Launcher", "about": "The most popular. Rows, wallpapers and icons you can change.",
+      "signers": ["f6697bf4082ee97511e4de07863193884a015b7ab5860430321bda1042b0aadd"], "max_mb": 64,
+      "releases": "https://github.com/spocky/miproja1/releases", "fire_os": true },
     { "package": "me.efesser.flauncher", "name": "FLauncher", "about": "Simple: your apps in rows, nothing else." }
   ]
 }
