@@ -212,6 +212,7 @@
     <string name="copy_tv_offline">テレビがオフライン</string>
     <string name="copy_off_wifi_line">テレビと同じ Wi-Fi につないでください。つながるとすぐに Tellyscope が再接続します。</string>
     <string name="copy_running_offline">テレビに接続すると、実行中のアプリがここに表示されます。</string>
+    <string name="copy_apps_offline">テレビに接続すると、アプリがここに表示されます。</string>
     <string name="copy_state_online">接続済み</string>
     <string name="copy_state_offline">オフライン</string>
     <string name="copy_state_not_allowed">許可されていません</string>

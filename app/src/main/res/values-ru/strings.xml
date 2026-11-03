@@ -236,6 +236,7 @@
     <string name="copy_tv_offline">Телевизор не в сети</string>
     <string name="copy_off_wifi_line">Подключитесь к той же сети Wi-Fi, что и телевизор. Tellyscope переподключится, как только вы подключитесь.</string>
     <string name="copy_running_offline">Запущенные приложения появятся здесь, когда телевизор подключится.</string>
+    <string name="copy_apps_offline">Приложения появятся здесь, когда телевизор подключится.</string>
     <string name="copy_state_online">Подключен</string>
     <string name="copy_state_offline">Не в сети</string>
     <string name="copy_state_not_allowed">Нет доступа</string>

@@ -228,6 +228,7 @@
     <string name="copy_tv_offline">TV sin conexión</string>
     <string name="copy_off_wifi_line">Conéctate a la misma Wi-Fi que la TV. Tellyscope se reconecta en cuanto estés conectado.</string>
     <string name="copy_running_offline">Las apps en ejecución aparecen aquí cuando la TV está conectada.</string>
+    <string name="copy_apps_offline">Las apps aparecen aquí cuando la TV está conectada.</string>
     <string name="copy_state_online">Conectada</string>
     <string name="copy_state_offline">Sin conexión</string>
     <string name="copy_state_not_allowed">Sin permiso</string>

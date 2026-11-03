@@ -285,9 +285,13 @@ class AdbDeviceSource(
         val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return true
         @Suppress("DEPRECATION") // the only synchronous list of every network, VPN's underlying one included
         return cm.allNetworks.any { n ->
-            cm.getNetworkCapabilities(n)?.let {
-                it.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || it.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
-            } == true
+            val caps = cm.getNetworkCapabilities(n) ?: return@any false
+            // A VPN carries the transports it runs over, so it can still say Wi-Fi once Wi-Fi has gone;
+            // the Wi-Fi under it is in the list in its own right.
+            val local = !caps.hasTransport(NetworkCapabilities.TRANSPORT_VPN) &&
+                (caps.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || caps.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET))
+            // Wi-Fi on its way down can stay listed with no address left, and the TV is already out of reach.
+            local && cm.getLinkProperties(n)?.linkAddresses.orEmpty().any { it.address is Inet4Address }
         }
     }
 
