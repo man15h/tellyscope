@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """Index and sign data/, the lists the app downloads from this repo. Python 3.9+, standard library only.
 
-  tools/data.py index                         rebuild data/index.json from data/
-  tools/data.py sign --key <private key.pem>  write data/index.json.sig, signed with that key
-  tools/data.py check [--unsigned]            fail if data/index.json is stale or data/index.json.sig
-                                              doesn't verify against tools/data-keys/ (--unsigned skips that)
+  tools/data.py index                          rebuild data/index.json from data/, unsigned; left alone
+                                               while nothing changed
+  tools/data.py sign --key <private key.pem>…  sign data/index.json with each key, on its line 2
+  tools/data.py check [--unsigned]             fail if data/index.json is stale or its signature doesn't
+                                               verify against tools/data-keys/ (--unsigned skips that)
+
+The signature sits on line 2 of data/index.json, `  "sigs": ["p256:<base64>", …],`. What is signed is
+the file without that line, cut out as bytes: never re-serialise the JSON to check it.
 
 Signing and checking signatures need the openssl command. How and when to sign: CONTRIBUTING.md.
 """
@@ -22,6 +26,7 @@ REPO = Path(__file__).resolve().parent.parent
 DATA = REPO / "data"
 KEYS = REPO / "tools" / "data-keys"
 LISTS = ("launchers", "labels", "streaming")
+SIGS = b'  "sigs": '
 # Every P-256 public key in SubjectPublicKeyInfo DER starts with these bytes, then 64 bytes of point.
 P256_SPKI = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200" "04")
 
@@ -43,6 +48,7 @@ def version(index):
     old one. The app refuses an index older than the one it has."""
     path = DATA / "index.json"
     old = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    old.pop("sigs", None)
     old.pop("schema", None)
     previous = old.pop("version", 0)
     if old == index and previous:
@@ -68,7 +74,7 @@ def public_keys():
         else:
             keys.append(der)
     if not keys and not errors:
-        errors.append("tools/data-keys/: no public key to check data/index.json.sig against")
+        errors.append("tools/data-keys/: no public key to check data/index.json's signature against")
     return keys, errors
 
 
@@ -87,45 +93,87 @@ def verifies(data, signature, key):
                        "-signature", str(tmp / "sig"), str(tmp / "data")).returncode == 0
 
 
+def split(raw):
+    """(unsigned bytes, sigs line or None): line 2 is the signature line when it starts with "sigs",
+    and the unsigned bytes are the file with exactly that line cut out."""
+    first = raw.find(b"\n") + 1
+    second = raw.find(b"\n", first) + 1
+    if first and second and raw[first:second].startswith(SIGS):
+        return raw[:first] + raw[second:], raw[first:second]
+    return raw, None
+
+
+def signatures(line):
+    """The p256 signatures on a sigs line, as DER; entries with other tags are skipped. None if the
+    line isn't `  "sigs": [<strings>],`."""
+    body = line[len(SIGS):].rstrip(b"\n")
+    try:
+        entries = json.loads(body[:-1]) if body.endswith(b",") else None
+    except ValueError:
+        entries = None
+    if not isinstance(entries, list) or not all(isinstance(e, str) for e in entries):
+        return None
+    found = []
+    for tag, _, value in (e.partition(":") for e in entries):
+        if tag == "p256":
+            try:
+                found.append(base64.b64decode(value, validate=True))
+            except ValueError:
+                pass
+    return found
+
+
 def check_signature():
     keys, errors = public_keys()
-    sig = DATA / "index.json.sig"
     if errors:
         return errors
-    if not sig.is_file():
-        return ["data/index.json.sig is missing: run tools/data.py sign --key <private key>"]
-    try:
-        signature = base64.b64decode(sig.read_text(encoding="utf-8").strip(), validate=True)
-    except ValueError:
-        return ["data/index.json.sig: not base64"]
-    if not any(verifies((DATA / "index.json").read_bytes(), signature, k) for k in keys):
-        return ["data/index.json.sig doesn't verify against tools/data-keys/: data/index.json changed "
+    unsigned, line = split((DATA / "index.json").read_bytes())
+    if line is None:
+        return ["data/index.json is unsigned: run tools/data.py sign --key <private key>"]
+    sigs = signatures(line)
+    if sigs is None:
+        return ['data/index.json: line 2 isn\'t `  "sigs": ["p256:<base64>", …],`']
+    if not any(verifies(unsigned, sig, k) for sig in sigs for k in keys):
+        return ["data/index.json's signature doesn't verify against tools/data-keys/: the file changed "
                 "since it was signed, run tools/data.py sign --key <private key>"]
     return []
 
 
-def sign(key):
-    """Sign data/index.json's exact bytes with key and write data/index.json.sig, if a key in
-    tools/data-keys/ verifies it."""
-    data = (DATA / "index.json").read_bytes()
+def sign(keys):
+    """Sign data/index.json without its sigs line with each key, and write the signatures on line 2,
+    if a key in tools/data-keys/ verifies every one of them."""
+    path = DATA / "index.json"
+    unsigned, _ = split(path.read_bytes())
+    public, errors = public_keys()
+    entries = []
     with tempfile.TemporaryDirectory() as tmp:
-        (Path(tmp) / "data").write_bytes(data)
-        run = openssl("dgst", "-sha256", "-sign", str(key), str(Path(tmp) / "data"))
-    if run.returncode != 0:
-        print(run.stderr.decode(errors="replace"), file=sys.stderr)
-        return 1
-    keys, errors = public_keys()
-    if errors or not any(verifies(data, run.stdout, k) for k in keys):
-        print(*errors, "the signature doesn't verify against any key in tools/data-keys/: wrong key?",
-              sep="\n", file=sys.stderr)
-        return 1
-    (DATA / "index.json.sig").write_text(base64.b64encode(run.stdout).decode() + "\n", encoding="utf-8")
+        (Path(tmp) / "data").write_bytes(unsigned)
+        for key in keys:
+            run = openssl("dgst", "-sha256", "-sign", str(key), str(Path(tmp) / "data"))
+            if run.returncode != 0:
+                print(run.stderr.decode(errors="replace"), file=sys.stderr)
+                return 1
+            if errors or not any(verifies(unsigned, run.stdout, k) for k in public):
+                print(*errors, f"{key}: the signature doesn't verify against any key in tools/data-keys/: "
+                      "wrong key?", sep="\n", file=sys.stderr)
+                return 1
+            entries.append("p256:" + base64.b64encode(run.stdout).decode())
+    first = unsigned.find(b"\n") + 1
+    path.write_bytes(unsigned[:first] + SIGS + json.dumps(entries).encode() + b",\n" + unsigned[first:])
     return 0
 
 
+def index():
+    """Write data/index.json unsigned, unless it already says the same, so a signature stays put."""
+    path = DATA / "index.json"
+    text = dump(build_index())
+    if not path.is_file() or split(path.read_bytes())[0] != text.encode():
+        path.write_text(text, encoding="utf-8")
+
+
 def check(signed=True):
-    index = DATA / "index.json"
-    if not index.is_file() or index.read_text(encoding="utf-8") != dump(build_index()):
+    path = DATA / "index.json"
+    if not path.is_file() or split(path.read_bytes())[0] != dump(build_index()).encode():
         errors = ["data/index.json is stale: run tools/data.py index"]
     else:
         errors = check_signature() if signed else []
@@ -137,10 +185,10 @@ def check(signed=True):
 def main(argv):
     if argv[:1] == ["check"] and argv[1:] in ([], ["--unsigned"]):
         return check(signed=not argv[1:])
-    if argv[:2] == ["sign", "--key"] and len(argv) == 3:
-        return sign(argv[2])
+    if argv[:1] == ["sign"] and len(argv) > 1 and argv[1::2] == ["--key"] * (len(argv) // 2) and len(argv) % 2:
+        return sign(argv[2::2])
     if argv == ["index"]:
-        (DATA / "index.json").write_text(dump(build_index()), encoding="utf-8")
+        index()
         return 0
     print(__doc__, file=sys.stderr)
     return 2

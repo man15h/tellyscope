@@ -42,8 +42,20 @@ The tests use small fixtures in [`app/src/test/resources/fixtures/`](app/src/tes
 
 ### Signing `data/`
 
-The app trusts `data/` only when `data/index.json.sig` verifies: an ECDSA P-256 / SHA-256 signature over
-the exact bytes of `data/index.json`, which holds the sha256 of every file in `data/`. The public keys
+The app trusts `data/` only when `data/index.json` is signed. It holds the sha256 of every file in
+`data/`, and its line 2 holds the signatures:
+
+```json
+{
+  "sigs": ["p256:<base64>"],
+  "schema": 1,
+  …
+```
+
+Each entry is an ECDSA P-256 / SHA-256 signature (DER, base64) over the exact bytes of the file with
+line 2 cut out. Nothing parses and rewrites the JSON to check it, so a file reformatted after signing
+fails, and `index` puts it right. A checker skips tags it doesn't know and passes if any `p256` entry
+verifies against any key, so a new key or algorithm can sign next to the old one. The public keys
 are built into the app and kept in [`tools/data-keys/`](tools/data-keys/) for the `Data` check: a primary,
 used for every update, and a backup kept offline, so losing the primary doesn't lock apps out. The
 private keys stay on the maintainer's machine, never in this repo or in CI. Make each one once:
@@ -54,7 +66,8 @@ openssl pkey -in tellyscope-data-primary.pem -pubout -outform DER | openssl base
 # the same with tellyscope-data-backup.pem > tools/data-keys/backup.pub, then store the backup offline
 ```
 
-Changing a public key needs an app release.
+Changing a public key needs an app release. To rotate, sign with both private keys
+(`sign --key old.pem --key new.pem`) until no app that knows only the old key is in use.
 
 **Sign last, after review, and only a branch you'll merge.** Once a signed `data/index.json` is on
 GitHub it stays fetchable by its commit forever, and anyone serving it gets it treated as signed, even
@@ -67,10 +80,18 @@ Every change to `data/`:
 2. After review, on the pull request's branch, the maintainer runs
    `python3 tools/data.py sign --key ~/path/to/tellyscope-data-primary.pem`. It refuses a key that
    `tools/data-keys/` doesn't verify.
-3. Commit `data/index.json.sig`, let `Data` pass, merge.
+3. Commit `data/index.json`, let `Data` pass, merge.
 
-`index` keeps `version` (`YYYYMMDDNN`, UTC) while nothing else changes and raises it otherwise; the app
-refuses an index older than the one it has.
+`index` leaves `data/index.json` alone, signature included, while nothing changes. Otherwise it raises
+`version` (`YYYYMMDDNN`, UTC) and writes it unsigned; the app refuses an index older than the one it has.
+
+**The format is fixed once an app ships with it**, so it changes only by adding:
+
+- A new field, in any file, keeps `schema: 1`. Apps ignore keys they don't know, so add a field only
+  when an app that ignores it still behaves correctly.
+- A breaking change goes in a new folder, `data/v2/`, with its own signed `index.json`, read by the app
+  versions that understand it. `data/` stays as it is and keeps serving older apps until they're gone.
+- A new list is a new entry in `lists`, and older apps skip it.
 
 ## README screenshots
 
