@@ -315,14 +315,14 @@ class LauncherScreenTest {
 
     @Test fun theStoreComesFirstAndOnlyAPinnedLauncherDownloadsDirectly() {
         val installs = mutableListOf<String>()
-        var downloads = 0
+        val downloads = mutableListOf<String>()
         compose.setContent {
-            LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions(install = { installs += it }, fireCheck = { downloads++ }), direct = true)
+            LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY), listOf(store, stock), LauncherActions(install = { installs += it }, fireCheck = { downloads += it }), direct = true)
         }
         compose.onNodeWithText(Copy.STORE_RECOMMENDED.text()).assertExists()
         compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY.text()).performClick()
         compose.onNodeWithText(Copy.GET_FROM_STORE.text()).performClick()
-        assertEquals(1, downloads)
+        assertEquals(listOf(PROJECTIVY), downloads)
         assertEquals(listOf(PROJECTIVY), installs)
         compose.onNodeWithText("FLauncher").performScrollTo().performClick()
         compose.onNodeWithText(Copy.DOWNLOAD_DIRECTLY.text()).assertDoesNotExist()

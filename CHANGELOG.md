@@ -13,6 +13,7 @@ until this file has a section for its version.
 ## Unreleased
 
 - **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
+- **Improved:** Installing a launcher from a list you added shows the list and signer, and asks you to confirm. [#322](../../pull/322)
 
 ## 0.15.0 — 2026-11-03
 

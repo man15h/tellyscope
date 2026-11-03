@@ -7,6 +7,8 @@ package app.tellyscope.ui
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -35,6 +38,7 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -53,8 +57,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.ripple
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,6 +69,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
@@ -74,6 +82,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -83,11 +92,10 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.LauncherRelease
-import app.tellyscope.data.PROJECTIVY
-import app.tellyscope.data.PROJECTIVY_RELEASES
 import app.tellyscope.data.UiText
 import app.tellyscope.data.asUiText
 import app.tellyscope.data.isFireOs
+import app.tellyscope.data.sourceName
 import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
 
@@ -105,11 +113,11 @@ internal fun hasPlayStore(apps: List<AppInfo>) = apps.any { it.packageName == PL
 internal fun hasAddedLauncher(apps: List<AppInfo>) = apps.any { it.listedLauncher || (it.removable && (it.home || it.answersHome)) }
 
 /**
- * Fire OS has no Play Store, so Install a home screen offers only Projectivy there, which Tellyscope downloads
- * from its developer and installs itself. Only while the launcher list ([recommended]) has Projectivy; without it, nothing is offered.
+ * Fire OS has no Play Store, so Install a home screen offers only the list's Fire OS launcher there ([fireLauncher]),
+ * which Tellyscope downloads from its developer and installs itself. Without one on the list, nothing is offered.
  */
 internal fun fireInstall(device: Device, apps: List<AppInfo>, recommended: List<Recommended> = RECOMMENDED) =
-    isFireOs(device, apps) && recommended.any { it.pkg == PROJECTIVY }
+    isFireOs(device, apps) && fireLauncher(recommended) != null
 
 /** [fire]: [fireInstall] holds, so the Play Store isn't needed. */
 internal fun offerChoose(apps: List<AppInfo>, fire: Boolean = false) = (hasPlayStore(apps) || fire) && !hasAddedLauncher(apps)
@@ -117,8 +125,9 @@ internal fun offerChoose(apps: List<AppInfo>, fire: Boolean = false) = (hasPlayS
 internal fun offerLauncher(apps: List<AppInfo>, hidden: Boolean, fire: Boolean = false) =
     !hidden && offerChoose(apps, fire) && apps.none { it.homeInstead != null || it.homeBack != null }
 
-/** Download directly is offered on [pkg] beside the Store: only launchers whose download and signer are pinned. */
-internal fun downloadable(pkg: String) = pkg == PROJECTIVY
+/** Download directly is offered on [pkg] beside the Store: only launchers whose list entry names its signers and releases. */
+internal fun downloadable(pkg: String) =
+    RECOMMENDED.firstOrNull { it.pkg == pkg }?.launcher?.let { it.signers.isNotEmpty() && it.releases != null } == true
 
 /** [pkg] on the TV and on, so the picker offers Make Home or Open on it rather than the Store. */
 internal fun installedLauncher(apps: List<AppInfo>, pkg: String) = apps.firstOrNull { it.packageName == pkg && it.enabled }
@@ -140,8 +149,10 @@ data class LauncherActions(
     /** Open in the picker: shows that launcher on the TV. */
     val open: (String) -> Unit = {},
     val later: () -> Unit = {},
-    /** Fire OS: Install Projectivy, which reads the latest release for the confirm dialog. Try again does the same. */
-    val fireCheck: () -> Unit = {},
+    /** Fire OS: Install the launcher, which reads its latest release for the confirm dialog. Try again does the same. */
+    val fireCheck: (String) -> Unit = {},
+    /** The tick on a launcher from the user's own list. */
+    val fireTrust: (Boolean) -> Unit = {},
     /** Fire OS: Download and install on the confirm step. */
     val fireInstall: () -> Unit = {},
     /** Fire OS: X, Stop or OK on a step. */
@@ -150,7 +161,7 @@ data class LauncherActions(
     val firePick: () -> Unit = {},
 )
 
-/** The Apps tab's card: a launcher without ads, from the Play Store ([fire]: Projectivy, installed by Tellyscope). Not now puts it away on this TV. */
+/** The Apps tab's card: a launcher without ads, from the Play Store ([fire]: the list's Fire OS one, installed by Tellyscope). Not now puts it away on this TV. */
 @Composable
 fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, fire: Boolean = false) {
     HomeNoteCard(
@@ -164,7 +175,7 @@ fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, f
  * Play Store, then the switch, which ends in the same yes for the accessibility service as Set as
  * default. A launcher already on the TV skips the Store: the picker offers Make Home or Open on it.
  * A TV that didn't open the Store says so; a Store closed without installing goes back to the picker.
- * On Fire OS ([LauncherFlow.fireOs]) the picker is Projectivy alone, which Tellyscope downloads and installs.
+ * On Fire OS ([LauncherFlow.fireOs]) the picker is the list's Fire OS launcher alone, which Tellyscope downloads and installs.
  * [direct]: a launcher that is [downloadable] also offers Download directly, under the Store and after a warning.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -215,7 +226,7 @@ fun LauncherScreen(
                 title = {
                     Text(
                         when {
-                            flow.fireOs -> Copy.INSTALL_PROJECTIVY
+                            flow.fireOs -> Copy.installLauncher(label)
                             flow.step == LauncherFlow.Step.Pick -> Copy.CHOOSE_HOME
                             else -> Copy.INSTALL_HOME
                         }.resolve(),
@@ -235,7 +246,7 @@ fun LauncherScreen(
             ) {
                 when (flow.step) {
                     LauncherFlow.Step.Pick -> if (fire != null) {
-                        FireButtons(fire, actions, Modifier.weight(1f))
+                        FireButtons(fire, flow.pkg, actions, Modifier.weight(1f))
                     } else {
                         val have = installedLauncher(apps, chosen)
                         when {
@@ -250,7 +261,7 @@ fun LauncherScreen(
                                 }
                                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth()) { actions.install(chosen) }
                                 if (both) {
-                                    OutlinedButton(onClick = actions.fireCheck, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
+                                    OutlinedButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
                                 }
                             }
                             // Home now, or a TV that can't take it as Home: only Open.
@@ -290,7 +301,7 @@ fun LauncherScreen(
             }
             val c = MaterialTheme.colorScheme
             when (flow.step) {
-                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, device, actions.firePick) else Picker(chosen, apps, direct) { chosen = it }
+                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, actions) else Picker(chosen, apps, direct) { chosen = it }
                 LauncherFlow.Step.Waiting -> {
                     Hero(LauncherIcons.Download, c.secondaryContainer, c.onSecondaryContainer)
                     Headed(Copy.INSTALL_IT.resolve(), bold(Copy.installItText(label).resolve(), label, stringResource(R.string.launcher_install_word)))
@@ -381,12 +392,12 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
     }
 }
 
-/** Fire OS's picker: Projectivy alone, about it as the picker says it, and nothing to do on the TV. */
+/** Fire OS's picker: [l] alone, about it as the picker says it, and nothing to do on the TV. */
 @Composable
-private fun FirePick() {
+private fun FirePick(l: Recommended?) {
     val c = MaterialTheme.colorScheme
     Text(Copy.FIRE_INSTALL_TEXT.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
-    val l = RECOMMENDED.firstOrNull { it.pkg == PROJECTIVY } ?: return
+    l ?: return
     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(l.name, style = MaterialTheme.typography.bodyLarge)
@@ -406,65 +417,60 @@ private fun FirePick() {
  * went wrong. Couldn't download offers the release page and Pick the downloaded file, checked the same way.
  * After Download directly ([FireInstall.store]) the confirm is a warning, and it and a wrong signature offer
  * the Play Store instead.
+ * From the user's own list ([FireInstall.list]) each step that can install it opens on [OwnListCard].
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FireBody(f: FireInstall, device: Device, onPick: () -> Unit) {
+private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: LauncherActions) {
     val c = MaterialTheme.colorScheme
     val uri = LocalUriHandler.current
-    val label = launcherName(PROJECTIVY)
+    val l = RECOMMENDED.firstOrNull { it.pkg == pkg }
+    val label = launcherName(pkg)
+    val releases = l?.launcher?.releases
     val release = f.release
-    val openPage = { uri.openUri(release?.page ?: "$PROJECTIVY_RELEASES/latest") }
+    val openPage = { (release?.page ?: releases?.let { "$it/latest" })?.let(uri::openUri) ?: Unit }
+    val source = releases?.removePrefix("https://")?.removeSuffix("/releases")
+    val own = f.list?.takeIf { f.step in OWN_LIST_STEPS }
+    if (own != null) OwnListCard(own, l?.launcher?.signers.orEmpty())
     when (f.step) {
         null, FireInstall.Step.Checking, FireInstall.Step.Confirm -> if (f.store) {
             WarningBadge()
             Text(Copy.downloadDirectly(label).resolve(), style = MaterialTheme.typography.headlineMedium)
             Text(Copy.downloadsFrom(label).resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-            release?.let { SourceRow(it, openPage) }
+            release?.let { SourceRow(source, it, openPage) }
             Text(Copy.DIRECT_CHECK.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             Text(Copy.STORE_SAFER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         } else {
-            FirePick()
+            FirePick(l)
             if (release != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(Copy.WHERE_FROM.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
-                    SourceRow(release, openPage)
+                    SourceRow(source, release, openPage)
                 }
-                Text(Copy.SIGNED_CHECK.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                Text(Copy.signedCheck(label).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
         }
         FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> {
             Text(Copy.installing(label).resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
-            FireSteps(f, device)
+            FireSteps(f, label, device)
             Text(Copy.INSTALL_KEEP_OPEN.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
         }
-        FireInstall.Step.NotProjectivy -> {
+        FireInstall.Step.WrongApk -> {
             Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
             Headed(
-                (if (f.picked) Copy.NOT_PROJECTIVY_FILE else Copy.NOT_PROJECTIVY).resolve(),
-                AnnotatedString((if (f.picked) Copy.NOT_PROJECTIVY_FILE_TEXT else Copy.NOT_PROJECTIVY_TEXT).resolve()),
+                (if (f.picked) Copy.wrongApkFile(label) else Copy.wrongApk(label)).resolve(),
+                AnnotatedString((if (f.picked) Copy.wrongApkFileText(label) else Copy.wrongApkText(label)).resolve()),
             )
-            FireSteps(f, device)
+            FireSteps(f, label, device)
             if (f.store) Text(Copy.STORE_INSTEAD.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         }
         FireInstall.Step.NoDownload -> {
             Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
             val text = if (f.until != null) Copy.noDownloadLimited(clockTime(f.until)) else Copy.NO_DOWNLOAD_OFFLINE
-            Headed(Copy.NO_DOWNLOAD.resolve(), AnnotatedString(text.resolve()))
+            Headed(Copy.noDownload(label).resolve(), AnnotatedString(text.resolve()))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(Copy.OR_YOURSELF.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
-                Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Numbered(1) {
-                            Text(Copy.YOURSELF_PAGE.resolve(), style = MaterialTheme.typography.bodyMedium)
-                            SourceRow(release, openPage)
-                        }
-                        Numbered(2) {
-                            Text(Copy.yourselfPick(release?.apk?.substringAfterLast('/')).resolve(), style = MaterialTheme.typography.bodyMedium)
-                            FilledTonalButton(onClick = onPick, modifier = Modifier.fillMaxWidth()) { Text(Copy.PICK_DOWNLOADED.resolve()) }
-                        }
-                    }
-                }
+                Yourself(f, label, source, openPage, actions)
             }
         }
         FireInstall.Step.Refused -> {
@@ -474,32 +480,60 @@ private fun FireBody(f: FireInstall, device: Device, onPick: () -> Unit) {
     }
 }
 
-/** The bottom of each Fire OS step: full width, so the confirm reads the same as Download directly's. */
+/**
+ * Download it in the browser, then pick it: after Couldn't download. From the user's own list,
+ * picking waits for the tick ([TrustRow]).
+ */
 @Composable
-private fun FireButtons(f: FireInstall, actions: LauncherActions, modifier: Modifier) {
-    val store = { actions.install(PROJECTIVY) }
+private fun Yourself(f: FireInstall, label: String, source: String?, openPage: () -> Unit, actions: LauncherActions) {
+    val release = f.release
+    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            Numbered(1) {
+                Text(Copy.YOURSELF_PAGE.resolve(), style = MaterialTheme.typography.bodyMedium)
+                SourceRow(source, release, openPage)
+            }
+            Numbered(2) {
+                Text(Copy.yourselfPick(release?.apk?.substringAfterLast('/'), label).resolve(), style = MaterialTheme.typography.bodyMedium)
+                if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
+                FilledTonalButton(onClick = actions.firePick, enabled = !f.gated, modifier = Modifier.fillMaxWidth()) { Text(Copy.PICK_DOWNLOADED.resolve()) }
+            }
+        }
+    }
+}
+
+/**
+ * The bottom of each Fire OS step, for [pkg]: full width, so the confirm reads the same as Download directly's.
+ * From the user's own list, the download waits for the tick ([TrustRow]).
+ */
+@Composable
+private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, modifier: Modifier) {
+    val store = { actions.install(pkg) }
+    val check = { actions.fireCheck(pkg) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
-            null, FireInstall.Step.Checking -> IconButtonText(LauncherIcons.Download, Copy.INSTALL_PROJECTIVY.resolve(), wide, enabled = f.step == null, onClick = actions.fireCheck)
+            null, FireInstall.Step.Checking -> IconButtonText(LauncherIcons.Download, Copy.installLauncher(launcherName(pkg)).resolve(), wide, enabled = f.step == null, onClick = check)
             // The safe way first and filled; the download only as the outlined second.
             FireInstall.Step.Confirm -> if (f.store) {
                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
-                OutlinedButton(onClick = actions.fireInstall, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
+                if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
+                OutlinedButton(onClick = actions.fireInstall, enabled = !f.gated, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
             } else {
-                IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), wide, onClick = actions.fireInstall)
+                if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
+                IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), wide, enabled = !f.gated, onClick = actions.fireInstall)
             }
             FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> Unit
-            FireInstall.Step.NotProjectivy -> when {
+            FireInstall.Step.WrongApk -> when {
                 f.picked -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                     TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
-                    Button(onClick = actions.fireCheck) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }
+                    Button(onClick = check) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }
                 }
                 f.store -> IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
-                else -> Button(onClick = actions.fireCheck, modifier = wide) { Text(Copy.TRY_AGAIN.resolve()) }
+                else -> Button(onClick = check, modifier = wide) { Text(Copy.TRY_AGAIN.resolve()) }
             }
             FireInstall.Step.NoDownload -> Row(wide, horizontalArrangement = Arrangement.End) {
-                Button(onClick = actions.fireCheck) { Text(Copy.TRY_AGAIN.resolve()) }
+                Button(onClick = check) { Text(Copy.TRY_AGAIN.resolve()) }
             }
             FireInstall.Step.Refused -> Row(wide, horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 if (f.picked) TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
@@ -526,10 +560,10 @@ private enum class StepMark { Todo, Active, Done, Failed }
 /** Download (or the picked file), the check, the install: each to do, under way, done, or failed. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FireSteps(f: FireInstall, device: Device) {
+private fun FireSteps(f: FireInstall, label: String, device: Device) {
     val c = MaterialTheme.colorScheme
     val release = f.release
-    val failed = f.step == FireInstall.Step.NotProjectivy
+    val failed = f.step == FireInstall.Step.WrongApk
     val checked = f.step == FireInstall.Step.Installing
     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -547,10 +581,10 @@ private fun FireSteps(f: FireInstall, device: Device) {
                 else -> StepLine(1, StepMark.Done, Copy.STEP_DOWNLOADED, release?.let { Copy.release(it.version, it.size) })
             }
             when {
-                failed -> StepLine(2, StepMark.Failed, Copy.STEP_FAILED, Copy.STEP_FAILED_TEXT)
-                checked -> StepLine(2, StepMark.Done, Copy.STEP_CHECKED, Copy.STEP_CHECKED_TEXT)
-                f.step == FireInstall.Step.Reading -> StepLine(2, StepMark.Active, Copy.STEP_CHECKING)
-                else -> StepLine(2, StepMark.Todo, Copy.STEP_CHECK)
+                failed -> StepLine(2, StepMark.Failed, Copy.stepFailed(label), Copy.STEP_FAILED_TEXT)
+                checked -> StepLine(2, StepMark.Done, Copy.stepChecked(label), Copy.STEP_CHECKED_TEXT)
+                f.step == FireInstall.Step.Reading -> StepLine(2, StepMark.Active, Copy.stepChecking(label))
+                else -> StepLine(2, StepMark.Todo, Copy.stepCheck(label))
             }
             if (!failed) {
                 if (checked) {
@@ -611,15 +645,12 @@ private fun StopDialog(onKeep: () -> Unit, onStop: () -> Unit) {
 private fun clockTime(millis: Long): String =
     java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(millis))
 
-/** Projectivy's repo, as the source row names it. */
-private val PROJECTIVY_SOURCE = PROJECTIVY_RELEASES.removePrefix("https://").removeSuffix("/releases")
-
 /**
- * Where the download comes from, as one tappable row: the repo, then the release and its size; it opens the
- * release page. With no [release] read, it says the latest one and opens that.
+ * Where the download comes from, as one tappable row: the repo ([source], like github.com/owner/repo), then the
+ * release and its size; it opens the release page. With no [release] read, it says the latest one and opens that.
  */
 @Composable
-private fun SourceRow(release: LauncherRelease?, onOpen: () -> Unit) {
+private fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Surface(
         onClick = onOpen,
@@ -631,7 +662,7 @@ private fun SourceRow(release: LauncherRelease?, onOpen: () -> Unit) {
             Icon(LauncherIcons.Code, null, Modifier.size(20.dp), tint = c.onSurfaceVariant)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(PROJECTIVY_SOURCE, style = MaterialTheme.typography.bodyMedium, color = c.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(source.orEmpty(), style = MaterialTheme.typography.bodyMedium, color = c.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text((release?.let { Copy.release(it.version, it.size) } ?: Copy.LATEST_RELEASE).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
             Spacer(Modifier.width(8.dp))
@@ -647,6 +678,69 @@ private fun WarningBadge() {
     val c = MaterialTheme.colorScheme
     Box(Modifier.size(56.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(c.errorContainer), contentAlignment = Alignment.Center) {
         Icon(Icons.Default.Warning, null, Modifier.size(32.dp), tint = c.onErrorContainer)
+    }
+}
+
+/** The steps that can still download or pick the APK, which [OwnListCard] opens. */
+private val OWN_LIST_STEPS = setOf(null, FireInstall.Step.Checking, FireInstall.Step.Confirm, FireInstall.Step.NoDownload)
+
+/**
+ * A launcher from the user's own list ([FireInstall.list]): the list's address and the signer it names, since all
+ * Tellyscope can check is that the APK matches them. In the error colours, above everything else on the step.
+ */
+@Composable
+private fun OwnListCard(list: String, signers: Set<String>) {
+    val c = MaterialTheme.colorScheme
+    Surface(shape = MaterialTheme.shapes.large, color = c.errorContainer, contentColor = c.onErrorContainer, modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Warning, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(Copy.OWN_LIST_TITLE.resolve(), style = MaterialTheme.typography.titleSmall)
+            }
+            Text(Copy.OWN_LIST_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium)
+            Column {
+                Text(Copy.OWN_LIST_LIST.resolve(), style = MaterialTheme.typography.labelMedium)
+                Text(sourceName(list), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+            }
+            Column {
+                Text(Copy.OWN_LIST_SIGNER.resolve(), style = MaterialTheme.typography.labelMedium)
+                signers.forEach { Text(groupedHex(it), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace) }
+            }
+        }
+    }
+}
+
+/** A SHA-256 as [OwnListCard] shows it: groups of eight, four to a line. */
+internal fun groupedHex(sha: String) = sha.chunked(8).chunked(4).joinToString("\n") { it.joinToString(" ") }
+
+/**
+ * I trust this list and its signer: the extra step before a launcher from the user's own list downloads or is
+ * picked. Keyboard and D-pad focus start here rather than on the button, which needs a press of its own.
+ */
+@Composable
+private fun TrustRow(trusted: Boolean, onTrust: (Boolean) -> Unit) {
+    val c = MaterialTheme.colorScheme
+    val focus = remember { FocusRequester() }
+    val interaction = remember { MutableInteractionSource() }
+    val focused by interaction.collectIsFocusedAsState()
+    LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        border = if (focused) BorderStroke(3.dp, c.onSurface) else BorderStroke(1.dp, c.outline),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier
+                .focusRequester(focus)
+                .toggleable(trusted, interaction, indication = ripple(), role = Role.Checkbox, onValueChange = onTrust)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Checkbox(trusted, onCheckedChange = null, Modifier.padding(8.dp))
+            Spacer(Modifier.width(4.dp))
+            Text(Copy.OWN_LIST_TRUST.resolve(), style = MaterialTheme.typography.bodyLarge)
+        }
     }
 }
 
