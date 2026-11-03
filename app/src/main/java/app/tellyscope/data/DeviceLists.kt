@@ -263,9 +263,12 @@ fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGro
  */
 class DeviceLists(
     private val dir: File,
+    private val default: String,
     private val fetch: suspend (String) -> ByteArray = ::download,
-    private val default: String = LISTS_BASE,
 ) {
+    /** The debloat list source, tellyscope-devices unless the user sets their own. [fetch] stays last, so it can trail. */
+    constructor(dir: File, fetch: suspend (String) -> ByteArray = ::download) : this(dir, LISTS_BASE, fetch)
+
     private val lock = Mutex()
     private var index: ListIndex? = null
     private val picks = File(dir, "picks.tsv")
