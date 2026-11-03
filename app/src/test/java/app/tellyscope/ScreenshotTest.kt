@@ -1266,7 +1266,7 @@ class ScreenshotTest {
         runBlocking {
             val online = DeviceLists(dir)
             if (online.index() != null) names.forEach { online.logo(it) }
-            SharedLists.load(DeviceLists(none, DATA_BASE, offline), DeviceLists(dir, offline))
+            SharedLists.load(DeviceLists(none, DATA_BASE, fetch = offline), DeviceLists(dir, offline))
         }
         try { body() } finally {
             SharedLists.reseed()

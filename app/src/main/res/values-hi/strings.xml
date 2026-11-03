@@ -153,11 +153,11 @@
     <string name="copy_pick_downloaded">डाउनलोड की गई फ़ाइल चुनें</string>
     <string name="copy_pick_another">दूसरी फ़ाइल चुनें</string>
     <string name="copy_try_download_again">फिर से डाउनलोड करें</string>
-    <string name="copy_own_list_title">आपकी जोड़ी हुई सूची से</string>
-    <string name="copy_own_list_text">Tellyscope इस ऐप की गारंटी नहीं दे सकता। यह सिर्फ़ जांचता है कि फ़ाइल इस सूची से मेल खाती है, और सिग्नेचर उसी ने चुना है जो यह सूची चलाता है।</string>
-    <string name="copy_own_list_list">सूची</string>
-    <string name="copy_own_list_signer">सिग्नेचर (SHA-256)</string>
-    <string name="copy_own_list_trust">मुझे इस सूची और इसके सिग्नेचर पर भरोसा है</string>
+    <string name="copy_unverified_title">लॉन्चर सूची की पुष्टि नहीं हो सकी</string>
+    <string name="copy_unverified_text">Tellyscope पुष्टि नहीं कर सका कि यह वही सूची है जो उसने प्रकाशित की थी। अगर सूची पिछले कुछ मिनटों में बदली है, तो थोड़ी देर बाद फिर कोशिश करें। अभी इंस्टॉल तभी करें जब आपको इस सूची और इसके सिग्नेचर पर भरोसा हो।</string>
+    <string name="copy_unverified_list">सूची</string>
+    <string name="copy_unverified_signer">सिग्नेचर (SHA-256)</string>
+    <string name="copy_unverified_trust">मुझे इस सूची और इसके सिग्नेचर पर भरोसा है</string>
     <string name="copy_service_off_text">%1$s की सुलभता सेवा बंद है, इसलिए TV Home को वापस ले सकता है।</string>
     <string name="copy_open_again">फिर से खोलें</string>
     <string name="copy_undo">पहले जैसा करें</string>

@@ -194,12 +194,12 @@
     <string name="copy_pick_downloaded">Pick the downloaded file</string>
     <string name="copy_pick_another">Pick another file</string>
     <string name="copy_try_download_again">Try download again</string>
-    <!-- A launcher from a list the user added, not the default: confirmed before anything installs -->
-    <string name="copy_own_list_title">From a list you added</string>
-    <string name="copy_own_list_text">Tellyscope can\'t vouch for this app. It only checks that the file matches this list, and whoever runs the list chose the signer.</string>
-    <string name="copy_own_list_list">List</string>
-    <string name="copy_own_list_signer">Signer (SHA-256)</string>
-    <string name="copy_own_list_trust">I trust this list and its signer</string>
+    <!-- The launcher list from data/ failed its signature or checksum check: shown, and ticked, before anything installs -->
+    <string name="copy_unverified_title">Couldn\'t verify the launcher list</string>
+    <string name="copy_unverified_text">Tellyscope couldn\'t confirm this is the list it published. If the list changed in the last few minutes, try again later. Install now only if you trust the list and its signer.</string>
+    <string name="copy_unverified_list">List</string>
+    <string name="copy_unverified_signer">Signer (SHA-256)</string>
+    <string name="copy_unverified_trust">I trust this list and its signer</string>
     <string name="copy_service_off_text">%1$s\'s accessibility service is off, so the TV can take Home back.</string>
 
     <string name="copy_open_again">Open again</string>

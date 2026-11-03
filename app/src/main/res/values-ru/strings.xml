@@ -153,11 +153,11 @@
     <string name="copy_pick_downloaded">Выбрать скачанный файл</string>
     <string name="copy_pick_another">Выбрать другой файл</string>
     <string name="copy_try_download_again">Скачать снова</string>
-    <string name="copy_own_list_title">Из списка, который вы добавили</string>
-    <string name="copy_own_list_text">Tellyscope не может ручаться за это приложение. Он лишь проверяет, что файл совпадает с этим списком, а подпись выбрал тот, кто ведёт список.</string>
-    <string name="copy_own_list_list">Список</string>
-    <string name="copy_own_list_signer">Подпись (SHA-256)</string>
-    <string name="copy_own_list_trust">Я доверяю этому списку и его подписи</string>
+    <string name="copy_unverified_title">Не удалось проверить список лаунчеров</string>
+    <string name="copy_unverified_text">Tellyscope не смог подтвердить, что это опубликованный им список. Если список изменился в последние несколько минут, попробуйте позже. Устанавливайте сейчас, только если доверяете списку и его подписи.</string>
+    <string name="copy_unverified_list">Список</string>
+    <string name="copy_unverified_signer">Подпись (SHA-256)</string>
+    <string name="copy_unverified_trust">Я доверяю этому списку и его подписи</string>
     <string name="copy_service_off_text">Служба специальных возможностей %1$s отключена, поэтому телевизор может вернуть свой главный экран.</string>
     <string name="copy_open_again">Открыть снова</string>
     <string name="copy_undo">Отменить</string>

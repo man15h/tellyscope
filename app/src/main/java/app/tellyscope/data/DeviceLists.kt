@@ -106,12 +106,18 @@ fun merge(maker: String, lists: List<DeviceList>): DeviceList = DeviceList(
 /** A file the index names outside `devices/`, checked against [sha256] like a device file. */
 data class ListFile(val file: String, val sha256: String)
 
-/** [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index without them. */
+/**
+ * [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index without them.
+ * [version] goes up with each signed `data/` index. [signed]: a signature on its line 2 verifies against the keys
+ * [DeviceLists] was given and its version is no lower than the newest signed one seen, so it is the one Tellyscope published.
+ */
 data class ListIndex(
     val commit: String?,
     val devices: List<ListEntry>,
     val lists: Map<String, ListFile> = emptyMap(),
     val logos: Map<String, ListFile> = emptyMap(),
+    val version: Long? = null,
+    val signed: Boolean = false,
 )
 
 data class ListPackage(val pkg: String, val note: String?, val optional: Boolean)
@@ -199,6 +205,7 @@ fun parseIndex(text: String): ListIndex? = try {
         }.orEmpty(),
         lists = o.files("lists", LIST_FILE),
         logos = o.files("logos", LOGO_FILE),
+        version = o.optLong("version").takeIf { it > 0 },
     )
 } catch (_: org.json.JSONException) {
     null
@@ -259,20 +266,24 @@ fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGro
  * Fetches and caches the index, device files, lists and logos under [dir], from [default] or the
  * user's own source. A failed fetch falls back to the cache; a file is only used (and cached) when
  * its sha256 matches the index. Hand picks are remembered per [historyKey]. `data/` ([DATA_BASE])
- * is read through one of these too, with its own [dir] and never a source of the user's.
+ * is read through one of these too, with its own [dir], never a source of the user's, and [keys] its index
+ * must be signed with ([ListIndex.signed], [verified]).
  */
 class DeviceLists(
     private val dir: File,
     private val default: String,
+    private val keys: List<String>? = null,
     private val fetch: suspend (String) -> ByteArray = ::download,
 ) {
     /** The debloat list source, tellyscope-devices unless the user sets their own. [fetch] stays last, so it can trail. */
-    constructor(dir: File, fetch: suspend (String) -> ByteArray = ::download) : this(dir, LISTS_BASE, fetch)
+    constructor(dir: File, fetch: suspend (String) -> ByteArray = ::download) : this(dir, LISTS_BASE, null, fetch)
 
     private val lock = Mutex()
     private var index: ListIndex? = null
     private val picks = File(dir, "picks.tsv")
     private val sourceFile = File(dir, "source.txt")
+    /** The newest signed [ListIndex.version] seen: an older index, even one signed, is never [ListIndex.signed] again. */
+    private val floorFile = File(dir, "version.txt")
 
     /** The folder holding `index.json`: one the user set, else [default]. Checked again here, so a stored address that isn't `https` is never used. */
     val base: String get() = custom()?.let(::normalize) ?: default
@@ -316,12 +327,46 @@ class DeviceLists(
     suspend fun index(): ListIndex? = lock.withLock {
         index ?: withContext(Dispatchers.IO) {
             dir.mkdirs()
-            val cache = File(dir, "index.json")
-            val text = attempt { fetch(base + "index.json") }?.decodeToString()
-            text?.let(::parseIndex)?.also { cache.writeText(text); index = it }
-                ?: cache.takeIf { it.exists() }?.readText()?.let(::parseIndex)
+            val bytes = attempt { fetch(base + "index.json") }
+            bytes?.let { b -> checked(b)?.also { save(b, it); index = it } } ?: cachedIndex()
         }
     }
+
+    /**
+     * Whether the index is [ListIndex.signed] and every list it names can be had and matches its sha256, so what
+     * is used is what was signed. False offline with nothing cached, and for a source without [keys].
+     */
+    suspend fun verified(): Boolean {
+        val index = index() ?: return false
+        return index.signed && index.lists.values.all { file(it.file, it.sha256) != null }
+    }
+
+    /** [verified] from the cache alone, for the moment before the network answers. */
+    suspend fun cachedVerified(): Boolean = withContext(Dispatchers.IO) {
+        val index = cachedIndex() ?: return@withContext false
+        index.signed && index.lists.values.all { f -> cached(f.file)?.let { sha256(it) == f.sha256 } == true }
+    }
+
+    /** [bytes] read as an index; [ListIndex.signed] when its signature line ([verifyIndex]) passes and the version is no lower than [floor]. */
+    private fun checked(bytes: ByteArray): ListIndex? {
+        val parsed = parseIndex(bytes.decodeToString()) ?: return null
+        val keys = keys ?: return parsed
+        val version = parsed.version ?: return parsed
+        return parsed.copy(signed = version >= floor() && verifyIndex(bytes, keys))
+    }
+
+    /** The cached index, its signature checked again rather than remembered, so an edited cache isn't trusted. */
+    private fun cachedIndex(): ListIndex? {
+        val bytes = File(dir, "index.json").takeIf { it.exists() }?.readBytes() ?: return null
+        return checked(bytes)
+    }
+
+    private fun save(bytes: ByteArray, parsed: ListIndex) {
+        File(dir, "index.json").writeBytes(bytes)
+        if (parsed.signed) parsed.version?.let { floorFile.writeText(it.toString()) }
+    }
+
+    private fun floor(): Long = floorFile.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull() ?: 0
 
     /** The device file for [entry], from cache or the network. Null when the bytes don't match its sha256. */
     suspend fun list(entry: ListEntry): DeviceList? =

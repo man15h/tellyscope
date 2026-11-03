@@ -153,11 +153,11 @@
     <string name="copy_pick_downloaded">选择已下载的文件</string>
     <string name="copy_pick_another">选择其他文件</string>
     <string name="copy_try_download_again">重新下载</string>
-    <string name="copy_own_list_title">来自你添加的列表</string>
-    <string name="copy_own_list_text">Tellyscope 无法为此应用担保。它只检查文件是否与此列表一致，签名由维护该列表的人选定。</string>
-    <string name="copy_own_list_list">列表</string>
-    <string name="copy_own_list_signer">签名 (SHA-256)</string>
-    <string name="copy_own_list_trust">我信任此列表及其签名</string>
+    <string name="copy_unverified_title">无法验证启动器列表</string>
+    <string name="copy_unverified_text">Tellyscope 无法确认这是它发布的列表。如果列表在几分钟内刚有更改，请稍后再试。只有在你信任此列表及其签名时才立即安装。</string>
+    <string name="copy_unverified_list">列表</string>
+    <string name="copy_unverified_signer">签名 (SHA-256)</string>
+    <string name="copy_unverified_trust">我信任此列表及其签名</string>
     <string name="copy_service_off_text">%1$s 的无障碍服务已关闭，因此电视可能会抢回主屏幕。</string>
     <string name="copy_open_again">再次打开</string>
     <string name="copy_undo">撤消</string>
