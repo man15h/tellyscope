@@ -12,12 +12,6 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Improved:** On This TV, tap the memory ring or the network graph to open its tab. [#334](../../pull/334)
-- **Improved:** Swipe sideways to switch tabs on Advanced and Apps. [#335](../../pull/335)
-- **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline", and it changes the moment Wi-Fi drops, not after reopening the app. [#333](../../pull/333)
-- **Fixed:** With the TV offline, Installed and Built-in say why they're empty instead of "Nothing here yet." [#333](../../pull/333)
-- **Fixed:** In Shell, pressing Enter no longer closes the keyboard. [#335](../../pull/335)
-
 ## 0.15.0 — 2026-11-03
 
 - **New:** Advanced has a Shell: a terminal on the TV where you can paste any `adb shell` command. Commands that change the TV ask first. [#314](../../pull/314)
@@ -27,6 +21,8 @@ until this file has a section for its version.
 - **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
 - **Improved:** The launcher list is signed. If Tellyscope can't verify it, installing a launcher shows the list and its signer, and asks you to confirm. [#322](../../pull/322)
 - **Improved:** Which launchers may turn on their accessibility service now comes from the signed launcher list. If Tellyscope can't verify the list, it turns on no launcher's accessibility service. Tellyscope also skips a copy of the launcher that is too old to have one. [#328](../../pull/328)
+- **Improved:** On This TV, tap the memory ring or the network graph to open its tab. [#334](../../pull/334)
+- **Improved:** Swipe sideways to switch tabs on Advanced and Apps. [#335](../../pull/335)
 - **Fixed:** Reconnecting to a TV, or installing right after the file picker, no longer leaves every action saying the TV is offline. [#312](../../pull/312)
 - **Fixed:** Off Wi-Fi, the TV tabs and failed sends blame the phone, not the TV, and Reconnect on Overview opens the Wi-Fi panel. [#313](../../pull/313)
 - **Fixed:** On a Fire TV or another HDMI box whose volume is fixed, the Remote's mute and volume keys are grayed out, with a line saying to use the TV's own remote. [#307](../../pull/307)
@@ -37,6 +33,9 @@ until this file has a section for its version.
 - **Fixed:** On Android 7 and older, Clear caches says it needs Android 8 instead of erroring. [#304](../../pull/304)
 - **Fixed:** Picking an app to install right after the TV's link dropped no longer fails with "Lost the TV partway through"; a file the phone can't read, or a TV that doesn't answer, now says which. [#305](../../pull/305)
 - **Fixed:** The install dialog no longer closes by itself after picking an app. [#311](../../pull/311)
+- **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline", and it changes the moment Wi-Fi drops, not after reopening the app. [#333](../../pull/333)
+- **Fixed:** With the TV offline, Installed and Built-in say why they're empty instead of "Nothing here yet." [#333](../../pull/333)
+- **Fixed:** In Shell, pressing Enter no longer closes the keyboard. [#335](../../pull/335)
 
 ## 0.14.0 — 2026-10-30
 
