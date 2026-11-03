@@ -10,6 +10,11 @@ Changes merged into `dev` collect under `## Unreleased`. A release renames
 that heading to its version and date. A pull request into `main` fails CI
 until this file has a section for its version.
 
+## Unreleased
+
+- **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline". [#333](../../pull/333)
+- **Fixed:** With the TV offline, Installed and Built-in say why they're empty instead of "Nothing here yet." [#333](../../pull/333)
+
 ## 0.15.0 — 2026-11-03
 
 - **New:** Advanced has a Shell: a terminal on the TV where you can paste any `adb shell` command. Commands that change the TV ask first. [#314](../../pull/314)
