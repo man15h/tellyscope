@@ -66,9 +66,13 @@ index:
    also what `Data` checks on a pull request into `dev`.
 2. After the merge, `Data`'s `needs-sign` job runs `index` and `check` without secrets. When the index
    needs a signature, the `sign` job waits for the maintainer's approval in the `data-signing`
-   environment, signs with its `DATA_SIGNING_KEY` secret, and commits the signed `data/index.json` to
-   `dev`. Alpha builds read that.
-3. The `dev` → `main` release carries the signed index; `Data` runs the full `check` on pull requests
+   environment, signs with its `DATA_SIGNING_KEY` secret, force-pushes the signed `data/index.json` to
+   the `data/sign` branch, and opens a pull request from it into `dev` (or updates the open one).
+3. The maintainer runs `Data` by hand on `data/sign` (Actions → Data → Run workflow, no secrets): a
+   pull request opened by a workflow triggers no checks itself, and a run by hand checks the signature
+   too. Once it passes, merge the pull request. Alpha builds read the signed index from `dev`, and the
+   merge doesn't ask for another signature, because the index on `dev` is now signed.
+4. The `dev` → `main` release carries the signed index; `Data` runs the full `check` on pull requests
    into `main` and on `main` itself.
 
 Signing only after merge matters: once a signed `data/index.json` is on GitHub it stays fetchable by its
