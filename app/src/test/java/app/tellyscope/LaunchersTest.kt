@@ -107,7 +107,7 @@ class LaunchersTest {
         val index = """{"schema":1,"devices":[],"lists":{"protected":{"file":"lists/protected.json","sha256":"${sha(file)}"}}}""".toByteArray()
         val served = mapOf("index.json" to index, "lists/protected.json" to file)
         try {
-            SharedLists.load(DeviceLists(tmp.newFolder(), { throw IOException("offline") }, DATA_BASE), DeviceLists(tmp.newFolder()) { url -> served[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") }, fresh = true)
+            SharedLists.load(DeviceLists(tmp.newFolder(), DATA_BASE) { throw IOException("offline") }, DeviceLists(tmp.newFolder()) { url -> served[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") }, fresh = true)
             assertEquals(ProtectedReason.TV_INPUTS_REMOTE, Protected.reason("org.droidtv.eum"))
             assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.android.settings"))
         } finally {
@@ -125,7 +125,7 @@ class LaunchersTest {
         val data = mapOf("index.json" to index(ours, "launchers.json"), "launchers.json" to ours)
         try {
             SharedLists.load(
-                DeviceLists(tmp.newFolder(), { url -> data[url.removePrefix(DATA_BASE)] ?: throw IOException("404 $url") }, DATA_BASE),
+                DeviceLists(tmp.newFolder(), DATA_BASE) { url -> data[url.removePrefix(DATA_BASE)] ?: throw IOException("404 $url") },
                 DeviceLists(tmp.newFolder()) { url -> asked += url; source[url.removePrefix(LISTS_BASE)] ?: throw IOException("404 $url") },
                 fresh = true,
             )
