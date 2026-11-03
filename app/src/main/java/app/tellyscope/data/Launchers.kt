@@ -10,21 +10,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Launchers that keep Home with their own accessibility service, for TVs whose Home button opens
- * their own launcher whatever the default is, so Make Home turns that service on, and Undo or a
- * switch away from it turns it off. Each with the version whose manifest was read. Built in, never
- * fetched: an accessibility service can read the screen, so only a list reviewed here may turn one on.
- */
-val ACCESSIBILITY_LAUNCHERS = mapOf(
-    "com.spocky.projengmenu" to "4.72",
-    "com.overdevs.at4k" to "1.2",
-    "com.spauldhaliwal.dispatch" to "1.0.175",
-)
-
-/**
- * A third-party launcher Tellyscope knows, from `launchers.json`. [accessibility] is whether it is
- * one of [ACCESSIBILITY_LAUNCHERS], never what the list says. [about] is the line Install a home
+ * A third-party launcher Tellyscope knows, from `launchers.json`. [about] is the line Install a home
  * screen shows; a launcher without one isn't offered there.
+ *
+ * [accessibility]: it keeps Home with its own accessibility service, for TVs whose Home button opens
+ * their own launcher whatever the default is, so Make Home turns that service on, and Undo or a switch
+ * away from it turns it off. The value is the version whose manifest was read. An accessibility service
+ * can read the screen, so [SharedLists] keeps it only while `data/` passes its signature check.
  *
  * Installing it from an APK rather than the Play Store: [signers] are the SHA-256s of the only
  * certificates it may be signed with (empty: never from an APK), [maxBytes] is past any real copy of
@@ -39,9 +31,8 @@ data class KnownLauncher(
     val maxBytes: Long = DEFAULT_MAX_MB shl 20,
     val releases: String? = null,
     val fireOs: Boolean = false,
+    val accessibility: String? = null,
 ) {
-    val accessibility get() = pkg in ACCESSIBILITY_LAUNCHERS
-
     /** It, signed only by its developer: [signers] are the SHA-256s of an APK's certificates. */
     fun accepts(packageName: String, signers: Set<String>) =
         packageName == pkg && signers.isNotEmpty() && this.signers.isNotEmpty() && this.signers.containsAll(signers)
@@ -50,6 +41,7 @@ data class KnownLauncher(
 private const val DEFAULT_MAX_MB = 64L
 private const val MAX_MB = 256L
 private val SIGNER = Regex("[0-9a-f]{64}")
+private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
 private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
@@ -67,6 +59,7 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             maxBytes = l.optLong("max_mb", DEFAULT_MAX_MB).coerceIn(1, MAX_MB) shl 20,
             releases = l.optStringOrNull("releases")?.takeIf(RELEASES_PAGE::matches),
             fireOs = l.optBoolean("fire_os"),
+            accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
 } catch (_: org.json.JSONException) {
@@ -147,6 +140,8 @@ object SharedLists {
     val streaming get() = _state.value.streaming
     /** `data/`'s address while it fails its check, or null: installing a launcher from it asks first. */
     val unverified get() = _state.value.unverified
+    /** Launchers whose accessibility service may go on ([KnownLauncher.accessibility]): none while `data/` fails its check. */
+    val serviceLaunchers: Set<String> get() = launchers.filter { it.accessibility != null }.mapTo(HashSet()) { it.pkg }
 
     @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
@@ -181,8 +176,10 @@ object SharedLists {
         val streaming = data("streaming")?.let(::parseStreaming)
         val protected = source("protected")?.let(::parseProtected)
         _state.update { now ->
+            val kept = launchers?.ifEmpty { null } ?: now.launchers
             now.copy(
-                launchers = launchers?.ifEmpty { null } ?: now.launchers,
+                // Unsigned, a list can't say a launcher's accessibility service may go on.
+                launchers = if (verified) kept else kept.map { it.copy(accessibility = null) },
                 labels = labels?.ifEmpty { null } ?: now.labels,
                 streaming = streaming?.ifEmpty { null } ?: now.streaming,
                 protected = protected?.ifEmpty { null } ?: now.protected,

@@ -36,7 +36,7 @@ These lists live in this repository, in [`data/`](data/), and the app downloads 
 - `data/labels.json`: names shown for common TV apps when the TV can't tell us.
 - `data/streaming.json`: the streaming services the Remote can have a button for. Each names a logo, which stays in tellyscope-devices' `logos/` with its source and licence in `SOURCES.md`.
 
-Which launchers may turn on an accessibility service is not on any list: it's `ACCESSIBILITY_LAUNCHERS` in [`Launchers.kt`](app/src/main/java/app/tellyscope/data/Launchers.kt), because an accessibility service can read the screen. Add one only for a launcher that keeps Home with its own accessibility service: check the APK's manifest for a service with `BIND_ACCESSIBILITY_SERVICE` and put the version you checked next to it. `LaunchersTest` names every such launcher on purpose, so add yours there too and a reviewer sees it.
+A launcher that keeps Home with its own accessibility service carries `"accessibility": "<version>"` in `data/launchers.json`, and only those may have that service turned on. An accessibility service can read the screen, so the field counts only while `data/` passes its signature check: while it fails, Tellyscope turns no launcher's service on, even when you've ticked that you trust the list. Add the field only after checking the APK's manifest for a service with `BIND_ACCESSIBILITY_SERVICE`, with the version you checked as its value. `DataListsTest` names every such launcher on purpose, so add yours there too and a reviewer sees it.
 
 The tests use small fixtures in [`app/src/test/resources/fixtures/`](app/src/test/resources/fixtures/) that only check the code: change the real debloat lists in tellyscope-devices and the others in `data/`, not there. The app itself bundles none.
 

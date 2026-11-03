@@ -233,7 +233,7 @@ class HostileSourceTest {
 
     @Test fun aLauncherEntryCannotAskForAccessibility() = runTest {
         val l = parseLaunchers("""{"schema": 1, "launchers": [{"package": "com.evil.home", "name": "Evil", "about": "x", "accessibility": true, "service": "com.evil.home/.Spy"}]}""").single()
-        assertFalse(l.accessibility)
+        assertNull(l.accessibility)
         assertFalse(actions.grant("com.evil.home/.Spy"))
         assertEquals(emptyList<String>(), ran)
     }

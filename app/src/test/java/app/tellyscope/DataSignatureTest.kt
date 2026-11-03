@@ -168,6 +168,21 @@ class DataSignatureTest {
         assertNull(SharedLists.unverified)
     }
 
+    /** `accessibility` counts only while `data/` passes: unsigned, every launcher's is dropped and none may turn its service on. */
+    @Test fun aLaunchersAccessibilityCountsOnlyWhenDataPasses() = runTest {
+        val file = """{"schema":1,"launchers":[{"package":"com.good.home","name":"Good","accessibility":"1.0"}]}""".toByteArray()
+        val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
+        val signedIndex = index(2026110301, file).let { withSigs(it, p256(it)) }
+        SharedLists.load(lists(tmp.newFolder(), Served(mapOf("index.json" to signedIndex, "launchers.json" to file))), none, fresh = true)
+        assertEquals(setOf("com.good.home"), SharedLists.serviceLaunchers)
+        assertEquals("1.0", SharedLists.launchers.single().accessibility)
+
+        SharedLists.load(lists(tmp.newFolder(), Served(mapOf("index.json" to index(2026110301, file), "launchers.json" to file))), none, fresh = true)
+        assertEquals(DATA_BASE, SharedLists.unverified)
+        assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
+        assertNull(SharedLists.launchers.single().accessibility)
+    }
+
     /**
      * The app and the Data check trust the same keys: [DATA_KEYS] is every key in the `.pub` files in
      * `tools/data-keys/`, read as `tools/data.py` reads them (`#` lines are comments, a file with no key is a
