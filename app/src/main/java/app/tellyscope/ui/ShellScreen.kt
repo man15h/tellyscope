@@ -130,6 +130,7 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
         input = TextFieldValue(t, TextRange(input.selection.min + s.length))
     }
     fun enter() {
+        if (state.running) return
         terminal.submit(input.text, online)
         // Offline, Enter does nothing, so the line stays to run once the TV is back.
         if (online || state.confirming != null) set("")
@@ -159,10 +160,12 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
                     is TermLine.Warn -> Text(l.text.resolve(), style = mono.copy(color = c.error))
                 }
             }
-            // The line being typed sits under the output, as in a terminal; there's none while a command runs.
-            if (!state.running) item {
+            // The line being typed sits under the output, as in a terminal. While a command runs it stays
+            // composed but blank and read-only, so the field keeps focus and the keyboard stays open.
+            item {
                 Row(verticalAlignment = Alignment.Top) {
                     when {
+                        state.running -> {}
                         state.confirming != null -> Text(stringResource(R.string.shell_confirm) + " ", style = mono.copy(color = c.error))
                         !online -> Text(stringResource(R.string.shell_offline_prompt) + " ", style = mono.copy(color = c.onSurfaceVariant))
                         else -> Text(stringResource(R.string.shell_prompt, state.cwd) + " ", style = mono.copy(color = c.primary))
@@ -172,7 +175,8 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
                         { input = it },
                         Modifier.weight(1f).focusRequester(focus),
                         textStyle = mono,
-                        cursorBrush = SolidColor(c.primary),
+                        readOnly = state.running,
+                        cursorBrush = SolidColor(if (state.running) Color.Transparent else c.primary),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.None,
