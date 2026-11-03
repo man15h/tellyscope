@@ -360,7 +360,7 @@ private fun Facts(device: Device, snap: Snapshot?, n: NetworkInfo?) {
             Fact(Icons2.Android, stringResource(R.string.advanced_android), (device.android ?: device.lastKnown?.android)?.let { stringResource(R.string.tabs_android_version, it) } ?: dash, Modifier.weight(1f))
             Fact(Icons2.Update, stringResource(R.string.advanced_updated), (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let(Copy::shortMonth) ?: dash, Modifier.weight(1f))
         }
-        val wifi = n?.iface?.let { it == "wifi" || it.startsWith("wlan") } ?: true
+        val wifi = n?.iface?.takeIf { it.isNotEmpty() }?.let { it == "wifi" || it.startsWith("wlan") } ?: true
         Row {
             Fact(
                 Icons2.Wifi,
@@ -483,7 +483,7 @@ private fun CpuCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?) {
                 Text(stringResource(R.string.advanced_percent, s.cpuPercent), style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"))
                 chipLine(s)?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant) }
             }
-            // Where the time went, adding up to the big number.
+            // Where the time went: apps and Android add up to the big number; waiting on storage is on top.
             if (s.cpuApps != null) {
                 Column(horizontalAlignment = Alignment.End) {
                     listOf(R.string.advanced_split_apps to s.cpuApps, R.string.advanced_split_system to s.cpuSystem, R.string.advanced_split_waiting to s.cpuWaiting).forEach { (label, v) ->
@@ -566,7 +566,7 @@ private fun NetworkCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, 
     SummaryCard(staleSince, s.at) {
         Column {
             Speeds(s, MaterialTheme.typography.headlineSmall, apart = false)
-            val wifi = n?.iface?.let { it == "wifi" || it.startsWith("wlan") }
+            val wifi = n?.iface?.takeIf { it.isNotEmpty() }?.let { it == "wifi" || it.startsWith("wlan") }
             when {
                 wifi == false -> stringResource(R.string.advanced_ethernet)
                 n?.ssid != null -> stringResource(R.string.advanced_wifi_on, n.ssid)
@@ -603,7 +603,7 @@ private fun Graph(area: List<Float>, line: List<Float>? = null, max: Float? = nu
         Canvas(Modifier.fillMaxWidth().height(56.dp)) {
             val top = max ?: ((area + line.orEmpty()).maxOrNull()?.takeIf { it > 0f } ?: 1f)
             fun points(v: List<Float>) = v.mapIndexed { i, y ->
-                Offset(size.width * (GRAPH_POINTS - v.size + i) / (GRAPH_POINTS - 1), size.height * (1f - (y / top).coerceIn(0f, 1f)))
+                Offset(size.width * (RECENT_READINGS - v.size + i) / (RECENT_READINGS - 1), size.height * (1f - (y / top).coerceIn(0f, 1f)))
             }
             val a = points(area)
             if (a.size >= 2) {
@@ -623,9 +623,6 @@ private fun Graph(area: List<Float>, line: List<Float>? = null, max: Float? = nu
         }
     }
 }
-
-/** Readings across a graph: a minute at one every 2 s. */
-private const val GRAPH_POINTS = 30
 
 /** A rounded bar, red when nearly full; [fromEnd] grows it from the right, under a right-aligned number. */
 @Composable

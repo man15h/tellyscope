@@ -173,9 +173,6 @@
         <item quantity="one">%1$d दिन पहले</item>
         <item quantity="other">%1$d दिन पहले</item>
     </plurals>
-    <string name="copy_uptime_days_hours">%1$d दि %2$d घं</string>
-    <string name="copy_uptime_hours_minutes">%1$d घं %2$d मि</string>
-    <string name="copy_uptime_minutes">%1$d मि</string>
     <plurals name="copy_days">
         <item quantity="one">%1$d दिन</item>
         <item quantity="other">%1$d दिन</item>

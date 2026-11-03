@@ -169,9 +169,6 @@
     <plurals name="copy_days_ago">
         <item quantity="other">%1$d 天前</item>
     </plurals>
-    <string name="copy_uptime_days_hours">%1$d 天 %2$d 小时</string>
-    <string name="copy_uptime_hours_minutes">%1$d 小时 %2$d 分钟</string>
-    <string name="copy_uptime_minutes">%1$d 分钟</string>
     <plurals name="copy_days">
         <item quantity="other">%1$d 天</item>
     </plurals>

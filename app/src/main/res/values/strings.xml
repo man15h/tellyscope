@@ -219,9 +219,6 @@
     </plurals>
 
     <!-- Compact uptime: days, hours, minutes -->
-    <string name="copy_uptime_days_hours">%1$dd %2$dh</string>
-    <string name="copy_uptime_hours_minutes">%1$dh %2$dm</string>
-    <string name="copy_uptime_minutes">%1$dm</string>
 
     <plurals name="copy_days">
         <item quantity="one">%1$d day</item>
