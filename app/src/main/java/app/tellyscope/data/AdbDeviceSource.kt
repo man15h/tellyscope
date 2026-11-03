@@ -129,7 +129,7 @@ class AdbDeviceSource(
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
     private val appNames = AppNames(File(appContext.filesDir, "app-names"))
     private val lists = DeviceLists(File(appContext.filesDir, "lists"))
-    /** `data/`'s launcher, app name and streaming lists and logos; never the user's source. */
+    /** `data/`'s launcher, app name and streaming lists; never the user's source. */
     private val data = DeviceLists(File(appContext.filesDir, "data"), default = DATA_BASE)
     /** [historyKey] → the keep entries of that TV's list, once it has been looked up. */
     private val keep = ConcurrentHashMap<String, Set<String>>()

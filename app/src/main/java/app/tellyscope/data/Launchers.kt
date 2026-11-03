@@ -100,9 +100,9 @@ data class Shared(
 )
 
 /**
- * The lists anyone can change without an app release: launchers, app names, streaming services and
- * the Remote's logos from `data/` ([DATA_BASE]), and the protected list from the list source next to
- * the debloat lists ([DeviceLists]), which may be the user's own. Each is the last cached copy at
+ * The lists anyone can change without an app release: launchers, app names and streaming services
+ * from `data/` ([DATA_BASE]), and the protected list and the Remote's logos from the list source next
+ * to the debloat lists ([DeviceLists]), which may be the user's own. Each is the last cached copy at
  * launch, then the downloaded one; a list that can't be had keeps what was there. The app bundles
  * none, so before the first fetch they are empty; a build with `fixtures/` among its Java resources
  * (the tests) starts from those instead. The protected list goes on to [Protected.extra], on top of
@@ -135,7 +135,7 @@ object SharedLists {
     }
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
-    suspend fun logo(name: String): ByteArray? = data?.logo(name)
+    suspend fun logo(name: String): ByteArray? = source?.logo(name)
 
     /** Launchers, labels and streaming from [data]; only the protected list from [source]. */
     private suspend fun apply(data: suspend (String) -> String?, source: suspend (String) -> String?) {

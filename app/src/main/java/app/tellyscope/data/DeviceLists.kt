@@ -16,12 +16,12 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
-/** Where the per-TV debloat lists and the extra protected apps live: the tellyscope-devices repo. */
+/** Where the per-TV debloat lists, the extra protected apps and the Remote's logos live: the tellyscope-devices repo. */
 const val LISTS_BASE = "https://raw.githubusercontent.com/man15h/tellyscope-devices/main/"
 
 /**
- * Where the launcher, app name and streaming lists and the Remote's logos live: `data/` in this
- * app's own repo, on `main`. `-Ptellyscope.data=<folder>` points a build elsewhere, to try a branch.
+ * Where the launcher, app name and streaming lists live: `data/` in this app's own repo, on `main`.
+ * `-Ptellyscope.data=<folder>` points a build elsewhere, to try a branch.
  */
 val DATA_BASE: String = BuildConfig.DATA_BASE
 
@@ -179,7 +179,7 @@ fun matches(rule: Map<String, List<String>>?, props: Map<String, String?>): Bool
 
 /**
  * Null unless it is a schema 1 index. Entries with a missing field, bad file name or checksum are
- * dropped, in `devices`, `lists` and `logos` alike. `data/`'s index has no `devices`.
+ * dropped, in `devices`, `lists` and `logos` alike. `data/`'s index has no `devices` or `logos`.
  */
 fun parseIndex(text: String): ListIndex? = try {
     val o = jsonObject(text)

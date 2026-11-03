@@ -83,14 +83,14 @@ Debloating a TV can break it if done carelessly. Tellyscope keeps to these rules
 4. **You see it first.** Every change names the apps it touches and asks before it runs.
 5. **No root, no exploits.** Only what ADB allows on a stock TV.
 6. **Nothing left on the TV.** Two small helpers run from `/data/local/tmp`: one reads app names and icons and is deleted at once, the other runs the Remote and is deleted when the Remote closes.
-7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists) from GitHub (debloat lists, or [your own fork](CONTRIBUTING.md#using-your-own-lists), plus launchers, app names and streaming services with their logos), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
+7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists) from GitHub (debloat lists and streaming logos, or [your own fork](CONTRIBUTING.md#using-your-own-lists), plus launchers, app names and streaming services), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
 
 ## The shared lists
 
 Tellyscope downloads two sets of public lists from GitHub, so they can change without an app release. Both histories are public.
 
-- **Debloat lists and extra protected apps**, from [tellyscope-devices](../../../tellyscope-devices). [Your own lists](CONTRIBUTING.md#using-your-own-lists) replace these, and only these.
-- **Launchers, app names and streaming services with their logos**, from this repository's [`data/`](data/) on `main`, where changes are reviewed alongside the app's code.
+- **Debloat lists, extra protected apps and the Remote's streaming logos**, from [tellyscope-devices](../../../tellyscope-devices). [Your own lists](CONTRIBUTING.md#using-your-own-lists) replace these, and only these.
+- **Launchers, app names and streaming services**, from this repository's [`data/`](data/) on `main`, where changes are reviewed alongside the app's code.
 
 **What the lists can't do:**
 
