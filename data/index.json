@@ -1,5 +1,6 @@
 {
   "schema": 1,
+  "version": 2026110301,
   "lists": {
     "launchers": {
       "file": "launchers.json",
