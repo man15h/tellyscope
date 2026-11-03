@@ -10,18 +10,15 @@ Changes merged into `dev` collect under `## Unreleased`. A release renames
 that heading to its version and date. A pull request into `main` fails CI
 until this file has a section for its version.
 
-## Unreleased
-
-- **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
-- **Improved:** The launcher list is signed. If Tellyscope can't verify it, installing a launcher shows the list and its signer, and asks you to confirm. [#322](../../pull/322)
-- **Improved:** Which launchers may turn on their accessibility service now comes from the signed launcher list. If Tellyscope can't verify the list, it turns on no launcher's accessibility service. Tellyscope also skips a copy of the launcher that is too old to have one. [#328](../../pull/328)
-
 ## 0.15.0 — 2026-11-03
 
 - **New:** Advanced has a Shell: a terminal on the TV where you can paste any `adb shell` command. Commands that change the TV ask first. [#314](../../pull/314)
 - **Improved:** Advanced is split into four tabs. This TV shows CPU, memory and storage as rings, a minute of network speed, and the TV's Wi-Fi, signal and MAC address. CPU, RAM and Network each open with a summary (per-core load, cached and free memory, data since boot) over a list of apps; tap an app to see its processes and connections. [#314](../../pull/314)
 - **New:** The Remote has a touchpad: swipe to move, tap for OK. Switch between it and the D-pad in the Remote's ⋮ menu. [#312](../../pull/312)
 - **Improved:** On the Remote, the text box stays hidden until you tap the keyboard key, which leaves more room for the keys. [#312](../../pull/312)
+- **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
+- **Improved:** The launcher list is signed. If Tellyscope can't verify it, installing a launcher shows the list and its signer, and asks you to confirm. [#322](../../pull/322)
+- **Improved:** Which launchers may turn on their accessibility service now comes from the signed launcher list. If Tellyscope can't verify the list, it turns on no launcher's accessibility service. Tellyscope also skips a copy of the launcher that is too old to have one. [#328](../../pull/328)
 - **Fixed:** Reconnecting to a TV, or installing right after the file picker, no longer leaves every action saying the TV is offline. [#312](../../pull/312)
 - **Fixed:** Off Wi-Fi, the TV tabs and failed sends blame the phone, not the TV, and Reconnect on Overview opens the Wi-Fi panel. [#313](../../pull/313)
 - **Fixed:** On a Fire TV or another HDMI box whose volume is fixed, the Remote's mute and volume keys are grayed out, with a line saying to use the TV's own remote. [#307](../../pull/307)
