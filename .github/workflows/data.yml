@@ -1,7 +1,9 @@
 name: Data
 
 # data/ is downloaded by every installed app straight from dev (alpha) and main, so it may only reach them
-# signed. Pull requests into dev are signed after merge, by the sign job below: nobody signs locally.
+# signed. Pull requests into dev are signed after merge, by the sign job below, which opens a pull request
+# from data/sign with the signed index: nobody signs locally. Run this workflow by hand on data/sign to
+# check that pull request, since one opened by the workflow triggers no checks of its own.
 on:
   pull_request:
     branches: [dev, main]
@@ -9,6 +11,7 @@ on:
   push:
     branches: [main, dev]
     paths: ["data/**", "tools/data.py", "tools/test_data.py", "tools/data-keys/**", ".github/workflows/data.yml"]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,7 +19,7 @@ permissions:
 jobs:
   check:
     name: data/ index and signature
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -24,6 +27,7 @@ jobs:
           persist-credentials: false
       - name: Tests
         run: python3 -m unittest discover -s tools -p 'test_data.py' -v
+      # A run by hand has no base, so it checks the signature too.
       - name: data/index.json is fresh, and signed unless this pull request goes into dev
         env:
           BASE: ${{ github.base_ref }}
@@ -47,7 +51,8 @@ jobs:
           python3 tools/data.py index
           if python3 tools/data.py check; then echo needed=false; else echo needed=true; fi >> "$GITHUB_OUTPUT"
 
-  # Waits for the data-signing environment's reviewer, so it runs only when the index really changed.
+  # Waits for the data-signing environment's reviewer, so it runs only when the index really changed. dev
+  # takes changes only through pull requests, so the signed index goes to data/sign and a pull request.
   sign:
     name: Sign data/index.json
     needs: needs-sign
@@ -56,6 +61,7 @@ jobs:
     environment: data-signing
     permissions:
       contents: write
+      pull-requests: write
     concurrency:
       group: data-signing
       cancel-in-progress: false
@@ -76,11 +82,27 @@ jobs:
       - name: Delete the key
         if: always()
         run: rm -f "$RUNNER_TEMP/data-signing.pem"
-      - name: Check, commit and push
+      - name: Check, commit, push data/sign and open its pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python3 tools/data.py check
           git diff --quiet -- data/index.json && exit 0
+          version=$(jq -r .version data/index.json) base=$(git rev-parse --short HEAD)
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -q -m "data/index.json: sign version $(jq -r .version data/index.json)" -- data/index.json
-          git push origin HEAD:dev
+          git switch -q -C data/sign
+          git commit -q -m "data/index.json: sign version $version" -- data/index.json
+          git push -q --force origin HEAD:refs/heads/data/sign
+          body=$(printf '%s\n' \
+            "Signed \`data/index.json\` version $version, from \`dev\` at $base." \
+            "" \
+            "\`python3 tools/data.py check\` passed in [the signing run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)." \
+            "" \
+            "Before merging, run the \`Data\` workflow on \`data/sign\` (Actions → Data → Run workflow): this pull request triggers no checks itself.")
+          pr=$(gh pr list --head data/sign --base dev --state open --json number --jq '.[].number')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "data/index.json: sign version $version" --body "$body"
+          else
+            gh pr create --head data/sign --base dev --title "data/index.json: sign version $version" --body "$body"
+          fi
