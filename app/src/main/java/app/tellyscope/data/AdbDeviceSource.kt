@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.Sink
@@ -141,26 +142,6 @@ class AdbDeviceSource(
     init {
         Connector.init(File(appContext.filesDir, "adbkey.pem"))
         scope.launch(Dispatchers.IO) { SharedLists.load(data, lists) }
-        refreshListsOnNetwork()
-    }
-
-    /**
-     * Each new network that reaches the internet gives the lists another go, so ones that couldn't be
-     * downloaded at launch (the phone offline, nothing cached) arrive without a restart. Cheap once
-     * they have: the index is kept and the files come from the cache.
-     */
-    private fun refreshListsOnNetwork() {
-        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return
-        cm.registerDefaultNetworkCallback(object : ConnectivityManager.NetworkCallback() {
-            private var last: Network? = null
-            // Validated comes after onAvailable, so wait for it here; the network's other changes don't count.
-            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
-                if (network == last || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return
-                last = network
-                // Paused, [pause] refreshes on the way back.
-                if (!paused) scope.launch(Dispatchers.IO) { SharedLists.refresh() }
-            }
-        })
     }
 
     /** Remembered TVs reconnect in the background from launch; [known] waits for the file read. */
@@ -352,6 +333,24 @@ class AdbDeviceSource(
         }
         cm.registerDefaultNetworkCallback(callback)
         awaitClose { cm.unregisterNetworkCallback(callback) }
+    }
+
+    override suspend fun refreshListsOnNetwork() = callbackFlow {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: run { close(); return@callbackFlow }
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            private var last: Network? = null
+            // Validated comes after onAvailable, so wait for it here; the network's other changes don't count.
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                if (network == last || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return
+                last = network
+                trySend(Unit)
+            }
+        }
+        cm.registerDefaultNetworkCallback(callback)
+        awaitClose { cm.unregisterNetworkCallback(callback) }
+    }.collect {
+        // Paused, [pause] refreshes on the way back.
+        if (!paused) withContext(Dispatchers.IO) { SharedLists.refresh() }
     }
 
     override fun scan(): Flow<ScanEvent> = flow {

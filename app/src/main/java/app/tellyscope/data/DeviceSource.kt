@@ -35,6 +35,12 @@ interface DeviceSource {
     /** Emits whenever the phone is on a Wi-Fi or Ethernet network a [scan] can sweep. */
     fun lanUp(): Flow<Unit> = emptyFlow()
 
+    /**
+     * Until cancelled, each new network that reaches the internet gives the shared lists another go, so ones
+     * that couldn't be downloaded at launch (the phone offline, nothing cached) arrive without a restart.
+     */
+    suspend fun refreshListsOnNetwork() {}
+
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
 

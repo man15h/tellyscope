@@ -546,6 +546,7 @@ class TellyscopeViewModel(
         }
         rescan()
         viewModelScope.launch { notice.collect { it?.let(::log) } }
+        viewModelScope.launch { source.refreshListsOnNetwork() }
         viewModelScope.launch {
             // Off Wi-Fi or under a VPN a scan has nothing to sweep; start over the moment there's a LAN to sweep.
             source.lanUp().collect {
