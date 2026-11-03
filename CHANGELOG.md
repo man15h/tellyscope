@@ -22,13 +22,11 @@ until this file has a section for its version.
   - CPU, RAM and Network open with a summary over a list of apps.
   - Tap an app to see its processes and connections.
   - Tap This TV's memory ring or network graph to open its tab.
-- **Improved:** Swipe sideways to switch tabs on Advanced and Apps. [#335](../../pull/335)
+  - Swipe sideways to switch tabs on Advanced and Apps.
 - **Improved:** On the Remote, the text box hides until you tap the keyboard key. [#312](../../pull/312)
-- **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
-- **Improved:** The launcher list is signed; if it can't be verified, you confirm it. [#322](../../pull/322)
-  - Installing a launcher then shows the list and its signer.
-- **Improved:** The signed launcher list decides which launchers get accessibility access. [#328](../../pull/328)
-  - If the list can't be verified, no launcher's accessibility service is turned on.
+- **Improved:** Launchers, app names and streaming services come from Tellyscope's own signed list. [#323](../../pull/323)
+  - If the list can't be verified, you confirm it; installing a launcher shows the list and its signer.
+  - The signed list decides which launchers get accessibility access; if it can't be verified, none do.
   - A copy of a launcher too old to have one is skipped.
 - **Fixed:** Off Wi-Fi or offline, Tellyscope now says why instead of blaming the TV. [#313](../../pull/313)
   - Off Wi-Fi, screens and failed sends say the phone isn't on Wi-Fi.
