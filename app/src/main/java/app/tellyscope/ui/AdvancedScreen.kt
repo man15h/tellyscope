@@ -131,13 +131,14 @@ fun AdvancedScreen(
         ) { pad ->
             Column(Modifier.fillMaxSize().padding(pad)) {
                 Header(state, Modifier.padding(horizontal = 16.dp), onShell = { shellFrom = it; shellOpen = true })
+                val tabs = listOf(R.string.advanced_this_tv, R.string.advanced_cpu, R.string.advanced_ram, R.string.advanced_network)
                 PrimaryTabRow(selectedTabIndex = tab, Modifier.padding(top = 12.dp)) {
-                    listOf(R.string.advanced_this_tv, R.string.advanced_cpu, R.string.advanced_ram, R.string.advanced_network).forEachIndexed { i, label ->
+                    tabs.forEachIndexed { i, label ->
                         Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(label), maxLines = 1) })
                     }
                 }
                 LazyColumn(
-                    Modifier.fillMaxSize(),
+                    Modifier.fillMaxSize().swipeTabs(tab, tabs.size) { tab = it },
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {

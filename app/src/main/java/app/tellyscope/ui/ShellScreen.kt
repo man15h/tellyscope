@@ -162,7 +162,9 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
             }
             // The line being typed sits under the output, as in a terminal. While a command runs it stays
             // composed but blank and read-only, so the field keeps focus and the keyboard stays open.
-            item {
+            // Its own key keeps it the same field as the output above it grows: by position, Enter's new
+            // line would take its slot and dispose the focused field, closing the keyboard.
+            item(key = "prompt") {
                 Row(verticalAlignment = Alignment.Top) {
                     when {
                         state.running -> {}
