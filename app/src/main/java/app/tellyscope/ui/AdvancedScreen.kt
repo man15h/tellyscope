@@ -206,7 +206,7 @@ private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit
             Column(Modifier.weight(1f)) {
                 Text(device.hit.hostname ?: name(device), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(address, style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), maxLines = 1)
+                    Text(address, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = { clipboard.setText(AnnotatedString(address)) }, Modifier.size(32.dp)) {
                         Icon(CopyIcon, stringResource(R.string.advanced_copy_address), Modifier.size(16.dp), tint = c.onSurfaceVariant)
                     }
@@ -289,7 +289,7 @@ private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: 
                     RowIcon(r, 32.dp)
                     Spacer(Modifier.width(12.dp))
                     Text(r.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Bar((r.cpu / max).toFloat(), Modifier.width(96.dp))
+                    Bar((r.cpu / max).toFloat(), Modifier.width(96.dp), absolute = false)
                     Text(res.getString(R.string.advanced_percent_whole, r.cpu), Modifier.width(48.dp), style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"), maxLines = 1, textAlign = TextAlign.End)
                 }
             }
@@ -626,14 +626,17 @@ private fun Graph(at: List<Long>, area: List<Float>, line: List<Float>? = null, 
     }
 }
 
-/** A rounded bar, red when nearly full; [fromEnd] grows it from the right, under a right-aligned number. */
+/**
+ * A rounded bar; [fromEnd] grows it from the right, under a right-aligned number. Red when nearly
+ * full, unless it isn't [absolute]: a bar scaled to the top row is always full on that row.
+ */
 @Composable
-private fun Bar(frac: Float, modifier: Modifier, fromEnd: Boolean = false) {
+private fun Bar(frac: Float, modifier: Modifier, fromEnd: Boolean = false, absolute: Boolean = !fromEnd) {
     val c = MaterialTheme.colorScheme
     val shown by animateFloatAsState(frac.coerceIn(0f, 1f), MaterialTheme.motionScheme.defaultSpatialSpec(), label = "bar")
     Box(modifier.height(6.dp).clip(CircleShape).background(c.surfaceContainerHighest), contentAlignment = if (fromEnd) Alignment.CenterEnd else Alignment.CenterStart) {
         // A sliver still shows, so an app at 0.4% isn't mistaken for one with no bar at all.
-        if (shown > 0f) Box(Modifier.fillMaxHeight().fillMaxWidth(shown.coerceAtLeast(0.04f)).clip(CircleShape).background(if (frac >= Copy.FULL && !fromEnd) c.error else c.primary))
+        if (shown > 0f) Box(Modifier.fillMaxHeight().fillMaxWidth(shown.coerceAtLeast(0.04f)).clip(CircleShape).background(if (frac >= Copy.FULL && absolute) c.error else c.primary))
     }
 }
 
