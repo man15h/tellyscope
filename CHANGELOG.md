@@ -21,7 +21,7 @@ until this file has a section for its version.
   - This TV shows CPU, memory and storage rings, network speed, Wi-Fi, signal and MAC.
   - CPU, RAM and Network open with a summary over a list of apps.
   - Tap an app to see its processes and connections.
-- **Improved:** Tap This TV's memory ring or network graph to open its tab. [#334](../../pull/334)
+  - Tap This TV's memory ring or network graph to open its tab.
 - **Improved:** Swipe sideways to switch tabs on Advanced and Apps. [#335](../../pull/335)
 - **Improved:** On the Remote, the text box hides until you tap the keyboard key. [#312](../../pull/312)
 - **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
@@ -30,19 +30,17 @@ until this file has a section for its version.
 - **Improved:** The signed launcher list decides which launchers get accessibility access. [#328](../../pull/328)
   - If the list can't be verified, no launcher's accessibility service is turned on.
   - A copy of a launcher too old to have one is skipped.
-- **Fixed:** Off Wi-Fi, Tellyscope says the phone isn't on Wi-Fi, not "TV offline". [#333](../../pull/333)
-  - It changes the moment Wi-Fi drops, not after reopening the app.
+- **Fixed:** Off Wi-Fi, Tellyscope says the phone isn't on Wi-Fi, not "TV offline". [#313](../../pull/313)
   - Failed sends blame the phone, and Reconnect on Overview opens the Wi-Fi panel.
 - **Fixed:** With the TV offline, Installed and Built-in say why they're empty. [#333](../../pull/333)
 - **Fixed:** Installing or sending a file from phone storage no longer drops the TV. [#301](../../pull/301)
   - Picking an app right after the link dropped no longer fails partway through.
   - A file the phone can't read, or a TV that doesn't answer, says which.
   - The install dialog no longer closes by itself after picking an app.
-- **Fixed:** Reconnecting, or installing after the file picker, no longer marks the TV offline. [#312](../../pull/312)
+- **Fixed:** Reconnecting to a TV no longer leaves every action saying it's offline. [#312](../../pull/312)
 - **Fixed:** On fixed-volume Fire TVs and HDMI boxes, mute and volume gray out. [#307](../../pull/307)
   - A line says to use the TV's own remote instead.
 - **Fixed:** On the Remote, a perfectly still tap on empty space closes the keyboard. [#300](../../pull/300)
-- **Fixed:** In Shell, pressing Enter no longer closes the keyboard. [#335](../../pull/335)
 - **Fixed:** Apps without a name no longer show a Java class name. [#303](../../pull/303)
 - **Fixed:** Philips Help stays on; turning it off broke the HDMI input picker. [#299](../../pull/299)
 - **Fixed:** On Android 7 and older, Clear caches says it needs Android 8, not an error. [#304](../../pull/304)
