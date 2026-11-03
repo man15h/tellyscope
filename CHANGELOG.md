@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+## 0.15.0 — 2026-11-03
+
 - **New:** Advanced has a Shell: a terminal on the TV where you can paste any `adb shell` command. Commands that change the TV ask first. [#314](../../pull/314)
 - **Improved:** Advanced is split into four tabs. This TV shows CPU, memory and storage as rings, a minute of network speed, and the TV's Wi-Fi, signal and MAC address. CPU, RAM and Network each open with a summary (per-core load, cached and free memory, data since boot) over a list of apps; tap an app to see its processes and connections. [#314](../../pull/314)
 - **New:** The Remote has a touchpad: swipe to move, tap for OK. Switch between it and the D-pad in the Remote's ⋮ menu. [#312](../../pull/312)
