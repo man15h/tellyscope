@@ -737,8 +737,8 @@
     </plurals>
     <!-- The count is what didn't go back. %4$s names the first of them; %5$s is a lowercase reason. -->
     <plurals name="vm_put_back_partly">
-        <item quantity="one">Put back %1$d of %2$d changes. %4$s didn\'t go back: %5$s</item>
-        <item quantity="other">Put back %1$d of %2$d changes. %3$d didn\'t go back, %4$s among them: %5$s</item>
+        <item quantity="one">Put back %1$d of %2$d. %4$s didn\'t go back: %5$s</item>
+        <item quantity="other">Put back %1$d of %2$d. %3$d didn\'t go back, %4$s among them: %5$s</item>
     </plurals>
 
     <!-- A reason shown mid-sentence after an app's name, so lower case -->

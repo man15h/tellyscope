@@ -80,6 +80,16 @@ class RestoreTest {
         assertTrue(plan.turnOff.isEmpty())
     }
 
+    @Test fun offBeforeThenResetThenDebloatStaysOff() = runTest {
+        // Off before Tellyscope, Reset TV turned it on, Debloat turned it off again: as it was, so nothing to do.
+        val source = FakeDeviceSource()
+        source.reset(tv, ResetPlan(turnOn = listOf(ResetApp(recommendations, "TV Recommendations"))), null) {}
+        source.act(tv, Action.Disable, recommendations)
+        assertEquals(0, source.count())
+        assertEquals(0, source.restoreAll(tv).done)
+        assertFalse(source.enabled(recommendations))
+    }
+
     @Test fun homeAfterTwoSwitchesGoesBackToTheFirst() {
         // L → A → B: the TV's own launcher L is Home again, and both turned-off launchers come back on.
         val own = "com.google.android.tvlauncher"
@@ -166,10 +176,14 @@ class RestoreTest {
         run.step(UiText.Raw("YouTube")) { throw java.io.IOException("connection reset") }
         run.step(UiText.Raw("XGIMI Updates")) { ran++ }
         val r = run.result()
+        // Nothing went back: no "0 of 1 changes".
+        val none = RestoreRun().apply { step(UiText.Raw("Netflix")) { throw IllegalStateException("the TV refused") } }.result()
+        assertEquals("Put back 0 of 1. Netflix didn't go back: the TV refused",
+            UiText.plural(R.plurals.vm_put_back_partly, 1, 0, 1, 1, none.failed[0].what, none.failed[0].why).text())
         assertEquals(2, ran)
         assertEquals(2, r.done)
         assertEquals(listOf("Jellyfin", "YouTube"), r.failed.map { it.what.text() })
-        assertEquals("Put back 2 of 4 changes. 2 didn't go back, Jellyfin among them: the TV refused",
+        assertEquals("Put back 2 of 4. 2 didn't go back, Jellyfin among them: the TV refused",
             UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, r.failed[0].what, r.failed[0].why).text())
     }
 
