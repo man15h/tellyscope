@@ -30,14 +30,15 @@ until this file has a section for its version.
 - **Improved:** The signed launcher list decides which launchers get accessibility access. [#328](../../pull/328)
   - If the list can't be verified, no launcher's accessibility service is turned on.
   - A copy of a launcher too old to have one is skipped.
-- **Fixed:** Off Wi-Fi, Tellyscope says the phone isn't on Wi-Fi, not "TV offline". [#313](../../pull/313)
-  - Failed sends blame the phone, and Reconnect on Overview opens the Wi-Fi panel.
-- **Fixed:** With the TV offline, Installed and Built-in say why they're empty. [#333](../../pull/333)
+- **Fixed:** Off Wi-Fi or offline, Tellyscope now says why instead of blaming the TV. [#313](../../pull/313)
+  - Off Wi-Fi, screens and failed sends say the phone isn't on Wi-Fi.
+  - Reconnect on Overview opens the Wi-Fi panel.
+  - Installed and Built-in say why they're empty, not "Nothing here yet."
+  - Reconnecting to a TV no longer leaves every action saying it's offline.
 - **Fixed:** Installing or sending a file from phone storage no longer drops the TV. [#301](../../pull/301)
   - Picking an app right after the link dropped no longer fails partway through.
   - A file the phone can't read, or a TV that doesn't answer, says which.
   - The install dialog no longer closes by itself after picking an app.
-- **Fixed:** Reconnecting to a TV no longer leaves every action saying it's offline. [#312](../../pull/312)
 - **Fixed:** On fixed-volume Fire TVs and HDMI boxes, mute and volume gray out. [#307](../../pull/307)
   - A line says to use the TV's own remote instead.
 - **Fixed:** On the Remote, a perfectly still tap on empty space closes the keyboard. [#300](../../pull/300)
