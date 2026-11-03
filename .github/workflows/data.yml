@@ -19,5 +19,5 @@ jobs:
       - uses: actions/checkout@v7
       - name: Tests
         run: python3 -m unittest discover -s tools -p 'test_data.py' -v
-      - name: data/index.json is fresh and data/index.json.sig verifies
+      - name: data/index.json is fresh and its signature verifies
         run: python3 tools/data.py check
