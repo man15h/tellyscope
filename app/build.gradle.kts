@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 
 import com.android.build.api.artifact.SingleArtifact
+import com.android.build.api.variant.HostTestBuilder
+import java.util.zip.ZipFile
 import com.android.tools.r8.D8
 import com.android.tools.r8.D8Command
 import com.android.tools.r8.OutputMode
@@ -41,8 +43,9 @@ android {
     }
 
     // Two builds of one app: the same app ID and release key. github is the APK on GitHub releases;
-    // play is the Play Store's AAB, with no in-app update and nothing downloaded from GitHub
-    // (BuildConfig.PLAY, a constant, so R8 drops that code from it).
+    // play is the Play Store's AAB. The update check and the Projectivy download are in src/github
+    // only, so the Play build never compiles them (src/play has the stubs); BuildConfig.PLAY is for
+    // what differs on screen. checkPlayRelease*NoGitHubApi below proves it on every Play build.
     flavorDimensions += "store"
     productFlavors {
         create("github") {
@@ -183,7 +186,34 @@ abstract class CheckApkSize : DefaultTask() {
     }
 }
 
+/**
+ * Fails the build when the Play build's code names GitHub's API. The update check and the Projectivy download,
+ * the only code that calls it, live in src/github; the debloat lists come from raw.githubusercontent.com.
+ */
+abstract class CheckNoGitHubApi : DefaultTask() {
+    @get:InputFiles abstract val archives: ConfigurableFileCollection
+
+    @TaskAction fun check() {
+        val files = archives.asFileTree.files.filter { it.extension == "apk" || it.extension == "aab" }
+        check(files.isNotEmpty()) { "no APK or AAB in ${archives.files}" }
+        for (f in files) {
+            ZipFile(f).use { zip ->
+                for (e in zip.entries().asSequence().filter { it.name.endsWith(".dex") }) {
+                    val dex = zip.getInputStream(e).use { it.readBytes() }.decodeToString()
+                    check("api.github.com" !in dex) { "${f.name}: ${e.name} names api.github.com, which only the GitHub build may call" }
+                }
+            }
+            logger.lifecycle("${f.name}: no api.github.com")
+        }
+    }
+}
+
 androidComponents {
+    // The unit tests cover the GitHub build, which has every path; the Play build's differences are tested there
+    // through the same seams (a pick-only LauncherPick, no Updates), and its code is checked by CheckNoGitHubApi.
+    beforeVariants(selector().withFlavor("store" to "play")) { variant ->
+        variant.hostTests[HostTestBuilder.UNIT_TEST_TYPE]?.enable = false
+    }
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(dexLabelHelper, DexLabelHelper::outputDir)
         variant.sources.assets?.addGeneratedSourceDirectory(bundleChangelog, BundleChangelog::outputDir)
@@ -195,6 +225,18 @@ androidComponents {
             maxBytes = 3_500_000L
         }
         afterEvaluate { tasks.named("assemble$name") { finalizedBy(sizeCheck) } }
+        if (variant.flavorName == "play") {
+            val apkCheck = tasks.register<CheckNoGitHubApi>("check${name}ApkNoGitHubApi") {
+                archives.from(variant.artifacts.get(SingleArtifact.APK))
+            }
+            val bundleCheck = tasks.register<CheckNoGitHubApi>("check${name}BundleNoGitHubApi") {
+                archives.from(variant.artifacts.get(SingleArtifact.BUNDLE))
+            }
+            afterEvaluate {
+                tasks.named("assemble$name") { finalizedBy(apkCheck) }
+                tasks.named("bundle$name") { finalizedBy(bundleCheck) }
+            }
+        }
     }
 }
 

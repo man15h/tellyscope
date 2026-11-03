@@ -9,8 +9,6 @@ import org.json.JSONArray
 import java.io.File
 import java.util.Properties
 
-/** Where releases are published: the app's own GitHub repo. */
-const val RELEASES = "https://github.com/man15h/tellyscope/releases"
 private val REPO = RELEASES.removePrefix("https://github.com/").removeSuffix("/releases")
 private const val RELEASES_API = "https://api.github.com/repos/man15h/tellyscope/releases?per_page=20"
 
@@ -21,29 +19,26 @@ private const val ALPHA_INTERVAL_MS = 5 * 60 * 1000L
 /** Tellyscope is about 3 MB; an APK far past that isn't it. */
 private const val MAX_APK_BYTES = 64L shl 20
 
-/** A newer Tellyscope than the one running. [apk] is its release's APK link; null when the release has none this build can install. */
-data class Update(val version: String, val notes: String, val url: String, val apk: String? = null)
-
 /**
  * Asks GitHub, at most every 30 minutes (5 minutes on alpha builds), whether a newer release is out. No auth and no download: it
  * only reads the release list. Off switch and last check live in [file].
- * Release builds look at full releases only; alpha builds at `-alpha` pre-releases too.
+ * Release builds look at full releases only; alpha builds at `-alpha` pre-releases too. GitHub build only.
  */
 class UpdateCheck(
     private val file: File,
     /** The running versionName, alpha suffix included. */
     private val current: String,
-    val alpha: Boolean,
+    override val alpha: Boolean,
     private val clock: () -> Long = System::currentTimeMillis,
     private val fetch: suspend (String) -> ByteArray = ::download,
-) {
+) : Updates {
     @get:Synchronized @set:Synchronized
-    var enabled: Boolean
+    override var enabled: Boolean
         get() = props().getProperty("off") != "true"
         set(on) = save { if (on) remove("off") else setProperty("off", "true") }
 
     /** The newest release past [current]. Null when off, checked recently, or on any failure. */
-    suspend fun check(): Update? = withContext(Dispatchers.IO) {
+    override suspend fun check(): Update? = withContext(Dispatchers.IO) {
         val p = props()
         if (p.getProperty("off") == "true") return@withContext null
         val last = p.getProperty("checked")?.toLongOrNull()
@@ -66,7 +61,7 @@ class UpdateCheck(
      * What's new lists releases only, never alphas. Null on any failure. No interval: What's new
      * asks only once the check has found an update.
      */
-    suspend fun newer(): List<Changelog.Release>? = withContext(Dispatchers.IO) {
+    override suspend fun newer(): List<Changelog.Release>? = withContext(Dispatchers.IO) {
         val text = try {
             fetch("https://raw.githubusercontent.com/$REPO/main/${Changelog.ASSET}").decodeToString()
         } catch (e: CancellationException) {
