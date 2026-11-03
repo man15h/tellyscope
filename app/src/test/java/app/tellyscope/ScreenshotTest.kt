@@ -765,8 +765,10 @@ class ScreenshotTest {
         shot("96_whats_new") { whatsNew(opened)() }
         compose.onNodeWithText("Installed").assertExists()
         compose.onAllNodesWithText("NEW")[0].assertExists()
-        compose.onAllNodes(SemanticsMatcher("opens #267") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#267" })[0].performClick()
-        assertEquals(listOf(Changelog.pullUrl(267)), opened)
+        // A link from the newest section, which is on screen whatever the changelog holds.
+        val pr = changelog.first().changes.first { it.pr != null }.pr!!
+        compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()
+        assertEquals(listOf(Changelog.pullUrl(pr)), opened)
     }
 
     @Test fun whatsNew_dark() = shot("96_whats_new", dark = true) { whatsNew()() }
