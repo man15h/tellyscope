@@ -221,6 +221,7 @@
     <string name="copy_tv_offline">TV ऑफ़लाइन है</string>
     <string name="copy_off_wifi_line">TV वाले Wi-Fi से जुड़ें। जुड़ते ही Tellyscope फिर से कनेक्ट हो जाएगा।</string>
     <string name="copy_running_offline">TV कनेक्ट होने पर चल रहे ऐप यहां दिखेंगे।</string>
+    <string name="copy_apps_offline">TV कनेक्ट होने पर ऐप यहां दिखेंगे।</string>
     <string name="copy_state_online">कनेक्ट है</string>
     <string name="copy_state_offline">ऑफ़लाइन</string>
     <string name="copy_state_not_allowed">अनुमति नहीं है</string>

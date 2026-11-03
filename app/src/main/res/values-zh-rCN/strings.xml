@@ -213,6 +213,7 @@
     <string name="copy_tv_offline">电视离线</string>
     <string name="copy_off_wifi_line">连接到电视所在的 Wi-Fi。一连上，Tellyscope 就会重新连接。</string>
     <string name="copy_running_offline">电视连接后，这里会显示正在运行的应用。</string>
+    <string name="copy_apps_offline">电视连接后，这里会显示应用。</string>
     <string name="copy_state_online">已连接</string>
     <string name="copy_state_offline">离线</string>
     <string name="copy_state_not_allowed">未获允许</string>

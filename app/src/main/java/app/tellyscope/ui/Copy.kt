@@ -403,6 +403,7 @@ object Copy {
     val PHONE_OFF_WIFI = UiText(R.string.scan_off_wifi_title)
     val OFF_WIFI_LINE = UiText(R.string.copy_off_wifi_line)
     val RUNNING_OFFLINE = UiText(R.string.copy_running_offline)
+    val APPS_OFFLINE = UiText(R.string.copy_apps_offline)
 
     val ANDROID_SYSTEM = AppNames.SYSTEM
 

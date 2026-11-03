@@ -375,10 +375,17 @@ fun DeviceTabsScreen(
                             }
                             if (split != null) {
                                 if (split.apps.isEmpty() && split.system.isEmpty()) item {
-                                    // Away, the TV can't say what's running, rather than nothing is.
+                                    // Away, the TV can't say what it has, rather than it has nothing.
                                     when {
                                         loading -> AppsLoading()
-                                        appsTab == AppsTab.Running && live == null -> EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else Copy.RUNNING_OFFLINE.resolve())
+                                        offline || (appsTab == AppsTab.Running && live == null) -> EmptyState(
+                                            awayIcon, awayTitle,
+                                            when {
+                                                offWifi -> Copy.OFF_WIFI_LINE
+                                                appsTab == AppsTab.Running -> Copy.RUNNING_OFFLINE
+                                                else -> Copy.APPS_OFFLINE
+                                            }.resolve(),
+                                        )
                                         else -> EmptyLine(q)
                                     }
                                 }
