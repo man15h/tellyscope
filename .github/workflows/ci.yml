@@ -29,7 +29,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       # build = assemble (debug + release) + unit tests + Android lint
-      - run: ./gradlew build --console=plain
+      - run: ./gradlew build --console=plain --profile
+
+      - name: Upload profile
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: profile
+          path: '**/build/reports/profile/'
+          retention-days: 7
 
       - name: Upload reports on failure
         if: failure()
