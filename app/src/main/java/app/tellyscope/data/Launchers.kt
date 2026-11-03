@@ -16,7 +16,8 @@ import kotlinx.coroutines.flow.update
  * [accessibility]: it keeps Home with its own accessibility service, for TVs whose Home button opens
  * their own launcher whatever the default is, so Make Home turns that service on, and Undo or a switch
  * away from it turns it off. The value is the version whose manifest was read. An accessibility service
- * can read the screen, so [SharedLists] keeps it only while `data/` passes its signature check.
+ * can read the screen, so only while `data/` passes its signature check may it go on
+ * ([SharedLists.serviceLaunchers]); off works either way ([SharedLists.listedServiceLaunchers]).
  *
  * Installing it from an APK rather than the Play Store: [signers] are the SHA-256s of the only
  * certificates it may be signed with (empty: never from an APK), [maxBytes] is past any real copy of
@@ -141,7 +142,12 @@ object SharedLists {
     /** `data/`'s address while it fails its check, or null: installing a launcher from it asks first. */
     val unverified get() = _state.value.unverified
     /** Launchers whose accessibility service may go on ([KnownLauncher.accessibility]): none while `data/` fails its check. */
-    val serviceLaunchers: Set<String> get() = launchers.filter { it.accessibility != null }.mapTo(HashSet()) { it.pkg }
+    val serviceLaunchers: Set<String> get() = if (unverified != null) emptySet() else listedServiceLaunchers
+    /**
+     * Every launcher with [KnownLauncher.accessibility], signed or not: for finding the one whose service holds Home and
+     * turning that service off. Unsigned, the worst a list can do with it is turn off the service of a launcher that was Home.
+     */
+    val listedServiceLaunchers: Set<String> get() = launchers.filter { it.accessibility != null }.mapTo(HashSet()) { it.pkg }
 
     @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
@@ -176,10 +182,8 @@ object SharedLists {
         val streaming = data("streaming")?.let(::parseStreaming)
         val protected = source("protected")?.let(::parseProtected)
         _state.update { now ->
-            val kept = launchers?.ifEmpty { null } ?: now.launchers
             now.copy(
-                // Unsigned, a list can't say a launcher's accessibility service may go on.
-                launchers = if (verified) kept else kept.map { it.copy(accessibility = null) },
+                launchers = launchers?.ifEmpty { null } ?: now.launchers,
                 labels = labels?.ifEmpty { null } ?: now.labels,
                 streaming = streaming?.ifEmpty { null } ?: now.streaming,
                 protected = protected?.ifEmpty { null } ?: now.protected,

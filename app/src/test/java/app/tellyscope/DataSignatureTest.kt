@@ -168,8 +168,8 @@ class DataSignatureTest {
         assertNull(SharedLists.unverified)
     }
 
-    /** `accessibility` counts only while `data/` passes: unsigned, every launcher's is dropped and none may turn its service on. */
-    @Test fun aLaunchersAccessibilityCountsOnlyWhenDataPasses() = runTest {
+    /** A launcher's service may go on only while `data/` passes; unsigned, it is still found and turned off. */
+    @Test fun aLaunchersAccessibilityGoesOnOnlyWhenDataPasses() = runTest {
         val file = """{"schema":1,"launchers":[{"package":"com.good.home","name":"Good","accessibility":"1.0"}]}""".toByteArray()
         val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
         val signedIndex = index(2026110301, file).let { withSigs(it, p256(it)) }
@@ -180,7 +180,7 @@ class DataSignatureTest {
         SharedLists.load(lists(tmp.newFolder(), Served(mapOf("index.json" to index(2026110301, file), "launchers.json" to file))), none, fresh = true)
         assertEquals(DATA_BASE, SharedLists.unverified)
         assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
-        assertNull(SharedLists.launchers.single().accessibility)
+        assertEquals(setOf("com.good.home"), SharedLists.listedServiceLaunchers)
     }
 
     /**
