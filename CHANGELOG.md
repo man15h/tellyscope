@@ -14,6 +14,7 @@ until this file has a section for its version.
 
 - **Improved:** Launchers, app names and streaming services now come from Tellyscope's own repository. [#323](../../pull/323)
 - **Improved:** The launcher list is signed. If Tellyscope can't verify it, installing a launcher shows the list and its signer, and asks you to confirm. [#322](../../pull/322)
+- **Improved:** Which launchers may turn on their accessibility service now comes from the signed launcher list. If Tellyscope can't verify the list, it turns on no launcher's accessibility service. [#328](../../pull/328)
 
 ## 0.15.0 — 2026-11-03
 
