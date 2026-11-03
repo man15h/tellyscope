@@ -51,7 +51,7 @@ private const val DEFAULT_MAX_MB = 64L
 private const val MAX_MB = 256L
 private val SIGNER = Regex("[0-9a-f]{64}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
-private val RELEASES = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
+private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
 /** Empty unless it is schema 1; entries that can't be read or aren't package names are dropped. */
 fun parseLaunchers(text: String): List<KnownLauncher> = try {
@@ -65,7 +65,7 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             signers = l.optJSONArray("signers")?.let { a -> (0 until a.length()).map { a.optString(it) } }
                 ?.takeIf { s -> s.all(SIGNER::matches) }?.toSet().orEmpty(),
             maxBytes = l.optLong("max_mb", DEFAULT_MAX_MB).coerceIn(1, MAX_MB) shl 20,
-            releases = l.optStringOrNull("releases")?.takeIf(RELEASES::matches),
+            releases = l.optStringOrNull("releases")?.takeIf(RELEASES_PAGE::matches),
             fireOs = l.optBoolean("fire_os"),
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
