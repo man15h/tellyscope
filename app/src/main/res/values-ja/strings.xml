@@ -458,13 +458,29 @@
         <item quantity="other">%2$d 個中 %1$d 個のアプリを無効にしました</item>
     </plurals>
     <string name="copy_still_on">%1$s はまだ有効です</string>
-    <plurals name="copy_still_off">
-        <item quantity="other">%1$d 個のアプリがまだ無効です</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="other">元に戻す変更が %1$d 件</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="other">Tellyscope が無効にした %1$d 個のアプリがまだ無効です</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="other">Tellyscope による %1$d 件の変更がまだ残っています</item>
     </plurals>
-    <string name="copy_still_off_text">「すべて復元」で再び有効になります。Tellyscope が最初に変更する前から無効だったアプリは、無効のままです。</string>
+    <string name="copy_put_back_text">「すべて復元」で、このテレビを Tellyscope が最初に変更する前の状態に戻します:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="other">%1$d 個のアプリを有効に戻す</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="other">%1$d 個のアプリを再び無効にする</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="other">テレビのリセットで戻った %1$d 個のアプリを削除する</item>
+    </plurals>
+    <string name="copy_restore_home">ホームを元に戻す</string>
+    <string name="copy_restore_dns">プライベート DNS を元に戻す</string>
+    <string name="copy_restore_animations">アニメーションの速度を元に戻す</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="other">%1$d 個のアプリはアンインストール済みのため戻せません</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="other">ほかに %1$d 台が接続中</item>
     </plurals>
@@ -553,9 +569,12 @@
     <string name="vm_not_an_ip">IP アドレスの形式ではありません。テレビのネットワーク設定に表示されているような、ドットで区切られた 4 つの数字を入力してください。</string>
     <string name="vm_bad_port">コロンの後のポートは、5555 のような 1～65535 の数字にしてください。</string>
     <string name="vm_didnt_work">うまくいきませんでした。</string>
-    <string name="vm_nothing_to_turn_on">有効に戻すものはありません。</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="other">%1$d 個のアプリを有効に戻しました。</item>
+    <string name="vm_nothing_to_put_back">元に戻すものはありません。</string>
+    <plurals name="vm_put_back">
+        <item quantity="other">%1$d 件の変更を元に戻しました。</item>
+    </plurals>
+    <plurals name="vm_put_back_partly">
+        <item quantity="other">%2$d 件中 %1$d 件の変更を元に戻しました。%3$d 件は戻せませんでした。%4$s: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">テレビが拒否しました</string>
     <string name="vm_tv_didnt_answer">テレビから応答がありません。</string>
@@ -593,10 +612,9 @@
     <string name="data_no_home_to_switch_back">戻せるホーム画面がありません</string>
     <string name="data_uninstall_after_service">%1$s。何もアンインストールされていません</string>
     <string name="data_uninstall_home_not_back">ホームを元に戻せませんでした: %1$s。何もアンインストールされていません</string>
-    <string name="data_restore_none">アプリを有効に戻せませんでした: %1$s</string>
-    <plurals name="data_restore_some">
-        <item quantity="other">%1$d 個のアプリを有効に戻した後、停止しました: %2$s</item>
-    </plurals>
+    <string name="data_restore_home">ホーム</string>
+    <string name="data_restore_dns">プライベート DNS</string>
+    <string name="data_restore_animations">アニメーションの速度</string>
     <string name="data_no_reset_to_undo">元に戻すリセットはありません</string>
     <string name="data_reset_already_undone">そのリセットはすでに元に戻されています</string>
     <string name="data_reset_tv_kept_home">テレビは %1$s をホーム画面のままにしました</string>
@@ -614,6 +632,7 @@
     <string name="data_lists_not_a_list">このソースは Tellyscope のリストではありません</string>
     <string name="data_app_names_system">Android システム</string>
     <string name="data_history_service_off">%1$s のユーザー補助サービスを無効にしました</string>
+    <string name="data_history_service_on">%1$s のユーザー補助サービスを有効にしました</string>
     <string name="data_history_reset_undone">テレビのリセットによる変更を元に戻しました</string>
     <plurals name="data_history_reset">
         <item quantity="other">テレビをリセット・%1$d 件の変更</item>
@@ -852,10 +871,10 @@
     <string name="device_disable_title">%1$s を無効にしますか？</string>
     <string name="device_cancel">キャンセル</string>
     <plurals name="device_restore_title">
-        <item quantity="other">%1$d 個のアプリを有効に戻しますか？</item>
+        <item quantity="other">%1$d 件の変更を元に戻しますか？</item>
     </plurals>
-    <string name="device_restore_text">Tellyscope がこのテレビで無効にしたすべてのアプリを有効に戻します。Tellyscope が最初に変更する前から無効だったアプリは、無効のままです。</string>
-    <string name="device_restore_button">有効に戻す</string>
+    <string name="device_restore_text">このテレビを Tellyscope が最初に変更する前の状態に戻します:</string>
+    <string name="device_restore_button">元に戻す</string>
     <string name="device_rename_title">このテレビの名前を変更</string>
     <string name="device_rename_text">この名前はこのスマートフォンでのみ表示されます。テレビ側は何も変わりません。</string>
     <string name="device_save">保存</string>
@@ -1096,7 +1115,7 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">まだ変更はありません</string>
     <string name="history_empty_text">停止、無効化、有効化したものはすべてここに表示され、元に戻すことができます。</string>
-    <string name="history_restoring">アプリを有効に戻しています…</string>
+    <string name="history_restoring">元に戻しています…</string>
     <string name="history_restore_all">すべて復元（%1$d）</string>
     <string name="history_undone">元に戻しました</string>
     <string name="debloat_title">整理</string>

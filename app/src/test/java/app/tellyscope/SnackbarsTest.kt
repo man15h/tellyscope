@@ -43,9 +43,9 @@ class SnackbarsTest {
 
     @Test fun noticeStaysOnScreen() {
         show()
-        notice.value = UiText.plural(R.plurals.vm_turned_back_on, 2)
+        notice.value = UiText.plural(R.plurals.vm_put_back, 2)
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText("Turned 2 apps back on.").assertExists()
+        compose.onNodeWithText("Put back 2 changes.").assertExists()
         // Shown once: it was taken off the queue as it went up.
         assertEquals(null, notice.value)
     }

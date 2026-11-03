@@ -65,6 +65,7 @@ import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.Proc
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
@@ -209,14 +210,17 @@ fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () 
     )
 }
 
-/** Restore only touches what Tellyscope turned off; the dialog says so before anything runs. */
+/** Restore puts back only what Tellyscope changed, both ways; the dialog lists it before anything runs. */
 @Composable
-fun RestoreDialog(count: Int, onRestore: () -> Unit, onDismiss: () -> Unit) {
+fun RestoreDialog(restore: RestoreSummary, onRestore: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(pluralStringResource(R.plurals.device_restore_title, count, count)) },
+        title = { Text(pluralStringResource(R.plurals.device_restore_title, restore.count, restore.count)) },
         text = {
-            Text(stringResource(R.string.device_restore_text))
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(stringResource(R.string.device_restore_text))
+                for (line in Copy.restoreLines(restore)) Text(line.resolve())
+            }
         },
         confirmButton = { Button(onClick = onRestore) { Text(stringResource(R.string.device_restore_button)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },

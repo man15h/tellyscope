@@ -6,12 +6,14 @@ import app.tellyscope.R
 import app.tellyscope.adb.InstallKind
 import app.tellyscope.adb.InstallRefusal
 import app.tellyscope.adb.Peripheral
+import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.TvSettings
 import app.tellyscope.data.UiText
@@ -771,10 +773,24 @@ object Copy {
         if (done == of) UiText.plural(R.plurals.copy_turned_off_all, of) else UiText.plural(R.plurals.copy_turned_off_some, of, done, of)
     fun stillOn(app: String) = UiText(R.string.copy_still_on, app)
 
-    /** Under History in the menu, and on top of the History screen: apps Restore everything turns back on. */
-    fun stillOff(n: Int) = UiText.plural(R.plurals.copy_still_off, n)
-    fun stillOffTitle(n: Int) = UiText.plural(R.plurals.copy_still_off_title, n)
-    val STILL_OFF_TEXT = UiText(R.string.copy_still_off_text)
+    /** Under History in the menu, and on top of the History screen: the changes Restore everything puts back. */
+    fun toPutBack(n: Int) = UiText.plural(R.plurals.copy_to_put_back, n)
+    fun putBackTitle(n: Int) = UiText.plural(R.plurals.copy_put_back_title, n)
+    val PUT_BACK_TEXT = UiText(R.string.copy_put_back_text)
+
+    /** Restore everything's steps, one line each, then the apps that can't come back; on the card and in the confirm. */
+    fun restoreLines(r: RestoreSummary): List<UiText> = listOfNotNull(
+        UiText.plural(R.plurals.copy_restore_on, r.turnOn).takeIf { r.turnOn > 0 },
+        UiText.plural(R.plurals.copy_restore_off, r.turnOff).takeIf { r.turnOff > 0 },
+        UiText.plural(R.plurals.copy_restore_remove, r.remove).takeIf { r.remove > 0 },
+        UiText(R.string.copy_restore_home).takeIf { r.home },
+    ) + r.settings.map {
+        when (it) {
+            Tweak.PRIVATE_DNS -> UiText(R.string.copy_restore_dns)
+            Tweak.ANIMATIONS -> UiText(R.string.copy_restore_animations)
+        }
+    } + listOfNotNull(UiText.plural(R.plurals.copy_restore_gone, r.gone).takeIf { r.gone > 0 })
+        .map { UiText(R.string.copy_restore_line, it) }
     fun othersConnected(n: Int) = UiText.plural(R.plurals.copy_others_connected, n)
     fun connections(n: Int) = UiText.plural(R.plurals.copy_connections, n)
     fun connectedFrom(address: String, n: Int) = UiText.plural(R.plurals.copy_connected_from, n, address, n)

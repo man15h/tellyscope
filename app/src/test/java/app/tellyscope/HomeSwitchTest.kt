@@ -134,7 +134,7 @@ class HomeSwitchTest {
         val entry = switch(tv, FLAUNCHER)
         assertEquals(FLAUNCHER, tv.home)
         assertFalse(TV_HOME in tv.enabled)
-        assertEquals(listOf(TV_HOME), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(setOf(TV_HOME), book.restorable("tv").apps.keys)
         undo(tv, entry)
         assertEquals(TV_HOME, tv.home)
         assertTrue(TV_HOME in tv.enabled)
@@ -146,7 +146,7 @@ class HomeSwitchTest {
         assertEquals(PROJECTIVY, tv.home)
         assertTrue(FLAUNCHER in tv.enabled)
         // Nothing went off, so Restore has nothing to turn on.
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(emptySet<String>(), book.restorable("tv").apps.keys)
         undo(tv, entry)
         assertEquals(FLAUNCHER, tv.home)
     }
@@ -280,7 +280,7 @@ class HomeSwitchTest {
         assertEquals(TV_HOME, tv.home)
         assertTrue(TV_HOME in tv.enabled)
         assertFalse(tv.ran.toString(), tv.ran.any { it.startsWith("pm disable-user") || it.startsWith("cmd package set-home-activity") })
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(emptySet<String>(), book.restorable("tv").apps.keys)
         // A home with nothing replaced: its Undo is the service alone.
         assertEquals(PROJECTIVY_SERVICE, entry.firstHomeService)
         assertEquals(Action.Enable, entry.undo)

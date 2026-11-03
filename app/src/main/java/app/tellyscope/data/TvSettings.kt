@@ -46,6 +46,12 @@ object TvSettings {
         }
     }
 
+    /** How Restore everything names [tweak] when it didn't go back. */
+    fun name(tweak: Tweak): UiText = when (tweak) {
+        Tweak.PRIVATE_DNS -> UiText(R.string.data_restore_dns)
+        Tweak.ANIMATIONS -> UiText(R.string.data_restore_animations)
+    }
+
     val DNS_TOO_OLD: UiText = UiText(R.string.data_dns_too_old)
 
     fun dnsUnreachable(host: String?) = UiText(R.string.data_dns_unreachable, host.toString())

@@ -224,7 +224,6 @@ class FakeDeviceSource(
     override suspend fun act(deviceId: String, action: Action, packageName: String, undoing: Long?): HistoryEntry {
         delay(400)
         val list = appsFor(deviceId)
-        if (!book.hasBaseline(deviceId)) book.setBaseline(deviceId, list.filter { !it.enabled }.map { it.packageName }.toSet())
         if (action == Action.Reset) {
             val reset = book.entries(deviceId).first { it.id == undoing }
             val on = ResetRecord.list(reset.previous, ResetRecord.ON)
@@ -252,13 +251,20 @@ class FakeDeviceSource(
 
     override suspend fun history(deviceId: String): List<HistoryEntry> = book.entries(deviceId)
 
-    override suspend fun restorable(deviceId: String): List<String> = book.restorable(deviceId)
+    override suspend fun restorable(deviceId: String): Restorable = book.restorable(deviceId)
 
-    override suspend fun restoreAll(deviceId: String): List<HistoryEntry> {
-        val off = appsFor(deviceId).filter { !it.enabled }.map { it.packageName }.toSet()
-        return restoreEach(restorable(deviceId).filter { it in off }) { pkg ->
-            act(deviceId, Action.Enable, pkg, undoing = book.openDisable(deviceId, pkg))
+    /** Apps and settings, as [AdbDeviceSource.restoreAll] puts them back; the demo TV has no Home to switch. */
+    override suspend fun restoreAll(deviceId: String): RestoreResult {
+        val target = book.restorable(deviceId)
+        val plan = target.plan { pkg -> appsFor(deviceId).firstOrNull { it.packageName == pkg }?.let { if (it.enabled) Was.On else Was.Off } ?: Was.Gone }
+        val run = RestoreRun()
+        fun app(pkg: String) = (appsFor(deviceId).firstOrNull { it.packageName == pkg }?.label ?: pkg).asUiText()
+        for (pkg in plan.turnOn) run.step(app(pkg)) { act(deviceId, Action.Enable, pkg, undoing = book.openDisable(deviceId, pkg)) }
+        for (pkg in plan.turnOff) run.step(app(pkg)) { act(deviceId, Action.Disable, pkg, undoing = book.openEnable(deviceId, pkg)) }
+        for ((tweak, before) in target.settings) {
+            if (before.any { (k, v) -> settingsFor(deviceId)[k] != v }) run.step(TvSettings.name(tweak)) { change(deviceId, tweak, before, null) }
         }
+        return run.result()
     }
 
     /** The demo TV's apps that are off and came with it, as if someone had turned them off by hand. */
