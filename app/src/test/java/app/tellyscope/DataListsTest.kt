@@ -29,6 +29,9 @@ class DataListsTest {
     private val package_ = Regex("[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z0-9_]+)+")
     private val logoName = Regex("[a-z0-9]+")
     private val hex = Regex("#[0-9A-Fa-f]{6}")
+    private val signer = Regex("[0-9a-f]{64}")
+    // "." and ".." are not repo names; they would walk the URL out of the repo.
+    private val releases = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
@@ -44,17 +47,31 @@ class DataListsTest {
     @Test fun launchers() {
         val errors = mutableListOf<String>()
         val seen = mutableSetOf<String>()
+        val fire = mutableListOf<String>()
         val entries = schema1("launchers.json").getJSONArray("launchers").objects()
         entries.forEachIndexed { i, l ->
             val where = "launchers.json: launcher ${i + 1}"
-            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about")
+            // Install details only: a list never asks for an accessibility service.
+            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "fire_os")
             if (unknown.isNotEmpty()) errors += "$where: unknown keys ${unknown.sorted()}"
             val pkg = l.optString("package")
             if (!package_.matches(pkg)) errors += "$where: not a package name: $pkg"
             if (!l.nonEmpty("name")) errors += "$where: 'name' must be a non-empty string"
             if (l.has("about") && !l.nonEmpty("about")) errors += "$where: 'about' must be a non-empty string"
+            val signers = l.optJSONArray("signers")?.let { a -> (0 until a.length()).map { a.opt(it) } }
+            if (l.has("signers") && (signers.isNullOrEmpty() || !signers.all { it is String && signer.matches(it) })) {
+                errors += "$where: 'signers' must be a non-empty list of SHA-256s, 64 lowercase hex"
+            }
+            if (l.has("max_mb") && (l.opt("max_mb") as? Int)?.takeIf { it in 1..256 } == null) errors += "$where: 'max_mb' must be a whole number from 1 to 256"
+            if (l.has("releases") && !releases.matches(l.optString("releases"))) errors += "$where: 'releases' must be https://github.com/<owner>/<repo>/releases"
+            if (l.has("fire_os") && l.opt("fire_os") != true) errors += "$where: 'fire_os' can only be true; leave it out otherwise"
+            if (l.opt("fire_os") == true) {
+                fire += pkg
+                if (!l.has("signers")) errors += "$where: 'fire_os' needs 'signers', or Fire OS has nothing to check the APK against"
+            }
             if (!seen.add(pkg)) errors += "$where: $pkg is listed twice"
         }
+        if (fire.size > 1) errors += "launchers.json: 'fire_os' is on ${fire.size} launchers; Fire OS installs one"
         if (errors.isEmpty()) assertEquals("launchers.json: the app drops none", entries.size, parseLaunchers(text("launchers.json")).size)
         assertNone(errors)
     }
