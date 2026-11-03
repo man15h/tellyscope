@@ -646,9 +646,9 @@
         <item quantity="other">Se revirtieron %1$d cambios.</item>
     </plurals>
     <plurals name="vm_put_back_partly">
-        <item quantity="one">Se revirtieron %1$d de %2$d cambios. %4$s no se revirtió: %5$s</item>
-        <item quantity="many">Se revirtieron %1$d de %2$d cambios. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
-        <item quantity="other">Se revirtieron %1$d de %2$d cambios. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
+        <item quantity="one">Revertidos: %1$d de %2$d. %4$s no se revirtió: %5$s</item>
+        <item quantity="many">Revertidos: %1$d de %2$d. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
+        <item quantity="other">Revertidos: %1$d de %2$d. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">la TV se negó</string>
     <string name="vm_tv_didnt_answer">La TV no respondió.</string>
