@@ -32,9 +32,11 @@ android {
             versionNameSuffix = "-alpha.$run"
         }
 
-        // Where the launcher, app name and streaming lists are downloaded from (DATA_BASE). Before
-        // data/ is on main, -Ptellyscope.data=<raw folder URL ending in /> tries it from a branch.
-        val data = providers.gradleProperty("tellyscope.data").orNull ?: "https://raw.githubusercontent.com/man15h/tellyscope/main/data/"
+        // Where the launcher, app name and streaming lists are downloaded from (DATA_BASE): dev/data/
+        // for an alpha, so a data/ change reaches alpha before prod, and main/data/ for a release.
+        // -Ptellyscope.data=<raw folder URL ending in /> overrides both, e.g. to try a branch.
+        val dataBranch = if (providers.gradleProperty("tellyscope.alpha").isPresent) "dev" else "main"
+        val data = providers.gradleProperty("tellyscope.data").orNull ?: "https://raw.githubusercontent.com/man15h/tellyscope/$dataBranch/data/"
         buildConfigField("String", "DATA_BASE", "\"$data\"")
     }
 
