@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline". [#333](../../pull/333)
+- **Fixed:** Off Wi-Fi, the TV screen says the phone isn't on Wi-Fi instead of "TV offline", and it changes the moment Wi-Fi drops, not after reopening the app. [#333](../../pull/333)
 - **Fixed:** With the TV offline, Installed and Built-in say why they're empty instead of "Nothing here yet." [#333](../../pull/333)
 
 ## 0.15.0 — 2026-11-03
