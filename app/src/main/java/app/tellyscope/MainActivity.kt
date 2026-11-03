@@ -217,7 +217,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     var rejoinSince by rememberSaveable { mutableStateOf(0L) }
 
     val pickApp = rememberLauncherForActivityResult(InDownloads.Multiple()) { vm.pickedApp(it) }
-    val pickProjectivy = rememberLauncherForActivityResult(InDownloads.One()) { uri -> uri?.let(vm::pickedProjectivy) }
+    val pickLauncherApk = rememberLauncherForActivityResult(InDownloads.One()) { uri -> uri?.let(vm::pickedLauncherApk) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::push) }
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), vm::saveTo)
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
@@ -360,10 +360,11 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 makeHome = vm::makeHome,
                 open = vm::openLauncher,
                 later = vm::launcherLater,
-                fireCheck = vm::checkProjectivy,
-                fireInstall = vm::installProjectivy,
-                fireDismiss = vm::dismissProjectivy,
-                firePick = { pickProjectivy.launch(arrayOf(InDownloads.APK)) },
+                fireCheck = vm::checkLauncherApk,
+                fireTrust = vm::trustLauncherList,
+                fireInstall = vm::installLauncherApk,
+                fireDismiss = vm::dismissLauncherApk,
+                firePick = { pickLauncherApk.launch(arrayOf(InDownloads.APK)) },
             ),
             snackbar = snackbar,
             direct = vm.directDownload,

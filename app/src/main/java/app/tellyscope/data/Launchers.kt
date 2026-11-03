@@ -25,14 +25,33 @@ val ACCESSIBILITY_LAUNCHERS = mapOf(
  * A third-party launcher Tellyscope knows, from `launchers.json`. [accessibility] is whether it is
  * one of [ACCESSIBILITY_LAUNCHERS], never what the list says. [about] is the line Install a home
  * screen shows; a launcher without one isn't offered there.
+ *
+ * Installing it from an APK rather than the Play Store: [signers] are the SHA-256s of the only
+ * certificates it may be signed with (empty: never from an APK), [maxBytes] is past any real copy of
+ * it, and [releases] is its developer's GitHub releases page, the only place the GitHub build
+ * downloads it from. [fireOs]: the launcher Fire OS installs, having no Play Store.
  */
 data class KnownLauncher(
     val pkg: String,
     val name: String,
     val about: String? = null,
+    val signers: Set<String> = emptySet(),
+    val maxBytes: Long = DEFAULT_MAX_MB shl 20,
+    val releases: String? = null,
+    val fireOs: Boolean = false,
 ) {
     val accessibility get() = pkg in ACCESSIBILITY_LAUNCHERS
+
+    /** It, signed only by its developer: [signers] are the SHA-256s of an APK's certificates. */
+    fun accepts(packageName: String, signers: Set<String>) =
+        packageName == pkg && signers.isNotEmpty() && this.signers.isNotEmpty() && this.signers.containsAll(signers)
 }
+
+private const val DEFAULT_MAX_MB = 64L
+private const val MAX_MB = 256L
+private val SIGNER = Regex("[0-9a-f]{64}")
+// "." and ".." are not repo names; they would walk the URL out of the repo.
+private val RELEASES = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
 /** Empty unless it is schema 1; entries that can't be read or aren't package names are dropped. */
 fun parseLaunchers(text: String): List<KnownLauncher> = try {
@@ -42,6 +61,12 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             pkg = l.getString("package"),
             name = plainText(l.getString("name"), NAME_MAX),
             about = l.optStringOrNull("about")?.let { plainText(it, NOTE_MAX) }?.ifEmpty { null },
+            // A signer that isn't a SHA-256 drops them all: a half-read list must not pass a different APK.
+            signers = l.optJSONArray("signers")?.let { a -> (0 until a.length()).map { a.optString(it) } }
+                ?.takeIf { s -> s.all(SIGNER::matches) }?.toSet().orEmpty(),
+            maxBytes = l.optLong("max_mb", DEFAULT_MAX_MB).coerceIn(1, MAX_MB) shl 20,
+            releases = l.optStringOrNull("releases")?.takeIf(RELEASES::matches),
+            fireOs = l.optBoolean("fire_os"),
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
 } catch (_: org.json.JSONException) {
@@ -97,6 +122,8 @@ data class Shared(
     val labels: Map<String, String> = emptyMap(),
     val streaming: List<StreamingService> = emptyList(),
     val protected: Map<String, ProtectedReason> = emptyMap(),
+    /** The user's own list these came from ([DeviceLists.base]), or null for the default source. */
+    val list: String? = null,
 )
 
 /**
@@ -114,6 +141,8 @@ object SharedLists {
     val launchers get() = _state.value.launchers
     val labels get() = _state.value.labels
     val streaming get() = _state.value.streaming
+    /** The user's own list the launchers came from, or null for the default: installing from it asks first. */
+    val list get() = _state.value.list
 
     @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
@@ -123,6 +152,7 @@ object SharedLists {
         this.data = data
         source = lists
         if (fresh) reset(_state.value.copy(protected = emptyMap()))
+        _state.update { it.copy(list = lists.custom()?.let { lists.base }) }
         apply(data::cachedShared, lists::cachedShared)
         refresh()
     }
@@ -144,7 +174,7 @@ object SharedLists {
         val streaming = data("streaming")?.let(::parseStreaming)
         val protected = source("protected")?.let(::parseProtected)
         _state.update { now ->
-            Shared(
+            now.copy(
                 launchers = launchers?.ifEmpty { null } ?: now.launchers,
                 labels = labels?.ifEmpty { null } ?: now.labels,
                 streaming = streaming?.ifEmpty { null } ?: now.streaming,

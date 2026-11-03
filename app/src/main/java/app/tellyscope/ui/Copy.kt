@@ -98,7 +98,7 @@ object Copy {
     val MAKE_HOME = UiText(R.string.copy_make_home)
     val GET_LAUNCHER = UiText(R.string.copy_get_launcher)
     val GET_LAUNCHER_TEXT = UiText(R.string.copy_get_launcher_text)
-    val GET_PROJECTIVY_TEXT = UiText(R.string.copy_get_projectivy_text)
+    fun getFireLauncherText(name: String) = UiText(R.string.copy_get_fire_launcher_text, name)
 
     /** The Apps tab's launcher rows: switching lives in the card, this opens it. */
     val HOME_SETTINGS = UiText(R.string.copy_home_settings)
@@ -244,8 +244,8 @@ object Copy {
     /** The Store closed without an install: back on the picker, still chosen. */
     fun wasntInstalled(name: String) = UiText(R.string.copy_wasnt_installed, name)
 
-    /** Install Projectivy on Fire OS: Tellyscope downloads it from its developer's GitHub and installs it over adb. */
-    val INSTALL_PROJECTIVY = UiText(R.string.copy_install_projectivy)
+    /** Install a launcher on Fire OS: Tellyscope downloads it from its developer's GitHub and installs it over adb. */
+    fun installLauncher(name: String) = UiText(R.string.copy_install_launcher, name)
     val FIRE_INSTALL_TEXT = UiText(R.string.copy_fire_install_text)
 
     fun downloadsFrom(name: String) = UiText(R.string.copy_downloads_from, name)
@@ -253,7 +253,7 @@ object Copy {
     fun release(version: String, size: Long) = UiText(R.string.copy_release, version, bytes(size))
 
     val WHERE_FROM = UiText(R.string.copy_where_from)
-    val SIGNED_CHECK = UiText(R.string.copy_signed_check)
+    fun signedCheck(name: String) = UiText(R.string.copy_signed_check, name)
     val DOWNLOAD_AND_INSTALL = UiText(R.string.copy_download_and_install)
 
     /** Download directly on a TV with the Play Store: what Tellyscope checks, what it doesn't, and the safer way. */
@@ -264,17 +264,17 @@ object Copy {
     val DOWNLOAD_ANYWAY = UiText(R.string.copy_download_anyway)
     val STORE_INSTEAD = UiText(R.string.copy_store_instead)
 
-    /** Install Projectivy's steps, one panel: download (or the picked file), the check, the install. */
+    /** The launcher install's steps, one panel: download (or the picked file), the check, the install. */
     fun installing(name: String) = UiText(R.string.copy_installing, name)
     val STEP_DOWNLOAD = UiText(R.string.copy_step_download)
     val STEP_DOWNLOADED = UiText(R.string.copy_step_downloaded)
     fun downloading(percent: Int, done: Long, total: Long) = UiText(R.string.copy_downloading, percent, bytes(done), bytes(total))
     val STEP_PICKED = UiText(R.string.copy_step_picked)
-    val STEP_CHECK = UiText(R.string.copy_step_check)
-    val STEP_CHECKING = UiText(R.string.copy_step_checking)
-    val STEP_CHECKED = UiText(R.string.copy_step_checked)
+    fun stepCheck(name: String) = UiText(R.string.copy_step_check, name)
+    fun stepChecking(name: String) = UiText(R.string.copy_step_checking, name)
+    fun stepChecked(name: String) = UiText(R.string.copy_step_checked, name)
     val STEP_CHECKED_TEXT = UiText(R.string.copy_step_checked_text)
-    val STEP_FAILED = UiText(R.string.copy_step_failed)
+    fun stepFailed(name: String) = UiText(R.string.copy_step_failed, name)
     val STEP_FAILED_TEXT = UiText(R.string.copy_step_failed_text)
     fun installOn(tv: String) = UiText(R.string.copy_install_on, tv)
 
@@ -286,25 +286,33 @@ object Copy {
     val STOP = UiText(R.string.copy_stop)
     val KEEP_DOWNLOADING = UiText(R.string.copy_keep_downloading)
 
-    val NOT_PROJECTIVY = UiText(R.string.copy_not_projectivy)
-    val NOT_PROJECTIVY_TEXT = UiText(R.string.copy_not_projectivy_text)
-    val NOT_PROJECTIVY_FILE = UiText(R.string.copy_not_projectivy_file)
-    val NOT_PROJECTIVY_FILE_TEXT = UiText(R.string.copy_not_projectivy_file_text)
+    fun wrongApk(name: String) = UiText(R.string.copy_wrong_apk, name)
+    fun wrongApkText(name: String) = UiText(R.string.copy_wrong_apk_text, name)
+    fun wrongApkFile(name: String) = UiText(R.string.copy_wrong_apk_file, name)
+    fun wrongApkFileText(name: String) = UiText(R.string.copy_wrong_apk_file_text, name)
     val CANT_READ_FILE = UiText(R.string.copy_cant_read_file)
     fun cantInstall(name: String) = UiText(R.string.copy_cant_install, name)
 
     /** Couldn't download: GitHub's limit for the network ([until] is a clock time), or no way to reach it. */
-    val NO_DOWNLOAD = UiText(R.string.copy_no_download)
+    fun noDownload(name: String) = UiText(R.string.copy_no_download, name)
     val NO_DOWNLOAD_OFFLINE = UiText(R.string.copy_no_download_offline)
     fun noDownloadLimited(until: String?) =
         if (until != null) UiText(R.string.copy_no_download_limited_until, until) else UiText(R.string.copy_no_download_limited)
     val OR_YOURSELF = UiText(R.string.copy_or_yourself)
     val YOURSELF_PAGE = UiText(R.string.copy_yourself_page)
-    fun yourselfPick(file: String?) = if (file != null) UiText(R.string.copy_yourself_pick_file, file) else UiText(R.string.copy_yourself_pick)
+    fun yourselfPick(file: String?, name: String) =
+        if (file != null) UiText(R.string.copy_yourself_pick_file, file, name) else UiText(R.string.copy_yourself_pick, name)
     val LATEST_RELEASE = UiText(R.string.copy_latest_release)
     val PICK_DOWNLOADED = UiText(R.string.copy_pick_downloaded)
     val PICK_ANOTHER = UiText(R.string.copy_pick_another)
     val TRY_DOWNLOAD_AGAIN = UiText(R.string.copy_try_download_again)
+
+    /** A launcher from a list the user added: shown, and ticked, before anything installs. */
+    val OWN_LIST_TITLE = UiText(R.string.copy_own_list_title)
+    val OWN_LIST_TEXT = UiText(R.string.copy_own_list_text)
+    val OWN_LIST_LIST = UiText(R.string.copy_own_list_list)
+    val OWN_LIST_SIGNER = UiText(R.string.copy_own_list_signer)
+    val OWN_LIST_TRUST = UiText(R.string.copy_own_list_trust)
 
     val NOT_INSTALLED_TEXT = UiText(R.string.copy_not_installed_text)
 

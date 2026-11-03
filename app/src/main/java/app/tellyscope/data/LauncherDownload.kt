@@ -19,29 +19,18 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
-const val PROJECTIVY = "com.spocky.projengmenu"
-
-/** Where Projectivy's developer publishes its APKs. Not open source: the repo holds only releases and themes. */
-const val PROJECTIVY_RELEASES = "https://github.com/spocky/miproja1/releases"
-private const val PROJECTIVY_LATEST = "https://api.github.com/repos/spocky/miproja1/releases/latest"
-
-/**
- * SHA-256 of the certificate Projectivy's GitHub APKs are signed with (APK Signature Scheme v2),
- * the same on 4.70 and 4.72. A download signed with anything else is never sent to the TV.
- */
-val PROJECTIVY_SIGNERS = setOf("f6697bf4082ee97511e4de07863193884a015b7ab5860430321bda1042b0aadd")
-
-/** Projectivy is about 11 MB; anything far past that isn't it. */
-private const val MAX_APK_BYTES = 64L shl 20
-
-/** Projectivy's latest release: [page] is shown before anything downloads, [apk] is its one APK. */
+/** A launcher's latest release: [page] is shown before anything downloads, [apk] is its one APK. */
 data class LauncherRelease(val version: String, val page: String, val apk: String, val size: Long)
 
+/** GitHub's API for [releases]' latest release: `https://github.com/<owner>/<repo>/releases` as the list gives it. */
+private fun latestApi(releases: String) =
+    "https://api.github.com/repos/" + releases.removePrefix("https://github.com/").removeSuffix("/releases") + "/releases/latest"
+
 /**
- * The latest release from GitHub's API, or null unless it is a full release on Projectivy's own
+ * The latest release from GitHub's API, or null unless it is a full release on [launcher]'s own
  * repo with exactly one APK, served from that release.
  */
-fun parseRelease(json: String): LauncherRelease? = runCatching {
+fun parseRelease(json: String, launcher: KnownLauncher): LauncherRelease? = runCatching {
     val r = JSONObject(json)
     val tag = r.getString("tag_name")
     val assets = r.getJSONArray("assets")
@@ -49,21 +38,23 @@ fun parseRelease(json: String): LauncherRelease? = runCatching {
     val url = apk?.getString("browser_download_url")
     val size = apk?.getLong("size") ?: 0L
     LauncherRelease(tag, r.getString("html_url"), url.orEmpty(), size).takeIf {
-        !r.optBoolean("draft") && !r.optBoolean("prerelease") && it.valid()
+        !r.optBoolean("draft") && !r.optBoolean("prerelease") && it.valid(launcher)
     }
 }.getOrNull()
 
-/** On Projectivy's own repo, its one APK served from that release, and about the right size. */
-private fun LauncherRelease.valid() =
-    page == "$PROJECTIVY_RELEASES/tag/$version" && apk.startsWith("$PROJECTIVY_RELEASES/download/$version/") && size in 1..MAX_APK_BYTES
+/** On [launcher]'s own repo, its one APK served from that release, and about the right size. */
+private fun LauncherRelease.valid(launcher: KnownLauncher): Boolean {
+    val releases = launcher.releases ?: return false
+    return page == "$releases/tag/$version" && apk.startsWith("$releases/download/$version/") && size in 1..launcher.maxBytes
+}
 
-/** The tag github.com's `releases/latest` redirects to, from its Location; null for anywhere else. */
-fun latestTag(location: String?): String? =
-    location?.removePrefix("$PROJECTIVY_RELEASES/tag/")?.takeIf { it != location && it.isNotEmpty() && '/' !in it && '?' !in it }
+/** The tag github.com's `releases/latest` on [releases] redirects to, from its Location; null for anywhere else. */
+fun latestTag(location: String?, releases: String): String? =
+    location?.removePrefix("$releases/tag/")?.takeIf { it != location && it.isNotEmpty() && '/' !in it && '?' !in it }
 
 /** The release page's one APK, from its asset list's links: the full URL, or null unless there is exactly one. */
-fun pageApk(html: String, tag: String): String? {
-    val path = PROJECTIVY_RELEASES.removePrefix("https://github.com") + "/download/$tag/"
+fun pageApk(html: String, tag: String, releases: String): String? {
+    val path = releases.removePrefix("https://github.com") + "/download/$tag/"
     return Regex("href=\"(${Regex.escape(path)}[^\"/?#]+\\.apk)\"").findAll(html).map { it.groupValues[1] }.distinct()
         .singleOrNull()?.let { "https://github.com$it" }
 }
@@ -74,23 +65,22 @@ fun pageApk(html: String, tag: String): String? {
  */
 class RateLimited(val until: Long?) : IOException("rate-limited")
 
-/** Projectivy, signed only by its developer: [signers] are the SHA-256s of the APK's certificates. */
-fun isProjectivy(packageName: String, signers: Set<String>) =
-    packageName == PROJECTIVY && signers.isNotEmpty() && PROJECTIVY_SIGNERS.containsAll(signers)
+/** The APK isn't the launcher it should be ([KnownLauncher.accepts]): another package, or not signed by its developer. */
+class WrongApk : IOException("not the launcher")
 
-/** The download isn't Projectivy, or isn't signed by its developer. */
-class NotProjectivy : IOException("not Projectivy")
-
-/** Fire OS's way to Projectivy: there's no Play Store, so Tellyscope fetches it from its developer. Faked in tests. */
+/**
+ * Fire OS's way to its launcher: there's no Play Store, so Tellyscope fetches it from its developer's
+ * [KnownLauncher.releases]. Faked in tests.
+ */
 interface LauncherDownload {
-    /** Throws on no network or a release that doesn't parse. */
-    suspend fun latest(): LauncherRelease
+    /** Throws on no network, no [KnownLauncher.releases], or a release that doesn't parse. */
+    suspend fun latest(launcher: KnownLauncher): LauncherRelease
 
-    /** Downloads [release]'s APK and checks it. Throws [NotProjectivy], or IOException on a failed download. */
-    suspend fun fetch(release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp
+    /** Downloads [release]'s APK and checks it. Throws [WrongApk], or IOException on a failed download. */
+    suspend fun fetch(launcher: KnownLauncher, release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp
 
-    /** A file the user downloaded and picked, checked the same way. Throws [NotProjectivy], or IOException when it can't be read. */
-    suspend fun open(uri: Uri): PickedApp
+    /** A file the user downloaded and picked, checked the same way. Throws [WrongApk], or IOException when it can't be read. */
+    suspend fun open(uri: Uri, launcher: KnownLauncher): PickedApp
 }
 
 class AndroidLauncherDownload(context: Context) : LauncherDownload {
@@ -101,17 +91,18 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
      * From GitHub's API, or, when that is rate-limited, from the release page it links to, which isn't.
      * Throws [RateLimited] only when the page didn't answer either.
      */
-    override suspend fun latest(): LauncherRelease = withContext(Dispatchers.IO) {
+    override suspend fun latest(launcher: KnownLauncher): LauncherRelease = withContext(Dispatchers.IO) {
+        val releases = launcher.releases ?: throw IOException("no releases page for ${launcher.pkg}")
         val limited = try {
-            return@withContext parseRelease(api()) ?: throw IOException("no Projectivy release")
+            return@withContext parseRelease(api(releases), launcher) ?: throw IOException("no release of ${launcher.pkg}")
         } catch (e: RateLimited) {
             e
         }
-        runCatching { fromPage() }.getOrNull() ?: throw limited
+        runCatching { fromPage(launcher, releases) }.getOrNull() ?: throw limited
     }
 
-    private fun api(): String {
-        val c = URL(PROJECTIVY_LATEST).openConnection() as HttpURLConnection
+    private fun api(releases: String): String {
+        val c = URL(latestApi(releases)).openConnection() as HttpURLConnection
         c.connectTimeout = 10_000
         c.readTimeout = 10_000
         try {
@@ -127,17 +118,17 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
     }
 
     /** `releases/latest` redirects to the tag, whose asset list names the APK; its size comes from the download's own length. */
-    private suspend fun fromPage(): LauncherRelease? {
-        val c = URL("$PROJECTIVY_RELEASES/latest").openConnection() as HttpURLConnection
+    private suspend fun fromPage(launcher: KnownLauncher, releases: String): LauncherRelease? {
+        val c = URL("$releases/latest").openConnection() as HttpURLConnection
         c.instanceFollowRedirects = false
         c.connectTimeout = 10_000
         c.readTimeout = 10_000
         val tag = try {
-            latestTag(c.takeIf { it.responseCode in 301..302 }?.getHeaderField("Location"))
+            latestTag(c.takeIf { it.responseCode in 301..302 }?.getHeaderField("Location"), releases)
         } finally {
             c.disconnect()
         } ?: return null
-        val apk = pageApk(download("$PROJECTIVY_RELEASES/expanded_assets/$tag").decodeToString(), tag) ?: return null
+        val apk = pageApk(download("$releases/expanded_assets/$tag").decodeToString(), tag, releases) ?: return null
         val head = URL(apk).openConnection() as HttpURLConnection
         head.requestMethod = "HEAD"
         head.connectTimeout = 10_000
@@ -147,13 +138,13 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
         } finally {
             head.disconnect()
         }
-        return LauncherRelease(tag, "$PROJECTIVY_RELEASES/tag/$tag", apk, size).takeIf { it.valid() }
+        return LauncherRelease(tag, "$releases/tag/$tag", apk, size).takeIf { it.valid(launcher) }
     }
 
-    override suspend fun fetch(release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp = withContext(Dispatchers.IO) {
+    override suspend fun fetch(launcher: KnownLauncher, release: LauncherRelease, onProgress: (Progress) -> Unit): PickedApp = withContext(Dispatchers.IO) {
         dir.deleteRecursively()
         dir.mkdirs()
-        val file = File(dir, "projectivy.apk")
+        val file = File(dir, "launcher.apk")
         val c = URL(release.apk).openConnection() as HttpURLConnection
         c.connectTimeout = 10_000
         c.readTimeout = 30_000
@@ -177,13 +168,13 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
         } finally {
             c.disconnect()
         }
-        read(file)
+        read(file, launcher)
     }
 
-    override suspend fun open(uri: Uri): PickedApp = withContext(Dispatchers.IO) {
+    override suspend fun open(uri: Uri, launcher: KnownLauncher): PickedApp = withContext(Dispatchers.IO) {
         dir.deleteRecursively()
         dir.mkdirs()
-        val file = File(dir, "projectivy.apk")
+        val file = File(dir, "launcher.apk")
         val input = ctx.contentResolver.openInputStream(uri) ?: throw IOException("can't read $uri")
         input.use { s ->
             file.outputStream().use { out ->
@@ -193,17 +184,17 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
                     ensureActive()
                     val n = s.read(buf).takeIf { it >= 0 } ?: break
                     done += n
-                    // Far past Projectivy's size: some other file, never read whole.
-                    if (done > MAX_APK_BYTES) throw NotProjectivy()
+                    // Far past the launcher's size: some other file, never read whole.
+                    if (done > launcher.maxBytes) throw WrongApk()
                     out.write(buf, 0, n)
                 }
             }
         }
-        read(file)
+        read(file, launcher)
     }
 
     /** The package manager checks the APK's signature while it reads the certificates. */
-    private fun read(file: File): PickedApp {
+    private fun read(file: File, launcher: KnownLauncher): PickedApp {
         val pm = ctx.packageManager
         val pkg = if (Build.VERSION.SDK_INT >= 28) {
             @Suppress("DEPRECATION") // the flags overload is API 33+
@@ -211,7 +202,7 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
         } else {
             @Suppress("DEPRECATION")
             pm.getPackageArchiveInfo(file.path, PackageManager.GET_SIGNATURES)
-        } ?: throw NotProjectivy()
+        } ?: throw WrongApk()
         val certs = if (Build.VERSION.SDK_INT >= 28) {
             // A rotated key lists its past certificates first; the current one signs.
             pkg.signingInfo?.let { if (it.hasMultipleSigners()) it.apkContentsSigners.toList() else it.signingCertificateHistory.takeLast(1) }
@@ -220,11 +211,11 @@ class AndroidLauncherDownload(context: Context) : LauncherDownload {
             pkg.signatures?.toList()
         }
         val signers = certs.orEmpty().map { sha256(it.toByteArray()) }.toSet()
-        if (!isProjectivy(pkg.packageName, signers)) throw NotProjectivy()
+        if (!launcher.accepts(pkg.packageName, signers)) throw WrongApk()
         return PickedApp(
             files = listOf(file),
             info = ApkInfo(pkg.packageName, PackageInfoCompat.getLongVersionCode(pkg), pkg.versionName),
-            label = "Projectivy Launcher",
+            label = launcher.name,
         )
     }
 }

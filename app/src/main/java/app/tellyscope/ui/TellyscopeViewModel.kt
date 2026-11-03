@@ -34,12 +34,11 @@ import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
 import app.tellyscope.data.LauncherRelease
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.NotAnApp
-import app.tellyscope.data.NotProjectivy
-import app.tellyscope.data.PROJECTIVY
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
 import app.tellyscope.data.RateLimited
@@ -53,6 +52,7 @@ import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.ScanProgress
+import app.tellyscope.data.SharedLists
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.StoreState
 import app.tellyscope.data.Suggestions
@@ -64,6 +64,7 @@ import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
 import app.tellyscope.data.UpdateCheck
 import app.tellyscope.data.UiText
+import app.tellyscope.data.WrongApk
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -191,12 +192,12 @@ data class ResetUi(
 data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg, val fire: FireInstall? = null) {
     enum class Step { Pick, Waiting, NoStore, Left, Installed }
 
-    /** Fire OS: Projectivy alone, with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
+    /** Fire OS: its launcher alone ([fireLauncher]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
     val fireOs get() = fire != null && !fire.store
 }
 
 /**
- * Install Projectivy on Fire OS ([fireInstall]), on [LauncherFlow.Step.Pick] in place of the picker: there's no
+ * Install a launcher's APK on Fire OS ([fireInstall]), on [LauncherFlow.Step.Pick] in place of the picker: there's no
  * Play Store, so Tellyscope reads the latest release ([Step.Checking]), asks ([Step.Confirm]), downloads and
  * checks it ([Step.Downloading]), installs it over adb ([Step.Installing]), then moves to [LauncherFlow.Step.Installed].
  * A null [step] is the picker with nothing started. [error] is the TV's refusal, for [Step.Refused].
@@ -215,8 +216,17 @@ data class FireInstall(
     val until: Long? = null,
     /** The APK's size once it's downloaded or picked, for the steps' first line. */
     val size: Long? = null,
+    /**
+     * The user's own list the launcher comes from ([SharedLists.list]), null for the default source. Then nothing
+     * downloads or installs until the user ticks that they trust it and its signer ([trusted]).
+     */
+    val list: String? = null,
+    val trusted: Boolean = false,
 ) {
-    enum class Step { Checking, Confirm, Downloading, Reading, Installing, NotProjectivy, NoDownload, Refused }
+    enum class Step { Checking, Confirm, Downloading, Reading, Installing, WrongApk, NoDownload, Refused }
+
+    /** From the user's own list and not yet trusted: Download and install and Pick the downloaded file wait. */
+    val gated get() = list != null && !trusted
 }
 
 /**
@@ -417,8 +427,10 @@ class TellyscopeViewModel(
     private val historySeen: SeenBook? = null,
     /** This build and phone, for reports. */
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
-    /** Projectivy from its developer's GitHub, for Fire OS. */
+    /** A launcher's APK from its developer's GitHub, for Fire OS. */
     private val launcherDownload: LauncherDownload? = null,
+    /** The user's own list the launchers came from, or null for the default source. */
+    private val ownList: () -> String? = { SharedLists.list },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState(now = clock()))
@@ -944,8 +956,9 @@ class TellyscopeViewModel(
     /** Opens Install a home screen on its picker; not before the launcher list has been downloaded once. */
     fun openLauncherFlow() {
         val id = _state.value.selectedId ?: return
-        if (_state.value.selected?.let { fireInstall(it, _state.value.device.apps) } == true) {
-            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = PROJECTIVY, fire = FireInstall())) }
+        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, _state.value.device.apps) } == true }
+        if (fire != null) {
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = ownList()))) }
             return
         }
         if (RECOMMENDED.isEmpty()) {
@@ -961,82 +974,113 @@ class TellyscopeViewModel(
     /** Download directly is offered beside the Play Store: there's a way to download, as on Fire OS. */
     val directDownload get() = launcherDownload != null
 
+    /** [pkg]'s entry on the launcher list, when it says how to check its APK: the only launchers installed from one. */
+    private fun apkLauncher(pkg: String?): KnownLauncher? =
+        RECOMMENDED.firstOrNull { it.pkg == pkg }?.launcher?.takeIf { it.signers.isNotEmpty() }
+
     /**
-     * Install Projectivy on Fire OS, or Download directly in the picker: reads the latest release, for the
+     * Install [pkg] on Fire OS, or Download directly in the picker: reads its latest release, for the
      * confirm dialog to show where it comes from.
      */
-    fun checkProjectivy() {
+    fun checkLauncherApk(pkg: String) {
         val id = _state.value.selectedId ?: return
         val download = launcherDownload ?: return
+        val launcher = apkLauncher(pkg) ?: return
         val store = _state.value.device.launcher?.let { it.fire?.store ?: true } ?: return
+        val list = ownList()
         launcherJob?.cancel()
-        updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = PROJECTIVY, fire = FireInstall(FireInstall.Step.Checking, store = store))) }
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = pkg, fire = FireInstall(FireInstall.Step.Checking, store = store, list = list))) }
         launcherJob = viewModelScope.launch {
             val release = try {
-                download.latest()
+                download.latest(launcher)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RateLimited) {
-                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, until = e.until) }
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, until = e.until, list = list) }
             } catch (_: Exception) {
-                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store) }
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, list = list) }
             }
-            setFire(id) { FireInstall(FireInstall.Step.Confirm, release, store = store) }
+            setFire(id) { FireInstall(FireInstall.Step.Confirm, release, store = store, list = list) }
         }
     }
 
     /**
-     * Download and install: fetches the APK, which must be Projectivy signed by its developer, then installs it
+     * The source changed since the flow read it ([FireInstall.list]), so the signers no longer match what the user
+     * saw or ticked: back to Checking against the new one, and nothing installs.
+     */
+    private fun listChanged(id: String, flow: LauncherFlow): Boolean {
+        val fire = flow.fire ?: return false
+        val list = ownList()
+        if (list == fire.list) return false
+        checkLauncherApk(flow.pkg)
+        return true
+    }
+
+    /** The tick on a launcher from the user's own list ([FireInstall.list]): until it's on, nothing downloads or installs. */
+    fun trustLauncherList(on: Boolean) {
+        val id = _state.value.selectedId ?: return
+        setFire(id) { if (it.list != null) it.copy(trusted = on) else it }
+    }
+
+    /**
+     * Download and install: fetches the APK, which must be the launcher signed by its developer, then installs it
      * over adb like any sideload. Nothing reaches the TV unless the check passes.
      */
-    fun installProjectivy() {
+    fun installLauncherApk() {
         val id = _state.value.selectedId ?: return
         val download = launcherDownload ?: return
-        val release = _state.value.device.launcher?.fire?.takeIf { it.step == FireInstall.Step.Confirm }?.release ?: return
+        val flow = _state.value.device.launcher ?: return
+        val launcher = apkLauncher(flow.pkg) ?: return
+        val release = flow.fire?.takeIf { it.step == FireInstall.Step.Confirm && !it.gated }?.release ?: return
+        if (listChanged(id, flow)) return
         launcherJob?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Downloading, progress = null, picked = false, size = null, until = null) }
         launcherJob = viewModelScope.launch {
             val app = try {
-                download.fetch(release) { p -> setFire(id) { it.copy(progress = p) } }
+                download.fetch(launcher, release) { p -> setFire(id) { it.copy(progress = p) } }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: NotProjectivy) {
-                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: WrongApk) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.WrongApk) }
             } catch (_: Exception) {
                 return@launch setFire(id) { it.copy(step = FireInstall.Step.NoDownload) }
             }
-            installFetched(id, app)
+            installFetched(id, launcher, app)
         }
     }
 
     /**
      * Pick the downloaded file, after Couldn't download: the file the user picked, checked like the download,
-     * then installed the same way. Nothing reaches the TV unless it's Projectivy signed by its developer.
+     * then installed the same way. Nothing reaches the TV unless it's the launcher signed by its developer.
      */
-    fun pickedProjectivy(uri: Uri) {
+    fun pickedLauncherApk(uri: Uri) {
         val id = _state.value.selectedId ?: return
         val download = launcherDownload ?: return
+        val flow = _state.value.device.launcher ?: return
+        val launcher = apkLauncher(flow.pkg) ?: return
         // The picker answers on its own timing: only from a step that offers it, never over a running install.
-        val step = _state.value.device.launcher?.fire?.step
-        if (step != FireInstall.Step.NoDownload && step != FireInstall.Step.NotProjectivy && step != FireInstall.Step.Refused) return
+        val fire = flow.fire ?: return
+        val step = fire.step
+        if (step != FireInstall.Step.NoDownload && step != FireInstall.Step.WrongApk && step != FireInstall.Step.Refused) return
+        if (fire.gated || listChanged(id, flow)) return
         launcherJob?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Reading, picked = true, progress = null, size = null) }
         launcherJob = viewModelScope.launch {
             val app = try {
-                download.open(uri)
+                download.open(uri, launcher)
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: NotProjectivy) {
-                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: WrongApk) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.WrongApk) }
             } catch (_: Exception) {
                 return@launch setFire(id) { it.copy(step = FireInstall.Step.Refused, error = Copy.CANT_READ_FILE) }
             }
-            installFetched(id, app)
+            installFetched(id, launcher, app)
         }
     }
 
-    /** Projectivy, downloaded or picked and checked, onto the TV over adb like any sideload. */
-    private suspend fun installFetched(id: String, app: PickedApp) {
+    /** The launcher, downloaded or picked and checked, onto the TV over adb like any sideload. */
+    private suspend fun installFetched(id: String, launcher: KnownLauncher, app: PickedApp) {
         setFire(id) { it.copy(step = FireInstall.Step.Installing, progress = null, size = app.sizeBytes) }
         val result = try {
             source.install(id, app.files, app.info, allowDowngrade = false) { p -> setFire(id) { it.copy(progress = p) } }
@@ -1047,21 +1091,21 @@ class TellyscopeViewModel(
         }
         when (result) {
             // The steps close with it: Installing would keep them up, and Close waits on that.
-            InstallResult.Done -> launcherInstalled(id, PROJECTIVY) { step ->
-                updateDevice(id) { it.copy(launcher = it.launcher?.let { l -> l.copy(step = step, fire = if (l.fire?.store == true) null else FireInstall()) }) }
+            InstallResult.Done -> launcherInstalled(id, launcher.pkg) { step ->
+                updateDevice(id) { it.copy(launcher = it.launcher?.let { l -> l.copy(step = step, fire = if (l.fire?.store == true) null else FireInstall(list = l.fire?.list)) }) }
             }
             is InstallResult.Refused -> setFire(id) {
-                it.copy(step = FireInstall.Step.Refused, error = Copy.installRefused(result.reason, launcherName(PROJECTIVY)))
+                it.copy(step = FireInstall.Step.Refused, error = Copy.installRefused(result.reason, launcher.name))
             }
         }
     }
 
     /** X or Stop on a Fire OS step: back to the start, or to the picker after Download directly. Not while the install runs. */
-    fun dismissProjectivy() {
+    fun dismissLauncherApk() {
         val id = _state.value.selectedId ?: return
         if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
         launcherJob?.cancel()
-        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall()) }) }
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall(list = l.fire?.list)) }) }
     }
 
     /** Not now on the Apps tab's card: it stays away on this TV, and Tweaks keeps the way in. */
