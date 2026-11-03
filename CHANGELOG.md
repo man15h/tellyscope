@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Improved:** Launchers, app names and streaming logos now come from Tellyscope's own repository. [#323](../../pull/323)
+
 ## 0.15.0 — 2026-11-03
 
 - **New:** Advanced has a Shell: a terminal on the TV where you can paste any `adb shell` command. Commands that change the TV ask first. [#314](../../pull/314)
