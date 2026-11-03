@@ -1,0 +1,69 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy policy · Tellyscope</title>
+<meta name="description" content="Tellyscope collects no data. It talks to your TV over your own network and reads public files from GitHub. Nothing about you or your TV is sent to us.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="logo/icon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://man15h.github.io/tellyscope/privacy.html">
+<style>
+@font-face { font-family: "GSF Text"; src: url(site/google-sans-flex-text.woff2) format("woff2"); font-weight: 400 700; font-display: swap; }
+:root { --bg: #F4FBFA; --ink: #0F2B2C; --sub: #557070; --pri: #00696B; color-scheme: light; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0B1517; --ink: #E6F6F5; --sub: #93ACAB; --pri: #80D4D5; color-scheme: dark; } }
+body { margin: 0; font-family: "GSF Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
+main { max-width: 720px; margin: 0 auto; padding: 48px 24px 64px; }
+h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 4px; }
+h2 { font-size: 1.2rem; margin: 36px 0 8px; }
+p, li { font-size: 1rem; }
+ul { padding-left: 1.2em; }
+li { margin: 6px 0; }
+a { color: var(--pri); }
+code { font-size: .9em; overflow-wrap: anywhere; }
+.sub { color: var(--sub); margin: 0 0 24px; }
+.home { display: inline-block; margin-bottom: 32px; font-weight: 500; text-decoration: none; }
+</style>
+</head><body><main>
+<a class="home" href="./">&larr; Tellyscope</a>
+<h1>Privacy policy</h1>
+<p class="sub">Last updated 3 November 2026. Applies to the Tellyscope app for Android, from Google Play and from GitHub.</p>
+
+<p><strong>Tellyscope collects no data.</strong> It has no account, no analytics, no ads and no crash reporting. Nothing about you, your phone or your TV is sent to the Tellyscope developers.</p>
+
+<h2>What stays on your phone</h2>
+<p>To work with your TVs, Tellyscope keeps these on your phone only:</p>
+<ul>
+  <li>the TVs you added: their names, network addresses and the last stats it read from them;</li>
+  <li>the key your phone uses to connect to each TV over ADB;</li>
+  <li>the changes you made to each TV, so you can undo them;</li>
+  <li>your settings, and cached copies of the debloat lists.</li>
+</ul>
+<p>Android cloud backup and phone-to-phone transfer are turned off for the app, so none of this leaves your phone that way. Uninstalling Tellyscope deletes all of it.</p>
+
+<h2>Your TV, over your own network</h2>
+<p>Tellyscope finds your TVs on your local network and connects to them with ADB (Android Debug Bridge). Everything it reads from a TV, and every file you send to one, goes directly between your phone and the TV over your Wi-Fi. It does not pass through any server.</p>
+
+<h2>What it downloads from GitHub</h2>
+<p>Tellyscope reads public files from GitHub. These requests send nothing about you or your TV; like any website, GitHub sees your IP address and which file was asked for, under <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's privacy statement</a>.</p>
+<ul>
+  <li><strong>Debloat lists, extra protected apps and streaming-app logos</strong>, from the public <code>tellyscope-devices</code> repository. If you set your own list address under Settings &rsaquo; Advanced, it reads from that address instead.</li>
+  <li><strong>Launchers, app names and streaming services</strong>, from the <code>data/</code> folder of Tellyscope's own public repository.</li>
+  <li><strong>Update check (GitHub build only).</strong> The build from GitHub asks GitHub every 30 minutes whether a newer Tellyscope is out, and reads its release notes. You can turn this off in Settings. The Google Play build has no update check; Google Play updates it.</li>
+  <li><strong>Projectivy Launcher download (GitHub build only).</strong> When you choose Download directly, the GitHub build downloads Projectivy from its developer's GitHub releases and installs it on your TV. The Google Play build downloads nothing: it opens the Play Store on the TV, or on a Fire TV, Projectivy's GitHub page in your phone's browser, so you can pick the file you downloaded.</li>
+</ul>
+
+<h2>Things you choose to send</h2>
+<ul>
+  <li><strong>Report a problem</strong> writes an issue for you, with Tellyscope's version, the model and Android version of your phone and your TV, how it connected, and a log of what went wrong, with addresses, keys, pairing codes, Wi-Fi names and serial numbers taken out. You see the text first, and it is sent only if you post it on GitHub yourself, in your browser, under your own GitHub account.</li>
+  <li><strong>Share Tellyscope</strong> hands a link to Android's share menu. Tellyscope doesn't see where it goes.</li>
+</ul>
+
+<h2>Permissions</h2>
+<ul>
+  <li><strong>Internet</strong> and <strong>network state</strong>: to reach your TV and the GitHub files above.</li>
+  <li><strong>Local network access</strong>: to find TVs on your Wi-Fi. Tellyscope asks for it before its first scan.</li>
+</ul>
+
+<h2>Children</h2>
+<p>Tellyscope is not directed at children and collects no data from anyone.</p>
+
+<h2>Changes and contact</h2>
+<p>Tellyscope is open source, so you can check all of this in <a href="https://github.com/man15h/tellyscope">its code</a>. If this policy changes, the new version will be on this page with a new date. Questions go to <a href="https://github.com/man15h/tellyscope/issues">Tellyscope's issue tracker</a>.</p>
+</main></body></html>

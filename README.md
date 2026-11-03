@@ -52,7 +52,7 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 
 - **Connect.** Finds TVs on your Wi-Fi, looking again every 10 seconds or when you tap **Rescan**, or add one by IP. Works with network debugging and with Android 11+ wireless debugging and its pairing code. TVs reconnect by themselves.
 - **See how it's doing.** Free space, CPU, RAM and network speed, plus what's paired or plugged in. **Advanced monitor** has CPU and RAM by app, processes, network and data used.
-- **Debloat.** Matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv)) and shows every app it will turn off before it does. Untick anything you use, or a whole group from its heading, then watch each app turn off. No list for your model? Pick from the maker's lists, or by hand.
+- **Debloat.** Matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv), kept in [tellyscope-devices](../../../tellyscope-devices)) and shows every app it will turn off before it does. Untick anything you use, or a whole group from its heading, then watch each app turn off. No list for your model? Pick from the maker's lists, or by hand.
 - **Apps.** See what's running and what's on the TV. Turn off apps you don't want, turn them back on any time, and uninstall the ones you added yourself.
 - **Install apps.** From an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone; the picker opens in Downloads and shows only apps. It says first whether it's new, an update or an older version.
 - **A better home screen.** Install Projectivy or FLauncher and make it Home. Android TV installs it from the TV's Play Store, or Projectivy can be downloaded directly after a warning. Fire TV has no Play Store, so Tellyscope downloads Projectivy from its developer's GitHub releases and installs it only if its signature matches. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes.
@@ -79,11 +79,24 @@ Debloating a TV can break it if done carelessly. Tellyscope keeps to these rules
 
 1. **Disable, never uninstall, what came with the TV.** Built-in apps get `pm disable-user`, which Undo or `pm enable` reverses. Uninstall is offered only for apps you installed (`pm list packages -3`), after a confirm. Tellyscope never runs `pm uninstall --user 0`.
 2. **Record before changing.** Before its first change on a TV, Tellyscope notes which apps were already off. Every change goes into that TV's History with an Undo (except uninstalls), and **Restore everything** turns back on only what Tellyscope turned off.
-3. **Protected list.** Apps the TV needs to boot, update, stay on Wi-Fi, show web pages, show its home screen or take input can't be stopped or disabled, with no override. A TV's list can only add warnings, never remove protection. When you switch home screens, the old launcher is turned off only after Home is checked to open the new one.
+3. **Protected list.** Apps the TV needs to boot, update, stay on Wi-Fi, show web pages, show its home screen or take input can't be stopped or disabled, with no override. A TV's list can only add warnings, never remove protection. Packages only one maker's TVs have are protected from tellyscope-devices' `protected.json`, which can only add to the built-in list. When you switch home screens, the old launcher is turned off only after Home is checked to open the new one.
 4. **You see it first.** Every change names the apps it touches and asks before it runs.
 5. **No root, no exploits.** Only what ADB allows on a stock TV.
 6. **Nothing left on the TV.** Two small helpers run from `/data/local/tmp`: one reads app names and icons and is deleted at once, the other runs the Remote and is deleted when the Remote closes.
-7. **Private.** No ads, tracking or accounts. The only internet requests fetch the shared lists from GitHub (debloat lists, launchers, app names and streaming services with their logos, or [your own fork](CONTRIBUTING.md#using-your-own-lists)), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
+7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists) from GitHub (debloat lists and streaming logos, or [your own fork](CONTRIBUTING.md#using-your-own-lists), plus launchers, app names and streaming services), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
+
+## The shared lists
+
+Tellyscope downloads two sets of public lists from GitHub, so they can change without an app release. Both histories are public.
+
+- **Debloat lists, extra protected apps and the Remote's streaming logos**, from [tellyscope-devices](../../../tellyscope-devices). [Your own lists](CONTRIBUTING.md#using-your-own-lists) replace these, and only these.
+- **Launchers, app names and streaming services**, from this repository's [`data/`](data/) on `main`, where changes are reviewed alongside the app's code.
+
+**What the lists can't do:**
+
+- Remove protection. The built-in protected list always wins, and `protected.json` can only add to it.
+- Choose an APK to install without a signature. Which launcher APK may be installed, where it downloads from and who must have signed it come only from `data/launchers.json`, and `data/` is signed by the maintainer. Your own lists can't change them. If `data/` fails its signature check, Tellyscope shows the list and its signer and asks before installing anything from it.
+- Turn on an accessibility service, unless `data/` passes its signature check. Only `data/launchers.json` names the launchers that may have one, so your own lists can't, and while `data/` fails its check none can.
 
 ## Get it
 
@@ -105,8 +118,10 @@ Modules: `:app` (the phone app, Kotlin and Jetpack Compose), `:adb` (pure Kotlin
 
 ```sh
 ./gradlew build          # assemble, unit tests and lint
-./gradlew :app:installDebug
+./gradlew :app:installGithubDebug
 ```
+
+There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The Play build has no update check (Play updates it) and downloads nothing from GitHub: on Fire OS you download Projectivy in your browser and pick the file. The update check and the Projectivy download live in `app/src/github` only, with stubs in `app/src/play`, and every Play build fails if its code names `api.github.com`. What differs on screen checks `BuildConfig.PLAY`. Unit tests run on the `github` build.
 
 ## Contributing
 

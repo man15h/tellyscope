@@ -104,6 +104,25 @@ data class Snapshot(
     val netBytesPerSec: Long? = null,
     /** When the TV's software was last updated. */
     val softwareMonth: YearMonth? = null,
+    /** Each core's use, 0..100. */
+    val cores: List<Int> = emptyList(),
+    /** Where the CPU's time went: apps, Android itself, and waiting on storage, each 0..100. */
+    val cpuApps: Int? = null,
+    val cpuSystem: Int? = null,
+    val cpuWaiting: Int? = null,
+    val chip: String? = null,
+    val clockMhz: Int? = null,
+    /** Memory the TV can hand back when an app asks (cache), and memory holding nothing. */
+    val ramCachedMb: Int = 0,
+    val ramFreeMb: Int = 0,
+    /** Zram; 0 total when the TV has none. */
+    val swapUsedMb: Int = 0,
+    val swapTotalMb: Int = 0,
+    val rxBytesPerSec: Long? = null,
+    val txBytesPerSec: Long? = null,
+    /** Received and sent since boot. */
+    val rxTotalBytes: Long? = null,
+    val txTotalBytes: Long? = null,
 )
 
 data class AppInfo(
@@ -209,4 +228,6 @@ data class TvTweaks(
     val animationScale: String?,
     /** Private DNS came in Android 9: older TVs accept the setting and ignore it. */
     val dnsSupported: Boolean = true,
+    /** Clearing caches over ADB came in Android 8: before it, the shell lacks CLEAR_APP_CACHE (#286). */
+    val cachesSupported: Boolean = true,
 )

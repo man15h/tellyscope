@@ -85,11 +85,15 @@ class AppNames(private val dir: File) {
         fun fallback(pkg: String): String = SharedLists.labels[pkg] ?: humanise(pkg)
 
         /**
-         * [label], unless it's the package or one of its classes, which Android reports for an app
-         * with no label of its own (`com.amazon.firehomestarter.FireHomeStarterApplication`).
+         * [label], unless it's the package or a class name, which Android reports for an app with no
+         * label of its own: one of its classes (`com.amazon.firehomestarter.FireHomeStarterApplication`)
+         * or one from another package (`com.android.server.NetworkPermissionConfig`, #260).
          */
         fun named(pkg: String, label: String): String =
-            if (label == pkg || label.startsWith("$pkg.")) fallback(pkg) else label
+            if (label == pkg || label.startsWith("$pkg.") || CLASS_NAME.matches(label)) fallback(pkg) else label
+
+        /** Lower-case dotted parts ending in a capitalised one, no spaces; "Dr.Fone" doesn't match. */
+        private val CLASS_NAME = Regex("[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+\\.[A-Z][A-Za-z0-9_$]*")
 
         /** What native daemons and system uids are listed as, in place of an app name. */
         val SYSTEM: UiText = UiText(R.string.data_app_names_system)

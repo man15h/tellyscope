@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -42,8 +43,8 @@ class DeviceLink(
     /** Pauses the stats while a change runs on this TV, and sets their refresh rates. */
     val gate = StatsGate()
 
-    @Volatile var session: AdbSession? = null
-        private set
+    private val current = AtomicReference<AdbSession?>(null)
+    val session: AdbSession? get() = current.get()
     @Volatile var lastSeenMillis: Long? = null
         private set
 
@@ -67,7 +68,7 @@ class DeviceLink(
      */
     fun connect(asked: Boolean = false) {
         job?.cancel()
-        session = null
+        current.set(null)
         if (asked) allowedBefore = false
         // Set here, not in the loop: nobody may see the old state once connect has returned.
         _state.value = _state.value.on(DeviceEvent.Connect)
@@ -78,10 +79,27 @@ class DeviceLink(
     fun holdLoggedOut(at: Long) {
         job?.cancel()
         job = null
-        session = null
+        current.set(null)
         allowedBefore = false
         _loggedOutAt.value = at
         _state.value = DeviceState.NOT_ALLOWED
+    }
+
+    /**
+     * The phone left the network, so an online TV is out of reach now, though a read on the old
+     * connection can take its socket timeout to fail. Offline at once; the loop retries as usual.
+     */
+    fun lanLost() {
+        if (_state.value != DeviceState.ONLINE) return
+        job?.cancel()
+        val old = current.getAndSet(null)
+        _state.value = _state.value.on(DeviceEvent.Lost)
+        job = scope.launch {
+            // Closing a TLS session sends close_notify: network I/O, so not on the caller's (main) thread.
+            old?.close()
+            delay(retryEvery)
+            loop()
+        }
     }
 
     fun disconnect() {
@@ -118,7 +136,7 @@ class DeviceLink(
 
     /** Streams stats until the link drops. The session is closed on every exit, cancellation included. */
     private suspend fun online(s: AdbSession) {
-        session = s
+        current.set(s)
         _state.value = _state.value.on(DeviceEvent.Authorized)
         try {
             monitorFor(s, gate).stats().collect {
@@ -130,7 +148,8 @@ class DeviceLink(
         } catch (_: Exception) {
             // Link dropped mid-read: the caller marks it offline and retries.
         } finally {
-            session = null
+            // A cancelled loop gets here after connect has started over: leave the new session alone.
+            current.compareAndSet(s, null)
             s.close()
         }
     }

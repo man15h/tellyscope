@@ -21,10 +21,20 @@ internal object Commands {
     /** Every 10 s on Overview and Apps: memory per process, without `top`'s CPU sampling. */
     const val LIGHT = "ps -A -o PID,USER,RSS,NAME 2>/dev/null"
 
-    /** Every 10 s on Advanced: processes with CPU, and whether the screen is on. */
+    /** Every 2 s on Advanced: processes with CPU, whether the screen is on, and each core's clock. */
     val MEDIUM = listOf(
         "top -b -n 1 -o PID,USER,RES,%CPU,NAME",
         "dumpsys power | grep -E 'mWakefulness=|mScreenOn='",
+        "cat /sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq",
+    ).batch()
+
+    /**
+     * Every 10 s while Advanced is open (once per TV elsewhere): the TV's address and hardware address, then its Wi-Fi. `cmd wifi`
+     * came in Android 11; older TVs print the same facts on `dumpsys wifi`'s `mWifiInfo` line.
+     */
+    val ADDRESS = listOf(
+        "ip addr show",
+        "s=\$(cmd wifi status 2>/dev/null); case \"\$s\" in *'Wifi is'*) echo \"\$s\";; *) dumpsys wifi | grep -m1 mWifiInfo;; esac",
     ).batch()
 
     /** Open TCP connections, IPv4 and IPv6. */

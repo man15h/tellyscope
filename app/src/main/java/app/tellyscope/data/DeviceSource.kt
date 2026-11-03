@@ -14,11 +14,13 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.TvShell
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import okio.Sink
 import okio.Source
 import java.io.File
+import java.io.IOException
 
 /**
  * Everything the screens need from a TV. The UI only talks to this; an
@@ -35,6 +37,9 @@ interface DeviceSource {
 
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
+
+    /** The phone just left Wi-Fi: every online TV goes offline now rather than when a read times out. */
+    fun lanLost() {}
 
     /** Classic connect. Suspends while the TV shows the Allow prompt; the caller owns the timeout. */
     suspend fun connect(hit: ScanHit): ConnectResult
@@ -164,6 +169,12 @@ interface DeviceSource {
     /** The remote screen closed: stop anything [press] left running on the TVs. */
     fun closeRemote() {}
 
+    /**
+     * The TV can't change volume from here: a box on HDMI whose own volume is fixed, so the
+     * Remote's volume keys do nothing (see [app.tellyscope.adb.Remote.musicFixed]). Throws when it's gone.
+     */
+    suspend fun volumeFixed(deviceId: String): Boolean = false
+
     /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.typeable] first. */
     suspend fun type(deviceId: String, text: String): Boolean
 
@@ -175,6 +186,9 @@ interface DeviceSource {
 
     /** Restarts the TV. The link drops and reconnects on its own once the TV is back. False if the TV refused. */
     suspend fun reboot(deviceId: String): Boolean
+
+    /** A shell session on the TV, for Advanced's Shell; each command reaches the TV over whatever link is up then. */
+    fun shell(deviceId: String): TvShell = TvShell({ throw IOException("no shell") }) { throw IOException("no shell") }
 
     /** Opens [packageName] on the TV, the way its launcher icon would. False when it has nothing to open. Not history. */
     suspend fun launch(deviceId: String, packageName: String): Boolean

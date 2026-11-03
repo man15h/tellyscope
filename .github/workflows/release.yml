@@ -123,7 +123,7 @@ jobs:
           RELEASE_KEYSTORE: ${{ runner.temp }}/alpha.jks
           RELEASE_KEY_ALIAS: ${{ secrets.ALPHA_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.ALPHA_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease -Ptellyscope.alpha=${{ steps.tag.outputs.n }} --console=plain
+        run: ./gradlew :app:assembleGithubRelease -Ptellyscope.alpha=${{ steps.tag.outputs.n }} --console=plain
 
       - name: Alpha pre-release
         env:
@@ -135,7 +135,7 @@ jobs:
             git push origin "$TAG"
           fi
           APK="Tellyscope-$TAG.apk"
-          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
           # The nearest tag before this commit, alpha or prod; a glob would find the tag just pushed.
           PREV=$(git describe --tags --abbrev=0 --match 'v*' "$GITHUB_SHA^" 2>/dev/null || true)
           {
@@ -157,6 +157,9 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: write
+    outputs:
+      new: ${{ steps.version.outputs.new }}
+      version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -200,7 +203,7 @@ jobs:
           RELEASE_KEYSTORE: ${{ runner.temp }}/release.jks
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-        run: ./gradlew :app:assembleRelease --console=plain
+        run: ./gradlew :app:assembleGithubRelease --console=plain
 
       # Notes: the version's CHANGELOG.md section, then every commit since the
       # previous tag.
@@ -222,7 +225,56 @@ jobs:
             git log --no-merges --pretty='- %s (%h)' ${PREV:+"$PREV.."}HEAD
           } >> notes.md
           APK="Tellyscope-$V.apk"
-          cp app/build/outputs/apk/release/app-release.apk "$APK"
+          cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
           git tag "v$V"
           git push origin "v$V"
           gh release create "v$V" "$APK" --title "Tellyscope $V" --notes-file notes.md --verify-tag
+
+  # Play: the same tag built as the play flavor, an app bundle signed with the
+  # release key, attached to the release prod just published. Its own job, so a
+  # failed bundle never holds back the APK.
+  play:
+    needs: prod
+    if: needs.prod.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    environment: release
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: v${{ needs.prod.outputs.version }}
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Keystore
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "::error::Secret RELEASE_KEYSTORE_BASE64 is not set in the release environment; see CONTRIBUTING.md#releases"
+            exit 1
+          fi
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+
+      - name: Build
+        env:
+          RELEASE_KEYSTORE: ${{ runner.temp }}/release.jks
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: ./gradlew :app:bundlePlayRelease --console=plain
+
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          V: ${{ needs.prod.outputs.version }}
+        run: |
+          AAB="Tellyscope-$V-play.aab"
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab "$AAB"
+          gh release upload "v$V" "$AAB"

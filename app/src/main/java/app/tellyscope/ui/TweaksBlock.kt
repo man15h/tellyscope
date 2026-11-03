@@ -58,7 +58,14 @@ fun TweaksBlock(ui: DeviceUi, actions: DeviceActions) {
     SwitchRow(Copy.ANIMATIONS_TITLE.resolve(), Copy.animationsState(tweaks?.animationScale).resolve(), fast, enabled = tweaks != null && ui.busy == null) {
         actions.setFastAnimations(it)
     }
-    ButtonRow(Copy.CACHES_TITLE.resolve(), Copy.CACHES_TEXT.resolve(), Copy.CACHES_BUTTON.resolve(), enabled = ui.busy == null, actions.clearCaches)
+    val cachesOk = tweaks?.cachesSupported != false
+    ButtonRow(
+        Copy.CACHES_TITLE.resolve(),
+        if (cachesOk) Copy.CACHES_TEXT.resolve() else Copy.CACHES_TOO_OLD.resolve(),
+        Copy.CACHES_BUTTON.resolve(),
+        enabled = cachesOk && ui.busy == null,
+        actions.clearCaches,
+    )
     ButtonRow(Copy.SCREENSHOT_TITLE.resolve(), Copy.SCREENSHOT_TEXT.resolve(), Copy.SCREENSHOT_BUTTON.resolve(), enabled = ui.busy == null, actions.screenshot)
     if (askDns) DnsDialog(onDismiss = { askDns = false }) { host -> askDns = false; actions.setDns(host) }
 }

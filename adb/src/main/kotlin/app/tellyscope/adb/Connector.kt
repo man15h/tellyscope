@@ -6,6 +6,7 @@ import com.flyfishxu.kadb.cert.KadbCert
 import com.flyfishxu.kadb.cert.KadbCertPolicy
 import com.flyfishxu.kadb.cert.OkioFilePrivateKeyStore
 import com.flyfishxu.kadb.exception.AdbPairAuthException
+import com.flyfishxu.kadb.shell.AdbShellPacket
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
@@ -247,6 +248,22 @@ internal class KadbSession(private val kadb: Kadb) : AdbSession {
             // Already buffered: `.buffer()` here would be their internal Buffer, cut off from the TV.
             override val stdin = stream.sink
             override val stdout = stream.source
+            override fun close() = stream.close()
+        }
+    }
+
+    override suspend fun openShell(): ShellChannel? = runInterruptible(Dispatchers.IO) {
+        val k = live()
+        if (!k.supportsFeature("shell_v2")) return@runInterruptible null
+        val stream = k.openShell()
+        object : ShellChannel {
+            override fun read(): ShellPacket = when (val p = stream.read()) {
+                is AdbShellPacket.StdOut -> ShellPacket.Out(p.payload)
+                is AdbShellPacket.StdError -> ShellPacket.Err(p.payload)
+                is AdbShellPacket.Exit -> ShellPacket.Exit(p.payload[0].toUByte().toInt())
+            }
+
+            override fun write(bytes: ByteArray) = stream.write(bytes)
             override fun close() = stream.close()
         }
     }

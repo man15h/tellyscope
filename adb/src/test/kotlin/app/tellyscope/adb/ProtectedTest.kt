@@ -23,7 +23,6 @@ class ProtectedTest {
 
     @Test fun vendorSettingsAndTheMediaModule() {
         assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.amazon.tv.settings.v2"))
-        assertEquals(ProtectedReason.SETTINGS, Protected.reason("org.droidtv.settings"))
         assertEquals(ProtectedReason.SYSTEM, Protected.reason("com.google.android.providers.media.module"))
     }
 
@@ -64,5 +63,31 @@ class ProtectedTest {
         // Wi-Fi extras the lists turn off stay allowed.
         assertNull(Protected.reason("com.sony.dtv.networkapp.wifidirect"))
         assertNull(Protected.reason("com.amazon.wifilocker"))
+    }
+
+    /** One maker's packages come from the list source, not the app. */
+    @Test fun makerPackagesAreProtectedOnlyByTheList() {
+        assertNull(Protected.reason("org.droidtv.eum"))
+        assertNull(Protected.reason("org.droidtv.settings"))
+        try {
+            Protected.extra = mapOf("org.droidtv.eum" to ProtectedReason.TV_INPUTS_REMOTE, "org.droidtv.settings" to ProtectedReason.SETTINGS)
+            assertEquals(ProtectedReason.TV_INPUTS_REMOTE, Protected.reason("org.droidtv.eum"))
+            assertEquals(ProtectedReason.SETTINGS, Protected.reason("org.droidtv.settings"))
+        } finally {
+            Protected.extra = emptyMap()
+        }
+    }
+
+    /** A fork's list can leave a built-in package out or give it another reason; neither takes the protection away. */
+    @Test fun aListCannotTakeABuiltInProtectionAway() {
+        assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.android.settings"))
+        try {
+            Protected.extra = mapOf("com.android.settings" to ProtectedReason.UPDATES, "com.acme.extra" to ProtectedReason.SYSTEM)
+            assertEquals(ProtectedReason.SETTINGS, Protected.reason("com.android.settings"))
+            assertEquals(ProtectedReason.HOME_SCREEN, Protected.reason("com.google.android.tvlauncher"))
+            assertEquals(ProtectedReason.PLAY_SERVICES, Protected.reason("com.google.android.gms"))
+        } finally {
+            Protected.extra = emptyMap()
+        }
     }
 }

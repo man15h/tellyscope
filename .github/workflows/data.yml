@@ -1,0 +1,108 @@
+name: Data
+
+# data/ is downloaded by every installed app straight from dev (alpha) and main, so it may only reach them
+# signed. Pull requests into dev are signed after merge, by the sign job below, which opens a pull request
+# from data/sign with the signed index: nobody signs locally. Run this workflow by hand on data/sign to
+# check that pull request, since one opened by the workflow triggers no checks of its own.
+on:
+  pull_request:
+    branches: [dev, main]
+    paths: ["data/**", "tools/data.py", "tools/test_data.py", "tools/data-keys/**", ".github/workflows/data.yml"]
+  push:
+    branches: [main, dev]
+    paths: ["data/**", "tools/data.py", "tools/test_data.py", "tools/data-keys/**", ".github/workflows/data.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: data/ index and signature
+    if: github.event_name != 'push' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Tests
+        run: python3 -m unittest discover -s tools -p 'test_data.py' -v
+      # A run by hand has no base, so it checks the signature too.
+      - name: data/index.json is fresh, and signed unless this pull request goes into dev
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          if [ "$BASE" = dev ]; then python3 tools/data.py check --unsigned; else python3 tools/data.py check; fi
+
+  needs-sign:
+    name: data/index.json needs a signature
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    outputs:
+      needed: ${{ steps.check.outputs.needed }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Tests
+        run: python3 -m unittest discover -s tools -p 'test_data.py' -v
+      - id: check
+        run: |
+          python3 tools/data.py index
+          if python3 tools/data.py check; then echo needed=false; else echo needed=true; fi >> "$GITHUB_OUTPUT"
+
+  # Waits for the data-signing environment's reviewer, so it runs only when the index really changed. dev
+  # takes changes only through pull requests, so the signed index goes to data/sign and a pull request.
+  sign:
+    name: Sign data/index.json
+    needs: needs-sign
+    if: needs.needs-sign.outputs.needed == 'true'
+    runs-on: ubuntu-latest
+    environment: data-signing
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: data-signing
+      cancel-in-progress: false
+    steps:
+      # dev's tip, not the pushed commit: a run that waited signs whatever dev holds now.
+      - uses: actions/checkout@v7
+        with:
+          ref: dev
+      - name: Index and sign, unless dev is already signed
+        env:
+          KEY: ${{ secrets.DATA_SIGNING_KEY }}
+        run: |
+          python3 tools/data.py index
+          if ! python3 tools/data.py check 2>/dev/null; then
+            (umask 077 && printf '%s\n' "$KEY" > "$RUNNER_TEMP/data-signing.pem")
+            python3 tools/data.py sign --key "$RUNNER_TEMP/data-signing.pem"
+          fi
+      - name: Delete the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/data-signing.pem"
+      - name: Check, commit, push data/sign and open its pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/data.py check
+          git diff --quiet -- data/index.json && exit 0
+          version=$(jq -r .version data/index.json) base=$(git rev-parse --short HEAD)
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git switch -q -C data/sign
+          git commit -q -m "data/index.json: sign version $version" -- data/index.json
+          git push -q --force origin HEAD:refs/heads/data/sign
+          body=$(printf '%s\n' \
+            "Signed \`data/index.json\` version $version, from \`dev\` at $base." \
+            "" \
+            "\`python3 tools/data.py check\` passed in [the signing run]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)." \
+            "" \
+            "Before merging, run the \`Data\` workflow on \`data/sign\` (Actions → Data → Run workflow): this pull request triggers no checks itself.")
+          pr=$(gh pr list --head data/sign --base dev --state open --json number --jq '.[].number')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "data/index.json: sign version $version" --body "$body"
+          else
+            gh pr create --head data/sign --base dev --title "data/index.json: sign version $version" --body "$body"
+          fi

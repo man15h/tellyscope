@@ -12,6 +12,38 @@ until this file has a section for its version.
 
 ## Unreleased
 
+## 0.15.0 — 2026-11-04
+
+- **New:** Advanced has a Shell for any `adb shell` command; changes ask first. [#314](../../pull/314)
+- **New:** The Remote has a touchpad: swipe to move, tap for OK. [#312](../../pull/312)
+  - Switch between it and the D-pad in the Remote's ⋮ menu.
+- **Improved:** Advanced is split into four tabs: This TV, CPU, RAM and Network. [#314](../../pull/314)
+  - This TV shows CPU, memory and storage rings, network speed, Wi-Fi, signal and MAC.
+  - CPU, RAM and Network open with a summary over a list of apps.
+  - Tap an app to see its processes and connections.
+  - Tap This TV's memory ring or network graph to open its tab.
+  - Swipe sideways to switch tabs on Advanced and Apps.
+- **Improved:** On the Remote, the text box hides until you tap the keyboard key. [#312](../../pull/312)
+- **Improved:** Launchers, app names and streaming services come from Tellyscope's own signed list. [#323](../../pull/323)
+  - If the list can't be verified, you confirm it; installing a launcher shows the list and its signer.
+  - The signed list decides which launchers get accessibility access; if it can't be verified, none do.
+  - A copy of a launcher too old to have one is skipped.
+- **Fixed:** Off Wi-Fi or offline, Tellyscope now says why instead of blaming the TV. [#313](../../pull/313)
+  - Off Wi-Fi, screens and failed sends say the phone isn't on Wi-Fi.
+  - Reconnect on Overview opens the Wi-Fi panel.
+  - Installed and Built-in say why they're empty, not "Nothing here yet."
+  - Reconnecting to a TV no longer leaves every action saying it's offline.
+- **Fixed:** Installing or sending a file from phone storage no longer drops the TV. [#301](../../pull/301)
+  - Picking an app right after the link dropped no longer fails partway through.
+  - A file the phone can't read, or a TV that doesn't answer, says which.
+  - The install dialog no longer closes by itself after picking an app.
+- **Fixed:** On fixed-volume Fire TVs and HDMI boxes, mute and volume gray out. [#307](../../pull/307)
+  - A line says to use the TV's own remote instead.
+- **Fixed:** On the Remote, a perfectly still tap on empty space closes the keyboard. [#300](../../pull/300)
+- **Fixed:** Apps without a name no longer show a Java class name. [#303](../../pull/303)
+- **Fixed:** Philips Help stays on; turning it off broke the HDMI input picker. [#299](../../pull/299)
+- **Fixed:** On Android 7 and older, Clear caches says it needs Android 8, not an error. [#304](../../pull/304)
+
 ## 0.14.0 — 2026-10-30
 
 - **New:** Hindi, Chinese, Japanese, Russian and Spanish support, machine-made; corrections welcome. [#272](../../pull/272)

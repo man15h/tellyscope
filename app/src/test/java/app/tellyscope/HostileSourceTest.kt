@@ -214,7 +214,7 @@ class HostileSourceTest {
         val idx = index(lists = mapOf("launchers" to ("lists/launchers.json" to launchers)), logos = mapOf("acme" to ("logos/acme.png" to logo)))
         val swapped = """{"schema": 1, "launchers": [{"package": "com.evil.home", "name": "Evil"}]}""".toByteArray()
         val lists = DeviceLists(dir, served(mapOf("index.json" to idx, "lists/launchers.json" to swapped, "logos/acme.png" to png(11, 10))))
-        assertNull(lists.shared().launchers)
+        assertNull(lists.shared("launchers"))
         assertNull(lists.logo("acme"))
         assertFalse(File(dir, "lists/launchers.json").exists())
         assertFalse(File(dir, "logos/acme.png").exists())
@@ -224,16 +224,16 @@ class HostileSourceTest {
         val dir = tmp.newFolder()
         val launchers = """{"schema": 1, "launchers": [{"package": "com.acme.home", "name": "Acme"}]}""".toByteArray()
         val lists = DeviceLists(dir, served(mapOf("index.json" to index(lists = mapOf("launchers" to ("lists/launchers.json" to launchers))), "lists/launchers.json" to launchers)))
-        assertEquals(launchers.decodeToString(), lists.shared().launchers)
+        assertEquals(launchers.decodeToString(), lists.shared("launchers"))
         File(dir, "lists/launchers.json").writeText("""{"schema": 1, "launchers": [{"package": "com.evil.home", "name": "Evil"}]}""")
-        assertNull(DeviceLists(dir) { throw IOException("offline") }.cachedShared().launchers)
+        assertNull(DeviceLists(dir) { throw IOException("offline") }.cachedShared("launchers"))
     }
 
     // A launcher entry asking for accessibility
 
     @Test fun aLauncherEntryCannotAskForAccessibility() = runTest {
         val l = parseLaunchers("""{"schema": 1, "launchers": [{"package": "com.evil.home", "name": "Evil", "about": "x", "accessibility": true, "service": "com.evil.home/.Spy"}]}""").single()
-        assertFalse(l.accessibility)
+        assertNull(l.accessibility)
         assertFalse(actions.grant("com.evil.home/.Spy"))
         assertEquals(emptyList<String>(), ran)
     }

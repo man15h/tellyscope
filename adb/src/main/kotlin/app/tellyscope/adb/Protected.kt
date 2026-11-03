@@ -39,7 +39,6 @@ object Protected {
         "com.android.settings" to ProtectedReason.SETTINGS,
         "com.android.tv.settings" to ProtectedReason.SETTINGS,
         "com.amazon.tv.settings.v2" to ProtectedReason.SETTINGS, // Fire TV
-        "org.droidtv.settings" to ProtectedReason.SETTINGS, // Philips
         "com.android.vending" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gms" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gsf" to ProtectedReason.PLAY_SERVICES,
@@ -84,6 +83,13 @@ object Protected {
     )
 
     /**
+     * Packages only one maker's TVs need, from the list source's `protected.json`, so a new one
+     * ships without an app release. They only add: a package the rules above protect keeps their reason, whatever
+     * this holds, so a list can't take a protection away.
+     */
+    @Volatile var extra: Map<String, ProtectedReason> = emptyMap()
+
+    /**
      * [homePackages] are the device's launchers, read live; they are protected whatever their name.
      * A [userApp] (one the user installed) named like a launcher isn't: only the live lookup
      * protects it, so FLauncher can go while another launcher is Home.
@@ -94,6 +100,7 @@ object Protected {
         if (CORE.matches(pkg) && !CORE_OK.matches(pkg)) return ProtectedReason.SYSTEM
         val lower = pkg.lowercase()
         PATTERNS.firstOrNull { (fragment, why) -> fragment in lower && !(userApp && why == ProtectedReason.HOME_SCREEN) }?.let { return it.second }
-        return if (UPDATER.containsMatchIn(lower)) ProtectedReason.UPDATES else null
+        if (UPDATER.containsMatchIn(lower)) return ProtectedReason.UPDATES
+        return extra[pkg]
     }
 }

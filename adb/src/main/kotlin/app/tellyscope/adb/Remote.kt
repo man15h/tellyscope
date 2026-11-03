@@ -40,6 +40,10 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
     /** The top of the TV's media volume, from `dumpsys audio`; null when it doesn't say. */
     suspend fun volumeMax(): Int? = musicMax(session.shell("dumpsys audio 2>/dev/null | grep -A12 '^- STREAM_MUSIC:'").output)
 
+    /** Media plays through a fixed-volume output, so the volume keys can't reach the TV: see [musicFixed]. */
+    suspend fun volumeFixed(): Boolean =
+        musicFixed(session.shell("dumpsys audio 2>/dev/null | grep -e mFixedVolumeDevices -e '^- STREAM_MUSIC:' -A12").output)
+
     /**
      * Home that opens [launcher], the activity Android resolves Home to (see [Actions.currentHome]).
      * For Fire TV, whose Home key goes to Amazon's launcher whatever the default is. Null, a name
@@ -105,6 +109,26 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
         fun musicMax(dump: String): Int? {
             val block = dump.substringAfter("- STREAM_MUSIC:", "").ifEmpty { return null }
             return Regex("""^\s*Max:\s*(\d+)""", RegexOption.MULTILINE).find(block)?.groupValues?.get(1)?.toIntOrNull()?.takeIf { it > 0 }
+        }
+
+        /**
+         * Music plays through a fixed-volume output: `Devices: hdmi` in the STREAM_MUSIC block, whose
+         * `400 (hdmi)` code is in `mFixedVolumeDevices`. A box on HDMI (a Fire TV stick) keeps its own
+         * volume at full there and ignores the volume keys. Android 11 lists the fixed devices
+         * (`0x1000,0x400`); 10 and older print one bitmask (`0x2c400`), so a device's bits are tested.
+         */
+        fun musicFixed(dump: String): Boolean {
+            val block = dump.substringAfter("- STREAM_MUSIC:", "").ifEmpty { return false }
+            val line = Regex("""mFixedVolumeDevices=(.*)""").find(dump)?.groupValues?.get(1).orEmpty()
+            val fixed = Regex("""0x([0-9a-fA-F]+)""").findAll(line).map { it.groupValues[1].toLong(16) }.toSet()
+            val devices = Regex("""^\s*Devices:\s*(.+)$""", RegexOption.MULTILINE).find(block)?.groupValues?.get(1).orEmpty()
+                .split(Regex("""[\s,]+""")).filter { it.isNotEmpty() }
+            val codes = Regex("""([0-9a-fA-F]+) \(([^)]+)\)""").findAll(block).associate { it.groupValues[2] to it.groupValues[1].toLong(16) }
+            // A list names each device exactly; a lone value is the old bitmask, tested bit by bit.
+            val listed = fixed.size > 1
+            return devices.isNotEmpty() && devices.all { d ->
+                codes[d]?.let { c -> c != 0L && fixed.any { if (listed) it == c else (it and c) == c } } == true
+            }
         }
 
         /** Volume keys per tap: 1 on a 15-step TV, 3 on 50, 7 on 100. Never under 1. */

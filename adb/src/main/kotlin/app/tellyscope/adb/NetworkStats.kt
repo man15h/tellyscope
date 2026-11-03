@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package app.tellyscope.adb
 
-/** Who the TV is talking to, and how much each uid has sent and received since boot. */
+/** Where the TV is on the network, who it's talking to, and how much each uid has sent and received since boot. */
 class NetworkStats(private val shell: AdbShell) {
+    /** The TV's address, and its Wi-Fi when that's what it's on: a TV on Ethernet can still report a network it remembers. */
+    suspend fun address(): Pair<Parsers.Address?, Parsers.Wifi?> {
+        val (ip, status) = Commands.split(shell.shell(Commands.ADDRESS).output, 2)
+        val address = Parsers.address(ip)
+        return address to Parsers.wifi(status)?.takeIf { address?.iface?.startsWith("wlan") != false }
+    }
+
     /** Live connections to somewhere off the TV; listeners and finished ones are left out. */
     suspend fun connections(): List<Parsers.TcpSocket> =
         Parsers.tcpSockets(shell.shell(Commands.SOCKETS).output).filter { it.open }

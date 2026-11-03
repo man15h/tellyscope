@@ -52,8 +52,8 @@
     <string name="copy_keeps_home">Keeps Home with its accessibility service</string>
     <string name="copy_make_home">Make Home</string>
     <string name="copy_get_launcher">Get another launcher</string>
-    <string name="copy_get_launcher_text">Install one from the Play Store, like Projectivy or FLauncher. Switch back any time.</string>
-    <string name="copy_get_projectivy_text">Install Projectivy. Switch back any time.</string>
+    <string name="copy_get_launcher_text">Install one from the Play Store. Switch back any time.</string>
+    <string name="copy_get_fire_launcher_text">Install %1$s. Switch back any time.</string>
     <string name="copy_home_settings">Home screen settings</string>
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
@@ -139,15 +139,16 @@
     <string name="copy_wasnt_installed">%1$s wasn\'t installed</string>
     <string name="copy_not_installed_text">The Play Store closed on the TV before it was installed. If the Store said it isn\'t available for this TV, choose another launcher.</string>
 
-    <!-- Installing Projectivy on Fire OS: downloaded from its developer's GitHub, installed over adb -->
-    <string name="copy_install_projectivy">Install Projectivy</string>
+    <!-- Installing a launcher's APK (Fire OS, or Download directly): from its developer's GitHub, installed over adb. %1$s the launcher's name -->
+    <string name="copy_install_launcher">Install %1$s</string>
     <string name="copy_fire_install_text">A home screen without ads. Tellyscope installs it on the TV for you; there\'s nothing to do on the TV.</string>
+    <string name="copy_fire_pick_text">A home screen without ads. Download it in your browser, then pick the file here. Tellyscope installs it on the TV.</string>
     <!-- %1$s the app's name -->
     <string name="copy_downloads_from">Tellyscope downloads %1$s from the developer\'s own release page:</string>
     <!-- %1$s the version, %2$s its size (copy_size_*) -->
     <string name="copy_release">Release %1$s · %2$s</string>
     <string name="copy_where_from">Where it comes from</string>
-    <string name="copy_signed_check">Tellyscope checks it\'s signed by Projectivy\'s developer before installing it on the TV. Tellyscope isn\'t affiliated with Projectivy.</string>
+    <string name="copy_signed_check">Tellyscope checks it\'s signed by %1$s\'s developer before installing it on the TV. Tellyscope isn\'t affiliated with %1$s.</string>
     <string name="copy_download_and_install">Download and install</string>
     <!-- Download directly, on a TV with the Play Store; %1$s the app's name -->
     <string name="copy_download_directly_title">Download %1$s directly?</string>
@@ -161,11 +162,11 @@
     <!-- %1$d percent done, %2$s and %3$s sizes (copy_size_*) -->
     <string name="copy_downloading">Downloading · %1$d%% · %2$s of %3$s</string>
     <string name="copy_step_picked">Picked a file</string>
-    <string name="copy_step_check">Check it\'s Projectivy</string>
-    <string name="copy_step_checking">Checking it\'s Projectivy…</string>
-    <string name="copy_step_checked">It\'s Projectivy</string>
+    <string name="copy_step_check">Check it\'s %1$s</string>
+    <string name="copy_step_checking">Checking it\'s %1$s…</string>
+    <string name="copy_step_checked">It\'s %1$s</string>
     <string name="copy_step_checked_text">Signed by its developer</string>
-    <string name="copy_step_failed">Not Projectivy</string>
+    <string name="copy_step_failed">Not %1$s</string>
     <string name="copy_step_failed_text">Package name or signature didn\'t match</string>
     <string name="copy_install_on">Install on %1$s</string>
     <string name="copy_stop_title">Stop the download?</string>
@@ -174,26 +175,32 @@
     <string name="copy_keep_downloading">Keep downloading</string>
     <!-- %1$s the TV's name -->
     <string name="copy_installing_on">Installing on %1$s…</string>
-    <string name="copy_not_projectivy">That download isn\'t Projectivy</string>
-    <string name="copy_not_projectivy_text">The file from GitHub didn\'t match Projectivy\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
-    <string name="copy_not_projectivy_file">That file isn\'t Projectivy</string>
-    <string name="copy_not_projectivy_file_text">It didn\'t match Projectivy\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
+    <string name="copy_wrong_apk">That download isn\'t %1$s</string>
+    <string name="copy_wrong_apk_text">The file from GitHub didn\'t match %1$s\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
+    <string name="copy_wrong_apk_file">That file isn\'t %1$s</string>
+    <string name="copy_wrong_apk_file_text">It didn\'t match %1$s\'s package name or its developer\'s signature, so Tellyscope installed nothing on the TV.</string>
     <string name="copy_cant_read_file">Tellyscope couldn\'t read that file. Pick it again, or download it again.</string>
     <string name="copy_cant_install">Couldn\'t install %1$s</string>
-    <string name="copy_no_download">Couldn\'t download Projectivy</string>
+    <string name="copy_no_download">Couldn\'t download %1$s</string>
     <string name="copy_no_download_offline">The phone can\'t reach GitHub. Check its internet, then try again.</string>
     <!-- %1$s a clock time, like 18:44 -->
     <string name="copy_no_download_limited_until">GitHub is limiting downloads from your network until %1$s. Try again then, or download it yourself.</string>
     <string name="copy_no_download_limited">GitHub is limiting downloads from your network for a while. Try again then, or download it yourself.</string>
     <string name="copy_or_yourself">Or download it yourself</string>
     <string name="copy_yourself_page">Download the app file (.apk) from the release page in your browser.</string>
-    <!-- %1$s the release's file name, like Projectivy.apk -->
-    <string name="copy_yourself_pick_file">Come back and pick %1$s. Tellyscope checks it\'s Projectivy before installing it.</string>
-    <string name="copy_yourself_pick">Come back and pick it. Tellyscope checks it\'s Projectivy before installing it.</string>
+    <!-- %1$s the release's file name, like Launcher.apk; %2$s the launcher's name -->
+    <string name="copy_yourself_pick_file">Come back and pick %1$s. Tellyscope checks it\'s %2$s before installing it.</string>
+    <string name="copy_yourself_pick">Come back and pick it. Tellyscope checks it\'s %1$s before installing it.</string>
     <string name="copy_latest_release">Latest release</string>
     <string name="copy_pick_downloaded">Pick the downloaded file</string>
     <string name="copy_pick_another">Pick another file</string>
     <string name="copy_try_download_again">Try download again</string>
+    <!-- The launcher list from data/ failed its signature or checksum check: shown, and ticked, before anything installs -->
+    <string name="copy_unverified_title">Couldn\'t verify the launcher list</string>
+    <string name="copy_unverified_text">Tellyscope couldn\'t confirm this is the list it published. If the list changed in the last few minutes, try again later. Install now only if you trust the list and its signer.</string>
+    <string name="copy_unverified_list">List</string>
+    <string name="copy_unverified_signer">Signer (SHA-256)</string>
+    <string name="copy_unverified_trust">I trust this list and its signer</string>
     <string name="copy_service_off_text">%1$s\'s accessibility service is off, so the TV can take Home back.</string>
 
     <string name="copy_open_again">Open again</string>
@@ -219,9 +226,6 @@
     </plurals>
 
     <!-- Compact uptime: days, hours, minutes -->
-    <string name="copy_uptime_days_hours">%1$dd %2$dh</string>
-    <string name="copy_uptime_hours_minutes">%1$dh %2$dm</string>
-    <string name="copy_uptime_minutes">%1$dm</string>
 
     <plurals name="copy_days">
         <item quantity="one">%1$d day</item>
@@ -272,7 +276,9 @@
     <string name="copy_reading_apps">Reading the TV\'s apps…</string>
     <string name="copy_reading_apps_line">This takes a few seconds.</string>
     <string name="copy_tv_offline">TV offline</string>
+    <string name="copy_off_wifi_line">Join the same Wi-Fi as the TV. Tellyscope reconnects as soon as you\'re on.</string>
     <string name="copy_running_offline">Running apps show here once the TV is connected.</string>
+    <string name="copy_apps_offline">Apps show here once the TV is connected.</string>
 
     <!-- Connection state, next to the status dot -->
     <string name="copy_state_online">Connected</string>
@@ -364,6 +370,7 @@
     <string name="copy_sent_renamed">Sent to %1$s as %2$s, since %3$s was already there</string>
     <string name="copy_saved">Saved %1$s to your phone</string>
     <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
+    <string name="copy_send_failed_off_wifi">Couldn\'t send %1$s. This phone isn\'t on Wi-Fi.</string>
     <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
     <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
     <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
@@ -446,6 +453,7 @@
     <string name="copy_animations_state_off">Off. Turn on to make menus feel snappier.</string>
     <string name="copy_caches_title">Clear all app caches</string>
     <string name="copy_caches_text">Frees space by clearing every app\'s temporary files. App data and sign-ins stay.</string>
+    <string name="copy_caches_too_old">Needs Android 8 or newer. This TV is older.</string>
     <string name="copy_caches_button">Clear caches</string>
     <string name="copy_caches_cleared">Cleared app caches</string>
     <!-- %1$s is a size, like 120 MB -->
@@ -935,19 +943,10 @@
 
     <!-- AdvancedScreen.kt: Advanced monitor -->
     <string name="advanced_back">Back to the TV\'s page</string>
-    <string name="advanced_this_tv">This TV</string>
-    <string name="advanced_ip_address">IP address</string>
-    <string name="advanced_port">Port</string>
-    <string name="advanced_maker">Maker</string>
-    <string name="advanced_network_name">Network name</string>
     <string name="advanced_loading">Loading stats…</string>
-    <string name="advanced_cpu_by_app">CPU by app</string>
-    <string name="advanced_ram_by_app">RAM by app</string>
-    <string name="advanced_processes">Processes</string>
     <string name="advanced_network">Network</string>
     <string name="advanced_cpu">CPU</string>
     <string name="advanced_ram">RAM</string>
-    <string name="advanced_app">App</string>
     <!-- How long the TV has been on, like "2d 4h" -->
     <string name="advanced_on_for">On for</string>
     <string name="advanced_screen">Screen</string>
@@ -955,14 +954,8 @@
     <string name="advanced_screen_off">Off</string>
     <string name="advanced_percent">%1$d%%</string>
     <string name="advanced_percent_whole">%1$.0f%%</string>
-    <string name="advanced_percent_tenths">%1$.1f%%</string>
-    <!-- %1$s is how long ago, like "5 minutes ago" -->
-    <string name="advanced_as_of">As of %1$s</string>
     <string name="advanced_memory">Memory</string>
     <string name="advanced_storage">Storage</string>
-    <string name="advanced_percent_used">%1$d%% used</string>
-    <!-- The bar that sums every app outside the top 6 -->
-    <string name="advanced_other">Other</string>
     <string name="advanced_connection">Connection</string>
     <string name="advanced_wifi">Wi-Fi</string>
     <string name="advanced_ethernet">Ethernet</string>
@@ -972,10 +965,88 @@
     <string name="advanced_signal_weak">Weak (%1$d dBm)</string>
     <string name="advanced_signal_very_weak">Very weak (%1$d dBm)</string>
     <string name="advanced_mac">MAC</string>
-    <string name="advanced_link_speed">Link speed</string>
     <string name="advanced_mbps">%1$d Mbps</string>
-    <string name="advanced_data_used">Data used</string>
-    <string name="advanced_open_connections">Open connections</string>
+    <string name="advanced_address" translatable="false">%1$s:%2$d</string>
+    <string name="shell_prompt" translatable="false">tv:%1$s $</string>
+    <string name="shell_offline_prompt" translatable="false">tv offline $</string>
+    <string name="shell_key_tab" translatable="false">Tab</string>
+    <string name="shell_key_ctrl_c" translatable="false">Ctrl-C</string>
+    <string name="shell_answer_yes" translatable="false">y</string>
+    <string name="shell_answer_no" translatable="false">N</string>
+    <string name="shell_exit_code" translatable="false">[exit %1$d]</string>
+    <string name="shell_stopped" translatable="false">^C</string>
+    <string name="advanced_copy_address">Copy address</string>
+    <string name="advanced_android">Android</string>
+    <string name="advanced_updated">Updated</string>
+    <string name="advanced_this_tv">This TV</string>
+    <string name="advanced_offline_as_of">Offline · as of %1$s</string>
+    <string name="advanced_busiest">Busiest</string>
+    <string name="advanced_copy_mac">Copy MAC address</string>
+    <string name="advanced_signal_strong_word">Strong</string>
+    <string name="advanced_signal_good_word">Good</string>
+    <string name="advanced_signal_weak_word">Weak</string>
+    <string name="advanced_signal_very_weak_word">Very weak</string>
+    <string name="advanced_not_running">Not running</string>
+    <string name="advanced_split_apps">Apps</string>
+    <string name="advanced_split_system">System</string>
+    <string name="advanced_split_waiting">Waiting on storage</string>
+    <string name="advanced_core">Core %1$d</string>
+    <string name="advanced_ghz">%1$.1f GHz</string>
+    <string name="advanced_in_use">In use</string>
+    <string name="advanced_cached">Cached</string>
+    <string name="advanced_free">Free</string>
+    <string name="advanced_swap">Swap %1$s of %2$s</string>
+    <string name="advanced_wifi_on">Wi-Fi · %1$s</string>
+    <string name="advanced_since_boot">Since boot ↓ %1$s ↑ %2$s</string>
+    <string name="advanced_minute_ago">60 s ago</string>
+    <string name="advanced_now">now</string>
+    <string name="advanced_cpu_share">%1$.0f%% CPU</string>
+    <string name="advanced_since_boot_short">%1$s since boot</string>
+    <string name="advanced_processes_n">Processes · %1$d</string>
+    <string name="advanced_connections_n">Open connections · %1$d</string>
+    <string name="advanced_established">Established</string>
+    <string name="advanced_connecting">Connecting</string>
+    <string name="advanced_closing">Closing</string>
+    <string name="advanced_down" translatable="false">↓ %1$s</string>
+    <string name="advanced_up" translatable="false">↑ %1$s</string>
+    <string name="advanced_down_up" translatable="false">↓ %1$s ↑ %2$s</string>
+    <plurals name="advanced_cores">
+        <item quantity="one">%1$d core</item>
+        <item quantity="other">%1$d cores</item>
+    </plurals>
+    <plurals name="advanced_processes">
+        <item quantity="one">%1$d process</item>
+        <item quantity="other">%1$d processes</item>
+    </plurals>
+    <plurals name="advanced_connections">
+        <item quantity="one">%1$d connection</item>
+        <item quantity="other">%1$d connections</item>
+    </plurals>
+    <plurals name="advanced_open_connections">
+        <item quantity="one">%1$d open connection</item>
+        <item quantity="other">%1$d open connections</item>
+    </plurals>
+    <plurals name="advanced_apps_running">
+        <item quantity="one">%1$d app running</item>
+        <item quantity="other">%1$d apps running</item>
+    </plurals>
+    <string name="shell_open">Shell</string>
+    <string name="shell_close">Close Shell</string>
+    <string name="shell_title">%1$s · %2$s</string>
+    <string name="shell_banner">Connected to %1$s (%2$s).\nType exit or tap ✕ to close.</string>
+    <string name="shell_trimmed">Earlier lines dropped: showing the last %1$d.</string>
+    <string name="shell_offline_hint">Commands run again once the TV is back.</string>
+    <string name="shell_key_paste">Paste</string>
+    <string name="shell_key_up">Previous command</string>
+    <string name="shell_key_down">Next command</string>
+    <string name="shell_confirm">This changes the TV. Run it? [y/N]</string>
+    <string name="shell_confirm_answered">This changes the TV. Run it? [y/N] %1$s</string>
+    <string name="shell_no_history">Shell runs don\'t go in History, so there\'s no one-tap undo.</string>
+    <string name="shell_not_run">Not run.</string>
+    <string name="shell_not_shell">Only adb shell commands run here.</string>
+    <string name="shell_full_screen">%1$s needs a full-screen terminal. It isn\'t supported here.</string>
+    <string name="shell_dropped_prefix">(dropped \"adb shell\")</string>
+    <string name="shell_lost">Lost the TV before the command finished. It may have run only partly.</string>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Help add this TV</string>
@@ -1137,6 +1208,11 @@
     <string name="remote_mute">Mute or unmute</string>
     <string name="remote_volume_up">Volume up</string>
     <string name="remote_volume_down">Volume down</string>
+    <string name="remote_volume_fixed">Volume is fixed over HDMI. Use the TV\'s remote.</string>
+    <string name="remote_dpad">D-pad</string>
+    <string name="remote_touchpad">Touchpad</string>
+    <string name="remote_touchpad_swipe">Swipe to move</string>
+    <string name="remote_touchpad_tap">Tap for OK</string>
     <string name="remote_back">Back</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">Menu</string>

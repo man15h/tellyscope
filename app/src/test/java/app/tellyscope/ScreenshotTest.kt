@@ -51,6 +51,7 @@ import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Docked
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.Device
+import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
@@ -459,6 +460,34 @@ class ScreenshotTest {
         compose.onNodeWithText(Copy.RUNNING_OFFLINE.text()).assertExists()
     }
     @Test fun md3_apps_offline_dark() { shot("71_md3_apps_offline", dark = true) { DeviceTabsScreen(offlineMd3(), DeviceActions(), startTab = TvTab.Apps) } }
+    // Away, Installed and Built-in can't say what the TV has either, so they say why rather than "Nothing here yet."
+    @Test fun md3_apps_offline_installed() {
+        appsTab("71_md3_apps_offline_installed", false, "Installed", ::offlineMd3)
+        compose.onNodeWithText(Copy.APPS_OFFLINE.text()).assertExists()
+        compose.onNodeWithText(Strings.strings.getValue("device_nothing_here")).assertDoesNotExist()
+    }
+    @Test fun md3_apps_offline_builtin() {
+        appsTab("71_md3_apps_offline_builtin", false, "Built-in", ::offlineMd3)
+        compose.onNodeWithText(Copy.APPS_OFFLINE.text()).assertExists()
+    }
+    // The phone left Wi-Fi, not the TV: every away state says so instead of "TV offline".
+    private fun offWifiMd3() = offlineMd3().copy(offWifi = true)
+    @Test fun md3_offWifi() {
+        shot("62_md3_off_wifi") { DeviceTabsScreen(offWifiMd3(), DeviceActions()) }
+        compose.onNodeWithText(Copy.PHONE_OFF_WIFI.text()).assertExists()
+        compose.onNodeWithText(Copy.OFF_WIFI_LINE.text()).assertExists()
+    }
+    @Test fun md3_offWifi_dark() { shot("62_md3_off_wifi", dark = true) { DeviceTabsScreen(offWifiMd3(), DeviceActions()) } }
+    @Test fun md3_apps_offWifi() {
+        shot("71_md3_apps_off_wifi") { DeviceTabsScreen(offWifiMd3(), DeviceActions(), startTab = TvTab.Apps) }
+        compose.onNodeWithText(Copy.PHONE_OFF_WIFI.text()).assertExists()
+        compose.onNodeWithText(Copy.TV_OFFLINE.text()).assertDoesNotExist()
+    }
+    @Test fun md3_apps_offWifi_builtin() {
+        appsTab("71_md3_apps_off_wifi_builtin", false, "Built-in", ::offWifiMd3)
+        compose.onNodeWithText(Copy.OFF_WIFI_LINE.text()).assertExists()
+        compose.onNodeWithText(Strings.strings.getValue("device_nothing_here")).assertDoesNotExist()
+    }
     // Just opened: the list is still on its way, so Apps says so rather than "Nothing here yet."
     private fun appsLoading() = md3State().let { it.copy(device = it.device.copy(apps = emptyList(), appsLoading = true)) }
     @Test fun md3_apps_loading() {
@@ -765,8 +794,10 @@ class ScreenshotTest {
         shot("96_whats_new") { whatsNew(opened)() }
         compose.onNodeWithText("Installed").assertExists()
         compose.onAllNodesWithText("NEW")[0].assertExists()
-        compose.onAllNodes(SemanticsMatcher("opens #267") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#267" })[0].performClick()
-        assertEquals(listOf(Changelog.pullUrl(267)), opened)
+        // A link from the newest section, which is on screen whatever the changelog holds.
+        val pr = changelog.first().changes.first { it.pr != null }.pr!!
+        compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()
+        assertEquals(listOf(Changelog.pullUrl(pr)), opened)
     }
 
     @Test fun whatsNew_dark() = shot("96_whats_new", dark = true) { whatsNew()() }
@@ -1259,14 +1290,16 @@ class ScreenshotTest {
     private fun withLogos(vararg names: String, body: () -> Unit) {
         val offline: suspend (String) -> ByteArray = { throw IOException("offline") }
         val dir = Files.createTempDirectory("logos").toFile()
+        val none = Files.createTempDirectory("none").toFile()
         runBlocking {
             val online = DeviceLists(dir)
             if (online.index() != null) names.forEach { online.logo(it) }
-            SharedLists.load(DeviceLists(dir, offline))
+            SharedLists.load(DeviceLists(none, DATA_BASE, fetch = offline), DeviceLists(dir, offline))
         }
         try { body() } finally {
-            runBlocking { SharedLists.load(DeviceLists(Files.createTempDirectory("none").toFile(), offline)) }
+            SharedLists.reseed()
             dir.deleteRecursively()
+            none.deleteRecursively()
         }
     }
 

@@ -82,7 +82,7 @@ SOFTWARE.
 
 --------------------------------------------------------------------------------
 Streaming service logos (downloaded from tellyscope-devices, not in this repo)
-The names and logos of the services in lists/streaming.json are trademarks of
+The names and logos of the services in data/streaming.json are trademarks of
 their owners. They are not covered by the GNU General Public License: they are
 not part of Tellyscope's source, and no licence to them is given. Tellyscope
 shows them only to name the app a Remote button opens, and isn't affiliated

@@ -90,9 +90,11 @@ class LoggedOutTest {
 
     @Test fun timeLineSaysWhen() {
         val hour = 3_600_000L
-        assertEquals("Logged out just now", Copy.loggedOutAt(0L, 60_000L).text())
-        assertEquals("Logged out yesterday", Copy.loggedOutAt(0L, 30 * hour).text())
-        assertEquals("Logged out 3 days ago", Copy.loggedOutAt(0L, 80 * hour).text())
+        // Anchored at local noon, not epoch 0: days are counted in the phone's zone, so +30 h is the next day at any offset.
+        val noon = LocalDate.of(2026, 10, 25).atTime(12, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        assertEquals("Logged out just now", Copy.loggedOutAt(noon, noon + 60_000L).text())
+        assertEquals("Logged out yesterday", Copy.loggedOutAt(noon, noon + 30 * hour).text())
+        assertEquals("Logged out 3 days ago", Copy.loggedOutAt(noon, noon + 80 * hour).text())
         // A day is a calendar day: 23:00 is "yesterday" at 09:00 the next morning, ten hours on.
         val lateEvening = LocalDate.of(2026, 10, 25).atTime(23, 0).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         assertEquals("Logged out yesterday", Copy.loggedOutAt(lateEvening, lateEvening + 10 * hour).text())

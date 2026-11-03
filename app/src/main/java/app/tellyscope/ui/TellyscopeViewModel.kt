@@ -34,12 +34,12 @@ import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
+import app.tellyscope.data.LauncherPick
 import app.tellyscope.data.LauncherRelease
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.NotAnApp
-import app.tellyscope.data.NotProjectivy
-import app.tellyscope.data.PROJECTIVY
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
 import app.tellyscope.data.RateLimited
@@ -53,6 +53,7 @@ import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.ScanProgress
+import app.tellyscope.data.SharedLists
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.StoreState
 import app.tellyscope.data.Suggestions
@@ -62,8 +63,9 @@ import app.tellyscope.data.TvTweaks
 import app.tellyscope.data.Update
 import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
-import app.tellyscope.data.UpdateCheck
+import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
+import app.tellyscope.data.WrongApk
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -112,8 +114,13 @@ data class ScanUi(
     val offWifi get() = noLan && hits.isEmpty()
 }
 
+/** How far back [DeviceUi.recent] and Advanced's graphs reach, by [Snapshot.at]. */
+const val RECENT_MS = 60_000L
+
 data class DeviceUi(
     val snapshot: Snapshot? = null,
+    /** The last minute of readings, oldest first, for Advanced's graphs. */
+    val recent: List<Snapshot> = emptyList(),
     val apps: List<AppInfo> = emptyList(),
     /** The first read of [apps] after opening the TV is still out; ends on success, empty or error. */
     val appsLoading: Boolean = false,
@@ -186,12 +193,12 @@ data class ResetUi(
 data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg, val fire: FireInstall? = null) {
     enum class Step { Pick, Waiting, NoStore, Left, Installed }
 
-    /** Fire OS: Projectivy alone, with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
+    /** Fire OS: its launcher alone ([fireLauncher]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
     val fireOs get() = fire != null && !fire.store
 }
 
 /**
- * Install Projectivy on Fire OS ([fireInstall]), on [LauncherFlow.Step.Pick] in place of the picker: there's no
+ * Install a launcher's APK on Fire OS ([fireInstall]), on [LauncherFlow.Step.Pick] in place of the picker: there's no
  * Play Store, so Tellyscope reads the latest release ([Step.Checking]), asks ([Step.Confirm]), downloads and
  * checks it ([Step.Downloading]), installs it over adb ([Step.Installing]), then moves to [LauncherFlow.Step.Installed].
  * A null [step] is the picker with nothing started. [error] is the TV's refusal, for [Step.Refused].
@@ -210,8 +217,17 @@ data class FireInstall(
     val until: Long? = null,
     /** The APK's size once it's downloaded or picked, for the steps' first line. */
     val size: Long? = null,
+    /**
+     * `data/`'s address while it fails its check ([SharedLists.unverified]), null once it passes. Then nothing
+     * downloads or installs until the user ticks that they trust the list and its signer ([trusted]).
+     */
+    val list: String? = null,
+    val trusted: Boolean = false,
 ) {
-    enum class Step { Checking, Confirm, Downloading, Reading, Installing, NotProjectivy, NoDownload, Refused }
+    enum class Step { Checking, Confirm, Downloading, Reading, Installing, WrongApk, NoDownload, Refused }
+
+    /** From a list that failed its check and not yet trusted: Download and install and Pick the downloaded file wait. */
+    val gated get() = list != null && !trusted
 }
 
 /**
@@ -289,6 +305,8 @@ data class UiState(
     val query: String = "",
     /** When this state was made; it doesn't tick. Screens read the time with [clock]. */
     val now: Long = System.currentTimeMillis(),
+    /** This phone is on no Wi-Fi or Ethernet, so an offline TV is out of reach rather than off. */
+    val offWifi: Boolean = false,
     /** TVs asked to restart, by id. */
     val restarting: Map<String, Restart> = emptyMap(),
     /** The user's own debloat-list source; null for tellyscope-devices. */
@@ -309,6 +327,10 @@ data class UiState(
     val screenOff: Set<String> = emptySet(),
     /** The Remote's Screen off button explains itself, the first time only. */
     val screenOffTip: Boolean = false,
+    /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
+    val volumeFixed: Set<String> = emptySet(),
+    /** The Remote shows the touchpad instead of the D-pad. Per phone, not per TV. */
+    val touchpad: Boolean = false,
     /** Debloat with nothing left on the list explains why it opens Apps, until Don't show again. */
     val debloatGate: Boolean = true,
     /** The Apps tabs whose System section the user folded away. */
@@ -398,7 +420,7 @@ class TellyscopeViewModel(
     private val storage: PhoneStorage? = null,
     private val allowTimeoutMs: Long = 60_000,
     private val clock: () -> Long = System::currentTimeMillis,
-    private val updates: UpdateCheck? = null,
+    private val updates: Updates? = null,
     private val folds: FoldBook? = null,
     private val keyHaptics: KeyHaptics? = null,
     /** App-wide prompts the user turned off: [DEBLOAT_GATE]. */
@@ -406,8 +428,13 @@ class TellyscopeViewModel(
     private val historySeen: SeenBook? = null,
     /** This build and phone, for reports. */
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
-    /** Projectivy from its developer's GitHub, for Fire OS. */
-    private val launcherDownload: LauncherDownload? = null,
+    /**
+     * A launcher's APK for Fire OS: a [LauncherDownload] from its developer's GitHub in the GitHub build. The Play
+     * build's only checks a file the user picked.
+     */
+    private val launcherDownload: LauncherPick? = null,
+    /** `data/`'s address while the launcher list fails its check, or null once it passes. */
+    private val unverified: () -> String? = { SharedLists.unverified },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState(now = clock()))
@@ -492,7 +519,7 @@ class TellyscopeViewModel(
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(checkUpdates = u.enabled, alphaBuild = u.alpha) } }
         }
         keyHaptics?.let { k ->
-            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen) } }
+            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, touchpad = k.touchpad) } }
         }
         gates?.let { g ->
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(debloatGate = DEBLOAT_GATE !in g.folded()) } }
@@ -525,7 +552,12 @@ class TellyscopeViewModel(
             while (true) {
                 delay(1_000)
                 _now.value = clock()
-                if (++tick % 3 == 0) refreshDevices()
+                val offWifi = !source.onLan()
+                val lost = offWifi && !_state.value.offWifi
+                _state.update { it.copy(offWifi = offWifi) }
+                // Just off Wi-Fi: the TVs show offline now, not after the old connection's read times out.
+                if (lost) source.lanLost()
+                if (++tick % 3 == 0 || lost) refreshDevices()
             }
         }
     }
@@ -695,6 +727,19 @@ class TellyscopeViewModel(
     /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
     fun showStats(profile: StatsProfile) = source.showStats(_state.value.selectedId, profile)
 
+    private val terminals = mutableMapOf<String, ShellTerminal>()
+
+    /** The selected TV's Shell. Its lines and recent commands stay while the app runs, so closing Shell and opening it again picks up where it was. */
+    fun terminal(): ShellTerminal? {
+        val id = _state.value.selectedId ?: return null
+        return terminals.getOrPut(id) { ShellTerminal(source.shell(id), viewModelScope) }
+    }
+
+    override fun onCleared() {
+        terminals.values.forEach(ShellTerminal::close)
+        super.onCleared()
+    }
+
     fun select(id: String?) {
         stopWatching()
         launcherJob?.cancel()
@@ -708,12 +753,16 @@ class TellyscopeViewModel(
         }
         // Only an online TV gets its old lists back: the offline card stays as it was.
         val online = _state.value.devices.firstOrNull { it.id == id }?.state == DeviceState.Online
-        // A removal survives the reconnect it causes; the TV coming back reselects it.
+        // A removal survives the reconnect it causes; the TV coming back reselects it. So does the
+        // install dialog: the link drops behind the file picker, and its return reselected the TV
+        // a few seconds after the dialog opened, closing it (#290).
         _state.update {
-            val removal = it.device.removal.takeIf { _ -> it.selectedId == id }
+            val same = it.selectedId == id
+            val removal = it.device.removal.takeIf { _ -> same }
+            val sideload = it.device.sideload.takeIf { _ -> same }
             val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
             val lists = if (online) id?.let(lastLists::get) else null
-            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal), query = "")
+            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload), query = "")
         }
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
@@ -744,7 +793,7 @@ class TellyscopeViewModel(
         liveJob = viewModelScope.launch {
             source.live(id).collect { snap ->
                 lastSnapshot[id] = snap
-                _state.update { it.copy(device = it.device.copy(snapshot = snap)) }
+                _state.update { it.copy(device = it.device.copy(snapshot = snap, recent = (it.device.recent + snap).filter { r -> snap.at - r.at <= RECENT_MS })) }
             }
         }
         // One read of the app list per open: Apps and the TV's list both use it. The list
@@ -915,8 +964,9 @@ class TellyscopeViewModel(
     /** Opens Install a home screen on its picker; not before the launcher list has been downloaded once. */
     fun openLauncherFlow() {
         val id = _state.value.selectedId ?: return
-        if (_state.value.selected?.let { fireInstall(it, _state.value.device.apps) } == true) {
-            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = PROJECTIVY, fire = FireInstall())) }
+        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, _state.value.device.apps) } == true }
+        if (fire != null) {
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = unverified()))) }
             return
         }
         if (RECOMMENDED.isEmpty()) {
@@ -929,85 +979,121 @@ class TellyscopeViewModel(
     private fun setFire(id: String, f: (FireInstall) -> FireInstall) =
         updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.fire?.let { l.copy(fire = f(it)) } }) }
 
+    /** The download, when this build has one: never in the Play build. */
+    private val downloader get() = launcherDownload as? LauncherDownload
+
     /** Download directly is offered beside the Play Store: there's a way to download, as on Fire OS. */
-    val directDownload get() = launcherDownload != null
+    val directDownload get() = downloader != null
+
+    /** [pkg]'s entry on the launcher list, when it says how to check its APK: the only launchers installed from one. */
+    private fun apkLauncher(pkg: String?): KnownLauncher? =
+        RECOMMENDED.firstOrNull { it.pkg == pkg }?.launcher?.takeIf { it.signers.isNotEmpty() }
 
     /**
-     * Install Projectivy on Fire OS, or Download directly in the picker: reads the latest release, for the
+     * Install [pkg] on Fire OS, or Download directly in the picker: reads its latest release, for the
      * confirm dialog to show where it comes from.
      */
-    fun checkProjectivy() {
+    fun checkLauncherApk(pkg: String) {
         val id = _state.value.selectedId ?: return
-        val download = launcherDownload ?: return
+        val download = downloader ?: return
+        val launcher = apkLauncher(pkg) ?: return
         val store = _state.value.device.launcher?.let { it.fire?.store ?: true } ?: return
+        val list = unverified()
         launcherJob?.cancel()
-        updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = PROJECTIVY, fire = FireInstall(FireInstall.Step.Checking, store = store))) }
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = pkg, fire = FireInstall(FireInstall.Step.Checking, store = store, list = list))) }
         launcherJob = viewModelScope.launch {
             val release = try {
-                download.latest()
+                download.latest(launcher)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: RateLimited) {
-                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, until = e.until) }
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, until = e.until, list = list) }
             } catch (_: Exception) {
-                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store) }
+                return@launch setFire(id) { FireInstall(FireInstall.Step.NoDownload, store = store, list = list) }
             }
-            setFire(id) { FireInstall(FireInstall.Step.Confirm, release, store = store) }
+            setFire(id) { FireInstall(FireInstall.Step.Confirm, release, store = store, list = list) }
         }
     }
 
     /**
-     * Download and install: fetches the APK, which must be Projectivy signed by its developer, then installs it
+     * The list's check changed since the flow read it ([FireInstall.list]), so the signers may not be what the user
+     * saw or ticked: back to Checking against the list as it is now (in the Play build, to the pick), and nothing installs.
+     */
+    private fun listChanged(id: String, flow: LauncherFlow): Boolean {
+        val fire = flow.fire ?: return false
+        val list = unverified()
+        if (list == fire.list) return false
+        if (downloader == null) setFire(id) { FireInstall(list = list) } else checkLauncherApk(flow.pkg)
+        return true
+    }
+
+    /** The tick on a launcher from a list that failed its check ([FireInstall.list]): until it's on, nothing downloads or installs. */
+    fun trustLauncherList(on: Boolean) {
+        val id = _state.value.selectedId ?: return
+        setFire(id) { if (it.list != null) it.copy(trusted = on) else it }
+    }
+
+    /**
+     * Download and install: fetches the APK, which must be the launcher signed by its developer, then installs it
      * over adb like any sideload. Nothing reaches the TV unless the check passes.
      */
-    fun installProjectivy() {
+    fun installLauncherApk() {
         val id = _state.value.selectedId ?: return
-        val download = launcherDownload ?: return
-        val release = _state.value.device.launcher?.fire?.takeIf { it.step == FireInstall.Step.Confirm }?.release ?: return
+        val download = downloader ?: return
+        val flow = _state.value.device.launcher ?: return
+        val launcher = apkLauncher(flow.pkg) ?: return
+        val release = flow.fire?.takeIf { it.step == FireInstall.Step.Confirm && !it.gated }?.release ?: return
+        if (listChanged(id, flow)) return
         launcherJob?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Downloading, progress = null, picked = false, size = null, until = null) }
         launcherJob = viewModelScope.launch {
             val app = try {
-                download.fetch(release) { p -> setFire(id) { it.copy(progress = p) } }
+                download.fetch(launcher, release) { p -> setFire(id) { it.copy(progress = p) } }
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: NotProjectivy) {
-                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: WrongApk) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.WrongApk) }
             } catch (_: Exception) {
                 return@launch setFire(id) { it.copy(step = FireInstall.Step.NoDownload) }
             }
-            installFetched(id, app)
+            installFetched(id, launcher, app)
         }
     }
 
     /**
      * Pick the downloaded file, after Couldn't download: the file the user picked, checked like the download,
-     * then installed the same way. Nothing reaches the TV unless it's Projectivy signed by its developer.
+     * then installed the same way. Nothing reaches the TV unless it's the launcher signed by its developer.
      */
-    fun pickedProjectivy(uri: Uri) {
+    fun pickedLauncherApk(uri: Uri) {
         val id = _state.value.selectedId ?: return
         val download = launcherDownload ?: return
+        val flow = _state.value.device.launcher ?: return
+        val launcher = apkLauncher(flow.pkg) ?: return
         // The picker answers on its own timing: only from a step that offers it, never over a running install.
-        val step = _state.value.device.launcher?.fire?.step
-        if (step != FireInstall.Step.NoDownload && step != FireInstall.Step.NotProjectivy && step != FireInstall.Step.Refused) return
+        val fire = flow.fire ?: return
+        val step = fire.step
+        // With no download (the Play build), it's offered from the start.
+        val start = downloader == null && step == null
+        if (!start && step != FireInstall.Step.NoDownload && step != FireInstall.Step.WrongApk && step != FireInstall.Step.Refused) return
+        if (fire.gated || listChanged(id, flow)) return
         launcherJob?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Reading, picked = true, progress = null, size = null) }
         launcherJob = viewModelScope.launch {
             val app = try {
-                download.open(uri)
+                download.open(uri, launcher)
             } catch (e: CancellationException) {
                 throw e
-            } catch (_: NotProjectivy) {
-                return@launch setFire(id) { it.copy(step = FireInstall.Step.NotProjectivy) }
+            } catch (_: WrongApk) {
+                return@launch setFire(id) { it.copy(step = FireInstall.Step.WrongApk) }
             } catch (_: Exception) {
                 return@launch setFire(id) { it.copy(step = FireInstall.Step.Refused, error = Copy.CANT_READ_FILE) }
             }
-            installFetched(id, app)
+            installFetched(id, launcher, app)
         }
     }
 
-    /** Projectivy, downloaded or picked and checked, onto the TV over adb like any sideload. */
-    private suspend fun installFetched(id: String, app: PickedApp) {
+    /** The launcher, downloaded or picked and checked, onto the TV over adb like any sideload. */
+    private suspend fun installFetched(id: String, launcher: KnownLauncher, app: PickedApp) {
         setFire(id) { it.copy(step = FireInstall.Step.Installing, progress = null, size = app.sizeBytes) }
         val result = try {
             source.install(id, app.files, app.info, allowDowngrade = false) { p -> setFire(id) { it.copy(progress = p) } }
@@ -1018,21 +1104,21 @@ class TellyscopeViewModel(
         }
         when (result) {
             // The steps close with it: Installing would keep them up, and Close waits on that.
-            InstallResult.Done -> launcherInstalled(id, PROJECTIVY) { step ->
-                updateDevice(id) { it.copy(launcher = it.launcher?.let { l -> l.copy(step = step, fire = if (l.fire?.store == true) null else FireInstall()) }) }
+            InstallResult.Done -> launcherInstalled(id, launcher.pkg) { step ->
+                updateDevice(id) { it.copy(launcher = it.launcher?.let { l -> l.copy(step = step, fire = if (l.fire?.store == true) null else FireInstall(list = l.fire?.list)) }) }
             }
             is InstallResult.Refused -> setFire(id) {
-                it.copy(step = FireInstall.Step.Refused, error = Copy.installRefused(result.reason, launcherName(PROJECTIVY)))
+                it.copy(step = FireInstall.Step.Refused, error = Copy.installRefused(result.reason, launcher.name))
             }
         }
     }
 
     /** X or Stop on a Fire OS step: back to the start, or to the picker after Download directly. Not while the install runs. */
-    fun dismissProjectivy() {
+    fun dismissLauncherApk() {
         val id = _state.value.selectedId ?: return
         if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
         launcherJob?.cancel()
-        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall()) }) }
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall(list = l.fire?.list)) }) }
     }
 
     /** Not now on the Apps tab's card: it stays away on this TV, and Tweaks keeps the way in. */
@@ -1278,15 +1364,22 @@ class TellyscopeViewModel(
         if (uris.isEmpty()) return
         setSideload(SideloadUi())
         sideloadJob = viewModelScope.launch {
-            val ui = try {
-                val app = storage.readApp(uris)
-                SideloadUi(SideloadUi.Step.Ready, app, source.installed(id, app.info.packageName))
+            // The phone's file and the TV fail apart: nothing has been sent yet, so neither is "lost partway".
+            val app = try {
+                storage.readApp(uris)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: NotAnApp) {
-                SideloadUi(SideloadUi.Step.Failed, error = Copy.NOT_AN_APP)
+                return@launch updateDevice(id) { it.copy(sideload = SideloadUi(SideloadUi.Step.Failed, error = Copy.NOT_AN_APP)) }
             } catch (_: Exception) {
-                SideloadUi(SideloadUi.Step.Failed, error = Copy.SIDELOAD_LOST)
+                return@launch updateDevice(id) { it.copy(sideload = SideloadUi(SideloadUi.Step.Failed, error = Copy.CANT_READ)) }
+            }
+            val ui = try {
+                SideloadUi(SideloadUi.Step.Ready, app, source.installed(id, app.info.packageName))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                SideloadUi(SideloadUi.Step.Failed, error = Copy.UNREACHABLE)
             }
             updateDevice(id) { it.copy(sideload = ui) }
         }
@@ -1411,7 +1504,7 @@ class TellyscopeViewModel(
                 _notice.value = Copy.CANCELLED_SEND
                 throw e
             } catch (_: Exception) {
-                _notice.value = Copy.sendFailed(file.name)
+                _notice.value = if (source.onLan()) Copy.sendFailed(file.name) else Copy.sendFailedOffWifi(file.name)
             } finally {
                 setTransfer(id, null)
             }
@@ -1828,6 +1921,12 @@ class TellyscopeViewModel(
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.on = on }
     }
 
+    /** The touchpad (true) or the D-pad on the Remote, kept for this phone. */
+    fun setTouchpad(on: Boolean) {
+        _state.update { it.copy(touchpad = on) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.touchpad = on }
+    }
+
     /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */
     fun disableSuggested(apps: List<ResetApp>) {
         val id = _state.value.selectedId ?: return
@@ -1923,6 +2022,24 @@ class TellyscopeViewModel(
                     _notice.value = Copy.REMOTE_LOST
                 }
             }
+        }
+    }
+
+    /**
+     * Reads whether the selected TV's volume is fixed over HDMI, for the Remote. Read each time it
+     * opens or the TV comes back, as the box's output changes with the TV it's plugged into.
+     */
+    fun checkVolume() {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch {
+            val fixed = try {
+                source.volumeFixed(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch
+            }
+            _state.update { it.copy(volumeFixed = if (fixed) it.volumeFixed + id else it.volumeFixed - id) }
         }
     }
 

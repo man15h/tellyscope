@@ -162,18 +162,36 @@ class FakeDeviceSource(
                     ramMb = (it.ramMb * (0.97 + random.nextDouble() * 0.06)).toInt(),
                 )
             }
+        val cpu = procs.sumOf { it.cpuPercent }.toInt()
+        val ramUsed = procs.sumOf { it.ramMb } + 260
+        val rx = 2_200_000L + random.nextLong(-200_000, 200_000)
         return Snapshot(
             at = clock(),
-            cpuPercent = procs.sumOf { it.cpuPercent }.toInt(),
-            ramUsedMb = procs.sumOf { it.ramMb } + 260,
+            cpuPercent = cpu,
+            ramUsedMb = ramUsed,
             ramTotalMb = 2048,
             storageUsedGb = 9.8,
             storageTotalGb = 16.0,
             uptimeSeconds = 3 * 86_400L + 4 * 3_600L,
             screenOn = true,
             procs = procs,
-            netBytesPerSec = 2_400_000L + random.nextLong(-200_000, 200_000),
+            netBytesPerSec = rx + 200_000,
             softwareMonth = YearMonth.of(2023, 5),
+            // Four cores around the average; apps and system add up to it, as on a real TV.
+            cores = listOf(6, -2, 4, -8).map { (cpu + it).coerceIn(0, 100) },
+            cpuApps = cpu * 2 / 3,
+            cpuSystem = cpu - cpu * 2 / 3,
+            cpuWaiting = cpu / 15,
+            chip = "Amlogic S905X4",
+            clockMhz = 1800,
+            ramCachedMb = (2048 - ramUsed) * 5 / 8,
+            ramFreeMb = (2048 - ramUsed) - (2048 - ramUsed) * 5 / 8,
+            swapUsedMb = 280,
+            swapTotalMb = 1024,
+            rxBytesPerSec = rx,
+            txBytesPerSec = 200_000L,
+            rxTotalBytes = 2_800_000_000L,
+            txTotalBytes = 126_000_000L,
         )
     }
 
