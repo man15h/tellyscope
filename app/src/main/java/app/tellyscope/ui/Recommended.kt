@@ -21,7 +21,7 @@ data class Recommended(
 
 /** In the picker's order: the launchers on `launchers.json` that have an `about` line, in file order. */
 val RECOMMENDED: List<Recommended> get() =
-    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.accessibility != null, l) } }
+    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.pkg in SharedLists.serviceLaunchers, l) } }
 
 fun launcherName(pkg: String) = RECOMMENDED.firstOrNull { it.pkg == pkg }?.name ?: AppNames.fallback(pkg)
 
