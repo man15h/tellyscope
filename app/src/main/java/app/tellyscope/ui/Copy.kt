@@ -307,12 +307,12 @@ object Copy {
     val PICK_ANOTHER = UiText(R.string.copy_pick_another)
     val TRY_DOWNLOAD_AGAIN = UiText(R.string.copy_try_download_again)
 
-    /** A launcher from a list the user added: shown, and ticked, before anything installs. */
-    val OWN_LIST_TITLE = UiText(R.string.copy_own_list_title)
-    val OWN_LIST_TEXT = UiText(R.string.copy_own_list_text)
-    val OWN_LIST_LIST = UiText(R.string.copy_own_list_list)
-    val OWN_LIST_SIGNER = UiText(R.string.copy_own_list_signer)
-    val OWN_LIST_TRUST = UiText(R.string.copy_own_list_trust)
+    /** A launcher from a list that failed its signature check: shown, and ticked, before anything installs. */
+    val UNVERIFIED_TITLE = UiText(R.string.copy_unverified_title)
+    val UNVERIFIED_TEXT = UiText(R.string.copy_unverified_text)
+    val UNVERIFIED_LIST = UiText(R.string.copy_unverified_list)
+    val UNVERIFIED_SIGNER = UiText(R.string.copy_unverified_signer)
+    val UNVERIFIED_TRUST = UiText(R.string.copy_unverified_trust)
 
     val NOT_INSTALLED_TEXT = UiText(R.string.copy_not_installed_text)
 

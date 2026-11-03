@@ -151,7 +151,7 @@ data class LauncherActions(
     val later: () -> Unit = {},
     /** Fire OS: Install the launcher, which reads its latest release for the confirm dialog. Try again does the same. */
     val fireCheck: (String) -> Unit = {},
-    /** The tick on a launcher from the user's own list. */
+    /** The tick on a launcher from a list that failed its check. */
     val fireTrust: (Boolean) -> Unit = {},
     /** Fire OS: Download and install on the confirm step. */
     val fireInstall: () -> Unit = {},
@@ -417,7 +417,7 @@ private fun FirePick(l: Recommended?) {
  * went wrong. Couldn't download offers the release page and Pick the downloaded file, checked the same way.
  * After Download directly ([FireInstall.store]) the confirm is a warning, and it and a wrong signature offer
  * the Play Store instead.
- * From the user's own list ([FireInstall.list]) each step that can install it opens on [OwnListCard].
+ * While the launcher list fails its check ([FireInstall.list]) each step that can install it opens on [UnverifiedCard].
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -430,8 +430,8 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: Launc
     val release = f.release
     val openPage = { (release?.page ?: releases?.let { "$it/latest" })?.let(uri::openUri) ?: Unit }
     val source = releases?.removePrefix("https://")?.removeSuffix("/releases")
-    val own = f.list?.takeIf { f.step in OWN_LIST_STEPS }
-    if (own != null) OwnListCard(own, l?.launcher?.signers.orEmpty())
+    val own = f.list?.takeIf { f.step in UNVERIFIED_STEPS }
+    if (own != null) UnverifiedCard(own, l?.launcher?.signers.orEmpty())
     when (f.step) {
         null, FireInstall.Step.Checking, FireInstall.Step.Confirm -> if (f.store) {
             WarningBadge()
@@ -481,8 +481,8 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, actions: Launc
 }
 
 /**
- * Download it in the browser, then pick it: after Couldn't download. From the user's own list,
- * picking waits for the tick ([TrustRow]).
+ * Download it in the browser, then pick it: after Couldn't download. While the list fails its check, picking waits
+ * for the tick ([TrustRow]).
  */
 @Composable
 private fun Yourself(f: FireInstall, label: String, source: String?, openPage: () -> Unit, actions: LauncherActions) {
@@ -504,7 +504,7 @@ private fun Yourself(f: FireInstall, label: String, source: String?, openPage: (
 
 /**
  * The bottom of each Fire OS step, for [pkg]: full width, so the confirm reads the same as Download directly's.
- * From the user's own list, the download waits for the tick ([TrustRow]).
+ * While the list fails its check, the download waits for the tick ([TrustRow]).
  */
 @Composable
 private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, modifier: Modifier) {
@@ -681,42 +681,42 @@ private fun WarningBadge() {
     }
 }
 
-/** The steps that can still download or pick the APK, which [OwnListCard] opens. */
-private val OWN_LIST_STEPS = setOf(null, FireInstall.Step.Checking, FireInstall.Step.Confirm, FireInstall.Step.NoDownload)
+/** The steps that can still download or pick the APK, which [UnverifiedCard] opens. */
+private val UNVERIFIED_STEPS = setOf(null, FireInstall.Step.Checking, FireInstall.Step.Confirm, FireInstall.Step.NoDownload)
 
 /**
- * A launcher from the user's own list ([FireInstall.list]): the list's address and the signer it names, since all
- * Tellyscope can check is that the APK matches them. In the error colours, above everything else on the step.
+ * A launcher from a list that failed its check ([FireInstall.list]): the list's address and the signer it names,
+ * since all Tellyscope can check is that the APK matches them. In the error colours, above everything else on the step.
  */
 @Composable
-private fun OwnListCard(list: String, signers: Set<String>) {
+private fun UnverifiedCard(list: String, signers: Set<String>) {
     val c = MaterialTheme.colorScheme
     Surface(shape = MaterialTheme.shapes.large, color = c.errorContainer, contentColor = c.onErrorContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Warning, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(Copy.OWN_LIST_TITLE.resolve(), style = MaterialTheme.typography.titleSmall)
+                Text(Copy.UNVERIFIED_TITLE.resolve(), style = MaterialTheme.typography.titleSmall)
             }
-            Text(Copy.OWN_LIST_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium)
+            Text(Copy.UNVERIFIED_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium)
             Column {
-                Text(Copy.OWN_LIST_LIST.resolve(), style = MaterialTheme.typography.labelMedium)
+                Text(Copy.UNVERIFIED_LIST.resolve(), style = MaterialTheme.typography.labelMedium)
                 Text(sourceName(list), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             }
             Column {
-                Text(Copy.OWN_LIST_SIGNER.resolve(), style = MaterialTheme.typography.labelMedium)
+                Text(Copy.UNVERIFIED_SIGNER.resolve(), style = MaterialTheme.typography.labelMedium)
                 signers.forEach { Text(groupedHex(it), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace) }
             }
         }
     }
 }
 
-/** A SHA-256 as [OwnListCard] shows it: groups of eight, four to a line. */
+/** A SHA-256 as [UnverifiedCard] shows it: groups of eight, four to a line. */
 internal fun groupedHex(sha: String) = sha.chunked(8).chunked(4).joinToString("\n") { it.joinToString(" ") }
 
 /**
- * I trust this list and its signer: the extra step before a launcher from the user's own list downloads or is
- * picked. Keyboard and D-pad focus start here rather than on the button, which needs a press of its own.
+ * I trust this list and its signer: the extra step before a launcher from a list that failed its check downloads or
+ * is picked. Keyboard and D-pad focus start here rather than on the button, which needs a press of its own.
  */
 @Composable
 private fun TrustRow(trusted: Boolean, onTrust: (Boolean) -> Unit) {
@@ -739,7 +739,7 @@ private fun TrustRow(trusted: Boolean, onTrust: (Boolean) -> Unit) {
         ) {
             Checkbox(trusted, onCheckedChange = null, Modifier.padding(8.dp))
             Spacer(Modifier.width(4.dp))
-            Text(Copy.OWN_LIST_TRUST.resolve(), style = MaterialTheme.typography.bodyLarge)
+            Text(Copy.UNVERIFIED_TRUST.resolve(), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

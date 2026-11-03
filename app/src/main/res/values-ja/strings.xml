@@ -153,11 +153,11 @@
     <string name="copy_pick_downloaded">ダウンロードしたファイルを選択</string>
     <string name="copy_pick_another">別のファイルを選択</string>
     <string name="copy_try_download_again">もう一度ダウンロード</string>
-    <string name="copy_own_list_title">追加したリストから</string>
-    <string name="copy_own_list_text">Tellyscope はこのアプリを保証できません。ファイルがこのリストと一致することだけを確認します。署名はリストの管理者が選んだものです。</string>
-    <string name="copy_own_list_list">リスト</string>
-    <string name="copy_own_list_signer">署名 (SHA-256)</string>
-    <string name="copy_own_list_trust">このリストとその署名を信頼する</string>
+    <string name="copy_unverified_title">ランチャーのリストを確認できませんでした</string>
+    <string name="copy_unverified_text">Tellyscope が公開したリストであることを確認できませんでした。数分以内にリストが変更された場合は、しばらくしてからもう一度お試しください。リストとその署名を信頼できる場合のみ、今すぐインストールしてください。</string>
+    <string name="copy_unverified_list">リスト</string>
+    <string name="copy_unverified_signer">署名 (SHA-256)</string>
+    <string name="copy_unverified_trust">このリストとその署名を信頼する</string>
     <string name="copy_service_off_text">%1$s のユーザー補助サービスがオフのため、テレビがホームを取り戻す可能性があります。</string>
     <string name="copy_open_again">もう一度開く</string>
     <string name="copy_undo">元に戻す</string>

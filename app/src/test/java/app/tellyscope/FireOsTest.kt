@@ -85,7 +85,7 @@ private const val RELEASES = "https://github.com/spocky/miproja1/releases"
 private val projectivy get() = RECOMMENDED.first { it.pkg == PROJECTIVY }.launcher
 
 /** A list the user added in place of the default source. */
-private const val OWN_LIST = "https://example.org/tv-lists/"
+private const val UNVERIFIED = "https://raw.githubusercontent.com/example/tellyscope/main/data/"
 
 private const val TAG = "4.72"
 private const val PAGE = "https://github.com/spocky/miproja1/releases/tag/$TAG"
@@ -146,8 +146,8 @@ class FireOsTest {
     private var source = FireTv()
     private val download = FakeDownload()
     private var vm: TellyscopeViewModel? = null
-    /** The source as the app reads it now: a test switches it mid-flow. */
-    private var ownList: String? = null
+    /** The launcher list's address while it fails its check, as the app reads it now: a test changes it mid-flow. */
+    private var unverified: String? = null
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
 
@@ -239,10 +239,10 @@ class FireOsTest {
         assertFalse(projectivy.copy(signers = emptySet()).accepts(PROJECTIVY, setOf(SIGNER)))
     }
 
-    /** [list]: the user's own list. */
+    /** [list]: the launcher list's address, as one that failed its check. */
     private fun TestScope.opened(list: String? = null): TellyscopeViewModel {
-        ownList = list
-        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download, ownList = { ownList })
+        unverified = list
+        val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download, unverified = { unverified })
         vm = v
         runCurrent()
         v.openLauncherFlow()
@@ -357,14 +357,14 @@ class FireOsTest {
         assertNull(v.state.value.device.launcher?.fire?.step)
     }
 
-    @Test fun fromTheUsersOwnListNothingDownloadsUntilTheyTrustIt() = with(test) {
-        val v = opened(list = OWN_LIST)
-        assertEquals(OWN_LIST, v.state.value.device.launcher?.fire?.list)
+    @Test fun fromAnUnverifiedListNothingDownloadsUntilTheyTrustIt() = with(test) {
+        val v = opened(list = UNVERIFIED)
+        assertEquals(UNVERIFIED, v.state.value.device.launcher?.fire?.list)
         v.checkLauncherApk(PROJECTIVY)
         runCurrent()
         val confirm = v.state.value.device.launcher?.fire
         assertEquals(FireInstall.Step.Confirm, confirm?.step)
-        assertEquals(OWN_LIST, confirm?.list)
+        assertEquals(UNVERIFIED, confirm?.list)
         assertTrue(confirm!!.gated)
 
         v.installLauncherApk()
@@ -378,9 +378,9 @@ class FireOsTest {
         assertEquals(listOf(PROJECTIVY), source.installs.map { it.packageName })
     }
 
-    @Test fun fromTheUsersOwnListDownloadDirectlyWaitsForTheTickToo() = with(test) {
+    @Test fun fromAnUnverifiedListDownloadDirectlyWaitsForTheTickToo() = with(test) {
         source = FireTv(androidTv, listOf(store, tvHome))
-        val v = opened(list = OWN_LIST)
+        val v = opened(list = UNVERIFIED)
         v.checkLauncherApk(PROJECTIVY)
         runCurrent()
         assertEquals(true, v.state.value.device.launcher?.fire?.gated)
@@ -393,8 +393,8 @@ class FireOsTest {
         assertEquals(1, download.fetched)
     }
 
-    @Test fun fromTheUsersOwnListThePickWaitsForTheTick() = with(test) {
-        val v = couldntDownload(list = OWN_LIST)
+    @Test fun fromAnUnverifiedListThePickWaitsForTheTick() = with(test) {
+        val v = couldntDownload(list = UNVERIFIED)
         v.pickedLauncherApk(Uri.parse("content://downloads/1"))
         runCurrent()
         assertTrue(source.installs.isEmpty())
@@ -407,7 +407,7 @@ class FireOsTest {
     }
 
     @Test fun dismissingAWrongPickAsksForTheTickAgain() = with(test) {
-        val v = couldntDownload(list = OWN_LIST)
+        val v = couldntDownload(list = UNVERIFIED)
         v.trustLauncherList(true)
         download.signedByDeveloper = false
         v.pickedLauncherApk(Uri.parse("content://downloads/1"))
@@ -416,29 +416,29 @@ class FireOsTest {
 
         v.dismissLauncherApk()
         val fire = v.state.value.device.launcher?.fire
-        assertEquals(OWN_LIST, fire?.list)
+        assertEquals(UNVERIFIED, fire?.list)
         assertEquals(true, fire?.gated)
     }
 
-    @Test fun switchingToTheirOwnListUnderConfirmChecksAgainFirst() = with(test) {
+    @Test fun failingTheCheckUnderConfirmChecksAgainFirst() = with(test) {
         val v = opened()
         v.checkLauncherApk(PROJECTIVY)
         runCurrent()
         assertEquals(false, v.state.value.device.launcher?.fire?.gated)
 
-        ownList = OWN_LIST
+        unverified = UNVERIFIED
         v.installLauncherApk()
         runCurrent()
         assertEquals(0, download.fetched)
         val fire = v.state.value.device.launcher?.fire
         assertEquals(FireInstall.Step.Confirm, fire?.step)
-        assertEquals(OWN_LIST, fire?.list)
+        assertEquals(UNVERIFIED, fire?.list)
         assertEquals(true, fire?.gated)
     }
 
-    @Test fun switchingToTheirOwnListAfterCouldntDownloadGatesThePick() = with(test) {
+    @Test fun failingTheCheckAfterCouldntDownloadGatesThePick() = with(test) {
         val v = couldntDownload()
-        ownList = OWN_LIST
+        unverified = UNVERIFIED
         v.pickedLauncherApk(Uri.parse("content://downloads/1"))
         runCurrent()
         assertTrue(source.installs.isEmpty())

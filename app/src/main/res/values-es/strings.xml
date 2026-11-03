@@ -153,11 +153,11 @@
     <string name="copy_pick_downloaded">Elegir el archivo descargado</string>
     <string name="copy_pick_another">Elegir otro archivo</string>
     <string name="copy_try_download_again">Volver a descargar</string>
-    <string name="copy_own_list_title">De una lista que añadiste</string>
-    <string name="copy_own_list_text">Tellyscope no puede responder por esta app. Solo comprueba que el archivo coincide con esta lista, y quien gestiona la lista eligió la firma.</string>
-    <string name="copy_own_list_list">Lista</string>
-    <string name="copy_own_list_signer">Firma (SHA-256)</string>
-    <string name="copy_own_list_trust">Confío en esta lista y en su firma</string>
+    <string name="copy_unverified_title">No se pudo verificar la lista de launchers</string>
+    <string name="copy_unverified_text">Tellyscope no pudo confirmar que esta es la lista que publicó. Si la lista cambió en los últimos minutos, vuelve a intentarlo más tarde. Instala ahora solo si confías en la lista y en su firma.</string>
+    <string name="copy_unverified_list">Lista</string>
+    <string name="copy_unverified_signer">Firma (SHA-256)</string>
+    <string name="copy_unverified_trust">Confío en esta lista y en su firma</string>
     <string name="copy_service_off_text">El servicio de accesibilidad de %1$s está desactivado, así que la TV puede recuperar Inicio.</string>
     <string name="copy_open_again">Volver a abrir</string>
     <string name="copy_undo">Deshacer</string>

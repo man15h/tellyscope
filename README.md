@@ -95,7 +95,7 @@ Tellyscope downloads two sets of public lists from GitHub, so they can change wi
 **What the lists can't do:**
 
 - Remove protection. The built-in protected list always wins, and `protected.json` can only add to it.
-- Choose an APK to install. The only launcher Tellyscope downloads is Projectivy, from the release page and signer pinned in the app; `launchers.json` only decides whether it's offered.
+- Choose an APK to install without a signature. Which launcher APK may be installed, where it downloads from and who must have signed it come only from `data/launchers.json`, and `data/` is signed by the maintainer. Your own lists can't change them. If `data/` fails its signature check, Tellyscope shows the list and its signer and asks before installing anything from it.
 - Turn on an accessibility service. The launchers allowed one are built into the app.
 
 ## Get it

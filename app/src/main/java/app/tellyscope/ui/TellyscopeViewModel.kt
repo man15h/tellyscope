@@ -217,15 +217,15 @@ data class FireInstall(
     /** The APK's size once it's downloaded or picked, for the steps' first line. */
     val size: Long? = null,
     /**
-     * The user's own list the launcher comes from ([SharedLists.list]), null for the default source. Then nothing
-     * downloads or installs until the user ticks that they trust it and its signer ([trusted]).
+     * `data/`'s address while it fails its check ([SharedLists.unverified]), null once it passes. Then nothing
+     * downloads or installs until the user ticks that they trust the list and its signer ([trusted]).
      */
     val list: String? = null,
     val trusted: Boolean = false,
 ) {
     enum class Step { Checking, Confirm, Downloading, Reading, Installing, WrongApk, NoDownload, Refused }
 
-    /** From the user's own list and not yet trusted: Download and install and Pick the downloaded file wait. */
+    /** From a list that failed its check and not yet trusted: Download and install and Pick the downloaded file wait. */
     val gated get() = list != null && !trusted
 }
 
@@ -429,8 +429,8 @@ class TellyscopeViewModel(
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
     /** A launcher's APK from its developer's GitHub, for Fire OS. */
     private val launcherDownload: LauncherDownload? = null,
-    /** The user's own list the launchers came from, or null for the default source. */
-    private val ownList: () -> String? = { SharedLists.list },
+    /** `data/`'s address while the launcher list fails its check, or null once it passes. */
+    private val unverified: () -> String? = { SharedLists.unverified },
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(UiState(now = clock()))
@@ -958,7 +958,7 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, _state.value.device.apps) } == true }
         if (fire != null) {
-            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = ownList()))) }
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = unverified()))) }
             return
         }
         if (RECOMMENDED.isEmpty()) {
@@ -987,7 +987,7 @@ class TellyscopeViewModel(
         val download = launcherDownload ?: return
         val launcher = apkLauncher(pkg) ?: return
         val store = _state.value.device.launcher?.let { it.fire?.store ?: true } ?: return
-        val list = ownList()
+        val list = unverified()
         launcherJob?.cancel()
         updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = pkg, fire = FireInstall(FireInstall.Step.Checking, store = store, list = list))) }
         launcherJob = viewModelScope.launch {
@@ -1005,18 +1005,18 @@ class TellyscopeViewModel(
     }
 
     /**
-     * The source changed since the flow read it ([FireInstall.list]), so the signers no longer match what the user
-     * saw or ticked: back to Checking against the new one, and nothing installs.
+     * The list's check changed since the flow read it ([FireInstall.list]), so the signers may not be what the user
+     * saw or ticked: back to Checking against the list as it is now, and nothing installs.
      */
     private fun listChanged(id: String, flow: LauncherFlow): Boolean {
         val fire = flow.fire ?: return false
-        val list = ownList()
+        val list = unverified()
         if (list == fire.list) return false
         checkLauncherApk(flow.pkg)
         return true
     }
 
-    /** The tick on a launcher from the user's own list ([FireInstall.list]): until it's on, nothing downloads or installs. */
+    /** The tick on a launcher from a list that failed its check ([FireInstall.list]): until it's on, nothing downloads or installs. */
     fun trustLauncherList(on: Boolean) {
         val id = _state.value.selectedId ?: return
         setFire(id) { if (it.list != null) it.copy(trusted = on) else it }

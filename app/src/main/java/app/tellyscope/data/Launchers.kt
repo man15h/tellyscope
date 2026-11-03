@@ -122,8 +122,11 @@ data class Shared(
     val labels: Map<String, String> = emptyMap(),
     val streaming: List<StreamingService> = emptyList(),
     val protected: Map<String, ProtectedReason> = emptyMap(),
-    /** The user's own list these came from ([DeviceLists.base]), or null for the default source. */
-    val list: String? = null,
+    /**
+     * `data/`'s address ([DeviceLists.base]) while it fails its check ([DeviceLists.verified]): a bad or missing
+     * signature, an older version, or a file that doesn't match the index. Null once it passes.
+     */
+    val unverified: String? = null,
 )
 
 /**
@@ -133,7 +136,8 @@ data class Shared(
  * launch, then the downloaded one; a list that can't be had keeps what was there. The app bundles
  * none, so before the first fetch they are empty; a build with `fixtures/` among its Java resources
  * (the tests) starts from those instead. The protected list goes on to [Protected.extra], on top of
- * the built-in one.
+ * the built-in one. `data/` that fails its signature check is still used, but [unverified] says so, and
+ * nothing installs from it without asking.
  */
 object SharedLists {
     private val _state = MutableStateFlow(seed())
@@ -141,8 +145,8 @@ object SharedLists {
     val launchers get() = _state.value.launchers
     val labels get() = _state.value.labels
     val streaming get() = _state.value.streaming
-    /** The user's own list the launchers came from, or null for the default: installing from it asks first. */
-    val list get() = _state.value.list
+    /** `data/`'s address while it fails its check, or null: installing a launcher from it asks first. */
+    val unverified get() = _state.value.unverified
 
     @Volatile private var data: DeviceLists? = null
     @Volatile private var source: DeviceLists? = null
@@ -152,8 +156,7 @@ object SharedLists {
         this.data = data
         source = lists
         if (fresh) reset(_state.value.copy(protected = emptyMap()))
-        _state.update { it.copy(list = lists.custom()?.let { lists.base }) }
-        apply(data::cachedShared, lists::cachedShared)
+        apply(data.cachedVerified(), data::cachedShared, lists::cachedShared)
         refresh()
     }
 
@@ -161,14 +164,18 @@ object SharedLists {
     suspend fun refresh() {
         val data = data ?: return
         val source = source ?: return
-        apply(data::shared, source::shared)
+        apply(data.verified(), data::shared, source::shared)
     }
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
     suspend fun logo(name: String): ByteArray? = source?.logo(name)
 
-    /** Launchers, labels and streaming from [data]; only the protected list from [source]. */
-    private suspend fun apply(data: suspend (String) -> String?, source: suspend (String) -> String?) {
+    /**
+     * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out
+     * first and set in the same update, so new launchers never sit behind an old [unverified].
+     */
+    private suspend fun apply(verified: Boolean, data: suspend (String) -> String?, source: suspend (String) -> String?) {
+        val base = this.data?.base
         val launchers = data("launchers")?.let(::parseLaunchers)
         val labels = data("labels")?.let(::parseLabels)
         val streaming = data("streaming")?.let(::parseStreaming)
@@ -179,6 +186,7 @@ object SharedLists {
                 labels = labels?.ifEmpty { null } ?: now.labels,
                 streaming = streaming?.ifEmpty { null } ?: now.streaming,
                 protected = protected?.ifEmpty { null } ?: now.protected,
+                unverified = if (verified) null else base,
             )
         }
         Protected.extra = _state.value.protected
