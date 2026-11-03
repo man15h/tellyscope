@@ -294,7 +294,9 @@ fun DeviceTabsScreen(
                 null
             }
             LazyColumn(
-                Modifier.fillMaxSize().padding(pad),
+                Modifier.fillMaxSize().padding(pad)
+                    // Sideways swipes step through Running, Installed and Built-in, as the buttons do.
+                    .then(if (tab == TvTab.Apps && !searching) Modifier.swipeTabs(appsTab.ordinal, AppsTab.entries.size) { appsTab = AppsTab.entries[it] } else Modifier),
                 state = list,
                 // No top padding: the Apps tabs pin at the list's top edge, flush under the bar; the hero carries the 4dp.
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
