@@ -23,6 +23,8 @@ import app.tellyscope.data.fireHomeBack
 import app.tellyscope.data.fireServiceHolder
 import app.tellyscope.data.fireServiceHome
 import app.tellyscope.data.firstHomeService
+import app.tellyscope.data.grant
+import app.tellyscope.data.mayTurnOn
 import app.tellyscope.data.switchHome
 import app.tellyscope.data.undoFireResetHome
 import app.tellyscope.data.undoHomeSwitch
@@ -56,6 +58,8 @@ private class LauncherTv(var home: String?) : AdbSession {
     val enabled = activities.keys.toMutableSet()
     val user = setOf(PROJECTIVY, FLAUNCHER)
     val services = mutableListOf<String>()
+    /** The versionName `dumpsys package` gives; the list's Projectivy has its service from 4.72. */
+    val versions = mutableMapOf(PROJECTIVY to "4.72", FLAUNCHER to "0.18.0")
     /** False: `am start` can't open a home screen, as on a TV that refuses it. */
     var opens = true
     val ran = mutableListOf<String>()
@@ -72,6 +76,9 @@ private class LauncherTv(var home: String?) : AdbSession {
             command.startsWith("pm disable-user") -> ok("Package $pkg new state: disabled-user\n").also { enabled -= pkg }
             command.startsWith("pm enable") -> ok("Package $pkg new state: enabled\n").also { enabled += pkg }
             command.startsWith("cmd package query-services") -> ok("$PROJECTIVY_SERVICE\n")
+            command.startsWith("dumpsys package ") -> command.removePrefix("dumpsys package ").let { p ->
+                ok(versions[p]?.let { "Packages:\n  Package [$p] (1a2b3c):\n    versionCode=1 minSdk=21 targetSdk=34\n    versionName=$it\n" }.orEmpty())
+            }
             command.startsWith("settings get secure enabled_accessibility_services") -> ok(services.joinToString(":").ifEmpty { "null" } + "\n")
             command.startsWith("settings put secure enabled_accessibility_services") -> ok("").also { services.clear(); services += quoted.split(':') }
             command.startsWith("settings delete secure enabled_accessibility_services") -> ok("").also { services.clear() }
@@ -178,6 +185,29 @@ class HomeSwitchTest {
         assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
         undo(tv, entry)
         assertEquals(TV_HOME, tv.home)
+        assertTrue(tv.services.isEmpty())
+    }
+
+    /** The list's version is a minimum: an older copy, or one with no readable version, gets no service. */
+    @Test fun belowTheListsVersionTheServiceStaysOff() = runTest {
+        for (version in listOf("4.71", "unknown", null)) {
+            val tv = LauncherTv(home = TV_HOME).apply { if (version == null) versions -= PROJECTIVY else versions[PROJECTIVY] = version }
+            assertFalse(version.toString(), Actions(tv).mayTurnOn(PROJECTIVY))
+            assertFalse(version.toString(), Actions(tv).grant(PROJECTIVY_SERVICE))
+            assertTrue(version.toString(), tv.services.isEmpty())
+        }
+        val tv = LauncherTv(home = TV_HOME).apply { versions[PROJECTIVY] = "4.80" }
+        assertTrue(Actions(tv).mayTurnOn(PROJECTIVY))
+    }
+
+    /** Undo goes through [grant] too: a copy downgraded below the list's version doesn't get the service back. */
+    @Test fun undoBelowTheListsVersionLeavesTheServiceOff() = runTest {
+        val tv = LauncherTv(home = PROJECTIVY).apply { services += PROJECTIVY_SERVICE }
+        val entry = switch(tv, FLAUNCHER)
+        assertTrue(tv.services.isEmpty())
+        tv.versions[PROJECTIVY] = "4.70"
+        undo(tv, entry)
+        assertEquals(PROJECTIVY, tv.home)
         assertTrue(tv.services.isEmpty())
     }
 

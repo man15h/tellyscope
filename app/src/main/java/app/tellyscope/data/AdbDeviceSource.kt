@@ -443,8 +443,10 @@ class AdbDeviceSource(
         val own = homeOptions?.let { builtIns(system, disabled, it) }.orEmpty()
         val back = homeOptions?.current?.takeIf { it !in system }
             ?.let { homeBackTarget(it, book.entries(key(deviceId)), own) }
+        // Only launchers at their list's version or newer are offered the service.
+        val offered = serviceLaunchers.filterTo(HashSet()) { pkg -> listed.any { it.name == pkg } && Actions(shell).mayTurnOn(pkg) }
         // Its service off, the TV's own launcher may still answer Home: the row offers Turn on.
-        val serviceOff = back != null && homeOptions?.current?.takeIf { it in serviceLaunchers }
+        val serviceOff = back != null && homeOptions?.current?.takeIf { it in offered }
             ?.let { Actions(shell).homeService(it) }?.let { !Actions(shell).serviceOn(it) } == true
         // The card stays until Got it, which notes it on the switch; the next switch shows it again.
         val note = serviceOff && back?.reverses?.let { id -> book.entries(key(deviceId)).firstOrNull { it.id == id } }
@@ -478,7 +480,7 @@ class AdbDeviceSource(
                 answersHome = homeOptions?.let { p.name == it.current || p.name in it.others } == true,
                 builtInLauncher = p.name in system && (p.name == homeOptions?.current || p.name in own),
                 homeBack = back?.takeIf { p.name == homeOptions?.current }?.let { names[it.pkg]?.label ?: AppNames.fallback(it.pkg) },
-                homeService = p.name in serviceLaunchers,
+                homeService = p.name in offered,
                 homeServiceOff = serviceOff && p.name == homeOptions?.current,
                 homeServiceNote = note && p.name == homeOptions?.current,
                 listKeep = p.name in keep,
@@ -536,7 +538,7 @@ class AdbDeviceSource(
     override suspend fun homeServiceOn(deviceId: String, packageName: String): Unit = busy(deviceId, reread = true) {
         val actions = Actions(session(deviceId))
         val label = labels[packageName] ?: AppNames.fallback(packageName)
-        val service = packageName.takeIf { it in serviceLaunchers }?.let { actions.homeService(it) }
+        val service = packageName.takeIf { actions.mayTurnOn(it) }?.let { actions.homeService(it) }
             ?: throw UiTextException(UiText(R.string.data_no_service, label))
         if (!actions.grant(service)) throw UiTextException(serviceNotOn(label))
         // Undo of the switch to it turns it off again, as if the switch had turned it on.
@@ -596,12 +598,13 @@ class AdbDeviceSource(
         fireHomes -= deviceId
         val key = key(deviceId)
         val actions = Actions(session(deviceId))
-        if (packageName in serviceLaunchers && fireOs(deviceId, actions.installed(FIRE_TV_LAUNCHER))) {
+        val offered = setOfNotNull(packageName.takeIf { actions.mayTurnOn(it) })
+        if (packageName in offered && fireOs(deviceId, actions.installed(FIRE_TV_LAUNCHER))) {
             return fireServiceHome(actions, packageName, withService, ::labelOf) { previous ->
                 book.record(key, System.currentTimeMillis(), Action.Home, packageName, labelOf(packageName), Action.Enable.takeIf { previous.isNotEmpty() }, undoing, previous)
             }
         }
-        return switchHome(actions, packageName, withService, serviceLaunchers, listedServiceLaunchers, ::labelOf, ::reasonText) { pkg, undo, previous ->
+        return switchHome(actions, packageName, withService, offered, listedServiceLaunchers, ::labelOf, ::reasonText) { pkg, undo, previous ->
             book.record(key, System.currentTimeMillis(), Action.Home, pkg, labelOf(packageName), undo, undoing, previous)
         }
     }
@@ -1383,12 +1386,19 @@ internal suspend fun fireHomeBack(
 }
 
 /**
- * Turns accessibility [service] on, only for a launcher in [SharedLists.serviceLaunchers]. Every path
- * that turns one on comes here, so neither an unsigned list nor a saved record can name another;
+ * Whether [pkg]'s accessibility service may go on: it's in [SharedLists.serviceLaunchers], and the TV
+ * has its list version or newer ([hasServiceFrom]). Below that it isn't offered, and [grant] refuses.
+ */
+internal suspend fun Actions.mayTurnOn(pkg: String): Boolean =
+    pkg in SharedLists.serviceLaunchers && SharedLists.serviceFrom(pkg)?.let { hasServiceFrom(it, versionName(pkg)) } == true
+
+/**
+ * Turns accessibility [service] on, only when [mayTurnOn] says so. Every path that turns one on comes
+ * here, so neither an unsigned list, a saved record nor an older copy of the launcher can get one;
  * false for any other, as for a TV that refused.
  */
 internal suspend fun Actions.grant(service: String): Boolean =
-    service.substringBefore('/') in SharedLists.serviceLaunchers && setService(service, true)
+    mayTurnOn(service.substringBefore('/')) && setService(service, true)
 
 /**
  * The rest of [switch]'s Undo once its old launcher is on again: Home back to that launcher, the

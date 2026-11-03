@@ -9,12 +9,14 @@ import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.SharedLists
+import app.tellyscope.data.hasServiceFrom
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseProtected
 import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -134,5 +136,22 @@ class LaunchersTest {
         } finally {
             SharedLists.reseed() // the seed lists, for the tests after this one
         }
+    }
+
+    /** `"accessibility"` is the minimum version that has the service: equal and newer pass, older and junk don't. */
+    @Test fun theServiceVersionIsAMinimum() {
+        assertTrue(hasServiceFrom("4.72", "4.72"))
+        assertTrue(hasServiceFrom("4.72", "4.72.0"))
+        assertTrue(hasServiceFrom("4.72", "4.80"))
+        assertTrue(hasServiceFrom("4.72", "5.0"))
+        assertTrue(hasServiceFrom("1.0.175", "1.0.200-beta"))
+        assertFalse(hasServiceFrom("4.72", "4.71"))
+        assertFalse(hasServiceFrom("4.72", "4.7"))
+        assertFalse(hasServiceFrom("1.0.175", "1.0.99"))
+        assertFalse(hasServiceFrom("4.72", null))
+        assertFalse(hasServiceFrom("4.72", ""))
+        assertFalse(hasServiceFrom("4.72", "beta-4.72"))
+        assertFalse(hasServiceFrom("4.72", "99999999999999999999"))
+        assertFalse(hasServiceFrom("x", "4.72"))
     }
 }

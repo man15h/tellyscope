@@ -187,6 +187,12 @@ class Actions(private val shell: AdbShell) {
     suspend fun homeService(pkg: String): String? =
         activitiesIn(shell.shell(Commands.A11Y_SERVICES).output).firstOrNull { it.substringBefore('/') == pkg }
 
+    /** [pkg]'s versionName as the TV has it installed; null when it isn't, or names none. */
+    suspend fun versionName(pkg: String): String? {
+        require(PACKAGE.matches(pkg)) { "not a package name: $pkg" }
+        return Sideload.parseInstalled(shell.shell("dumpsys package $pkg").output, pkg)?.versionName
+    }
+
     suspend fun serviceOn(service: String): Boolean = HomeServices.has(shell.shell(Commands.A11Y_ON).output, service)
 
     /**
