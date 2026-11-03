@@ -484,9 +484,13 @@ class AdbDeviceSource(
         }.sortedBy { it.label.lowercase() }
     }
 
+    /** The last address and Wi-Fi read per TV: re-read only while Advanced shows it, since old TVs answer with all of `dumpsys wifi`. */
+    private val addresses = ConcurrentHashMap<String, Pair<Parsers.Address?, Parsers.Wifi?>>()
+
     override suspend fun network(deviceId: String): NetworkInfo {
         val shell = session(deviceId)
-        val (address, wifi) = NetworkStats(shell).address()
+        val cached = addresses[deviceId]?.takeIf { statsFor != (deviceId to StatsProfile.ADVANCED) }
+        val (address, wifi) = cached ?: NetworkStats(shell).address().also { addresses[deviceId] = it }
         val packages = links[deviceId]?.stats?.value?.packages.orEmpty()
         return NetworkInfo(
             iface = address?.iface.orEmpty(),

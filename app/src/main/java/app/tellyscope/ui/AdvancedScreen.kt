@@ -277,7 +277,7 @@ private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: 
             )
         }
         Speeds(s, MaterialTheme.typography.titleSmall)
-        Graph(recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
+        Graph(recent.map { it.at }, recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
         // The busiest apps only when the CPU is busy enough for them to matter.
         val busiest = rows.filter { it.cpu >= 1 }.sortedByDescending { it.cpu }.take(3).takeIf { s.cpuPercent > 33 }.orEmpty()
         if (busiest.isNotEmpty()) {
@@ -495,7 +495,7 @@ private fun CpuCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?) {
                 }
             }
         }
-        Graph(recent.map { it.cpuPercent.toFloat() }, max = 100f)
+        Graph(recent.map { it.at }, recent.map { it.cpuPercent.toFloat() }, max = 100f)
         s.cores.chunked(2).forEachIndexed { row, pair ->
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 pair.forEachIndexed { i, pct ->
@@ -524,7 +524,7 @@ private fun RamCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?) {
             Text(stringResource(R.string.advanced_percent, s.ramUsedMb * 100 / total), style = MaterialTheme.typography.headlineMedium.copy(fontFeatureSettings = "tnum"))
             Text(Copy.gbOf(s.ramUsedMb / 1024.0, s.ramTotalMb / 1024.0).resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         }
-        Graph(recent.map { it.ramUsedMb * 100f / it.ramTotalMb.coerceAtLeast(1) }, max = 100f)
+        Graph(recent.map { it.at }, recent.map { it.ramUsedMb * 100f / it.ramTotalMb.coerceAtLeast(1) }, max = 100f)
         // In use, then cache the TV gives back when asked, then memory holding nothing.
         val parts = listOf(
             Triple(R.string.advanced_in_use, s.ramUsedMb, c.primary),
@@ -574,7 +574,7 @@ private fun NetworkCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, 
                 else -> null
             }?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant) }
         }
-        Graph(recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
+        Graph(recent.map { it.at }, recent.map { it.rxBytesPerSec?.toFloat() ?: 0f }, recent.map { it.txBytesPerSec?.toFloat() ?: 0f })
         val rx = s.rxTotalBytes
         val tx = s.txTotalBytes
         if (rx != null && tx != null) {
@@ -591,10 +591,11 @@ private fun NetworkCard(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, 
 
 /**
  * The last minute: [area] filled, [line] drawn over it, against [max] or the highest reading.
- * Readings fill from the right, so a graph that just started grows out of "now".
+ * Each reading sits at its time in [at], the newest at "now", so a graph that just started grows
+ * out of the right edge and readings taken further apart sit further apart.
  */
 @Composable
-private fun Graph(area: List<Float>, line: List<Float>? = null, max: Float? = null) {
+private fun Graph(at: List<Long>, area: List<Float>, line: List<Float>? = null, max: Float? = null) {
     val c = MaterialTheme.colorScheme
     val fill = c.primary.copy(alpha = 0.25f)
     val edge = c.primary
@@ -602,8 +603,9 @@ private fun Graph(area: List<Float>, line: List<Float>? = null, max: Float? = nu
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Canvas(Modifier.fillMaxWidth().height(56.dp)) {
             val top = max ?: ((area + line.orEmpty()).maxOrNull()?.takeIf { it > 0f } ?: 1f)
+            val now = at.lastOrNull() ?: 0L
             fun points(v: List<Float>) = v.mapIndexed { i, y ->
-                Offset(size.width * (RECENT_READINGS - v.size + i) / (RECENT_READINGS - 1), size.height * (1f - (y / top).coerceIn(0f, 1f)))
+                Offset(size.width * (1f - (now - at[i]).toFloat() / RECENT_MS), size.height * (1f - (y / top).coerceIn(0f, 1f)))
             }
             val a = points(area)
             if (a.size >= 2) {

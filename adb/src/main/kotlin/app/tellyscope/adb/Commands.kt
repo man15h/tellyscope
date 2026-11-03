@@ -29,7 +29,7 @@ internal object Commands {
     ).batch()
 
     /**
-     * Every 10 s on Advanced: the TV's address and hardware address, then its Wi-Fi. `cmd wifi`
+     * Every 10 s while Advanced is open (once per TV elsewhere): the TV's address and hardware address, then its Wi-Fi. `cmd wifi`
      * came in Android 11; older TVs print the same facts on `dumpsys wifi`'s `mWifiInfo` line.
      */
     val ADDRESS = listOf(

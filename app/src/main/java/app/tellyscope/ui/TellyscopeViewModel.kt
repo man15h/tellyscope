@@ -112,8 +112,8 @@ data class ScanUi(
     val offWifi get() = noLan && hits.isEmpty()
 }
 
-/** Readings in [DeviceUi.recent] and across Advanced's graphs: a minute at one every 2 s. */
-const val RECENT_READINGS = 30
+/** How far back [DeviceUi.recent] and Advanced's graphs reach, by [Snapshot.at]. */
+const val RECENT_MS = 60_000L
 
 data class DeviceUi(
     val snapshot: Snapshot? = null,
@@ -773,7 +773,7 @@ class TellyscopeViewModel(
         liveJob = viewModelScope.launch {
             source.live(id).collect { snap ->
                 lastSnapshot[id] = snap
-                _state.update { it.copy(device = it.device.copy(snapshot = snap, recent = (it.device.recent + snap).takeLast(RECENT_READINGS))) }
+                _state.update { it.copy(device = it.device.copy(snapshot = snap, recent = (it.device.recent + snap).filter { r -> snap.at - r.at <= RECENT_MS })) }
             }
         }
         // One read of the app list per open: Apps and the TV's list both use it. The list
