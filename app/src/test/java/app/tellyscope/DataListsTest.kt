@@ -2,7 +2,6 @@
 
 package app.tellyscope
 
-import app.tellyscope.data.Png
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
@@ -33,9 +32,6 @@ class DataListsTest {
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
-
-    /** Logos are drawn at four times their size in dp and have to fit the smallest pill, 72 × 30 dp. */
-    private val logoMax = 72 * 4 to 30 * 4
 
     private fun text(name: String) = File(data, name).readText()
     private fun schema1(name: String): JSONObject = JSONObject(text(name)).also { assertEquals("$name: schema", 1, it.optInt("schema")) }
@@ -79,11 +75,11 @@ class DataListsTest {
         assertNone(errors)
     }
 
-    @Test fun streamingAndLogos() {
+    /** The logos themselves live in tellyscope-devices, which checks them; here only their names. */
+    @Test fun streaming() {
         val errors = mutableListOf<String>()
         val names = mutableSetOf<String>()
         val packages = mutableSetOf<String>()
-        val used = mutableSetOf<String>()
         for (g in schema1("streaming.json").getJSONArray("groups").objects()) {
             for (s in g.getJSONArray("services").objects()) {
                 val where = "streaming.json: '${s.optString("name")}'"
@@ -103,33 +99,14 @@ class DataListsTest {
                 }
                 val logo = s.optString("logo")
                 if (!logoName.matches(logo)) errors += "$where: 'logo' must be lowercase letters and digits"
-                else if (!File(data, "logos/$logo.png").isFile) errors += "$where: logos/$logo.png is missing"
-                used += logo
                 if (!names.add(s.optString("name"))) errors += "$where: listed twice"
             }
         }
         if (errors.isEmpty()) assertEquals("streaming.json: the app drops none", names.size, parseStreaming(text("streaming.json")).size)
-
-        val rows = Regex("^\\| *([a-z0-9]+) *\\|", RegexOption.MULTILINE).findAll(text("logos/SOURCES.md")).map { it.groupValues[1] }.toSet()
-        for (f in File(data, "logos").listFiles().orEmpty().sortedBy { it.name }) {
-            if (f.name == "SOURCES.md") continue
-            val where = "logos/${f.name}"
-            if (f.nameWithoutExtension !in rows) errors += "$where: needs a row in logos/SOURCES.md with its source and licence"
-            if (f.extension != "png" || !logoName.matches(f.nameWithoutExtension)) {
-                errors += "$where: logos are <lowercase letters and digits>.png"
-                continue
-            }
-            val b = f.readBytes()
-            val size = Png.size(b)
-            if (size == null) errors += "$where: not a PNG"
-            else if (size.first > logoMax.first || size.second > logoMax.second) errors += "$where: ${size.first}x${size.second} is over ${logoMax.first}x${logoMax.second}"
-            if (!Png.ok(b)) errors += "$where: the app won't show it (Png.ok)"
-            if (f.nameWithoutExtension !in used) errors += "$where: no service in streaming.json uses it"
-        }
         assertNone(errors)
     }
 
-    /** `index.json` names every list and logo with its sha256, as the app checks each download. */
+    /** `index.json` names every list with its sha256, as the app checks each download, and nothing else. */
     @Test fun theIndexMatchesTheFiles() {
         val errors = mutableListOf<String>()
         val index = parseIndex(text("index.json"))
@@ -137,8 +114,7 @@ class DataListsTest {
             assertNone(listOf("index.json: not a schema 1 index the app reads"))
             return
         }
-        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" } +
-            File(data, "logos").listFiles().orEmpty().filter { it.extension == "png" }.associate { "logo ${it.nameWithoutExtension}" to "logos/${it.name}" }
+        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" }
         val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" }
         for ((name, path) in expected) {
             val entry = listed[name]
