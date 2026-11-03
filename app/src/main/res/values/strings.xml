@@ -142,6 +142,7 @@
     <!-- Installing a launcher's APK (Fire OS, or Download directly): from its developer's GitHub, installed over adb. %1$s the launcher's name -->
     <string name="copy_install_launcher">Install %1$s</string>
     <string name="copy_fire_install_text">A home screen without ads. Tellyscope installs it on the TV for you; there\'s nothing to do on the TV.</string>
+    <string name="copy_fire_pick_text">A home screen without ads. Download it in your browser, then pick the file here. Tellyscope installs it on the TV.</string>
     <!-- %1$s the app's name -->
     <string name="copy_downloads_from">Tellyscope downloads %1$s from the developer\'s own release page:</string>
     <!-- %1$s the version, %2$s its size (copy_size_*) -->

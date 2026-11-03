@@ -4,7 +4,7 @@
 
 Render the screenshot tests first, then run this from the repository root:
 
-    ./gradlew :app:testDebugUnitTest --tests '*ScreenshotTest' -Proborazzi.test.record=true
+    ./gradlew :app:testGithubDebugUnitTest --tests '*ScreenshotTest' -Proborazzi.test.record=true
     python3 docs/screenshots/frame.py
 
 Needs Pillow (pip install pillow).

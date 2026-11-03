@@ -108,6 +108,7 @@
     <string name="copy_not_installed_text">Play Маркет на телевизоре закрылся до завершения установки. Если там было написано, что приложение недоступно для этого телевизора, выберите другой лаунчер.</string>
     <string name="copy_install_launcher">Установить %1$s</string>
     <string name="copy_fire_install_text">Главный экран без рекламы. Tellyscope сам установит его на телевизор, на телевизоре ничего делать не нужно.</string>
+    <string name="copy_fire_pick_text">Главный экран без рекламы. Скачайте его в браузере, затем выберите файл здесь. Tellyscope установит его на телевизор.</string>
     <string name="copy_downloads_from">Tellyscope скачивает %1$s со страницы релизов самого разработчика:</string>
     <string name="copy_release">Релиз %1$s · %2$s</string>
     <string name="copy_where_from">Откуда он берется</string>
