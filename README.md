@@ -127,10 +127,10 @@ You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.
 
 ## From the community
 
-Videos other people have made about Tellyscope and cleanyourtv, the project its lists come from.
+Videos other people have made about Tellyscope.
 
 - [De-Bloat and Block Ads on Your Google TV With These Two Apps!](https://www.youtube.com/watch?v=TBu0qgXmYFo) by [Shane Craig](https://www.youtube.com/@shanecraigtech)
-- [I Cleaned Up My Android TV Using AI! Removed Bloatware, Ads & More](https://www.youtube.com/watch?v=HVfzeM6rFg8) by [TabSheer Tech & Reviews](https://www.youtube.com/@TabsheerTech)
+- [This FREE App Cleans Up Your Firestick — NO PC Needed!](https://www.youtube.com/watch?v=h_TcOpugax4) by [TechDoctorUK](https://www.youtube.com/@TechDoctorUK)
 
 Made a video or written a post about Tellyscope? [Open an issue](../../issues/new) with the link and we'll add it here.
 
