@@ -34,17 +34,29 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
     <td><img src="docs/screenshots/send.png" alt="Sending a video from the phone to the TV's Movies folder"></td>
     <td><img src="docs/screenshots/tweaks.png" alt="Tweaks: the Home screen card with Google TV Home as Current and Get another launcher, then ad-blocking Private DNS on, faster animations and clear caches"></td>
     <td><img src="docs/screenshots/home.png" alt="Make Projectivy Launcher the home screen: the confirm says Google TV Home, the TV's built-in launcher, is the only one ever turned off"></td>
-    <td><img src="docs/screenshots/advanced.png" alt="Advanced monitor: CPU and RAM by app, the TV's network connection, and the apps' open connections"></td>
+    <td><img src="docs/screenshots/this-tv.png" alt="Advanced monitor, This TV: CPU, memory and storage rings, the network's last minute, and the TV's facts"></td>
   </tr>
   <tr>
     <td align="center"><sub>Send files to the TV</sub></td>
     <td align="center"><sub>Block ads, tweak the TV, add a launcher</sub></td>
     <td align="center"><sub>Make a launcher Home</sub></td>
-    <td align="center"><sub>Advanced monitor: what is using the CPU, RAM and network</sub></td>
+    <td align="center"><sub>Advanced monitor: the TV at a glance</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/cpu.png" alt="Advanced monitor, CPU: the last minute's CPU use over the apps using it most"></td>
+    <td><img src="docs/screenshots/ram.png" alt="Advanced monitor, RAM: memory in use over the apps holding the most"></td>
+    <td><img src="docs/screenshots/network.png" alt="Advanced monitor, Network: the TV's traffic and connection, then the data each app has used"></td>
+    <td><img src="docs/screenshots/shell.png" alt="Shell: a terminal on the TV after getprop and pm list packages"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>What is using the CPU</sub></td>
+    <td align="center"><sub>What is using the RAM</sub></td>
+    <td align="center"><sub>What is using the network</sub></td>
+    <td align="center"><sub>A shell on the TV</sub></td>
   </tr>
 </table>
 
-<sub>Rendered from the app's screenshot tests with sample data. The Install dialog is drawn to match the app, and Advanced monitor joins parts of its longer page.</sub>
+<sub>Rendered from the app's screenshot tests with sample data. The Install dialog is drawn to match the app.</sub>
 
 ## What it does
 

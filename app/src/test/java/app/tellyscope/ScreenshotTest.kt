@@ -38,6 +38,14 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithTag
 import app.tellyscope.adb.ApkInfo
+import app.tellyscope.adb.ShellChannel
+import app.tellyscope.adb.ShellPacket
+import app.tellyscope.adb.TvShell
+import app.tellyscope.ui.ShellTerminal
+import androidx.compose.ui.test.hasClickAction
+import java.util.concurrent.LinkedBlockingQueue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.InstallRefusal
@@ -1720,6 +1728,48 @@ class ScreenshotTest {
     @Test fun readme_home() {
         shot("30_readme_home", screen = true) { DeviceTabsScreen(homeState(home = false, pending = "com.spocky.projengmenu" to Action.Home), DeviceActions(), startTab = TvTab.Tweaks) }
         compose.onNodeWithText(Copy.makeHomeTitle("Projectivy Launcher").text()).assertExists()
+    }
+
+    // Advanced's tabs on a minute of stats, so the graphs have a line.
+    private fun readmeAdvanced() = deviceState {
+        val recent = (29 downTo 0).map { fake.snapshot(xgimi.ip).copy(at = now - it * 2_000L) }
+        copy(snapshot = recent.last(), recent = recent)
+    }
+    private fun advancedTab(label: String) = { compose.onAllNodes(hasText(label) and hasClickAction()).onFirst().performClick(); Unit }
+    @Test fun readme_thisTv() = shot("31_readme_this_tv") { AdvancedScreen(readmeAdvanced(), back = {}) }
+    @Test fun readme_cpu() = shot("32_readme_cpu", before = advancedTab("CPU")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+    @Test fun readme_ram() = shot("33_readme_ram", before = advancedTab("RAM")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+    @Test fun readme_network() = shot("34_readme_network", before = advancedTab("Network")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+
+    /** A shell on the TV that answers each command from [replies] and ends it with TvShell's marker line. */
+    private class ReadmeChannel(val replies: Map<String, String>) : ShellChannel {
+        private val frames = LinkedBlockingQueue<ShellPacket>()
+        override fun read(): ShellPacket = frames.take()
+        override fun write(bytes: ByteArray) {
+            val command = String(bytes).substringAfter("{ ").substringBefore("\n}")
+            replies[command]?.let { frames.add(ShellPacket.Out("$it\n".toByteArray())) }
+            frames.add(ShellPacket.Out("\u001ETELLYSCOPE 0 /\n".toByteArray()))
+        }
+        override fun close() {}
+    }
+
+    // Shell after three read-only commands.
+    @Test fun readme_shell() {
+        val xgimiApps = runBlocking { fake.apps(xgimi.ip) }.map { it.packageName }.filter { it.startsWith("com.xgimi.") }.sorted()
+        val replies = linkedMapOf(
+            "getprop ro.product.model" to "XGIMI Horizon Pro",
+            "getprop ro.build.version.release" to "11",
+            "pm list packages xgimi" to xgimiApps.joinToString("\n") { "package:$it" },
+        )
+        val channel = ReadmeChannel(replies)
+        val terminal = ShellTerminal(TvShell({ throw IOException("no one-shot shell") }) { channel }, CoroutineScope(Dispatchers.IO))
+        for (command in replies.keys) {
+            terminal.submit(command, online = true)
+            repeat(200) { if (terminal.state.value.running) Thread.sleep(10) }
+            assertFalse(terminal.state.value.running)
+        }
+        shot("35_readme_shell", before = advancedTab("Shell")) { AdvancedScreen(readmeAdvanced(), back = {}, terminal = terminal) }
+        compose.onAllNodesWithText("package:com.xgimi.ota").onFirst().assertExists()
     }
 
     private fun homeCard(dark: Boolean) {
