@@ -113,6 +113,15 @@ You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.
 3. Open Tellyscope, pick your TV's brand under **Add your TV**, and tap **Connect** when your TV shows up. The app shows the exact menu names for your brand.
 4. On the TV, check the key matches the one Tellyscope shows, tick **Always allow from this computer** and press **Allow**. With wireless debugging, type the 6-digit pairing code instead.
 
+## From the community
+
+Videos and posts other people have made about Tellyscope.
+
+[![VIDEO_TITLE](https://img.youtube.com/vi/VIDEO_ID/hqdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID)<br>
+**VIDEO_TITLE** by CREATOR
+
+Made a video or written a post about Tellyscope? [Open an issue](../../issues/new) with the link and we'll add it here.
+
 ## Building
 
 Modules: `:app` (the phone app, Kotlin and Jetpack Compose), `:adb` (pure Kotlin ADB library on [Kadb](https://github.com/flyfishxu/Kadb)), `app/src/helper` (the on-TV label helper) and `:cli` (a desktop smoke test, not shipped). You need JDK 25 and the Android SDK with platform 37.
