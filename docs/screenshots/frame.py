@@ -26,6 +26,11 @@ SHOTS = {
     "send": "25_readme_send",
     "tweaks": "29_readme_tweaks",
     "home": "30_readme_home",
+    "this-tv": "31_readme_this_tv",
+    "cpu": "32_readme_cpu",
+    "ram": "33_readme_ram",
+    "network": "34_readme_network",
+    "shell": "35_readme_shell",
 }
 
 DP = 3  # the tests render at xxhdpi
