@@ -231,7 +231,8 @@ jobs:
           gh release create "v$V" "$APK" --title "Tellyscope $V" --notes-file notes.md --verify-tag
 
   # Play: the same tag built as the play flavor, an app bundle signed with the
-  # release key, attached to the release prod just published. Its own job, so a
+  # release key, kept as an artifact of this run for upload to Play Console. Never
+  # attached to the release, so nobody downloads it by mistake. Its own job, so a
   # failed bundle never holds back the APK.
   play:
     needs: prod
@@ -239,8 +240,6 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     timeout-minutes: 30
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -270,11 +269,15 @@ jobs:
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: ./gradlew :app:bundlePlayRelease --console=plain
 
-      - name: Attach to the release
+      - name: Rename
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           V: ${{ needs.prod.outputs.version }}
-        run: |
-          AAB="Tellyscope-$V-play.aab"
-          cp app/build/outputs/bundle/playRelease/app-play-release.aab "$AAB"
-          gh release upload "v$V" "$AAB"
+        run: cp app/build/outputs/bundle/playRelease/app-play-release.aab "Tellyscope-$V-play.aab"
+
+      - name: Keep as a run artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Tellyscope-${{ needs.prod.outputs.version }}-play
+          path: Tellyscope-${{ needs.prod.outputs.version }}-play.aab
+          if-no-files-found: error
+          retention-days: 90  # the most GitHub allows
