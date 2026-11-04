@@ -117,8 +117,8 @@ You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.
 
 Videos and posts other people have made about Tellyscope.
 
-[![VIDEO_TITLE](https://img.youtube.com/vi/VIDEO_ID/hqdefault.jpg)](https://www.youtube.com/watch?v=VIDEO_ID)<br>
-**VIDEO_TITLE** by CREATOR
+[![De-Bloat and Block Ads on Your Google TV With These Two Apps!](https://img.youtube.com/vi/TBu0qgXmYFo/hqdefault.jpg)](https://www.youtube.com/watch?v=TBu0qgXmYFo)<br>
+**De-Bloat and Block Ads on Your Google TV With These Two Apps!** by Shane Craig
 
 Made a video or written a post about Tellyscope? [Open an issue](../../issues/new) with the link and we'll add it here.
 
