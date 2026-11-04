@@ -1,6 +1,6 @@
 # <img src="docs/logo/icon.svg" alt="" width="64" height="64" align="middle"> Tellyscope
 
-Debloat your Android TV, install apps, and browse and transfer files on it, all from your phone. No root, no PC.
+Debloat your Android TV, install apps, and browse and transfer files on it from your phone. It works without root or a computer.
 
 <p>
   <img src="https://img.shields.io/badge/size-3%20MB-00696B" alt="3 MB">
@@ -81,7 +81,7 @@ Debloating a TV can break it if done carelessly. Tellyscope keeps to these rules
 2. **Record before changing.** Before its first change on a TV, Tellyscope notes which apps were already off. Every change goes into that TV's History with an Undo (except uninstalls), and **Restore everything** turns back on only what Tellyscope turned off.
 3. **Protected list.** Apps the TV needs to boot, update, stay on Wi-Fi, show web pages, show its home screen or take input can't be stopped or disabled, with no override. A TV's list can only add warnings, never remove protection. Packages only one maker's TVs have are protected from tellyscope-devices' `protected.json`, which can only add to the built-in list. When you switch home screens, the old launcher is turned off only after Home is checked to open the new one.
 4. **You see it first.** Every change names the apps it touches and asks before it runs.
-5. **No root, no exploits.** Only what ADB allows on a stock TV.
+5. **Stock ADB only.** Tellyscope doesn't use root or exploits, only what ADB allows on a stock TV.
 6. **Nothing left on the TV.** Two small helpers run from `/data/local/tmp`: one reads app names and icons and is deleted at once, the other runs the Remote and is deleted when the Remote closes.
 7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists) from GitHub (debloat lists and streaming logos, or [your own fork](CONTRIBUTING.md#using-your-own-lists), plus launchers, app names and streaming services), check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
 
