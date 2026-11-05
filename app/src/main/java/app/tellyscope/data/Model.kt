@@ -232,4 +232,6 @@ data class TvTweaks(
     val dnsSupported: Boolean = true,
     /** Clearing caches over ADB came in Android 8: before it, the shell lacks CLEAR_APP_CACHE (#286). */
     val cachesSupported: Boolean = true,
+    /** Fire OS 8's side menu breaks with animations sped up (#356), so Faster animations is hidden there. */
+    val fireOs: Boolean = false,
 )

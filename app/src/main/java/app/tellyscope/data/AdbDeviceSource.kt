@@ -1073,7 +1073,8 @@ class AdbDeviceSource(
 
     override suspend fun tweaks(deviceId: String): TvTweaks {
         val t = Tweaks(session(deviceId))
-        return TvSettings.tweaks(t.read(Tweak.PRIVATE_DNS), t.read(Tweak.ANIMATIONS), sdk(deviceId))
+        val fire = fireOs(deviceId, Actions(session(deviceId)).installed(FIRE_TV_LAUNCHER))
+        return TvSettings.tweaks(t.read(Tweak.PRIVATE_DNS), t.read(Tweak.ANIMATIONS), sdk(deviceId), fire)
     }
 
     private suspend fun sdk(deviceId: String) = session(deviceId).shell("getprop ro.build.version.sdk").output.trim().toIntOrNull()
