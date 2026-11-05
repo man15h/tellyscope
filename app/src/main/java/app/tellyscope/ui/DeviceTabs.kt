@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -100,6 +102,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -235,11 +238,11 @@ fun DeviceTabsScreen(
 
     Box {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbar) },
-            // Each tab's main action as Material's extended FAB: the Remote on Overview, install on Apps, upload on Files.
+            // Lifted by the Remote's rise, so a message isn't hidden behind the button.
+            snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = RemoteRise)) },
+            // Install on Apps and upload on Files as Material's extended FAB; the Remote has its own button in the bar.
             floatingActionButton = {
                 if (!offline) when (tab) {
-                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text(stringResource(R.string.tabs_remote)) })
                     TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text(stringResource(R.string.tabs_install_app)) })
                     TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text(stringResource(R.string.tabs_upload_files)) })
                     else -> {}
@@ -260,19 +263,32 @@ fun DeviceTabsScreen(
                 }
             },
             bottomBar = {
-                ShortNavigationBar {
-                    TvTab.entries.forEach { t ->
-                        ShortNavigationBarItem(
-                            selected = tab == t,
-                            onClick = {
-                                // Leaving Apps closes the search, so the list isn't still filtered on return.
-                                if (t != TvTab.Apps && searching) closeSearch()
-                                tab = t
-                            },
-                            icon = { Icon(t.icon(), contentDescription = null) },
-                            label = { Text(stringResource(t.label)) },
-                        )
+                // The Remote sits in the middle of the bar on every tab: an action, never a selected tab. Its raised
+                // button is drawn over the bar, and is the same action as the label slot under it.
+                Box {
+                    ShortNavigationBar {
+                        TvTab.entries.forEach { t ->
+                            if (t == TvTab.Files) ShortNavigationBarItem(
+                                selected = false,
+                                onClick = actions.remote,
+                                icon = { Spacer(Modifier.size(24.dp)) },
+                                label = { Text(stringResource(R.string.tabs_remote)) },
+                                enabled = !offline,
+                                modifier = Modifier.testTag("barRemote"),
+                            )
+                            ShortNavigationBarItem(
+                                selected = tab == t,
+                                onClick = {
+                                    // Leaving Apps closes the search, so the list isn't still filtered on return.
+                                    if (t != TvTab.Apps && searching) closeSearch()
+                                    tab = t
+                                },
+                                icon = { Icon(t.icon(), contentDescription = null) },
+                                label = { Text(stringResource(t.label)) },
+                            )
+                        }
                     }
+                    RemoteButton(enabled = !offline, onClick = actions.remote, modifier = Modifier.align(Alignment.TopCenter))
                 }
             },
         ) { pad ->
@@ -346,6 +362,10 @@ fun DeviceTabsScreen(
                                     },
                                 )
                             }
+                            // A better home screen is a suggestion, so it sits with the actions rather than among the apps.
+                            if (offerLauncher(ui.apps, ui.launcherCardHidden, fire)) item(key = "launcherCard") {
+                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
+                            }
                         }
                         // The list, what's plugged in, and Android.
                         item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history) }
@@ -370,9 +390,6 @@ fun DeviceTabsScreen(
                                     lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp,
                                     below = { SearchPill(enabled = !offline) { searching = true } },
                                 ) { appsTab = AppsTab.entries[it] }
-                            }
-                            if (!offline && offerLauncher(ui.apps, ui.launcherCardHidden, fire)) item(key = "launcherCard") {
-                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
                             }
                             if (split != null) {
                                 if (split.apps.isEmpty() && split.system.isEmpty()) item {
@@ -689,6 +706,29 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
  * The list in one line of plain text, with See changes beside it. When apps Tellyscope turned off
  * are on again, one red line says so; the Debloat tile above carries the count and the fix.
  */
+/** How far the Remote's button rises above the bottom bar's top edge. */
+private val RemoteRise = 17.dp
+
+// The Remote's raised button over its slot in the bar. Offline it stays, greyed, so the bar doesn't shift;
+// TalkBack reads the slot's label instead, so the button itself is left out.
+@Composable
+private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = MaterialTheme.colorScheme
+    Box(modifier.offset(y = -RemoteRise).clearAndSetSemantics {}) {
+        Surface(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(62.dp, 57.dp),
+            shape = RoundedCornerShape(18.dp),
+            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f),
+            contentColor = if (enabled) c.onPrimary else c.onSurface.copy(alpha = 0.38f),
+            shadowElevation = if (enabled) 6.dp else 0.dp,
+        ) {
+            Box(contentAlignment = Alignment.Center) { Icon(TileIcons.Remote, null, Modifier.size(26.dp)) }
+        }
+    }
+}
+
 @Composable
 private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
     val c = MaterialTheme.colorScheme

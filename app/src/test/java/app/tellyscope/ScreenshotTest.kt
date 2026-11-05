@@ -932,8 +932,8 @@ class ScreenshotTest {
         // The list's card stands on its own, with no heading over it.
         compose.onNodeWithText("Suggested for this TV").assertDoesNotExist()
         compose.onNodeWithText("Updated ", substring = true).assertExists()
-        // The Remote is the page's FAB, no longer a button in the top bar.
-        compose.onNodeWithText("Remote", useUnmergedTree = true).assertExists()
+        // The Remote is the button in the middle of the bottom bar, not a FAB on the page.
+        compose.onNodeWithTag("barRemote").assertIsEnabled()
     }
 
     @Test fun device_overview_dark() = shot("04_device", dark = true) { DeviceTabsScreen(deviceState(), DeviceActions()) }
@@ -957,8 +957,8 @@ class ScreenshotTest {
         compose.onNodeWithText("Internal storage").assertExists()
         compose.onAllNodesWithText("\u2014").assertCountEquals(3)
         compose.onNodeWithText("Updated ", substring = true).assertExists()
-        // No Remote while the TV is away.
-        compose.onNodeWithText("Remote", useUnmergedTree = true).assertDoesNotExist()
+        // The Remote stays in the bar while the TV is away, greyed out, so the bar doesn't shift.
+        compose.onNodeWithTag("barRemote").assertIsNotEnabled()
     }
 
     @Test fun device_storageFull() {
