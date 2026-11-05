@@ -205,7 +205,7 @@ data class ResetUi(
 data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg, val fire: FireInstall? = null) {
     enum class Step { Pick, Waiting, NoStore, Left, Installed }
 
-    /** Fire OS: its launcher alone ([fireLauncher]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
+    /** Fire OS: its launchers alone ([fireLaunchers]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
     val fireOs get() = fire != null && !fire.store
 }
 
@@ -993,6 +993,13 @@ class TellyscopeViewModel(
             return
         }
         updateDevice(id) { it.copy(launcher = LauncherFlow()) }
+    }
+
+    /** Fire OS's picker, before anything started: [pkg], one of [fireLaunchers], is the one Install acts on. */
+    fun chooseFireLauncher(pkg: String) {
+        val id = _state.value.selectedId ?: return
+        if (fireLaunchers().none { it.pkg == pkg }) return
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> if (l.fireOs && l.fire?.step == null) l.copy(pkg = pkg) else l }) }
     }
 
     private fun setFire(id: String, f: (FireInstall) -> FireInstall) =

@@ -25,6 +25,9 @@ val RECOMMENDED: List<Recommended> get() =
 
 fun launcherName(pkg: String) = RECOMMENDED.firstOrNull { it.pkg == pkg }?.name ?: AppNames.fallback(pkg)
 
-/** The launcher Fire OS installs, having no Play Store: the list's `fire_os` one, if it says how to check the APK. */
-fun fireLauncher(recommended: List<Recommended> = RECOMMENDED) =
-    recommended.firstOrNull { it.launcher.fireOs && it.launcher.signers.isNotEmpty() }
+/** The launchers Fire OS offers, having no Play Store: the list's `fire_os` ones that say how to check the APK, in its order. */
+fun fireLaunchers(recommended: List<Recommended> = RECOMMENDED) =
+    recommended.filter { it.launcher.fireOs && it.launcher.signers.isNotEmpty() }
+
+/** The first of [fireLaunchers], which Fire OS's picker opens on. */
+fun fireLauncher(recommended: List<Recommended> = RECOMMENDED) = fireLaunchers(recommended).firstOrNull()

@@ -38,7 +38,9 @@ import app.tellyscope.ui.PLAY_STORE
 import app.tellyscope.ui.RECOMMENDED
 import app.tellyscope.ui.TellyscopeViewModel
 import app.tellyscope.ui.fireInstall
+import app.tellyscope.ui.Recommended
 import app.tellyscope.ui.fireLauncher
+import app.tellyscope.ui.fireLaunchers
 import app.tellyscope.ui.groupedHex
 import app.tellyscope.ui.offerChoose
 import app.tellyscope.ui.offerLauncher
@@ -200,6 +202,17 @@ class FireOsTest {
         assertNull(one(""""releases": "https://github.com/x/../releases"""").releases)
         assertNull(one(""""releases": "https://github.com/x/./releases"""").releases)
         assertEquals("https://github.com/x/.github/releases", one(""""releases": "https://github.com/x/.github/releases"""").releases)
+        assertEquals("monet-launcher.apk", one(""""apk": "monet-launcher.apk"""").apk)
+        assertNull(one(""""apk": "../monet.apk"""").apk)
+        assertNull(one(""""apk": "monet.zip"""").apk)
+    }
+
+    @Test fun everySignedFireOsLauncherIsOfferedInListOrder() {
+        val monet = KnownLauncher("com.klevico.monet", "Monet Launcher", "Colors.", setOf(SIGNER), releases = RELEASES, fireOs = true)
+        val two = RECOMMENDED + Recommended(monet.pkg, monet.name, "Colors.", accessibility = false, launcher = monet)
+        assertEquals(listOf(PROJECTIVY, monet.pkg), fireLaunchers(two).map { it.pkg })
+        assertEquals(PROJECTIVY, fireLauncher(two)?.pkg)
+        assertEquals(listOf(monet.pkg), fireLaunchers(two.filter { it.pkg != PROJECTIVY }).map { it.pkg })
     }
 
     @Test fun theSignerReadsInGroupsOfEight() {
@@ -229,6 +242,18 @@ class FireOsTest {
         assertNull(parseRelease(release(size = 200L shl 20), projectivy))
         assertNull(parseRelease(release(), projectivy.copy(releases = null)))
         assertNull(parseRelease("not json", projectivy))
+    }
+
+    /** A release with the same APK under two names: the list's [KnownLauncher.apk] says which, and only it counts. */
+    @Test fun theListsApkNamePicksOneOfSeveral() {
+        val two = listOf("monet-1.1.1.apk" to APK.replace(".apk", "-a.apk"), "monet-launcher.apk" to APK)
+        assertNull(parseRelease(release(assets = two), projectivy))
+        assertEquals(APK, parseRelease(release(assets = two), projectivy.copy(apk = "monet-launcher.apk"))?.apk)
+        assertNull(parseRelease(release(), projectivy.copy(apk = "monet-launcher.apk")))
+        val link = APK.removePrefix("https://github.com")
+        val page = """<a href="${link.replace(".apk", "-a.apk")}">a</a><a href="$link">b</a>"""
+        assertNull(pageApk(page, TAG, RELEASES))
+        assertEquals(APK, pageApk(page, TAG, RELEASES, APK.substringAfterLast('/')))
     }
 
     @Test fun onlyTheLauncherSignedByItsDeveloper() {

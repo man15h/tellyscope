@@ -40,6 +40,7 @@
     <string name="copy_get_launcher">Conseguir otro launcher</string>
     <string name="copy_get_launcher_text">Instala uno desde Play Store. Puedes volver al anterior cuando quieras.</string>
     <string name="copy_get_fire_launcher_text">Instala %1$s. Puedes volver al anterior cuando quieras.</string>
+    <string name="copy_get_fire_launchers_text">Tellyscope instala el que elijas. Puedes volver al anterior cuando quieras.</string>
     <string name="copy_home_settings">Ajustes de la pantalla de inicio</string>
     <string name="copy_make_home_title">¿Usar %1$s como pantalla de inicio?</string>
     <string name="copy_explain_replace_opens">Inicio abre %1$s. Para que la TV no vuelva al anterior por su cuenta, Tellyscope desactiva %2$s, el launcher integrado de la TV.</string>
@@ -76,11 +77,12 @@
     <string name="copy_choose_home_text">Cada una reemplaza la pantalla de inicio de la TV. Tellyscope la abre en Play Store en la TV; la instalas con el control remoto.</string>
     <string name="copy_can_download">Algunas también se pueden descargar directamente.</string>
     <string name="copy_no_launcher_list">No se pudo cargar la lista de pantallas de inicio. Revisa la conexión a internet del teléfono y vuelve a intentarlo.</string>
-    <string name="copy_recommended">Recomendado</string>
+    <string name="copy_recommended">Selección del editor</string>
     <string name="copy_on_this_tv">En esta TV</string>
     <string name="copy_installed">Instalado</string>
     <string name="copy_home_now">Inicio actual</string>
     <string name="copy_open">Abrir</string>
+    <string name="copy_home_screen_of">Pantalla de inicio de %1$s</string>
     <string name="copy_uses_service">Usa un servicio de accesibilidad</string>
     <string name="copy_no_service">Código abierto · sin servicio de accesibilidad</string>
     <string name="copy_other_launcher">¿Prefieres otro launcher? Instálalo desde Play Store en tu TV y vuelve aquí. Aparecerá en %1$s.</string>

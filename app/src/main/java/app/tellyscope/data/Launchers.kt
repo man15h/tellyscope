@@ -23,7 +23,11 @@ import kotlinx.coroutines.flow.update
  * Installing it from an APK rather than the Play Store: [signers] are the SHA-256s of the only
  * certificates it may be signed with (empty: never from an APK), [maxBytes] is past any real copy of
  * it, and [releases] is its developer's GitHub releases page, the only place the GitHub build
- * downloads it from. [fireOs]: the launcher Fire OS installs, having no Play Store.
+ * downloads it from, and [apk] the asset to take from a release that carries more than one APK. [fireOs]: a
+ * launcher Fire OS offers, having no Play Store.
+ *
+ * [icon] and [screenshot] name images in `data/images/` ([SharedLists.image]): its app icon, and its home screen
+ * as the picker shows it on the chosen row.
  */
 data class KnownLauncher(
     val pkg: String,
@@ -34,6 +38,9 @@ data class KnownLauncher(
     val releases: String? = null,
     val fireOs: Boolean = false,
     val accessibility: String? = null,
+    val apk: String? = null,
+    val icon: String? = null,
+    val screenshot: String? = null,
 ) {
     /** It, signed only by its developer: [signers] are the SHA-256s of an APK's certificates. */
     fun accepts(packageName: String, signers: Set<String>) =
@@ -45,6 +52,9 @@ private const val MAX_MB = 256L
 private val SIGNER = Regex("[0-9a-f]{64}")
 private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
+private val APK_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
+/** An image's name in `data/images/`, without `.png`. */
+internal val IMAGE_NAME = Regex("[a-z0-9][a-z0-9-]{0,39}")
 private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
 /**
@@ -82,6 +92,9 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             releases = l.optStringOrNull("releases")?.takeIf(RELEASES_PAGE::matches),
             fireOs = l.optBoolean("fire_os"),
             accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
+            apk = l.optStringOrNull("apk")?.takeIf(APK_NAME::matches),
+            icon = l.optStringOrNull("icon")?.takeIf(IMAGE_NAME::matches),
+            screenshot = l.optStringOrNull("screenshot")?.takeIf(IMAGE_NAME::matches),
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
 } catch (_: org.json.JSONException) {
@@ -193,6 +206,9 @@ object SharedLists {
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
     suspend fun logo(name: String): ByteArray? = source?.logo(name)
+
+    /** A launcher's icon or screenshot from `data/images/` ([KnownLauncher.icon]); null until it can be had. */
+    suspend fun image(name: String): ByteArray? = data?.image(name)
 
     /**
      * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out

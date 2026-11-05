@@ -40,6 +40,7 @@
     <string name="copy_get_launcher">दूसरा लॉन्चर पाएं</string>
     <string name="copy_get_launcher_text">Play Store से कोई लॉन्चर इंस्टॉल करें. कभी भी वापस बदल सकते हैं।</string>
     <string name="copy_get_fire_launcher_text">%1$s इंस्टॉल करें। कभी भी वापस बदल सकते हैं।</string>
+    <string name="copy_get_fire_launchers_text">आप जो चुनें, Tellyscope उसे इंस्टॉल कर देता है। कभी भी वापस बदल सकते हैं।</string>
     <string name="copy_home_settings">होम स्क्रीन सेटिंग्स</string>
     <string name="copy_make_home_title">%1$s को होम स्क्रीन बनाएं?</string>
     <string name="copy_explain_replace_opens">Home दबाने पर %1$s खुलेगा। TV अपने-आप वापस न बदल जाए, इसके लिए Tellyscope TV का पहले से मौजूद लॉन्चर %2$s बंद कर देता है।</string>
@@ -76,11 +77,12 @@
     <string name="copy_choose_home_text">हर एक TV की होम स्क्रीन की जगह ले लेता है। Tellyscope इसे TV पर Play Store में खोलता है; आप रिमोट से इसे इंस्टॉल करते हैं।</string>
     <string name="copy_can_download">कुछ को सीधे डाउनलोड भी किया जा सकता है।</string>
     <string name="copy_no_launcher_list">होम स्क्रीन की सूची लोड नहीं हो सकी। फ़ोन का इंटरनेट देखें और फिर से कोशिश करें।</string>
-    <string name="copy_recommended">सुझाया गया</string>
+    <string name="copy_recommended">संपादक की पसंद</string>
     <string name="copy_on_this_tv">इस TV पर</string>
     <string name="copy_installed">इंस्टॉल है</string>
     <string name="copy_home_now">अभी Home है</string>
     <string name="copy_open">खोलें</string>
+    <string name="copy_home_screen_of">%1$s की होम स्क्रीन</string>
     <string name="copy_uses_service">सुलभता सेवा का इस्तेमाल करता है</string>
     <string name="copy_no_service">ओपन सोर्स · कोई सुलभता सेवा नहीं</string>
     <string name="copy_other_launcher">कोई दूसरा लॉन्चर चाहिए? उसे अपने TV पर Play Store से इंस्टॉल करें, फिर यहां वापस आएं। वह %1$s में दिखेगा।</string>

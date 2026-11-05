@@ -40,6 +40,7 @@
     <string name="copy_get_launcher">获取其他启动器</string>
     <string name="copy_get_launcher_text">从 Play 商店安装一个。随时可以切换回来。</string>
     <string name="copy_get_fire_launcher_text">安装 %1$s。随时可以切换回来。</string>
+    <string name="copy_get_fire_launchers_text">Tellyscope 会安装你选择的那个。随时可以切换回来。</string>
     <string name="copy_home_settings">主屏幕设置</string>
     <string name="copy_make_home_title">要将 %1$s 设为主屏幕吗？</string>
     <string name="copy_explain_replace_opens">按主页键将打开 %1$s。为防止电视自行切换回去，Tellyscope 会停用电视内置的启动器 %2$s。</string>
@@ -76,11 +77,12 @@
     <string name="copy_choose_home_text">每一个都会替换电视的主屏幕。Tellyscope 会在电视上的 Play 商店中打开它，你用遥控器进行安装。</string>
     <string name="copy_can_download">部分也可以直接下载。</string>
     <string name="copy_no_launcher_list">无法加载主屏幕列表。请检查手机的网络连接，然后重试。</string>
-    <string name="copy_recommended">推荐</string>
+    <string name="copy_recommended">编辑精选</string>
     <string name="copy_on_this_tv">在此电视上</string>
     <string name="copy_installed">已安装</string>
     <string name="copy_home_now">当前主屏幕</string>
     <string name="copy_open">打开</string>
+    <string name="copy_home_screen_of">%1$s 的主屏幕</string>
     <string name="copy_uses_service">使用无障碍服务</string>
     <string name="copy_no_service">开源 · 不使用无障碍服务</string>
     <string name="copy_other_launcher">想用其他启动器？在电视上的 Play 商店中安装后再回到这里，它会显示在“%1$s”下。</string>

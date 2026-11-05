@@ -54,6 +54,7 @@
     <string name="copy_get_launcher">Get another launcher</string>
     <string name="copy_get_launcher_text">Install one from the Play Store. Switch back any time.</string>
     <string name="copy_get_fire_launcher_text">Install %1$s. Switch back any time.</string>
+    <string name="copy_get_fire_launchers_text">Tellyscope installs the one you choose. Switch back any time.</string>
     <string name="copy_home_settings">Home screen settings</string>
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
@@ -105,11 +106,12 @@
     <string name="copy_choose_home_text">Each one replaces the TV\'s home screen. Tellyscope opens it in the Play Store on the TV; you install it with the remote.</string>
     <string name="copy_can_download">Some can also be downloaded directly.</string>
     <string name="copy_no_launcher_list">Couldn\'t load the list of home screens. Check the phone\'s internet and try again.</string>
-    <string name="copy_recommended">Recommended</string>
+    <string name="copy_recommended">Editor\'s choice</string>
     <string name="copy_on_this_tv">On this TV</string>
     <string name="copy_installed">Installed</string>
     <string name="copy_home_now">Home now</string>
     <string name="copy_open">Open</string>
+    <string name="copy_home_screen_of">%1$s home screen</string>
     <string name="copy_uses_service">Uses an accessibility service</string>
     <string name="copy_no_service">Open source · no accessibility service</string>
     <!-- %1$s is copy_on_this_tv -->

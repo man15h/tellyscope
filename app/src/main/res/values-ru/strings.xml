@@ -40,6 +40,7 @@
     <string name="copy_get_launcher">Другой лаунчер</string>
     <string name="copy_get_launcher_text">Установите лаунчер из Play Маркета. Вернуть прежний можно в любой момент.</string>
     <string name="copy_get_fire_launcher_text">Установите %1$s. Вернуть прежний можно в любой момент.</string>
+    <string name="copy_get_fire_launchers_text">Tellyscope установит тот, что вы выберете. Вернуть прежний можно в любой момент.</string>
     <string name="copy_home_settings">Настройки главного экрана</string>
     <string name="copy_make_home_title">Сделать %1$s главным экраном?</string>
     <string name="copy_explain_replace_opens">Кнопка «Домой» будет открывать %1$s. Чтобы телевизор не возвращал прежний экран сам, Tellyscope отключит %2$s — встроенный лаунчер телевизора.</string>
@@ -76,11 +77,12 @@
     <string name="copy_choose_home_text">Любой из них заменяет главный экран телевизора. Tellyscope откроет его в Play Маркете на телевизоре, а установите вы его пультом.</string>
     <string name="copy_can_download">Некоторые можно скачать и напрямую.</string>
     <string name="copy_no_launcher_list">Не удалось загрузить список главных экранов. Проверьте подключение телефона к интернету и повторите попытку.</string>
-    <string name="copy_recommended">Рекомендуем</string>
+    <string name="copy_recommended">Выбор редакции</string>
     <string name="copy_on_this_tv">На этом телевизоре</string>
     <string name="copy_installed">Установлен</string>
     <string name="copy_home_now">Сейчас главный</string>
     <string name="copy_open">Открыть</string>
+    <string name="copy_home_screen_of">Главный экран %1$s</string>
     <string name="copy_uses_service">Использует службу специальных возможностей</string>
     <string name="copy_no_service">Открытый код · без службы специальных возможностей</string>
     <string name="copy_other_launcher">Хотите другой лаунчер? Установите его из Play Маркета на телевизоре и вернитесь сюда. Он появится в разделе «%1$s».</string>
