@@ -81,19 +81,23 @@ jobs:
               comments.push(dupes.map(d => `Possibly a duplicate of #${d.number}.`).join('\n'));
             }
 
-            // Brand labels from the TV field of whichever form was used.
+            // One OS label from the TV fields of whichever form was used; first match wins.
+            // Google TV reports "Android TV OS", so google-tv is checked before android-tv.
             const section = name => {
               const m = body.match(new RegExp(`^###\\s+${name}\\s*$([\\s\\S]*?)(?=^###\\s|(?![\\s\\S]))`, 'm'));
               return m ? m[1].toLowerCase() : '';
             };
-            const tv = section('TV make and model') + ' ' + section('Which TV is it for\\?');
-            const brands = [
-              ['fire-tv', /fire\s?tv|fire\s?stick|fire\s?os/],
-              ['xiaomi', /xiaomi|mi\s?box|mitv/],
-              ['tcl', /\btcl\b/],
-              ['hisense', /hisense/],
+            const tv = ['TV make and model', 'Android TV / Google TV version', 'Which TV is it for\\?']
+              .map(section).join(' ');
+            const platforms = [
+              ['fire-os', /fire\s?os|fire\s?tv|fire\s?stick/],
+              ['nvidia-shield', /shield/],
+              ['not-android', /vidaa|tizen|webos|roku/],
+              ['google-tv', /google\s?tv|chromecast/],
+              ['android-tv', /android/],
             ];
-            for (const [label, re] of brands) if (re.test(tv)) labels.add(label);
+            const platform = platforms.find(([, re]) => re.test(tv));
+            if (platform) labels.add(platform[0]);
 
             if (labels.size) {
               await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [...labels] });
