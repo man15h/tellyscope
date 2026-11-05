@@ -386,4 +386,18 @@ object Parsers {
         props["ro.build.version.security_patch"]?.let { runCatching { YearMonth.parse(it.take(7)) }.getOrNull() }
             ?: props["ro.build.date.utc"]?.toLongOrNull()?.takeIf { it > 0 }
                 ?.let { YearMonth.from(Instant.ofEpochSecond(it).atZone(ZoneOffset.UTC)) }
+
+    /**
+     * Fire OS's version, like `8.1.4.9`. Fire OS 5 also has `ro.build.version.fireos`. 5 to 8
+     * put it in `ro.build.version.name` (`Fire OS 8.1.4.9 (RS8149/3133)`), which other makers
+     * may use for anything, so that one counts only on an Amazon-made device. Fire TV Edition sets
+     * from other brands report Amazon as the manufacturer too. Null when neither has a version.
+     */
+    fun fireOsVersion(props: Map<String, String>): String? {
+        val amazon = props["ro.product.manufacturer"].equals("Amazon", ignoreCase = true)
+        return listOfNotNull(props["ro.build.version.fireos"], props["ro.build.version.name"]?.takeIf { amazon })
+            .firstNotNullOfOrNull { FIRE_OS_VERSION.find(it)?.value }
+    }
+
+    private val FIRE_OS_VERSION = Regex("""\b\d+(\.\d+){2,3}\b""")
 }

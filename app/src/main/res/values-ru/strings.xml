@@ -321,6 +321,8 @@
     <string name="copy_remote_lost">Связь с телевизором потеряна. Убедитесь, что он включен и подключен.</string>
     <string name="copy_no_update_screen">На этом телевизоре нет экрана обновлений, который может открыть Tellyscope. Поищите его в настройках, в разделе «Система» или «Об устройстве».</string>
     <string name="copy_updates_opened">На телевизоре открыт экран обновлений. Проверьте наличие обновлений на телевизоре.</string>
+    <string name="copy_fire_settings_opened">На телевизоре открыты настройки. Перейдите в «My Fire TV» (на телевизорах «Device &amp; Software»), затем в «About» и «Check for updates».</string>
+    <string name="copy_no_fire_update_screen">Tellyscope не может открыть настройки на этом телевизоре. На телевизоре откройте «Settings», затем «My Fire TV» (на телевизорах «Device &amp; Software»), «About» и «Check for updates».</string>
     <string name="copy_reboot_refused">Телевизор отказался перезапускаться. Воспользуйтесь его пультом или кнопкой питания.</string>
     <string name="copy_reboot_ignored">Телевизор не перезапустился. Воспользуйтесь его пультом или кнопкой питания.</string>
     <string name="copy_remote_offline_wake">заработает снова после переподключения</string>

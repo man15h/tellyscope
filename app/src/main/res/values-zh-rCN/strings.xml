@@ -294,6 +294,8 @@
     <string name="copy_remote_lost">与电视断开连接。请确认电视仍开机并已连接。</string>
     <string name="copy_no_update_screen">此电视没有 Tellyscope 可以打开的更新界面。请在电视的“设置”中查看“系统”或“关于”。</string>
     <string name="copy_updates_opened">已在电视上打开更新界面。请在电视上检查更新。</string>
+    <string name="copy_fire_settings_opened">已在电视上打开设置。请依次进入“My Fire TV”（电视上为“Device &amp; Software”）、“About”、“Check for updates”。</string>
+    <string name="copy_no_fire_update_screen">Tellyscope 无法在此电视上打开设置。请在电视上依次进入“Settings”、“My Fire TV”（电视上为“Device &amp; Software”）、“About”、“Check for updates”。</string>
     <string name="copy_reboot_refused">电视拒绝重启。请改用电视自带的遥控器或电源键。</string>
     <string name="copy_reboot_ignored">电视没有重启。请改用电视自带的遥控器或电源键。</string>
     <string name="copy_remote_offline_wake">重新连接后即可恢复使用</string>

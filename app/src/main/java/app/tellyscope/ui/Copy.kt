@@ -582,6 +582,8 @@ object Copy {
     val REMOTE_LOST = UiText(R.string.copy_remote_lost)
     val NO_UPDATE_SCREEN = UiText(R.string.copy_no_update_screen)
     val UPDATES_OPENED = UiText(R.string.copy_updates_opened)
+    val FIRE_SETTINGS_OPENED = UiText(R.string.copy_fire_settings_opened)
+    val NO_FIRE_UPDATE_SCREEN = UiText(R.string.copy_no_fire_update_screen)
     val REBOOT_REFUSED = UiText(R.string.copy_reboot_refused)
     val REBOOT_IGNORED = UiText(R.string.copy_reboot_ignored)
     val REMOTE_OFFLINE_WAKE = UiText(R.string.copy_remote_offline_wake)
