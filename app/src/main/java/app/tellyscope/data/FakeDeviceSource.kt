@@ -17,6 +17,7 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.UpdateScreen
 import java.io.File
 import java.io.IOException
 import java.time.YearMonth
@@ -388,9 +389,9 @@ class FakeDeviceSource(
         return true
     }
 
-    override suspend fun openUpdates(deviceId: String): Boolean {
+    override suspend fun openUpdates(deviceId: String): UpdateScreen {
         delay(300)
-        return true
+        return UpdateScreen.UPDATES
     }
 
     override suspend fun launch(deviceId: String, packageName: String): Boolean {

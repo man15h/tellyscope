@@ -303,6 +303,8 @@
     <string name="copy_remote_lost">TV से कनेक्शन टूट गया। देखें कि वह अब भी चालू और कनेक्ट है।</string>
     <string name="copy_no_update_screen">इस TV में ऐसी कोई अपडेट स्क्रीन नहीं है जिसे Tellyscope खोल सके। TV की सेटिंग्स में, सिस्टम या जानकारी के अंदर देखें।</string>
     <string name="copy_updates_opened">TV पर अपडेट स्क्रीन खोल दी गई है। अपडेट देखने के लिए TV पर देखें।</string>
+    <string name="copy_fire_settings_opened">TV पर सेटिंग्स खोल दी गई हैं। My Fire TV (TV पर Device &amp; Software) पर जाएँ, फिर About, फिर Check for updates।</string>
+    <string name="copy_no_fire_update_screen">Tellyscope इस TV पर सेटिंग्स नहीं खोल सकता। TV पर Settings में जाएँ, फिर My Fire TV (TV पर Device &amp; Software), फिर About, फिर Check for updates।</string>
     <string name="copy_reboot_refused">TV ने रीस्टार्ट करने से मना कर दिया। इसके बजाय TV का अपना रिमोट या पावर बटन इस्तेमाल करें।</string>
     <string name="copy_reboot_ignored">TV रीस्टार्ट नहीं हुआ। इसके बजाय TV का अपना रिमोट या पावर बटन इस्तेमाल करें।</string>
     <string name="copy_remote_offline_wake">दोबारा कनेक्ट होने पर फिर से काम करेगा</string>

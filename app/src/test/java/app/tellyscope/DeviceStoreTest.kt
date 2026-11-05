@@ -67,7 +67,7 @@ class DeviceStoreTest {
         val file = tmp.root.resolve("devices.tsv")
         DeviceStore(file).save(listOf(tv))
         // The older format stopped at the last-known facts.
-        file.writeText(file.readText().replace("\t\t\n", "\n"))
+        file.writeText(file.readText().replace("\t\t\t\n", "\n"))
         assertEquals(14, file.readLines().single().split('\t').size)
         assertEquals(listOf(tv), DeviceStore(file).load())
     }
@@ -84,16 +84,33 @@ class DeviceStoreTest {
         val out = tv.copy(loggedOutAt = 1_761_475_500_000)
         DeviceStore(file).save(listOf(out))
         // The older format stopped at the logout.
-        file.writeText(file.readText().replace("\t\n", "\n"))
+        file.writeText(file.readText().replace("\t\t\n", "\n"))
         assertEquals(15, file.readLines().single().split('\t').size)
         assertEquals(listOf(out), DeviceStore(file).load())
+    }
+
+    @Test fun keepsTheFireOsVersion() {
+        val file = tmp.root.resolve("devices.tsv")
+        val fire = stick.copy(lastKnown = LastKnown(manufacturer = "Amazon", android = "11", fireOs = "8.1.4.9"))
+        DeviceStore(file).save(listOf(tv, fire))
+        assertEquals(listOf(tv, fire), DeviceStore(file).load())
+    }
+
+    @Test fun readsFilesFromBeforeTheFireOsVersion() {
+        val file = tmp.root.resolve("devices.tsv")
+        val named = stick.copy(service = "adb-QV7124ZK-3fRb2c")
+        DeviceStore(file).save(listOf(named))
+        // The older format stopped at the service name.
+        file.writeText(file.readText().replace("\t\n", "\n"))
+        assertEquals(16, file.readLines().single().split('\t').size)
+        assertEquals(listOf(named), DeviceStore(file).load())
     }
 
     @Test fun readsFilesFromBeforeTheHistoryKey() {
         val file = tmp.root.resolve("devices.tsv")
         DeviceStore(file).save(listOf(tv))
         // The older format had no eighth field at all.
-        file.writeText(file.readText().replace("\t".repeat(9) + "\n", "\n"))
+        file.writeText(file.readText().replace("\t".repeat(10) + "\n", "\n"))
         assertEquals(7, file.readLines().single().split('\t').size)
         assertEquals(listOf(tv), DeviceStore(file).load())
     }
@@ -110,7 +127,7 @@ class DeviceStoreTest {
         val keyed = tv.copy(historyKey = "sn:XK03H1234")
         DeviceStore(file).save(listOf(keyed))
         // The older format stopped at the history key.
-        file.writeText(file.readText().replace("\t".repeat(8) + "\n", "\n"))
+        file.writeText(file.readText().replace("\t".repeat(9) + "\n", "\n"))
         assertEquals(8, file.readLines().single().split('\t').size)
         assertEquals(listOf(keyed), DeviceStore(file).load())
     }

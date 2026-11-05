@@ -739,14 +739,15 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
     }
 }
 
-/** Which Android and when it last updated, with a way to make the TV look for a newer one. */
+/** Which Android, or Fire OS, and when it last updated, with a way to make the TV look for a newer one. */
 @Composable
 private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpdates: () -> Unit) {
     val device = state.selected ?: return
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         StatusRow(
             Icons.Default.Info,
-            device.android?.let { stringResource(R.string.tabs_android_version, it) } ?: "Android",
+            device.fireOs?.let { stringResource(R.string.tabs_fire_os_version, it) }
+                ?: device.android?.let { stringResource(R.string.tabs_android_version, it) } ?: "Android",
             (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { stringResource(R.string.tabs_updated, Copy.month(it)) },
             stringResource(R.string.tabs_check_updates), !offline, onUpdates,
 

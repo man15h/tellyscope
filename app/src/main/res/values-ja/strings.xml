@@ -294,6 +294,8 @@
     <string name="copy_remote_lost">テレビとの接続が切れました。テレビの電源が入っていて接続されていることを確認してください。</string>
     <string name="copy_no_update_screen">このテレビには、Tellyscope から開けるアップデート画面がありません。テレビの設定の「システム」または「デバイス情報」を確認してください。</string>
     <string name="copy_updates_opened">テレビでアップデート画面を開きました。テレビでアップデートを確認してください。</string>
+    <string name="copy_fire_settings_opened">テレビで設定を開きました。「マイFire TV」（テレビでは「デバイスとソフトウェア」）、「バージョン情報」、「アップデートを確認」の順に進んでください。</string>
+    <string name="copy_no_fire_update_screen">Tellyscope はこのテレビの設定を開けません。テレビで「設定」、「マイFire TV」（テレビでは「デバイスとソフトウェア」）、「バージョン情報」、「アップデートを確認」の順に進んでください。</string>
     <string name="copy_reboot_refused">テレビが再起動を拒否しました。テレビ付属のリモコンか電源ボタンを使ってください。</string>
     <string name="copy_reboot_ignored">テレビが再起動しませんでした。テレビ付属のリモコンか電源ボタンを使ってください。</string>
     <string name="copy_remote_offline_wake">再接続すると使えるようになります</string>

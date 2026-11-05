@@ -25,6 +25,18 @@ enum class RemoteKey(val code: Int, val repeats: Boolean = false) {
     DEL(67, repeats = true),
 }
 
+/** What [Remote.openUpdates] opened on the TV. */
+enum class UpdateScreen {
+    /** A screen with Check for updates: Android's update screen, or Fire OS's About. */
+    UPDATES,
+    /** Fire TV's Settings, where the user goes on to About. */
+    FIRE_SETTINGS,
+    /** Nothing on a Fire TV. */
+    FIRE_NONE,
+    /** Nothing. */
+    NONE,
+}
+
 class Remote(private val session: AdbSession, private val keys: KeyHelper? = null) {
 
     /**
@@ -58,12 +70,24 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
     }
 
     /**
-     * Opens the TV's own system update screen. Some builds have none, and older `am` reports a
-     * missing screen in its output with exit code 0, so both are checked.
+     * Opens the TV's own system update screen. Fire OS has none behind Android's intent, so a
+     * [fireOs] TV tries its About screen, which has Check for updates, then Fire TV's Settings.
      */
-    suspend fun openUpdates(): Boolean {
-        val r = session.shell("am start -a android.settings.SYSTEM_UPDATE_SETTINGS 2>&1")
-        return r.exitCode == 0 && !r.output.contains("Error")
+    suspend fun openUpdates(fireOs: Boolean): UpdateScreen = when {
+        start("-a android.settings.SYSTEM_UPDATE_SETTINGS") -> UpdateScreen.UPDATES
+        !fireOs -> UpdateScreen.NONE
+        start("-a android.settings.DEVICE_INFO_SETTINGS") -> UpdateScreen.UPDATES
+        FIRE_SETTINGS.any { start("-n $it") } -> UpdateScreen.FIRE_SETTINGS
+        else -> UpdateScreen.FIRE_NONE
+    }
+
+    /**
+     * `am start` with [args]. A build without the screen, or one that keeps it to Amazon's own
+     * apps, says so in the output, and older `am` exits 0 even then, so both are checked.
+     */
+    private suspend fun start(args: String): Boolean {
+        val r = session.shell("am start $args 2>&1")
+        return r.exitCode == 0 && !r.output.contains("Error") && !r.output.contains("Exception")
     }
 
     /** Types [text] into whatever box has focus on the TV, through [keys] like [press]. Check [typeable] first. */
@@ -101,6 +125,9 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
 
     companion object {
         const val MAX_TEXT = 200
+
+        /** Fire TV's Settings, from Amazon's launcher: Fire OS 6 and later, then Fire OS 5. */
+        val FIRE_SETTINGS = listOf("com.amazon.tv.launcher/.ui.MainSettingsActivity", "com.amazon.tv.launcher/.ui.SettingsActivity")
 
         /** A volume tap moves about this share of the range, whatever the TV's own step count. */
         const val VOLUME_STEPS = 15

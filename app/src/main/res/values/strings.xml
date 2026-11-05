@@ -384,6 +384,8 @@
     <string name="copy_remote_lost">Lost the TV. Check it\'s still on and connected.</string>
     <string name="copy_no_update_screen">This TV has no update screen Tellyscope can open. Look in its Settings, under System or About.</string>
     <string name="copy_updates_opened">Opened the update screen on the TV. Look at the TV to check for updates.</string>
+    <string name="copy_fire_settings_opened">Opened Settings on the TV. Go to My Fire TV (Device &amp; Software on TVs), then About, then Check for updates.</string>
+    <string name="copy_no_fire_update_screen">Tellyscope can\'t open Settings on this TV. On the TV, go to Settings, then My Fire TV (Device &amp; Software on TVs), then About, then Check for updates.</string>
     <string name="copy_reboot_refused">The TV said no to restarting. Use its own remote or power button instead.</string>
     <string name="copy_reboot_ignored">The TV didn\'t restart. Use its own remote or power button instead.</string>
     <!-- Lower case: shown after the TV's state -->
@@ -919,6 +921,7 @@
     <string name="tabs_lists_credit">Lists adapted from cleanyourtv (MIT).</string>
     <!-- %1$s is the Android version, like 11 -->
     <string name="tabs_android_version">Android %1$s</string>
+    <string name="tabs_fire_os_version" translatable="false">Fire OS %1$s</string>
     <!-- %1$s is a month and year, like March 2026 -->
     <string name="tabs_updated">Updated %1$s</string>
     <string name="tabs_check_updates">Check for updates</string>

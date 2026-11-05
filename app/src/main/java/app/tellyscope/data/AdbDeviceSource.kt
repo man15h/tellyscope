@@ -244,6 +244,7 @@ class AdbDeviceSource(
         softwareMonth = s.softwareMonth ?: old?.softwareMonth,
         storageUsedGb = s.storage?.let { tenths(it.usedKb) } ?: old?.storageUsedGb,
         storageTotalGb = s.storage?.let { tenths(it.totalKb) } ?: old?.storageTotalGb,
+        fireOs = s.fireOsVersion ?: old?.fireOs,
     )
 
     private fun tenths(kb: Long) = Math.round(kb / 104_857.6) / 10.0
@@ -1117,7 +1118,8 @@ class AdbDeviceSource(
         return TvShell({ live().shell(it) }) { live().openShell() }
     }
 
-    override suspend fun openUpdates(deviceId: String) = Remote(session(deviceId)).openUpdates()
+    override suspend fun openUpdates(deviceId: String) =
+        Remote(session(deviceId)).openUpdates(fireOs(deviceId, Actions(session(deviceId)).installed(FIRE_TV_LAUNCHER)))
 
     override suspend fun launch(deviceId: String, packageName: String) =
         busy(deviceId, reread = true) { Actions(session(deviceId)).run(AdbAction.OPEN, packageName) is ActionResult.Done }
@@ -1357,6 +1359,7 @@ class AdbDeviceSource(
             lastKnown = saved[id]?.lastKnown,
             // Read after state: the link writes it first, so a fresh refusal never shows an old logout.
             loggedOutAt = link?.loggedOutAt?.value?.takeIf { state == AdbState.NOT_ALLOWED },
+            fireOs = stats?.fireOsVersion ?: saved[id]?.lastKnown?.fireOs,
         )
     }
 

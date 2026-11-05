@@ -58,6 +58,8 @@ data class Device(
      * (state stays [DeviceState.NotAllowed]). Null otherwise; cleared by a reconnect.
      */
     val loggedOutAt: Long? = null,
+    /** Fire OS's version, like `8.1.4.9`, shown instead of [android]; null on anything else. */
+    val fireOs: String? = null,
 )
 
 /**
@@ -71,6 +73,7 @@ data class LastKnown(
     val softwareMonth: YearMonth? = null,
     val storageUsedGb: Double? = null,
     val storageTotalGb: Double? = null,
+    val fireOs: String? = null,
 )
 
 sealed interface ConnectResult {

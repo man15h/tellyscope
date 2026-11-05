@@ -258,6 +258,18 @@ class ParsersTest {
         assertEquals(null, Parsers.softwareMonth(mapOf("ro.build.version.security_patch" to "", "ro.build.date.utc" to "0")))
     }
 
+    @Test fun fireOsVersionFromItsBuildName() {
+        val amazon = mapOf("ro.product.manufacturer" to "Amazon")
+        assertEquals("8.1.4.9", Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "Fire OS 8.1.4.9 (RS8149/3133)")))
+        assertEquals("7.7.1.7", Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "7.7.1.7 (PS7717/5741)")))
+        // Fire OS 5 has its own prop, read first.
+        assertEquals("5.2.2.0", Parsers.fireOsVersion(mapOf("ro.build.version.fireos" to "5.2.2.0", "ro.build.version.name" to "Fire OS 5.2.2.0 (555164120)")))
+        // Another maker's build name isn't Fire OS.
+        assertEquals(null, Parsers.fireOsVersion(mapOf("ro.product.manufacturer" to "XGIMI", "ro.build.version.name" to "V1.2.3")))
+        assertEquals(null, Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "")))
+        assertEquals(null, Parsers.fireOsVersion(amazon))
+    }
+
     @Test fun psProcessesFromToyboxAndToolbox() {
         val toybox = Parsers.psProcesses("PID USER RSS NAME\n2201 u0_a87 319488 com.google.android.youtube.tv\n")
         assertEquals(listOf(Parsers.Process(2201, "u0_a87", 319488, null, "com.google.android.youtube.tv")), toybox)

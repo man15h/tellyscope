@@ -225,4 +225,40 @@ class RemoteTest {
         assertFalse(Remote(refused).press(RemoteKey.VOLUME_DOWN, 3))
         assertEquals(listOf("input keyevent 25"), refused.ran)
     }
+
+    @Test fun updatesOpenAndroidsUpdateScreen() = runTest {
+        val sh = FakeShell()
+        assertEquals(UpdateScreen.UPDATES, Remote(sh).openUpdates(fireOs = false))
+        assertEquals(listOf("am start -a android.settings.SYSTEM_UPDATE_SETTINGS 2>&1"), sh.ran)
+    }
+
+    @Test fun anAndroidTvWithoutAnUpdateScreenTriesNothingElse() = runTest {
+        val sh = FakeShell(mapOf("am start" to ShellResult("Error: Activity not started, unable to resolve Intent", 0)))
+        assertEquals(UpdateScreen.NONE, Remote(sh).openUpdates(fireOs = false))
+        assertEquals(1, sh.ran.size)
+    }
+
+    @Test fun aFireTvOpensAboutWhenItCan() = runTest {
+        val sh = FakeShell(mapOf("am start -a android.settings.SYSTEM_UPDATE_SETTINGS" to ShellResult("Error: Activity not started, unable to resolve Intent", 0)))
+        assertEquals(UpdateScreen.UPDATES, Remote(sh).openUpdates(fireOs = true))
+        assertEquals("am start -a android.settings.DEVICE_INFO_SETTINGS 2>&1", sh.ran.last())
+    }
+
+    @Test fun aFireTvThatGuardsAboutOpensSettings() = runTest {
+        val sh = FakeShell(
+            mapOf(
+                "am start -a" to ShellResult("Error: Activity not started, unable to resolve Intent", 0),
+                "am start -n ${Remote.FIRE_SETTINGS[0]}" to
+                    ShellResult("java.lang.SecurityException: Permission Denial: starting Intent requires com.amazon.tv.permission.LAUNCHER_SETTINGS", 255),
+            ),
+        )
+        assertEquals(UpdateScreen.FIRE_SETTINGS, Remote(sh).openUpdates(fireOs = true))
+        assertEquals("am start -n ${Remote.FIRE_SETTINGS[1]} 2>&1", sh.ran.last())
+    }
+
+    @Test fun aFireTvThatOpensNothingSaysWhereToLook() = runTest {
+        val sh = FakeShell(mapOf("am start" to ShellResult("Error: Activity class does not exist.", 0)))
+        assertEquals(UpdateScreen.FIRE_NONE, Remote(sh).openUpdates(fireOs = true))
+        assertEquals(2 + Remote.FIRE_SETTINGS.size, sh.ran.size)
+    }
 }

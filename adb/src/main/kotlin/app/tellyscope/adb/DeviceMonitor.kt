@@ -27,6 +27,8 @@ data class Stats(
     /** The name on the box; the manufacturer can be the factory (Philips TVs say TPV). */
     val brand: String? = null,
     val androidVersion: String? = null,
+    /** Fire OS's own version, like `8.1.4.9`; null on anything else. See [Parsers.fireOsVersion]. */
+    val fireOsVersion: String? = null,
     val sdk: Int? = null,
     /** Uid → packages, from the slow tier; empty where `pm` can't list uids. */
     val packages: Map<Int, List<String>> = emptyMap(),
@@ -303,6 +305,7 @@ class DeviceMonitor(
             manufacturer = props["ro.product.manufacturer"],
             brand = props["ro.product.brand"],
             androidVersion = props["ro.build.version.release"],
+            fireOsVersion = Parsers.fireOsVersion(props),
             sdk = props["ro.build.version.sdk"]?.toIntOrNull(),
             softwareMonth = Parsers.softwareMonth(props),
             chip = Parsers.chip(props),

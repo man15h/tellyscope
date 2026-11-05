@@ -22,6 +22,7 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -2219,7 +2220,7 @@ class TellyscopeViewModel(
     fun checkUpdates() {
         val id = _state.value.selectedId ?: return
         viewModelScope.launch {
-            val ok = try {
+            val opened = try {
                 source.openUpdates(id)
             } catch (e: CancellationException) {
                 throw e
@@ -2227,7 +2228,12 @@ class TellyscopeViewModel(
                 _notice.value = Copy.REMOTE_LOST
                 return@launch
             }
-            _notice.value = if (ok) Copy.UPDATES_OPENED else Copy.NO_UPDATE_SCREEN
+            _notice.value = when (opened) {
+                UpdateScreen.UPDATES -> Copy.UPDATES_OPENED
+                UpdateScreen.FIRE_SETTINGS -> Copy.FIRE_SETTINGS_OPENED
+                UpdateScreen.FIRE_NONE -> Copy.NO_FIRE_UPDATE_SCREEN
+                UpdateScreen.NONE -> Copy.NO_UPDATE_SCREEN
+            }
         }
     }
 
