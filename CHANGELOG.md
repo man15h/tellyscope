@@ -12,7 +12,7 @@ until this file has a section for its version.
 
 ## Unreleased
 
-- **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#PR](../../pull/PR)
+- **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#354](../../pull/354)
 
 ## 0.15.0 — 2026-11-04
 
