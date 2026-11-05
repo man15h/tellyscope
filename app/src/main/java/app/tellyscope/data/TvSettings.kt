@@ -33,6 +33,16 @@ object TvSettings {
         fireOs = fireOs,
     )
 
+    /**
+     * Whether [values], read for [tweak], are off the TV's default: a Private DNS mode other than
+     * Automatic (unset, or `opportunistic` as Tellyscope's off writes it), or an animation scale
+     * other than 1×. Reset TV puts those back by deleting the keys.
+     */
+    fun offDefault(tweak: Tweak, values: Map<String, String?>): Boolean = when (tweak) {
+        Tweak.PRIVATE_DNS -> values["private_dns_mode"].let { it != null && it != "opportunistic" }
+        Tweak.ANIMATIONS -> values.values.any { it != null && it.toFloatOrNull() != 1f }
+    }
+
     /** History's line for a change that left the TV at [values]. */
     fun label(tweak: Tweak, values: Map<String, String?>): UiText = when (tweak) {
         Tweak.PRIVATE_DNS -> when (values["private_dns_mode"]) {

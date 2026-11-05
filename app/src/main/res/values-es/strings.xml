@@ -430,6 +430,11 @@
     <string name="copy_reset_home">Usar %1$s como pantalla de inicio</string>
     <string name="copy_reset_home_text">En lugar de %1$s. %1$s sigue instalado.</string>
     <string name="copy_reset_home_text_service">En lugar de %1$s, con su servicio de accesibilidad desactivado. %1$s sigue instalado.</string>
+    <string name="copy_reset_dns">DNS privado de vuelta en Automático</string>
+    <string name="copy_reset_animations">Animaciones de vuelta a velocidad normal</string>
+    <string name="copy_reset_was">Era %1$s</string>
+    <string name="copy_dns_off">desactivado</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d app que %2$s entregó desactivada sigue desactivada.</item>
         <item quantity="many">%1$d apps que %2$s entregó desactivadas siguen desactivadas.</item>
@@ -444,6 +449,8 @@
     <string name="copy_resetting_turn_on">Activando apps: %1$d de %2$d.</string>
     <string name="copy_resetting_bring_back">Recuperando apps: %1$d de %2$d.</string>
     <string name="copy_resetting_home">Poniendo %1$s como pantalla de inicio.</string>
+    <string name="copy_resetting_dns">Volviendo a poner el DNS privado en Automático.</string>
+    <string name="copy_resetting_animations">Volviendo a poner las animaciones a velocidad normal.</string>
     <string name="copy_keep_tv_on">Mantén la TV encendida y conectada.</string>
     <string name="copy_resetting">Restableciendo…</string>
     <string name="copy_reset_apps_stale">Restablecimiento terminado, pero la lista de apps no se actualizó. Vuelve a abrir la TV para verla.</string>
@@ -451,17 +458,20 @@
     <string name="copy_reset_done">La TV volvió a como venía de fábrica</string>
     <string name="copy_reset_partly">Restablecimiento parcial</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">Volvió %1$d app preinstalada, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="many">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="other">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
+        <item quantity="one">Volvió %1$d app preinstalada, y %2$s es la pantalla de inicio.</item>
+        <item quantity="many">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio.</item>
+        <item quantity="other">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">Volvió %1$d app preinstalada. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="many">Volvieron %1$d apps preinstaladas. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="other">Volvieron %1$d apps preinstaladas. Los datos y los inicios de sesión de las apps se conservaron.</item>
+        <item quantity="one">Volvió %1$d app preinstalada.</item>
+        <item quantity="many">Volvieron %1$d apps preinstaladas.</item>
+        <item quantity="other">Volvieron %1$d apps preinstaladas.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</string>
-    <string name="copy_reset_done_nothing">. Los datos y los inicios de sesión de las apps se conservaron.</string>
+    <string name="copy_reset_done_home">%1$s es la pantalla de inicio.</string>
+    <string name="copy_reset_done_settings">El DNS privado y las animaciones volvieron a sus valores predeterminados.</string>
+    <string name="copy_reset_done_dns">El DNS privado volvió a Automático.</string>
+    <string name="copy_reset_done_animations">Las animaciones volvieron a velocidad normal.</string>
+    <string name="copy_reset_kept_data">Los datos y los inicios de sesión de las apps se conservaron.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">Un paso no funcionó. Todo lo demás volvió a como venía de fábrica. No se perdió nada.</item>
         <item quantity="many">%1$d pasos no funcionaron. Todo lo demás volvió a como venía de fábrica. No se perdió nada.</item>
@@ -489,6 +499,10 @@
     </plurals>
     <string name="copy_is_home">%1$s es la pantalla de inicio</string>
     <string name="copy_still_home">%1$s sigue siendo la pantalla de inicio</string>
+    <string name="copy_dns_automatic">El DNS privado está en Automático</string>
+    <string name="copy_dns_still">El DNS privado sigue en %1$s</string>
+    <string name="copy_animations_normal">Las animaciones están a velocidad normal</string>
+    <string name="copy_animations_still">Las animaciones siguen a %1$s</string>
     <string name="copy_try_app_again">Reintentar %1$s</string>
     <string name="copy_try_again">Reintentar</string>
     <string name="copy_disabling_apps">Desactivando apps: %1$d de %2$d. Mantén la TV encendida y conectada.</string>

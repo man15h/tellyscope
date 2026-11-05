@@ -228,6 +228,7 @@ class FakeDeviceSource(
             val reset = book.entries(deviceId).first { it.id == undoing }
             val on = ResetRecord.list(reset.previous, ResetRecord.ON)
             list.replaceAll { if (it.packageName in on) it.copy(enabled = false) else it }
+            Tweak.entries.forEach { tweak -> ResetRecord.setting(reset.previous, tweak)?.let(settingsFor(deviceId)::putAll) }
             return book.record(deviceId, clock(), Action.Change, packageName, UiText(R.string.data_history_reset_undone).text(), null, undoing)
         }
         val i = list.indexOfFirst { it.packageName == packageName }
@@ -271,7 +272,8 @@ class FakeDeviceSource(
     override suspend fun resetPlan(deviceId: String): ResetPlan {
         delay(400)
         val off = appsFor(deviceId).filter { it.system && !it.enabled }.map { ResetApp(it.packageName, it.label) }
-        return ResetPlan(turnOn = off, ownHome = "Google TV Home")
+        fun offDefault(tweak: Tweak) = tweak.keys.associateWith { settingsFor(deviceId)[it] }.takeIf { TvSettings.offDefault(tweak, it) }
+        return ResetPlan(turnOn = off, ownHome = "Google TV Home", dns = offDefault(Tweak.PRIVATE_DNS), animations = offDefault(Tweak.ANIMATIONS))
     }
 
     override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> {
@@ -281,9 +283,19 @@ class FakeDeviceSource(
             delay(300)
             list.replaceAll { if (it.packageName == app.packageName) it.copy(enabled = true) else it }
         }
-        if (plan.turnOn.isEmpty()) return into to emptyList()
+        val s = settingsFor(deviceId)
+        val settings = listOfNotNull(
+            plan.dns?.let { Triple(ResetPart.Dns, Tweak.PRIVATE_DNS, it) },
+            plan.animations?.let { Triple(ResetPart.Animations, Tweak.ANIMATIONS, it) },
+        ).flatMap { (part, tweak, was) ->
+            onProgress(ResetProgress(part, 0, 1))
+            delay(300)
+            tweak.keys.forEach { s.remove(it) }
+            was.entries.map { it.toPair() } + (ResetRecord.mark(tweak) to "1")
+        }
+        if (plan.turnOn.isEmpty() && settings.isEmpty()) return into to emptyList()
         val on = plan.turnOn.joinToString(",") { it.packageName }
-        val entry = book.record(deviceId, clock(), Action.Reset, "reset", ResetRecord.label(plan.changes).text(), Action.Reset, previous = mapOf(ResetRecord.ON to on))
+        val entry = book.record(deviceId, clock(), Action.Reset, "reset", ResetRecord.label(plan.changes).text(), Action.Reset, previous = mapOf(ResetRecord.ON to on) + settings)
         return entry.id to emptyList()
     }
 

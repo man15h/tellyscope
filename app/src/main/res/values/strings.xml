@@ -513,6 +513,14 @@
     <!-- %1$s is the launcher Home moves away from -->
     <string name="copy_reset_home_text">Instead of %1$s. %1$s stays installed.</string>
     <string name="copy_reset_home_text_service">Instead of %1$s, with its accessibility service turned off. %1$s stays installed.</string>
+    <string name="copy_reset_dns">Private DNS back to Automatic</string>
+    <string name="copy_reset_animations">Animations back to normal speed</string>
+    <!-- Under a setting Reset TV puts back: %1$s is the Private DNS provider ("dns.adguard-dns.com", or "off"), or an animation scale ("0.5×"). -->
+    <string name="copy_reset_was">Was %1$s</string>
+    <!-- Private DNS turned off, as "Was off" and "Private DNS is still off" name it. -->
+    <string name="copy_dns_off">off</string>
+    <!-- An animation scale; %1$s is a number such as 0.5. -->
+    <string name="copy_animation_scale">%1$s×</string>
     <!-- %2$s is the TV's brand, or copy_the_maker -->
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d app %2$s shipped switched off stay off.</item>
@@ -529,6 +537,8 @@
     <string name="copy_resetting_turn_on">Turning on apps: %1$d of %2$d.</string>
     <string name="copy_resetting_bring_back">Bringing back apps: %1$d of %2$d.</string>
     <string name="copy_resetting_home">Making %1$s the home screen.</string>
+    <string name="copy_resetting_dns">Putting Private DNS back to Automatic.</string>
+    <string name="copy_resetting_animations">Putting animations back to normal speed.</string>
     <string name="copy_keep_tv_on">Keep the TV on and connected.</string>
     <string name="copy_resetting">Resetting…</string>
     <string name="copy_reset_apps_stale">Reset done, but the app list didn\'t refresh. Open the TV again to see it.</string>
@@ -537,16 +547,18 @@
     <string name="copy_reset_partly">Reset partly done</string>
     <!-- After a reset; %2$s is the launcher now on Home -->
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">%1$d preinstalled app is back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
-        <item quantity="other">%1$d preinstalled apps are back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
+        <item quantity="one">%1$d preinstalled app is back, and %2$s is the home screen.</item>
+        <item quantity="other">%1$d preinstalled apps are back, and %2$s is the home screen.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">%1$d preinstalled app is back. Apps\' data and sign-ins stayed.</item>
-        <item quantity="other">%1$d preinstalled apps are back. Apps\' data and sign-ins stayed.</item>
+        <item quantity="one">%1$d preinstalled app is back.</item>
+        <item quantity="other">%1$d preinstalled apps are back.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s is the home screen. Apps\' data and sign-ins stayed.</string>
-    <!-- Only reached when a reset changed nothing; the leading ". " is as the app always showed it -->
-    <string name="copy_reset_done_nothing">. Apps\' data and sign-ins stayed.</string>
+    <string name="copy_reset_done_home">%1$s is the home screen.</string>
+    <string name="copy_reset_done_settings">Private DNS and animations are back to their defaults.</string>
+    <string name="copy_reset_done_dns">Private DNS is back to Automatic.</string>
+    <string name="copy_reset_done_animations">Animations are back to normal speed.</string>
+    <string name="copy_reset_kept_data">Apps\' data and sign-ins stayed.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">One step didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
         <item quantity="other">%1$d steps didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
@@ -570,6 +582,12 @@
     </plurals>
     <string name="copy_is_home">%1$s is the home screen</string>
     <string name="copy_still_home">%1$s is still the home screen</string>
+    <string name="copy_dns_automatic">Private DNS is Automatic</string>
+    <!-- %1$s is the Private DNS provider, or "off". -->
+    <string name="copy_dns_still">Private DNS is still %1$s</string>
+    <string name="copy_animations_normal">Animations are at normal speed</string>
+    <!-- %1$s is an animation scale, such as "0.5×". -->
+    <string name="copy_animations_still">Animations are still at %1$s</string>
     <string name="copy_try_app_again">Try %1$s again</string>
     <string name="copy_try_again">Try again</string>
 

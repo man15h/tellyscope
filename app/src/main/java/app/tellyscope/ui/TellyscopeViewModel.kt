@@ -1358,8 +1358,10 @@ class TellyscopeViewModel(
                 rereadAfterFailure(id)
                 return@launch
             }
+            // A reset's Undo can put settings back too.
+            val tweaks = if (action == Action.Reset) runCatching { source.tweaks(id) }.getOrNull() else null
             val (history, restorable) = historyOf(id)
-            updateDevice(id) { it.copy(apps = apps, busy = null, history = history, restorable = restorable) }
+            updateDevice(id) { it.copy(apps = apps, tweaks = tweaks ?: it.tweaks, busy = null, history = history, restorable = restorable) }
             if (undoing == null) _done.value = Done(id, entry)
             if (action == Action.Uninstall) pruneDock(id, apps)
         }
@@ -2108,6 +2110,8 @@ class TellyscopeViewModel(
             bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app },
             // A Home failure with an app is its service, still on: Try again does just that.
             home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } },
+            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } },
+            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } },
         )
         updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList())) }
         viewModelScope.launch {
@@ -2120,16 +2124,22 @@ class TellyscopeViewModel(
                 val why = e.why(R.string.vm_tv_didnt_answer_reason)
                 ui.entry to todo.turnOn.map { ResetFailure(ResetPart.TurnOn, it, why) } +
                     todo.bringBack.map { ResetFailure(ResetPart.BringBack, it, why) } +
-                    listOfNotNull(todo.home?.let { ResetFailure(ResetPart.Home, null, why) })
+                    listOfNotNull(
+                        todo.home?.let { ResetFailure(ResetPart.Home, null, why) },
+                        todo.dns?.let { ResetFailure(ResetPart.Dns, null, why) },
+                        todo.animations?.let { ResetFailure(ResetPart.Animations, null, why) },
+                    )
             }
             // Read again what Reset changed, as opening the TV does: the apps, then the list from them,
             // so the Debloat tile counts what came back on. A failed read is tried once more, then said.
             val apps = runCatching { source.apps(id) }.recoverCatching { source.apps(id) }.getOrNull()
             if (apps == null) _notice.value = Copy.RESET_APPS_STALE
+            // And the settings it put back, for This TV's tweaks.
+            val tweaks = if (todo.dns != null || todo.animations != null) runCatching { source.tweaks(id) }.getOrNull() else null
             val (history, restorable) = historyOf(id)
             updateDevice(id) { d ->
                 d.copy(
-                    apps = apps ?: d.apps, history = history, restorable = restorable, busy = null,
+                    apps = apps ?: d.apps, tweaks = tweaks ?: d.tweaks, history = history, restorable = restorable, busy = null,
                     reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry),
                 )
             }
