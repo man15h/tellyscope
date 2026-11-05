@@ -15,6 +15,8 @@ fails CI until this file has a section for its version.
 
 ## Unreleased
 
+## 0.15.1 — 2026-11-06
+
 - **Improved:** Reset TV to how it shipped also puts Private DNS back to Automatic and animations back to normal speed, when they've been changed. Undo puts them back too. [#360](../../pull/360)
 - **Fixed:** Fire TVs no longer offer Faster animations, which broke their side menu. [#359](../../pull/359)
 - **Fixed:** Started off Wi-Fi, the Remote's app buttons now load once the phone is back online, without a restart. [#341](../../pull/341)
