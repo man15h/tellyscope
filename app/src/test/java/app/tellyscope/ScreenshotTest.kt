@@ -313,6 +313,12 @@ class ScreenshotTest {
         return deviceState { copy(history = history, files = FilesUi(TvFolder.DOWNLOAD, files), tweaks = tweaks) }
     }
 
+    // History's disables as the TV shows them: those apps off, and Restore's list naming them.
+    private fun DeviceUi.leftOff(vararg pkgs: String) = copy(
+        apps = apps.map { if (it.packageName in pkgs) it.copy(enabled = false) else it },
+        restorable = pkgs.toList(),
+    )
+
     // The 0.5.0 Overview: three TVs, one offline with saved facts.
     private fun md3State(): UiState {
         val s = tabsState()
@@ -841,10 +847,11 @@ class ScreenshotTest {
     }
 
     private fun history(name: String, dark: Boolean, state: () -> UiState) = shot(name, dark) { HistoryScreen(state(), {}, {}, {}) }
-    @Test fun history_list() = history("46_history", false, ::tabsState)
-    @Test fun history_list_dark() = history("46_history", true, ::tabsState)
-    @Test fun history_restoring() = history("47_history_restoring", false) { tabsState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
-    @Test fun history_restoring_dark() = history("47_history_restoring", true) { tabsState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
+    private fun historyState() = tabsState().let { it.copy(device = it.device.leftOff("com.xgimi.ota")) }
+    @Test fun history_list() = history("46_history", false, ::historyState)
+    @Test fun history_list_dark() = history("46_history", true, ::historyState)
+    @Test fun history_restoring() = history("47_history_restoring", false) { historyState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
+    @Test fun history_restoring_dark() = history("47_history_restoring", true) { historyState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
     @Test fun history_empty() {
         history("48_history_empty", false) { deviceState() }
         compose.onNodeWithText("Nothing changed yet").assertExists()
@@ -959,7 +966,7 @@ class ScreenshotTest {
             HistoryEntry(2, xgimi.ip, now - 40_000, Action.Disable, "com.xgimi.ota", "XGIMI Updates", Action.Enable, null),
             HistoryEntry(1, xgimi.ip, now - 5 * 60_000, Action.Stop, "com.netflix.ninja", "Netflix", Action.Open, now - 4 * 60_000),
         )
-        shot("07_device_history") { HistoryScreen(deviceState { copy(history = history) }, {}, {}, {}) }
+        shot("07_device_history") { HistoryScreen(deviceState { leftOff("com.xgimi.ota").copy(history = history) }, {}, {}, {}) }
     }
 
     @Test fun history_undoOfTurnOnAsksFirst() {
@@ -1673,7 +1680,7 @@ class ScreenshotTest {
             HistoryEntry(2, xgimi.ip, now - 5 * 60_000, Action.Stop, "com.netflix.ninja", "Netflix", Action.Open, null),
             HistoryEntry(1, xgimi.ip, now - 2 * 3_600_000, Action.Stop, "com.google.android.youtube.tv", "YouTube", Action.Open, now - 3_500_000),
         )
-        shot("22_readme_history") { HistoryScreen(deviceState { copy(history = history) }, {}, {}, {}) }
+        shot("22_readme_history") { HistoryScreen(deviceState { leftOff("com.google.android.tvrecommendations", "com.xgimi.assistant").copy(history = history) }, {}, {}, {}) }
         compose.onNodeWithText("Restore everything (2)").assertExists()
     }
     @Test fun readme_install() {
