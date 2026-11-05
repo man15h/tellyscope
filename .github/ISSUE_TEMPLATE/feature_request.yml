@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest something Tellyscope should do.
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks! Tell us what gets in your way first; there may be more than one way to fix it.
+        Please don't paste serial numbers, IP addresses or account names.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and what stops you today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How you'd like Tellyscope to handle it.
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Which TV is it for?
+      description: Make and model, or "any".
+      placeholder: e.g. Fire TV Stick 4K, any Google TV
