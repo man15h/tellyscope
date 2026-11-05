@@ -22,7 +22,14 @@ object TvSettings {
         if (host == null) mapOf("private_dns_mode" to "opportunistic")
         else mapOf("private_dns_specifier" to host, "private_dns_mode" to "hostname")
 
-    fun animations(fast: Boolean): Map<String, String?> = Tweak.ANIMATIONS.keys.associateWith { if (fast) FAST else "1.0" }
+    /**
+     * Fast scales window and transition only. Fire OS 8's launcher side menu opens nothing with
+     * `animator_duration_scale` below 1, so that key is always written back to 1.0, which also
+     * repairs a TV an older Tellyscope left at 0.5.
+     */
+    fun animations(fast: Boolean): Map<String, String?> = Tweak.ANIMATIONS.keys.associateWith {
+        if (fast && it != "animator_duration_scale") FAST else "1.0"
+    }
 
     fun tweaks(dns: Map<String, String?>, animations: Map<String, String?>, sdk: Int?) = TvTweaks(
         dnsHost = dns["private_dns_specifier"]?.takeIf { dns["private_dns_mode"] == "hostname" },

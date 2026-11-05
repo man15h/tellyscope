@@ -13,6 +13,7 @@ until this file has a section for its version.
 ## Unreleased
 
 - **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#354](../../pull/354)
+- **Fixed:** On Fire OS 8, Faster animations no longer stops the side menu opening Settings. [#357](../../pull/357)
 
 ## 0.15.0 — 2026-11-04
 
