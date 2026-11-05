@@ -1,0 +1,117 @@
+name: Issue triage
+
+on:
+  issues:
+    types: [opened]
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  triage:
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const issue = context.payload.issue;
+            if (['OWNER', 'MEMBER', 'COLLABORATOR'].includes(issue.author_association)) return;
+
+            const { owner, repo } = context.repo;
+            const number = issue.number;
+            const body = issue.body || '';
+            const labels = new Set();
+            const comments = [];
+
+            // Form headings (`### <label>`) that only an issue form would produce.
+            const formHeadings = [
+              'TV make and model',
+              'Tellyscope version',
+              'Steps to reproduce',
+              'What happened?',
+              'The problem',
+              'Your idea',
+            ];
+            const headings = [...body.matchAll(/^###\s+(.+?)\s*$/gm)].map(m => m[1]);
+            if (!headings.some(h => formHeadings.includes(h))) {
+              labels.add('needs-info');
+              const url = `${context.serverUrl}/${owner}/${repo}/issues/new/choose`;
+              comments.push(
+                `Thanks for the report. Please fill in one of the issue forms (${url}) ` +
+                'so we have the TV model, Android version and app version. ' +
+                'Issues without that information are closed after 7 days.'
+              );
+            }
+
+            // Duplicate hint: token overlap between titles.
+            const stop = new Set(['a', 'an', 'the', 'and', 'or', 'of', 'to', 'in', 'on', 'for', 'with',
+              'is', 'it', 'not', 'no', 'my', 'i', 'can', 'cant', 'does', 'doesnt', 'dont', 'be', 'tv',
+              'when', 'after', 'from', 'this', 'that', 'app', 'tellyscope']);
+            const tokens = title => new Set(title
+              .replace(/^\s*\[(bug|feature|feature request|device)\]\s*/i, '')
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, ' ')
+              .split(' ')
+              .filter(t => t && !stop.has(t)));
+            const jaccard = (a, b) => {
+              if (!a.size || !b.size) return 0;
+              let shared = 0;
+              for (const t of a) if (b.has(t)) shared++;
+              return shared / (a.size + b.size - shared);
+            };
+            const mine = tokens(issue.title);
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100,
+            });
+            const dupes = open
+              .filter(o => !o.pull_request && o.number !== number)
+              .map(o => ({ number: o.number, score: jaccard(mine, tokens(o.title)) }))
+              .filter(o => o.score >= 0.5)
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 3);
+            if (dupes.length) {
+              labels.add('duplicate?');
+              comments.push(dupes.map(d => `Possibly a duplicate of #${d.number}.`).join('\n'));
+            }
+
+            // Brand labels from the TV field of whichever form was used.
+            const section = name => {
+              const m = body.match(new RegExp(`^###\\s+${name}\\s*$([\\s\\S]*?)(?=^###\\s|(?![\\s\\S]))`, 'm'));
+              return m ? m[1].toLowerCase() : '';
+            };
+            const tv = section('TV make and model') + ' ' + section('Which TV is it for\\?');
+            const brands = [
+              ['fire-tv', /fire\s?tv|fire\s?stick|fire\s?os/],
+              ['xiaomi', /xiaomi|mi\s?box|mitv/],
+              ['tcl', /\btcl\b/],
+              ['hisense', /hisense/],
+            ];
+            for (const [label, re] of brands) if (re.test(tv)) labels.add(label);
+
+            if (labels.size) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: number, labels: [...labels] });
+            }
+            if (comments.length) {
+              await github.rest.issues.createComment({ owner, repo, issue_number: number, body: comments.join('\n\n') });
+            }
+
+  stale:
+    if: github.event_name != 'issues'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11.0.0
+        with:
+          only-issue-labels: needs-info
+          days-before-issue-stale: 7
+          days-before-issue-close: 0
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-message: "No reply in 7 days, so this will be closed. Please open a new issue with one of the forms if it still happens."
+          close-issue-reason: not_planned
