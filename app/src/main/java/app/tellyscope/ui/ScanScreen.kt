@@ -133,8 +133,13 @@ fun ScanScreen(
                     Icon(Icons.Default.Info, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        if (scan.noLan) stringResource(R.string.scan_no_lan)
-                        else stringResource(R.string.scan_same_wifi),
+                        stringResource(
+                            when {
+                                scan.noLan -> R.string.scan_no_lan
+                                scan.vpn -> R.string.scan_vpn
+                                else -> R.string.scan_same_wifi
+                            },
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                     )

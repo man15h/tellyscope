@@ -12,6 +12,8 @@ until this file has a section for its version.
 
 ## Unreleased
 
+- **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#PR](../../pull/PR)
+
 ## 0.15.0 — 2026-11-04
 
 - **New:** Advanced has a Shell for any `adb shell` command; changes ask first. [#314](../../pull/314)

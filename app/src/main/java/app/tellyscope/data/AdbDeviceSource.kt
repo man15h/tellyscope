@@ -295,6 +295,12 @@ class AdbDeviceSource(
         }
     }
 
+    private fun onVpn(): Boolean {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return false
+        val network = cm.activeNetwork ?: return false
+        return cm.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
     override fun lanLost() = links.values.forEach(DeviceLink::lanLost)
 
     override fun lanUp(): Flow<Unit> = callbackFlow {
@@ -311,7 +317,10 @@ class AdbDeviceSource(
 
     override fun scan(): Flow<ScanEvent> = flow {
         val hosts = lanHosts()
-        if (hosts.isEmpty()) emit(ScanEvent.NoLan)
+        if (hosts.isEmpty()) when {
+            !onLan() -> emit(ScanEvent.NoLan)
+            onVpn() -> emit(ScanEvent.Vpn)
+        }
         LanScanner(KadbMdnsAndroid(appContext)).scan(hosts).collect { h ->
             if (h.kind == AdbHit.Kind.PAIRING) {
                 pairingPorts[h.host] = h.port

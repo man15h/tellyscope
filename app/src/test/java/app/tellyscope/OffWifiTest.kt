@@ -38,15 +38,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Off Wi-Fi on the first scan, on it from the second; [lan] stands in for the network callback. */
-private class JoinsWifi : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
+/** Off Wi-Fi (or under a VPN) on the first scan, on it from the second; [lan] stands in for the network callback. */
+private class JoinsWifi(private val first: ScanEvent = ScanEvent.NoLan) : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     var scans = 0
     val lan = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override suspend fun known() = emptyList<Device>()
 
     override fun scan() = flow {
-        if (++scans == 1) emit(ScanEvent.NoLan)
+        if (++scans == 1) emit(first)
         emit(ScanEvent.Done)
     }
 
@@ -84,6 +84,35 @@ class OffWifiTest {
         show(ScanUi())
         compose.onNodeWithText("Add your TV").assertIsDisplayed()
         compose.onNodeWithText("This phone isn't on Wi-Fi").assertDoesNotExist()
+    }
+
+    @Test fun aVpnKeepsTheScanAndSaysWhy() {
+        show(ScanUi(vpn = true))
+        compose.onNodeWithText("Add your TV").assertIsDisplayed()
+        compose.onNodeWithText("A VPN is on", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("This phone isn't on Wi-Fi").assertDoesNotExist()
+    }
+
+    @Test fun aVpnScansAgainOnceThereIsALan() {
+        val dispatcher = StandardTestDispatcher()
+        Dispatchers.setMain(dispatcher)
+        val source = JoinsWifi(ScanEvent.Vpn)
+        val vm = TellyscopeViewModel(source, clock = { 0L })
+        try {
+            with(TestScope(dispatcher)) {
+                runCurrent()
+                assertTrue(vm.state.value.scan.vpn)
+                assertFalse(vm.state.value.scan.offWifi)
+
+                source.lan.tryEmit(Unit)
+                runCurrent()
+                assertEquals(2, source.scans)
+                assertFalse(vm.state.value.scan.vpn)
+            }
+        } finally {
+            vm.viewModelScope.cancel()
+            Dispatchers.resetMain()
+        }
     }
 
     @Test fun joiningWifiScansAgain() {

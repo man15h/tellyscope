@@ -105,6 +105,8 @@ data class ScanUi(
     val progress: ScanProgress? = null,
     /** Not on Wi-Fi or Ethernet, so there was no sweep. */
     val noLan: Boolean = false,
+    /** On Wi-Fi or Ethernet under a VPN, so there was no sweep either; not off Wi-Fi. */
+    val vpn: Boolean = false,
     val hits: List<ScanHit> = emptyList(),
     val rows: Map<String, RowState> = emptyMap(),
     /** Nothing found yet: when the next scan starts by itself. Null while a scan runs or once a TV turns up. */
@@ -536,9 +538,9 @@ class TellyscopeViewModel(
         rescan()
         viewModelScope.launch { notice.collect { it?.let(::log) } }
         viewModelScope.launch {
-            // Off Wi-Fi a scan has nothing to sweep; start over the moment the phone joins one.
+            // Off Wi-Fi or under a VPN a scan has nothing to sweep; start over the moment there's a LAN to sweep.
             source.lanUp().collect {
-                if (_state.value.scan.noLan) {
+                if (_state.value.scan.let { it.noLan || it.vpn }) {
                     scanJob?.cancel()
                     rescan()
                 }
@@ -602,7 +604,7 @@ class TellyscopeViewModel(
             // The retry stays in this job, as rescan() from here would see it still active.
             val done = { _state.value.let { it.scan.hits.isNotEmpty() || (it.selected != null && !addingTv) } }
             while (true) {
-                _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false)) }
+                _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false, vpn = false)) }
                 source.scan().collect { e ->
                     when (e) {
                         is ScanEvent.Progress -> _state.update { it.copy(scan = it.scan.copy(progress = e.progress)) }
@@ -615,6 +617,7 @@ class TellyscopeViewModel(
                             ))
                         }
                         ScanEvent.NoLan -> _state.update { it.copy(scan = it.scan.copy(noLan = true)) }
+                        ScanEvent.Vpn -> _state.update { it.copy(scan = it.scan.copy(vpn = true)) }
                         ScanEvent.Done -> Unit
                     }
                 }
