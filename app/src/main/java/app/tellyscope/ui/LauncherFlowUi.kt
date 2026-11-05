@@ -97,6 +97,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -857,7 +858,8 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
                     if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
                 }
                 l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp))
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Light,
+                        modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp))
                 }
             }
         },
