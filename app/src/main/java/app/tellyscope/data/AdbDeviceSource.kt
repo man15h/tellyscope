@@ -735,6 +735,8 @@ class AdbDeviceSource(
 
     override suspend fun history(deviceId: String): List<HistoryEntry> = book.entries(key(deviceId))
 
+    override suspend fun restorable(deviceId: String): List<String> = book.restorable(key(deviceId))
+
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
         // Only a launcher the list names: the Store link is the one thing this opens.
         if (SharedLists.launchers.none { it.pkg == packageName }) return false
@@ -760,7 +762,7 @@ class AdbDeviceSource(
         val key = key(deviceId)
         // One change for them all: the stats are read again once, after the last app.
         return batch(deviceId) {
-            restoreEach(book.restorable(key).filter { it in off }) { pkg ->
+            restoreEach(restorable(deviceId).filter { it in off }) { pkg ->
                 act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg))
             }
         }

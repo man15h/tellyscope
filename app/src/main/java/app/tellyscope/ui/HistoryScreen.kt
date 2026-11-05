@@ -54,7 +54,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Action
-import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.resolve
 
@@ -95,14 +94,14 @@ fun HistoryScreen(
         ) {
             item {
                 if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, stringResource(R.string.history_empty_title), stringResource(R.string.history_empty_text))
-                else HistoryList(ui.history, state.clock(), onUndo, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
+                else HistoryList(ui.history, state.clock(), onUndo, off = ui.restoreCount, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
             }
         }
     }
 }
 
 /**
- * The Restore card while apps Tellyscope turned off are still off, then one row per change. While
+ * The Restore card while Restore has [off] apps to turn back on, then one row per change. While
  * anything runs on the TV, a restore included, Undo and Restore wait for it.
  */
 @Composable
@@ -110,13 +109,13 @@ internal fun HistoryList(
     history: List<HistoryEntry>,
     now: Long,
     onUndo: (HistoryEntry) -> Unit,
+    off: Int,
     restoring: Boolean = false,
     onRestoreAll: () -> Unit = {},
     busy: Boolean = restoring,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
-    val off = HistoryBook.leftDisabled(history).size
-    if (confirming) RestoreDialog(off, onRestore = { confirming = false; onRestoreAll() }, onDismiss = { confirming = false })
+    if (confirming && off > 0) RestoreDialog(off, onRestore = { confirming = false; onRestoreAll() }, onDismiss = { confirming = false })
     var disabling by remember { mutableStateOf<HistoryEntry?>(null) }
     disabling?.let { h ->
         UndoDisableDialog(h, onDisable = { disabling = null; onUndo(h) }, onDismiss = { disabling = null })

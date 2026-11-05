@@ -110,6 +110,12 @@ interface DeviceSource {
     /** Everything Tellyscope changed on this TV, newest first. Survives app restarts. */
     suspend fun history(deviceId: String): List<HistoryEntry>
 
+    /**
+     * Apps [restoreAll] may turn back on, newest first: Tellyscope left them off, and they weren't
+     * off before its first change. Read on the phone; [restoreAll] then skips any on the TV now.
+     */
+    suspend fun restorable(deviceId: String): List<String>
+
     /** Turns back on every app Tellyscope disabled, and nothing that was off before. */
     suspend fun restoreAll(deviceId: String): List<HistoryEntry>
 

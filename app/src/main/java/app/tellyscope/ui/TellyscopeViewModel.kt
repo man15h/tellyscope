@@ -128,6 +128,8 @@ data class DeviceUi(
     val appsLoading: Boolean = false,
     val network: NetworkInfo? = null,
     val history: List<HistoryEntry> = emptyList(),
+    /** [DeviceSource.restorable], read with [history]. */
+    val restorable: List<String> = emptyList(),
     /** Package whose action row is open, and the action awaiting confirmation. */
     val pending: Pair<String, Action>? = null,
     val busy: String? = null,
@@ -158,7 +160,14 @@ data class DeviceUi(
     val reset: ResetUi? = null,
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
-)
+) {
+    /**
+     * How many apps Restore everything would turn on: [restorable] less any the last read of [apps]
+     * shows on or gone, as Restore skips them. Before the first read, all of [restorable].
+     */
+    val restoreCount: Int
+        get() = if (apps.isEmpty()) restorable.size else restorable.count { p -> apps.any { it.packageName == p && !it.enabled } }
+}
 
 /**
  * Debloat turning off the ticked [apps], in order. [at] counts the ones the TV has answered for,
@@ -770,13 +779,16 @@ class TellyscopeViewModel(
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
         viewModelScope.launch {
-            val history = source.history(device.id)
+            val (history, restorable) = historyOf(device.id)
             val dock = source.dock(device.id)
             val hidden = source.launcherCardHidden(device.id)
-            _state.update { if (it.selectedId == device.id) it.copy(device = it.device.copy(history = history, dock = dock, launcherCardHidden = hidden)) else it }
+            _state.update { if (it.selectedId == device.id) it.copy(device = it.device.copy(history = history, restorable = restorable, dock = dock, launcherCardHidden = hidden)) else it }
         }
         watch(device)
     }
+
+    /** History and what Restore everything may turn on, read together so the count never lags the list. */
+    private suspend fun historyOf(id: String) = source.history(id) to source.restorable(id)
 
     /** Stops the reads of the TV on screen that [watch] started. */
     private fun stopWatching() {
@@ -922,8 +934,8 @@ class TellyscopeViewModel(
                 rereadAfterFailure(id)
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps, busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1267,14 +1279,14 @@ class TellyscopeViewModel(
                 throw e
             } catch (e: Exception) {
                 // A change can fail after it was recorded (a rollback that didn't take), so History is reread.
-                val history = source.history(id)
-                updateDevice(id) { it.copy(busy = null, history = history) }
+                val (history, restorable) = historyOf(id)
+                updateDevice(id) { it.copy(busy = null, history = history, restorable = restorable) }
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(tweaks = tweaks, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(tweaks = tweaks, busy = null, history = history, restorable = restorable) }
             if (undoing == null) _done.value = Done(id, entry)
         }
     }
@@ -1290,8 +1302,8 @@ class TellyscopeViewModel(
             } catch (e: Exception) {
                 UiText.Capitalized(e.why(R.string.vm_didnt_work))
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1340,13 +1352,13 @@ class TellyscopeViewModel(
                 // Anything else (a dropped socket) still must not crash the app.
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 // A reset's Undo can get partway, so History shows where it ended.
-                if (undoing != null) runCatching { source.history(id) }.getOrNull()?.let { h -> updateDevice(id) { it.copy(history = h) } }
+                if (undoing != null) runCatching { historyOf(id) }.getOrNull()?.let { (h, r) -> updateDevice(id) { it.copy(history = h, restorable = r) } }
                 _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
                 rereadAfterFailure(id)
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps, busy = null, history = history, restorable = restorable) }
             if (undoing == null) _done.value = Done(id, entry)
             if (action == Action.Uninstall) pruneDock(id, apps)
         }
@@ -1358,8 +1370,8 @@ class TellyscopeViewModel(
      */
     private suspend fun rereadAfterFailure(id: String) {
         val apps = runCatching { source.apps(id) }.getOrNull()
-        val history = runCatching { source.history(id) }.getOrNull()
-        updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history ?: it.history) }
+        val read = runCatching { historyOf(id) }.getOrNull()
+        updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = read?.first ?: it.history, restorable = read?.second ?: it.restorable) }
     }
 
     /** The user picked one or more files to install. Reads them, then asks the TV what it has. */
@@ -1597,8 +1609,8 @@ class TellyscopeViewModel(
                 UiText.Capitalized(e.why(R.string.vm_didnt_work))
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1955,8 +1967,8 @@ class TellyscopeViewModel(
                 }
             }
             val read = runCatching { source.apps(id) }.getOrNull()
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = read ?: it.apps, busy = null, history = history, debloat = it.debloat?.copy(ran = true)) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = read ?: it.apps, busy = null, history = history, restorable = restorable, debloat = it.debloat?.copy(ran = true)) }
             loadLists(id) { read ?: source.apps(id) }
         }
     }
@@ -2107,10 +2119,10 @@ class TellyscopeViewModel(
             // so the Debloat tile counts what came back on. A failed read is tried once more, then said.
             val apps = runCatching { source.apps(id) }.recoverCatching { source.apps(id) }.getOrNull()
             if (apps == null) _notice.value = Copy.RESET_APPS_STALE
-            val history = source.history(id)
+            val (history, restorable) = historyOf(id)
             updateDevice(id) { d ->
                 d.copy(
-                    apps = apps ?: d.apps, history = history, busy = null,
+                    apps = apps ?: d.apps, history = history, restorable = restorable, busy = null,
                     reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry),
                 )
             }
