@@ -6,9 +6,12 @@ for the people using the app. Headings are `## <version> — <date>`, where
 **New:**, **Improved:** or **Fixed:**, in that order within a section, then a
 plain line of at most about twelve words, ending with a link to its PR.
 
-Changes merged into `dev` collect under `## Unreleased`. A release renames
-that heading to its version and date. A pull request into `main` fails CI
-until this file has a section for its version.
+Pull requests don't edit this file. Each one puts its line in its
+description instead, as `Changelog: **Fixed:** …`. The `[release]` pull
+request for an alpha copies the lines of the pull requests merged since the
+last release under `## Unreleased`, and changes nothing else. A release
+renames that heading to its version and date. A pull request into `main`
+fails CI until this file has a section for its version.
 
 ## Unreleased
 
