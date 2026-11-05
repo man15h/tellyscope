@@ -1150,6 +1150,7 @@
     <string name="scan_back">Atrás</string>
     <string name="scan_title">Añade tu TV</string>
     <string name="scan_no_lan">No estás conectado a una red Wi-Fi, así que solo aparecen las TV que se anuncian solas. Conéctate a la red Wi-Fi de tu TV.</string>
+    <string name="scan_vpn">Hay una VPN activa, así que la búsqueda no puede explorar tu red. Las TV que se anuncian solas siguen apareciendo. Añade tu TV por su dirección IP o permite el acceso a la red local en la VPN.</string>
     <string name="scan_same_wifi">Mantén el teléfono y la TV en la misma red Wi-Fi.</string>
     <string name="scan_add_by_ip">Añadir por dirección IP</string>
     <string name="scan_cant_find">¿No encuentras tu TV?</string>
