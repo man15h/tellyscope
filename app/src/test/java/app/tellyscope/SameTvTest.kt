@@ -19,7 +19,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** A session that only records whether it was let go. */
-private class Tv : AdbSession {
+private class LetGoSession : AdbSession {
     var closed = false
 
     override suspend fun shell(command: String) = ShellResult("", 0)
@@ -36,7 +36,7 @@ private class Tv : AdbSession {
 
 class SameTvTest {
     @Test fun theSameTvStaysConnected() = runTest {
-        val tv = Tv()
+        val tv = LetGoSession()
         val r = ConnectResult.Online(tv)
         assertSame(r, sameTv(r, "sn:QV7124ZK") { "sn:QV7124ZK" })
         assertFalse(tv.closed)
@@ -44,19 +44,19 @@ class SameTvTest {
 
     @Test fun anotherTvIsLetGo() = runTest {
         // A neighbour's TV took the address, or the port, after a DHCP change.
-        val tv = Tv()
+        val tv = LetGoSession()
         assertTrue(sameTv(ConnectResult.Online(tv), "sn:QV7124ZK") { "sn:XK03H1234" } is ConnectResult.Unreachable)
         assertTrue(tv.closed)
     }
 
     @Test fun aTvThatCantBeReadIsLetGo() = runTest {
-        val tv = Tv()
+        val tv = LetGoSession()
         assertTrue(sameTv(ConnectResult.Online(tv), "sn:QV7124ZK") { throw IOException("link gone") } is ConnectResult.Unreachable)
         assertTrue(tv.closed)
     }
 
     @Test fun aTvNotKnownYetIsNotChecked() = runTest {
-        val tv = Tv()
+        val tv = LetGoSession()
         val r = ConnectResult.Online(tv)
         assertSame(r, sameTv(r, null) { error("not read") })
         assertFalse(tv.closed)
