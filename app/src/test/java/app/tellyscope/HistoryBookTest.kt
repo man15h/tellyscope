@@ -11,6 +11,7 @@ import app.tellyscope.data.UiTextException
 import app.tellyscope.data.firstHomeService
 import app.tellyscope.data.historyKey
 import app.tellyscope.data.restoreEach
+import app.tellyscope.ui.DeviceUi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -190,6 +191,26 @@ class HistoryBookTest {
         assertTrue(apps.getValue("org.jellyfin.androidtv").enabled)
         assertFalse(apps.getValue("com.google.android.tvrecommendations").enabled)
         assertEquals(emptyList<String>(), source.restoreAll(id).map { it.packageName })
+    }
+
+    @Test fun theRestoreCountIsWhatRestoreTurnsOn() = runTest {
+        // History counted apps off before Tellyscope's first change too, so it offered 96 and Restore turned on none.
+        val source = FakeDeviceSource()
+        val id = "tv"
+        source.act(id, Action.Disable, "com.netflix.ninja")
+        source.act(id, Action.Disable, "org.jellyfin.androidtv")
+        source.act(id, Action.Enable, "com.google.android.tvrecommendations")
+        source.act(id, Action.Disable, "com.google.android.tvrecommendations")
+        val apps = source.apps(id)
+        val ui = DeviceUi(apps = apps, history = source.history(id), restorable = source.restorable(id))
+
+        assertEquals(3, HistoryBook.leftDisabled(ui.history).size)
+        assertEquals(2, ui.restoreCount)
+        // Turned back on from the TV: Restore skips it, so the count does too.
+        val onAgain = ui.copy(apps = apps.map { if (it.packageName == "org.jellyfin.androidtv") it.copy(enabled = true) else it })
+        assertEquals(1, onAgain.restoreCount)
+        assertEquals(ui.restoreCount, source.restoreAll(id).size)
+        assertEquals(0, DeviceUi(apps = source.apps(id), history = source.history(id), restorable = source.restorable(id)).restoreCount)
     }
 
     @Test fun historyFollowsTheSerialNotTheAddress() {

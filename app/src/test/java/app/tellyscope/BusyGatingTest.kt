@@ -60,21 +60,21 @@ class BusyGatingTest {
 
     @Test fun undoAndRestoreWaitWhileTheTvIsBusy() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}, busy = true) }
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, off = 1, busy = true) }
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
         compose.onNodeWithText("Restore everything (1)").assertIsNotEnabled()
     }
 
     @Test fun restoreKeepsItsOwnLabel() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}, restoring = true) }
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, off = 1, restoring = true) }
         compose.onNodeWithText("Turning apps back on…").assertIsNotEnabled()
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
     }
 
     @Test fun idleUndoStillWorks() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}) }
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, off = 1) }
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsEnabled()
     }
 
