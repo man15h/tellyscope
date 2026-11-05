@@ -23,16 +23,23 @@ import kotlin.time.Duration.Companion.seconds
  * marks a device remembered from an earlier launch, which counts as let in before. After
  * `connect(asked = true)` the user is watching the prompt, so a refusal is a plain NOT_ALLOWED until
  * the TV lets the phone in again.
+ *
+ * Wireless debugging moves to a new port after a reboot, standby or toggle: [findPort] looks up the
+ * one the TV takes connections on now, before every retry, and [port] follows it.
  */
 class DeviceLink(
     val host: String,
-    val port: Int,
+    port: Int,
     private val scope: CoroutineScope,
     private val retryEvery: Duration = 5.seconds,
     private val monitorFor: (AdbShell, StatsGate) -> MonitorSource = { s, gate -> DeviceMonitor(s, gate = gate) },
     private val open: suspend (String, Int) -> ConnectResult = { h, p -> Connector.connect(h, p) },
     knownGood: Boolean = false,
+    private val findPort: suspend () -> Int? = { null },
 ) {
+    @Volatile var port: Int = port
+        private set
+
     private val _state = MutableStateFlow(DeviceState.FOUND)
     val state: StateFlow<DeviceState> = _state.asStateFlow()
 
@@ -109,8 +116,12 @@ class DeviceLink(
     }
 
     private suspend fun loop() {
+        // The first try goes to the port we have; it is usually still right.
+        var retry = false
         while (true) {
             gate.awaitResumed()
+            if (retry) findPort()?.let { port = it }
+            retry = true
             when (val r = open(host, port)) {
                 is ConnectResult.NotAllowed -> {
                     _loggedOutAt.value = if (allowedBefore) System.currentTimeMillis() else null

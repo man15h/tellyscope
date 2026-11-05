@@ -19,6 +19,11 @@ data class SavedDevice(
     val lastKnown: LastKnown? = null,
     /** Epoch millis the TV took this phone's key back; null while it hasn't, or once it lets it in again. */
     val loggedOutAt: Long? = null,
+    /**
+     * Wireless debugging only: the TV's `_adb-tls-connect` instance name (`adb-<serial>-…`), saved at
+     * first connect, so its new port is looked up for this TV and no other.
+     */
+    val service: String? = null,
 )
 
 /**
@@ -50,13 +55,14 @@ class DeviceStore(private val file: File) {
         clean(d.lastKnown?.manufacturer), clean(d.lastKnown?.brand), clean(d.lastKnown?.android),
         d.lastKnown?.softwareMonth?.toString().orEmpty(),
         d.lastKnown?.storageUsedGb?.toString().orEmpty(), d.lastKnown?.storageTotalGb?.toString().orEmpty(),
-        d.loggedOutAt?.toString().orEmpty(),
+        d.loggedOutAt?.toString().orEmpty(), clean(d.service),
     ).joinToString("\t")
 
     private fun parse(line: String): SavedDevice? {
         val f = line.split('\t')
-        // 7 fields: written before the history key existed; 8 before the last-known facts; 14 before logout.
-        if (f.size !in setOf(7, 8, 14, 15) || f[0] != VERSION) return null
+        // 7 fields: written before the history key existed; 8 before the last-known facts; 14 before logout;
+        // 15 before the wireless service name.
+        if (f.size !in setOf(7, 8, 14, 15, 16) || f[0] != VERSION) return null
         val lastKnown = if (f.size >= 14 && f.subList(8, 14).any { it.isNotEmpty() }) {
             LastKnown(
                 manufacturer = f[8].ifEmpty { null },
@@ -77,6 +83,7 @@ class DeviceStore(private val file: File) {
             historyKey = f.getOrNull(7)?.ifEmpty { null },
             lastKnown = lastKnown,
             loggedOutAt = f.getOrNull(14)?.toLongOrNull(),
+            service = f.getOrNull(15)?.ifEmpty { null },
         )
     }
 

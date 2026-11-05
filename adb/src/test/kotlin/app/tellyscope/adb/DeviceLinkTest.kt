@@ -129,6 +129,32 @@ class DeviceLinkTest {
         assertEquals(2, sessions.size)
     }
 
+    @Test fun wirelessDebuggingFollowsANewPort() = runTest {
+        // The TV came back from standby on a new port; the saved one refuses.
+        val tried = mutableListOf<Int>()
+        val link = DeviceLink(
+            "tv", 37211, backgroundScope,
+            monitorFor = { _, _ -> fakeMonitor(failFirst = false) },
+            open = { _, p -> tried += p; if (p == 40523) ConnectResult.Online(FakeShell()) else ConnectResult.Unreachable("refused") },
+            findPort = { 40523 },
+        )
+        link.connect(); runCurrent()
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        advanceTimeBy(5_001)
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(listOf(37211, 40523), tried)
+        assertEquals(40523, link.port)
+    }
+
+    @Test fun noPortFoundKeepsTheOldOne() = runTest {
+        val tried = mutableListOf<Int>()
+        val link = DeviceLink("tv", 37211, backgroundScope, open = { _, p -> tried += p; ConnectResult.Unreachable("asleep") }, findPort = { null })
+        link.connect(); runCurrent()
+        advanceTimeBy(5_001)
+        assertEquals(listOf(37211, 37211), tried)
+        assertEquals(37211, link.port)
+    }
+
     @Test fun lanLostLeavesAnOfflineLinkAlone() = runTest {
         var calls = 0
         val link = DeviceLink("tv", 5555, backgroundScope, open = { _, _ -> calls++; ConnectResult.NotAllowed })

@@ -111,6 +111,8 @@ class AdbDeviceSource(
     private val keys = ConcurrentHashMap<String, String>()
     /** Wireless debugging advertises pairing and connect on different ports. */
     private val pairingPorts = ConcurrentHashMap<String, Int>()
+    /** Address → a wireless-debugging TV's `_adb-tls-connect` instance name, see [SavedDevice.service]. */
+    private val services = ConcurrentHashMap<String, String>()
     private val book = HistoryBook(File(appContext.filesDir, "history.tsv"))
     private val names = NameBook(File(appContext.filesDir, "names.tsv"))
     private val docks = DockBook(File(appContext.filesDir, "docks.tsv"))
@@ -146,6 +148,8 @@ class AdbDeviceSource(
         store.load().forEach { d ->
             saved[d.host] = d
             d.historyKey?.let { keys[d.host] = it }
+            // Saved before the service had a field of its own: a wireless TV's name was its instance name.
+            (d.service ?: d.name?.takeIf { d.kind == ScanKind.Wireless && it.startsWith("adb-") })?.let { services[d.host] = it }
             hits[d.host] = ScanHit(d.host, d.port, d.kind, d.name, null)
             // A TV that logged this phone out stays quiet: reconnecting would prompt on it again.
             if (d.loggedOutAt == null) restoring += d.host
@@ -156,12 +160,23 @@ class AdbDeviceSource(
     /**
      * Starts the reconnecting link for a TV and keeps its saved entry current as it comes and goes.
      * A TV [loggedOutAt] a time gets its link without a connect.
+     *
+     * A wireless-debugging TV is looked up by its instance name before each retry, as its port moves.
+     * Whatever answers a retry must be the same TV ([sameTv]): another one that took the address or the
+     * port is let go, and the saved TV stays offline.
      */
     private fun link(host: String, port: Int, first: AdbConnectResult?, knownGood: Boolean, loggedOutAt: Long? = null) {
         var pending = first
-        val link = DeviceLink(host, port, scope, knownGood = knownGood, open = { h, p ->
-            pending?.also { pending = null } ?: connector(h, p)
-        })
+        val link = DeviceLink(
+            host, port, scope, knownGood = knownGood,
+            open = { h, p ->
+                // The user picked [first] off the scan: that one is the TV they meant.
+                pending?.also { pending = null } ?: connector(h, p).let { r ->
+                    if (hits[host]?.kind != ScanKind.Wireless) r else sameTv(r, keys[host]) { keyOf(it, host) }
+                }
+            },
+            findPort = { services[host]?.let { LanScanner(KadbMdnsAndroid(appContext)).connectPort(host, it) } },
+        )
         link.gate.profile.value = statsFor?.takeIf { it.first == host }?.second ?: StatsProfile.OTHER
         link.gate.paused.value = paused
         links.put(host, link)?.disconnect()
@@ -210,6 +225,7 @@ class AdbDeviceSource(
             historyKey = keys[host] ?: old?.historyKey,
             lastKnown = link.stats.value?.let { lastKnown(it, kept) } ?: kept,
             loggedOutAt = link.loggedOutAt.value,
+            service = services[host],
         )
         persist()
     }
@@ -259,6 +275,7 @@ class AdbDeviceSource(
         volumeSteps -= deviceId
         links.remove(deviceId)?.disconnect()
         hits.remove(deviceId)
+        services.remove(deviceId)
         restoring -= deviceId
         if (saved.remove(deviceId) != null) persist()
     }
@@ -342,6 +359,7 @@ class AdbDeviceSource(
     override suspend fun connect(hit: ScanHit): ConnectResult = when (val r = connector(hit.ip, hit.port)) {
         is AdbConnectResult.Online -> {
             hits[hit.ip] = hit
+            hit.hostname?.takeIf { hit.kind == ScanKind.Wireless }?.let { services[hit.ip] = it } ?: services.remove(hit.ip)
             restoring -= hit.ip
             // Hand the open session to a link, which reconnects on its own from here on.
             link(hit.ip, hit.port, first = r, knownGood = false)
@@ -1139,9 +1157,8 @@ class AdbDeviceSource(
 
     private suspend fun readKey(deviceId: String): String {
         val shell = links[deviceId]?.session ?: return keys[deviceId] ?: deviceId
-        suspend fun prop(cmd: String) = shell.shell(cmd).takeIf { it.exitCode == 0 }?.output
         val key = try {
-            historyKey(prop("getprop ro.serialno"), prop("settings get secure android_id"), deviceId)
+            keyOf(shell, deviceId)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -1156,6 +1173,12 @@ class AdbDeviceSource(
             remember(deviceId)
         }
         return key
+    }
+
+    /** The [historyKey] of the TV on [shell], read from it; [deviceId] stands in when it has none. */
+    private suspend fun keyOf(shell: AdbSession, deviceId: String): String {
+        suspend fun prop(cmd: String) = shell.shell(cmd).takeIf { it.exitCode == 0 }?.output
+        return historyKey(prop("getprop ro.serialno"), prop("settings get secure android_id"), deviceId)
     }
 
     private suspend fun disabledPackages(deviceId: String) =
@@ -1500,4 +1523,24 @@ internal suspend fun uninstallAfterHomeBack(switchBack: suspend () -> HistoryEnt
         throw UiTextException(UiText(if (switchedBack) R.string.data_uninstall_after_service else R.string.data_uninstall_home_not_back, why))
     }
     return uninstall().also { dropUndo(back.id) }
+}
+
+/**
+ * [r], unless it is a different TV than the one whose [historyKey] is [expected]: that one is let go
+ * and counts as unreachable, so a saved TV is never re-pointed at another. A TV that can't be read
+ * counts as different. Null [expected]: not known yet, so there is nothing to tell apart.
+ */
+internal suspend fun sameTv(r: AdbConnectResult, expected: String?, keyOf: suspend (AdbSession) -> String): AdbConnectResult {
+    if (r !is AdbConnectResult.Online || expected == null) return r
+    val key = try {
+        keyOf(r.session)
+    } catch (e: CancellationException) {
+        r.session.close()
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+    if (key == expected) return r
+    r.session.close()
+    return AdbConnectResult.Unreachable("A different TV answers here")
 }
