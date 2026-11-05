@@ -222,8 +222,11 @@ object SharedLists {
     /** Where launchers' icons and screenshots are cached; set once by the app, null in tests that don't. */
     @Volatile var images: LauncherImages? = null
 
-    /** A launcher's icon or screenshot from its developer's page ([KnownLauncher.icon]); null until it can be had. */
-    suspend fun image(url: String): ByteArray? = images?.get(url)
+    /**
+     * A launcher's icon or screenshot from its developer's page ([KnownLauncher.icon]); null until it can be had, and
+     * while `data/` fails its check ([unverified]), so a list that isn't ours can't send the phone to any host it names.
+     */
+    suspend fun image(url: String): ByteArray? = if (unverified != null) null else images?.get(url)
 
     /**
      * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out
