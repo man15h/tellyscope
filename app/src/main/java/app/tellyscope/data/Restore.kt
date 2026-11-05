@@ -116,8 +116,10 @@ data class Restorable(
                         p[ResetRecord.SERVICE]?.let { service(e, it, true) }
                         // A setting it put back to its default, as it was before; kept once undone, as a change's is.
                         Tweak.entries.forEach { tweak ->
-                            val first = settings.getOrPut(tweak) { mutableMapOf() }
-                            p.filterKeys { it in tweak.keys }.forEach { (k, v) -> if (k !in first) first[k] = v }
+                            ResetRecord.setting(p, tweak)?.forEach { (k, v) ->
+                                val first = settings.getOrPut(tweak) { mutableMapOf() }
+                                if (k !in first) first[k] = v
+                            }
                         }
                     }
                     Action.Change -> Tweak.entries.firstOrNull { it.name == e.packageName }?.let { tweak ->
