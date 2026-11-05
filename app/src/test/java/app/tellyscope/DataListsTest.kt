@@ -2,8 +2,8 @@
 
 package app.tellyscope
 
-import app.tellyscope.data.Png
 import app.tellyscope.data.RemoteButtons
+import app.tellyscope.data.imageUrl
 import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
@@ -35,7 +35,6 @@ class DataListsTest {
     private val releases = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
     private val checked = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
     private val apkName = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
-    private val imageName = Regex("[a-z0-9][a-z0-9-]{0,39}")
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
@@ -54,7 +53,7 @@ class DataListsTest {
         val entries = schema1("launchers.json").getJSONArray("launchers").objects()
         entries.forEachIndexed { i, l ->
             val where = "launchers.json: launcher ${i + 1}"
-            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "apk", "fire_os", "accessibility", "icon", "screenshot")
+            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "apk", "fire_os", "accessibility", "icon", "screenshot", "credit")
             if (unknown.isNotEmpty()) errors += "$where: unknown keys ${unknown.sorted()}"
             val pkg = l.optString("package")
             if (!package_.matches(pkg)) errors += "$where: not a package name: $pkg"
@@ -69,15 +68,10 @@ class DataListsTest {
             if (l.has("apk") && (l.opt("apk") as? String)?.takeIf(apkName::matches) == null) errors += "$where: 'apk' must be a file name ending in .apk"
             if (l.has("apk") && !l.has("releases")) errors += "$where: 'apk' names an asset of 'releases', which is missing"
             for (key in listOf("icon", "screenshot")) {
-                if (!l.has(key)) continue
-                val name = (l.opt(key) as? String)?.takeIf(imageName::matches)
-                val png = name?.let { File(data, "images/$it.png") }
-                when {
-                    name == null -> errors += "$where: '$key' must name an image in data/images/, lowercase letters, digits and -"
-                    !png!!.isFile -> errors += "$where: '$key' names data/images/$name.png, which isn't there"
-                    !Png.ok(png.readBytes(), Png.MAX_IMAGE_BYTES) -> errors += "$where: data/images/$name.png must be a PNG of at most ${Png.MAX_IMAGE_BYTES / 1024} KB and ${Png.MAX_SIDE} px a side"
-                }
+                if (l.has(key) && imageUrl(l.opt(key) as? String) == null) errors += "$where: '$key' must be an https address of at most 500 characters"
             }
+            if ((l.has("icon") || l.has("screenshot")) && !l.nonEmpty("credit")) errors += "$where: 'credit' must say where its images come from"
+            if (l.has("credit") && !l.nonEmpty("credit")) errors += "$where: 'credit' must be a non-empty string"
             if (l.has("accessibility") && (l.opt("accessibility") as? String)?.takeIf(checked::matches) == null) {
                 errors += "$where: 'accessibility' must be the minimum version that has the service, like \"4.72\""
             }
@@ -147,7 +141,7 @@ class DataListsTest {
         assertNone(errors)
     }
 
-    /** `index.json` names every list and every image in `images/` with its sha256, as the app checks each download, and nothing else. */
+    /** `index.json` names every list with its sha256, as the app checks each download, and nothing else. */
     @Test fun theIndexMatchesTheFiles() {
         val errors = mutableListOf<String>()
         val index = parseIndex(text("index.json"))
@@ -155,10 +149,8 @@ class DataListsTest {
             assertNone(listOf("index.json: not a schema 1 index the app reads"))
             return
         }
-        val images = File(data, "images").listFiles { f -> f.name.endsWith(".png") }.orEmpty().map { it.name }
-        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" } +
-            images.associate { "image ${it.removeSuffix(".png")}" to "images/$it" }
-        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" } + index.images.mapKeys { "image ${it.key}" }
+        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" }
+        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" }
         for ((name, path) in expected) {
             val entry = listed[name]
             val sha = sha256(File(data, path).readBytes())

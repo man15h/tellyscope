@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "version": 2026110501,
+  "version": 2026110502,
   "lists": {
     "launchers": {
       "file": "launchers.json",
-      "sha256": "c1886e557f78ad6a68e89faf9b0b35a6ee0daf10350d6c0994ff33fca534b761"
+      "sha256": "96928e11b56e5d7bbc6660e851d36bece428e7f77bcd96475ca78cadd3cf8526"
     },
     "labels": {
       "file": "labels.json",

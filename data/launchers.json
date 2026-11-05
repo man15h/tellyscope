@@ -8,7 +8,8 @@
     { "package": "com.overdevs.at4k", "name": "AT4K Launcher", "about": "Light and fast, with widgets and folders.", "accessibility": "1.2" },
     { "package": "com.klevico.monet", "name": "Monet Launcher", "about": "Takes its colors from your wallpaper. Widgets and profiles.",
       "signers": ["4bec386a6baae56f0694d3be54f67e0625b973109e0dbb947df2a5d0254975e0"], "max_mb": 64,
-      "releases": "https://github.com/Klevico/Monet-Launcher/releases", "apk": "monet-launcher.apk", "fire_os": true, "accessibility": "1.1.1" },
+      "releases": "https://github.com/Klevico/Monet-Launcher/releases", "apk": "monet-launcher.apk", "fire_os": true, "accessibility": "1.1.1",
+      "screenshot": "https://raw.githubusercontent.com/Klevico/Monet-Launcher/main/screenshots/feature-graphic.png", "credit": "Image from Klevico's GitHub page" },
     { "package": "com.spauldhaliwal.dispatch", "name": "Dispatch", "accessibility": "1.0.175" }
   ]
 }

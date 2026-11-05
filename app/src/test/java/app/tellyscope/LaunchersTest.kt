@@ -8,10 +8,8 @@ import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.KnownLauncher
-import app.tellyscope.data.ListFile
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.hasServiceFrom
-import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseProtected
@@ -89,23 +87,15 @@ class LaunchersTest {
         assertTrue(parseLaunchers("{").isEmpty())
     }
 
-    @Test fun imageNamesReadOnlyAsNamesInDataImages() {
+    @Test fun imagesAreHttpsAddressesWithACredit() {
         fun one(fields: String) = parseLaunchers("""{"schema": 1, "launchers": [{"package": "a.b", "name": "A", $fields}]}""").single()
-        val l = one(""""icon": "monet-icon", "screenshot": "monet-home"""")
-        assertEquals("monet-icon" to "monet-home", l.icon to l.screenshot)
-        assertNull(one(""""icon": "../index"""").icon)
-        assertNull(one(""""icon": "Monet.png"""").icon)
-        assertNull(one(""""screenshot": "https://example.com/a.png"""").screenshot)
-    }
-
-    @Test fun theIndexNamesImagesUnderImagesOnly() {
-        val sha = "a".repeat(64)
-        val index = parseIndex("""{"schema": 1, "images": {
-            "monet-icon": {"file": "images/monet-icon.png", "sha256": "$sha"},
-            "away": {"file": "../away.png", "sha256": "$sha"},
-            "logo": {"file": "logos/netflix.png", "sha256": "$sha"}
-        }}""")!!
-        assertEquals(mapOf("monet-icon" to ListFile("images/monet-icon.png", sha)), index.images)
+        val l = one(""""icon": "https://example.com/i.png", "screenshot": "https://example.com/s.jpg", "credit": "Images from A's page"""")
+        assertEquals(Triple("https://example.com/i.png", "https://example.com/s.jpg", "Images from A's page"), Triple(l.icon, l.screenshot, l.credit))
+        assertNull(one(""""icon": "http://example.com/i.png"""").icon)
+        assertNull(one(""""icon": "https://user:pw@example.com/i.png"""").icon)
+        assertNull(one(""""icon": "file:///sdcard/i.png"""").icon)
+        assertNull(one(""""screenshot": "https:///no-host.png"""").screenshot)
+        assertNull(one(""""credit": "  """").credit)
     }
 
     /** A list can't claim the home screen or the TV's own states, and a reason this app doesn't know still protects. */

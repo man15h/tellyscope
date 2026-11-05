@@ -102,7 +102,7 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.LauncherRelease
-import app.tellyscope.data.Png
+import app.tellyscope.data.Picture
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.UiText
 import app.tellyscope.data.asUiText
@@ -831,8 +831,8 @@ private fun PickRow(
 
 /**
  * A launcher from `launchers.json` in a picker: its icon, name and about line, and whether it uses an accessibility
- * service, under the icon at full width so it stays on one line. Chosen ([on]), it opens to its screenshot, then
- * scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
+ * service, under the icon at full width so it stays on one line. Chosen ([on]), it opens to its screenshot and the
+ * list's credit for it, then scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
  */
 @Composable
 private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
@@ -854,7 +854,10 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
                     Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp).fillMaxWidth().aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest),
                 ) {
-                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                }
+                l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp))
                 }
             }
         },
@@ -880,7 +883,7 @@ private fun ServiceLine(accessibility: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** A launcher's image from `data/images/`, as [listImage] has it. */
+/** A launcher's image from its developer's page, as [listImage] has it. */
 private sealed interface ListImage {
     data object Loading : ListImage
     /** None named, or it couldn't be had or decoded. */
@@ -889,15 +892,15 @@ private sealed interface ListImage {
 }
 
 /**
- * [name]'s image ([SharedLists.image]), decoded off the main thread; [ListImage.Missing] for a null [name]. The state
- * outlives a change of [name], so each change starts over from Loading (or Missing) rather than the old image.
+ * The image at [url] ([SharedLists.image]), decoded off the main thread; [ListImage.Missing] for a null [url]. The state
+ * outlives a change of [url], so each change starts over from Loading (or Missing) rather than the old image.
  */
 @Composable
-private fun listImage(name: String?): ListImage = produceState<ListImage>(if (name == null) ListImage.Missing else ListImage.Loading, name) {
-    value = if (name == null) ListImage.Missing else ListImage.Loading
-    if (name == null) return@produceState
-    value = SharedLists.image(name)
-        ?.let { b -> withContext(Dispatchers.Default) { Png.decode(b, Png.MAX_IMAGE_BYTES) } }
+private fun listImage(url: String?): ListImage = produceState<ListImage>(if (url == null) ListImage.Missing else ListImage.Loading, url) {
+    value = if (url == null) ListImage.Missing else ListImage.Loading
+    if (url == null) return@produceState
+    value = SharedLists.image(url)
+        ?.let { b -> withContext(Dispatchers.Default) { Picture.decode(b) } }
         ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Missing
 }.value
 
