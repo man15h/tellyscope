@@ -15,6 +15,9 @@ fails CI until this file has a section for its version.
 
 ## Unreleased
 
+- **Improved:** Reset TV to how it shipped also puts Private DNS back to Automatic and animations back to normal speed, when they've been changed. Undo puts them back too. [#360](../../pull/360)
+- **Fixed:** Fire TVs no longer offer Faster animations, which broke their side menu. [#359](../../pull/359)
+- **Fixed:** Started off Wi-Fi, the Remote's app buttons now load once the phone is back online, without a restart. [#341](../../pull/341)
 - **Fixed:** Forgetting your last TV starts looking for TVs right away. [#358](../../pull/358)
 - **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#354](../../pull/354)
 - **Fixed:** TVs on wireless debugging reconnect on their own after their port changes. [#353](../../pull/353)
