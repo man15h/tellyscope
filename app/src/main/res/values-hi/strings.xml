@@ -1106,7 +1106,7 @@
     <string name="scan_back">वापस जाएं</string>
     <string name="scan_title">अपना TV जोड़ें</string>
     <string name="scan_no_lan">आप Wi-Fi पर नहीं हैं, इसलिए सिर्फ़ वही TV दिखेंगे जो खुद अपनी जानकारी भेजते हैं। अपने TV वाले Wi-Fi से जुड़ें।</string>
-    <string name="scan_vpn">VPN चालू है, इसलिए स्कैन आपके नेटवर्क में नहीं खोज सकता। जो TV खुद अपनी जानकारी भेजते हैं, वे अब भी दिखेंगे। अपना TV IP पते से जोड़ें, या VPN में लोकल नेटवर्क ऐक्सेस की अनुमति दें।</string>
+    <string name="scan_vpn">VPN चालू है, इसलिए Tellyscope आपके Wi-Fi में नहीं खोज सकता। जो TV खुद अपनी जानकारी भेजते हैं, वे अब भी दिखेंगे। अपना TV IP पते से जोड़ें, या अपने VPN ऐप में लोकल नेटवर्क ऐक्सेस की अनुमति दें।</string>
     <string name="scan_same_wifi">अपने फ़ोन और TV को एक ही Wi-Fi पर रखें।</string>
     <string name="scan_add_by_ip">IP पते से जोड़ें</string>
     <string name="scan_cant_find">आपका TV नहीं मिल रहा?</string>

@@ -1057,7 +1057,7 @@
     <string name="scan_back">返回</string>
     <string name="scan_title">添加你的电视</string>
     <string name="scan_no_lan">你未连接 Wi-Fi，因此只会显示主动广播自身的电视。请连接电视所在的 Wi-Fi。</string>
-    <string name="scan_vpn">VPN 已开启，因此扫描无法搜索你的网络。主动广播自身的电视仍会显示。请通过 IP 地址添加电视，或在 VPN 中允许访问本地网络。</string>
+    <string name="scan_vpn">VPN 已开启，因此 Tellyscope 无法搜索你的 Wi-Fi。主动广播自身的电视仍会显示。请通过 IP 地址添加电视，或在 VPN 应用中允许访问本地网络。</string>
     <string name="scan_same_wifi">请让手机和电视连接同一 Wi-Fi。</string>
     <string name="scan_add_by_ip">通过 IP 地址添加</string>
     <string name="scan_cant_find">找不到你的电视？</string>

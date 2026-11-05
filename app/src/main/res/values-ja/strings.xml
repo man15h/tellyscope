@@ -1057,7 +1057,7 @@
     <string name="scan_back">戻る</string>
     <string name="scan_title">テレビを追加</string>
     <string name="scan_no_lan">Wi-Fi に接続していないため、自身の存在を知らせるテレビしか表示されません。テレビと同じ Wi-Fi に接続してください。</string>
-    <string name="scan_vpn">VPN がオンのため、スキャンでネットワークを検索できません。自身の存在を知らせるテレビは引き続き表示されます。IP アドレスでテレビを追加するか、VPN でローカルネットワークへのアクセスを許可してください。</string>
+    <string name="scan_vpn">VPN がオンのため、Tellyscope は Wi-Fi 内を検索できません。自身の存在を知らせるテレビは引き続き表示されます。IP アドレスでテレビを追加するか、VPN アプリでローカルネットワークへのアクセスを許可してください。</string>
     <string name="scan_same_wifi">スマートフォンとテレビを同じ Wi-Fi に接続してください。</string>
     <string name="scan_add_by_ip">IP アドレスで追加</string>
     <string name="scan_cant_find">テレビが見つかりませんか？</string>

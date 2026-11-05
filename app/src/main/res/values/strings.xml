@@ -1371,7 +1371,7 @@
     <string name="scan_back">Back</string>
     <string name="scan_title">Add your TV</string>
     <string name="scan_no_lan">You\'re not on Wi-Fi, so only TVs that announce themselves show up. Join your TV\'s Wi-Fi.</string>
-    <string name="scan_vpn">A VPN is on, so the scan can\'t search your network. TVs that announce themselves still show up. Add your TV by IP address, or allow local network access in your VPN.</string>
+    <string name="scan_vpn">A VPN is on, so Tellyscope can\'t search your Wi-Fi. TVs that announce themselves still show up. Add your TV by IP address, or allow local network access in your VPN app.</string>
     <string name="scan_same_wifi">Keep your phone and TV on the same Wi-Fi.</string>
     <string name="scan_add_by_ip">Add by IP address</string>
     <string name="scan_cant_find">Can\'t find your TV?</string>
