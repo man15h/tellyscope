@@ -24,12 +24,13 @@ object TvSettings {
 
     fun animations(fast: Boolean): Map<String, String?> = Tweak.ANIMATIONS.keys.associateWith { if (fast) FAST else "1.0" }
 
-    fun tweaks(dns: Map<String, String?>, animations: Map<String, String?>, sdk: Int?) = TvTweaks(
+    fun tweaks(dns: Map<String, String?>, animations: Map<String, String?>, sdk: Int?, fireOs: Boolean = false) = TvTweaks(
         dnsHost = dns["private_dns_specifier"]?.takeIf { dns["private_dns_mode"] == "hostname" },
         animationScale = animations["window_animation_scale"],
         // A TV that doesn't say is let through: the lookup check after the change still guards it.
         dnsSupported = sdk == null || sdk >= DNS_SDK,
         cachesSupported = sdk == null || sdk >= CACHES_SDK,
+        fireOs = fireOs,
     )
 
     /** History's line for a change that left the TV at [values]. */
