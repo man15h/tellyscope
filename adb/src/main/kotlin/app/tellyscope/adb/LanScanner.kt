@@ -2,6 +2,7 @@
 package app.tellyscope.adb
 
 import com.flyfishxu.kadb.mdns.KadbMdns
+import com.flyfishxu.kadb.mdns.MdnsEndpoint
 import com.flyfishxu.kadb.mdns.MdnsServiceType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -98,14 +99,23 @@ class LanScanner(
      * The port [host] advertises for "pair with code" right now, or null when none shows up within the
      * mDNS window. The TV only advertises it while that dialog is open, and picks a new one each time.
      */
-    suspend fun pairingPort(host: String): Int? {
+    suspend fun pairingPort(host: String): Int? =
+        advertised { it.host == host && it.serviceType == MdnsServiceType.TLS_PAIRING }
+
+    /**
+     * The port the wireless-debugging TV named [service] (its `adb-<serial>-…` instance name) takes
+     * connections on at [host] right now, or null when it doesn't show up within the mDNS window. The
+     * TV picks a new one after a reboot, standby or toggle. Another TV on [host] never matches.
+     */
+    suspend fun connectPort(host: String, service: String): Int? =
+        advertised { it.host == host && it.name == service && it.serviceType == MdnsServiceType.TLS_CONNECT }
+
+    private suspend fun advertised(match: (MdnsEndpoint) -> Boolean): Int? {
         val mdns = mdns ?: return null
         withContext(Dispatchers.IO) { mdns.start() }
         return try {
             withTimeoutOrNull(mdnsWindow) {
-                mdns.state.mapNotNull { s ->
-                    s.allDevices.firstOrNull { it.host == host && it.serviceType == MdnsServiceType.TLS_PAIRING }?.port
-                }.first()
+                mdns.state.mapNotNull { s -> s.allDevices.firstOrNull(match)?.port }.first()
             }
         } finally {
             withContext(NonCancellable + Dispatchers.IO) { mdns.stop() }
