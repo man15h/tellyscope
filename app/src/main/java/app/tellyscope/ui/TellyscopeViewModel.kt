@@ -49,6 +49,8 @@ import app.tellyscope.data.ResetFailure
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
@@ -66,6 +68,7 @@ import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
+import app.tellyscope.data.summary
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -105,6 +108,8 @@ data class ScanUi(
     val progress: ScanProgress? = null,
     /** Not on Wi-Fi or Ethernet, so there was no sweep. */
     val noLan: Boolean = false,
+    /** On Wi-Fi or Ethernet under a VPN, so there was no sweep either; not off Wi-Fi. */
+    val vpn: Boolean = false,
     val hits: List<ScanHit> = emptyList(),
     val rows: Map<String, RowState> = emptyMap(),
     /** Nothing found yet: when the next scan starts by itself. Null while a scan runs or once a TV turns up. */
@@ -126,6 +131,8 @@ data class DeviceUi(
     val appsLoading: Boolean = false,
     val network: NetworkInfo? = null,
     val history: List<HistoryEntry> = emptyList(),
+    /** [DeviceSource.restorable], read with [history]. */
+    val restorable: Restorable = Restorable(),
     /** Package whose action row is open, and the action awaiting confirmation. */
     val pending: Pair<String, Action>? = null,
     val busy: String? = null,
@@ -156,7 +163,11 @@ data class DeviceUi(
     val reset: ResetUi? = null,
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
-)
+) {
+    /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
+    val restore: RestoreSummary
+        get() = restorable.summary(apps, tweaks)
+}
 
 /**
  * Debloat turning off the ticked [apps], in order. [at] counts the ones the TV has answered for,
@@ -535,10 +546,11 @@ class TellyscopeViewModel(
         }
         rescan()
         viewModelScope.launch { notice.collect { it?.let(::log) } }
+        viewModelScope.launch { source.refreshListsOnNetwork() }
         viewModelScope.launch {
-            // Off Wi-Fi a scan has nothing to sweep; start over the moment the phone joins one.
+            // Off Wi-Fi or under a VPN a scan has nothing to sweep; start over the moment there's a LAN to sweep.
             source.lanUp().collect {
-                if (_state.value.scan.noLan) {
+                if (_state.value.scan.let { it.noLan || it.vpn }) {
                     scanJob?.cancel()
                     rescan()
                 }
@@ -602,7 +614,7 @@ class TellyscopeViewModel(
             // The retry stays in this job, as rescan() from here would see it still active.
             val done = { _state.value.let { it.scan.hits.isNotEmpty() || (it.selected != null && !addingTv) } }
             while (true) {
-                _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false)) }
+                _state.update { it.copy(scan = it.scan.copy(scanning = true, noLan = false, vpn = false)) }
                 source.scan().collect { e ->
                     when (e) {
                         is ScanEvent.Progress -> _state.update { it.copy(scan = it.scan.copy(progress = e.progress)) }
@@ -615,6 +627,7 @@ class TellyscopeViewModel(
                             ))
                         }
                         ScanEvent.NoLan -> _state.update { it.copy(scan = it.scan.copy(noLan = true)) }
+                        ScanEvent.Vpn -> _state.update { it.copy(scan = it.scan.copy(vpn = true)) }
                         ScanEvent.Done -> Unit
                     }
                 }
@@ -767,13 +780,16 @@ class TellyscopeViewModel(
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
         viewModelScope.launch {
-            val history = source.history(device.id)
+            val (history, restorable) = historyOf(device.id)
             val dock = source.dock(device.id)
             val hidden = source.launcherCardHidden(device.id)
-            _state.update { if (it.selectedId == device.id) it.copy(device = it.device.copy(history = history, dock = dock, launcherCardHidden = hidden)) else it }
+            _state.update { if (it.selectedId == device.id) it.copy(device = it.device.copy(history = history, restorable = restorable, dock = dock, launcherCardHidden = hidden)) else it }
         }
         watch(device)
     }
+
+    /** History and what Restore everything may turn on, read together so the count never lags the list. */
+    private suspend fun historyOf(id: String) = source.history(id) to source.restorable(id)
 
     /** Stops the reads of the TV on screen that [watch] started. */
     private fun stopWatching() {
@@ -880,6 +896,8 @@ class TellyscopeViewModel(
             _state.update { it.copy(devices = known, listSource = lists) }
             // Next TV, online ones first; none left means back to the scan screen.
             select((known.firstOrNull { it.state == DeviceState.Online } ?: known.firstOrNull())?.id)
+            // The scan skipped it while it was known, so look again; the TV turns up as a fresh hit.
+            if (known.isEmpty()) rescan()
         }
     }
 
@@ -917,8 +935,8 @@ class TellyscopeViewModel(
                 rereadAfterFailure(id)
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps, busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1262,14 +1280,14 @@ class TellyscopeViewModel(
                 throw e
             } catch (e: Exception) {
                 // A change can fail after it was recorded (a rollback that didn't take), so History is reread.
-                val history = source.history(id)
-                updateDevice(id) { it.copy(busy = null, history = history) }
+                val (history, restorable) = historyOf(id)
+                updateDevice(id) { it.copy(busy = null, history = history, restorable = restorable) }
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(tweaks = tweaks, busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(tweaks = tweaks, busy = null, history = history, restorable = restorable) }
             if (undoing == null) _done.value = Done(id, entry)
         }
     }
@@ -1285,8 +1303,8 @@ class TellyscopeViewModel(
             } catch (e: Exception) {
                 UiText.Capitalized(e.why(R.string.vm_didnt_work))
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(busy = null, history = history) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1335,13 +1353,15 @@ class TellyscopeViewModel(
                 // Anything else (a dropped socket) still must not crash the app.
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 // A reset's Undo can get partway, so History shows where it ended.
-                if (undoing != null) runCatching { source.history(id) }.getOrNull()?.let { h -> updateDevice(id) { it.copy(history = h) } }
+                if (undoing != null) runCatching { historyOf(id) }.getOrNull()?.let { (h, r) -> updateDevice(id) { it.copy(history = h, restorable = r) } }
                 _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
                 rereadAfterFailure(id)
                 return@launch
             }
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps, busy = null, history = history) }
+            // A reset's Undo can put settings back too.
+            val tweaks = if (action == Action.Reset) runCatching { source.tweaks(id) }.getOrNull() else null
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps, tweaks = tweaks ?: it.tweaks, busy = null, history = history, restorable = restorable) }
             if (undoing == null) _done.value = Done(id, entry)
             if (action == Action.Uninstall) pruneDock(id, apps)
         }
@@ -1353,8 +1373,8 @@ class TellyscopeViewModel(
      */
     private suspend fun rereadAfterFailure(id: String) {
         val apps = runCatching { source.apps(id) }.getOrNull()
-        val history = runCatching { source.history(id) }.getOrNull()
-        updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history ?: it.history) }
+        val read = runCatching { historyOf(id) }.getOrNull()
+        updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = read?.first ?: it.history, restorable = read?.second ?: it.restorable) }
     }
 
     /** The user picked one or more files to install. Reads them, then asks the TV what it has. */
@@ -1578,22 +1598,28 @@ class TellyscopeViewModel(
         _notice.value = null
     }
 
-    /** Turns back on everything Tellyscope disabled on the selected TV. */
+    /** Puts the selected TV back as it was before Tellyscope's first change. */
     fun restoreAll() {
         val id = _state.value.selectedId ?: return
         _state.update { it.copy(device = it.device.copy(busy = RESTORING)) }
         viewModelScope.launch {
             _notice.value = try {
-                val n = source.restoreAll(id).size
-                if (n == 0) UiText(R.string.vm_nothing_to_turn_on) else UiText.plural(R.plurals.vm_turned_back_on, n)
+                val r = source.restoreAll(id)
+                val first = r.failed.firstOrNull()
+                when {
+                    first != null -> UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, first.what, first.why)
+                    r.done == 0 -> UiText(R.string.vm_nothing_to_put_back)
+                    else -> UiText.plural(R.plurals.vm_put_back, r.done)
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 UiText.Capitalized(e.why(R.string.vm_didnt_work))
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = apps ?: it.apps, busy = null, history = history) }
+            val tweaks = runCatching { source.tweaks(id) }.getOrNull()
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = apps ?: it.apps, tweaks = tweaks ?: it.tweaks, busy = null, history = history, restorable = restorable) }
         }
     }
 
@@ -1950,8 +1976,8 @@ class TellyscopeViewModel(
                 }
             }
             val read = runCatching { source.apps(id) }.getOrNull()
-            val history = source.history(id)
-            updateDevice(id) { it.copy(apps = read ?: it.apps, busy = null, history = history, debloat = it.debloat?.copy(ran = true)) }
+            val (history, restorable) = historyOf(id)
+            updateDevice(id) { it.copy(apps = read ?: it.apps, busy = null, history = history, restorable = restorable, debloat = it.debloat?.copy(ran = true)) }
             loadLists(id) { read ?: source.apps(id) }
         }
     }
@@ -2084,6 +2110,8 @@ class TellyscopeViewModel(
             bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app },
             // A Home failure with an app is its service, still on: Try again does just that.
             home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } },
+            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } },
+            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } },
         )
         updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList())) }
         viewModelScope.launch {
@@ -2096,16 +2124,22 @@ class TellyscopeViewModel(
                 val why = e.why(R.string.vm_tv_didnt_answer_reason)
                 ui.entry to todo.turnOn.map { ResetFailure(ResetPart.TurnOn, it, why) } +
                     todo.bringBack.map { ResetFailure(ResetPart.BringBack, it, why) } +
-                    listOfNotNull(todo.home?.let { ResetFailure(ResetPart.Home, null, why) })
+                    listOfNotNull(
+                        todo.home?.let { ResetFailure(ResetPart.Home, null, why) },
+                        todo.dns?.let { ResetFailure(ResetPart.Dns, null, why) },
+                        todo.animations?.let { ResetFailure(ResetPart.Animations, null, why) },
+                    )
             }
             // Read again what Reset changed, as opening the TV does: the apps, then the list from them,
             // so the Debloat tile counts what came back on. A failed read is tried once more, then said.
             val apps = runCatching { source.apps(id) }.recoverCatching { source.apps(id) }.getOrNull()
             if (apps == null) _notice.value = Copy.RESET_APPS_STALE
-            val history = source.history(id)
+            // And the settings it put back, for This TV's tweaks.
+            val tweaks = if (todo.dns != null || todo.animations != null) runCatching { source.tweaks(id) }.getOrNull() else null
+            val (history, restorable) = historyOf(id)
             updateDevice(id) { d ->
                 d.copy(
-                    apps = apps ?: d.apps, history = history, busy = null,
+                    apps = apps ?: d.apps, tweaks = tweaks ?: d.tweaks, history = history, restorable = restorable, busy = null,
                     reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry),
                 )
             }

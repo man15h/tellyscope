@@ -64,6 +64,10 @@ import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.AppBefore
+import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreSummary
+import app.tellyscope.data.Was
 import app.tellyscope.data.TvSettings
 import app.tellyscope.data.TvAccess
 import app.tellyscope.data.TvTweaks
@@ -312,6 +316,12 @@ class ScreenshotTest {
         val tweaks = TvTweaks(dnsHost = TvSettings.ADGUARD, animationScale = null)
         return deviceState { copy(history = history, files = FilesUi(TvFolder.DOWNLOAD, files), tweaks = tweaks) }
     }
+
+    // History's disables as the TV shows them: those apps off, and Restore's list naming them.
+    private fun DeviceUi.leftOff(vararg pkgs: String) = copy(
+        apps = apps.map { if (it.packageName in pkgs) it.copy(enabled = false) else it },
+        restorable = Restorable(apps = pkgs.associateWith { AppBefore(Was.On, Was.Off) }),
+    )
 
     // The 0.5.0 Overview: three TVs, one offline with saved facts.
     private fun md3State(): UiState {
@@ -801,7 +811,8 @@ class ScreenshotTest {
         val opened = mutableListOf<String>()
         shot("96_whats_new") { whatsNew(opened)() }
         compose.onNodeWithText("Installed").assertExists()
-        compose.onAllNodesWithText("NEW")[0].assertExists()
+        // The newest section's first heading, whatever kind it opens with.
+        compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name.uppercase())[0].assertExists()
         // A link from the newest section, which is on screen whatever the changelog holds.
         val pr = changelog.first().changes.first { it.pr != null }.pr!!
         compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()
@@ -841,10 +852,11 @@ class ScreenshotTest {
     }
 
     private fun history(name: String, dark: Boolean, state: () -> UiState) = shot(name, dark) { HistoryScreen(state(), {}, {}, {}) }
-    @Test fun history_list() = history("46_history", false, ::tabsState)
-    @Test fun history_list_dark() = history("46_history", true, ::tabsState)
-    @Test fun history_restoring() = history("47_history_restoring", false) { tabsState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
-    @Test fun history_restoring_dark() = history("47_history_restoring", true) { tabsState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
+    private fun historyState() = tabsState().let { it.copy(device = it.device.leftOff("com.xgimi.ota")) }
+    @Test fun history_list() = history("46_history", false, ::historyState)
+    @Test fun history_list_dark() = history("46_history", true, ::historyState)
+    @Test fun history_restoring() = history("47_history_restoring", false) { historyState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
+    @Test fun history_restoring_dark() = history("47_history_restoring", true) { historyState().let { it.copy(device = it.device.copy(busy = RESTORING)) } }
     @Test fun history_empty() {
         history("48_history_empty", false) { deviceState() }
         compose.onNodeWithText("Nothing changed yet").assertExists()
@@ -959,7 +971,7 @@ class ScreenshotTest {
             HistoryEntry(2, xgimi.ip, now - 40_000, Action.Disable, "com.xgimi.ota", "XGIMI Updates", Action.Enable, null),
             HistoryEntry(1, xgimi.ip, now - 5 * 60_000, Action.Stop, "com.netflix.ninja", "Netflix", Action.Open, now - 4 * 60_000),
         )
-        shot("07_device_history") { HistoryScreen(deviceState { copy(history = history) }, {}, {}, {}) }
+        shot("07_device_history") { HistoryScreen(deviceState { leftOff("com.xgimi.ota").copy(history = history) }, {}, {}, {}) }
     }
 
     @Test fun history_undoOfTurnOnAsksFirst() {
@@ -1223,7 +1235,7 @@ class ScreenshotTest {
         }
     }
 
-    @Test fun restore() = shot("11_restore", screen = true) { RestoreDialog(2, {}, {}) }
+    @Test fun restore() = shot("11_restore", screen = true) { RestoreDialog(RestoreSummary(turnOn = 2, home = true), {}, {}) }
 
     private val docked = listOf(Docked("com.google.android.youtube.tv", "YouTube"), Docked("com.netflix.ninja", "Netflix"))
 
@@ -1673,7 +1685,7 @@ class ScreenshotTest {
             HistoryEntry(2, xgimi.ip, now - 5 * 60_000, Action.Stop, "com.netflix.ninja", "Netflix", Action.Open, null),
             HistoryEntry(1, xgimi.ip, now - 2 * 3_600_000, Action.Stop, "com.google.android.youtube.tv", "YouTube", Action.Open, now - 3_500_000),
         )
-        shot("22_readme_history") { HistoryScreen(deviceState { copy(history = history) }, {}, {}, {}) }
+        shot("22_readme_history") { HistoryScreen(deviceState { leftOff("com.google.android.tvrecommendations", "com.xgimi.assistant").copy(history = history) }, {}, {}, {}) }
         compose.onNodeWithText("Restore everything (2)").assertExists()
     }
     @Test fun readme_install() {

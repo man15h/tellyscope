@@ -54,8 +54,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Action
-import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.resolve
 
 /**
@@ -95,14 +95,14 @@ fun HistoryScreen(
         ) {
             item {
                 if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, stringResource(R.string.history_empty_title), stringResource(R.string.history_empty_text))
-                else HistoryList(ui.history, state.clock(), onUndo, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
+                else HistoryList(ui.history, state.clock(), onUndo, restore = ui.restore, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
             }
         }
     }
 }
 
 /**
- * The Restore card while apps Tellyscope turned off are still off, then one row per change. While
+ * The Restore card while [restore] has anything to put back, then one row per change. While
  * anything runs on the TV, a restore included, Undo and Restore wait for it.
  */
 @Composable
@@ -110,13 +110,14 @@ internal fun HistoryList(
     history: List<HistoryEntry>,
     now: Long,
     onUndo: (HistoryEntry) -> Unit,
+    restore: RestoreSummary,
     restoring: Boolean = false,
     onRestoreAll: () -> Unit = {},
     busy: Boolean = restoring,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
-    val off = HistoryBook.leftDisabled(history).size
-    if (confirming) RestoreDialog(off, onRestore = { confirming = false; onRestoreAll() }, onDismiss = { confirming = false })
+    val off = restore.count
+    if (confirming && off > 0) RestoreDialog(restore, onRestore = { confirming = false; onRestoreAll() }, onDismiss = { confirming = false })
     var disabling by remember { mutableStateOf<HistoryEntry?>(null) }
     disabling?.let { h ->
         UndoDisableDialog(h, onDisable = { disabling = null; onUndo(h) }, onDismiss = { disabling = null })
@@ -129,8 +130,9 @@ internal fun HistoryList(
                 shape = MaterialTheme.shapes.large,
             ) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(Copy.stillOffTitle(off).resolve(), style = MaterialTheme.typography.titleSmall)
-                    Text(Copy.STILL_OFF_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(Copy.putBackTitle(off).resolve(), style = MaterialTheme.typography.titleSmall)
+                    Text(Copy.PUT_BACK_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    for (line in Copy.restoreLines(restore)) Text(line.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.size(8.dp))
                     FilledTonalButton(onClick = { confirming = true }, enabled = !busy) {
                         if (restoring) {

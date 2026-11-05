@@ -24,6 +24,8 @@ sealed interface ScanEvent {
     data class Progress(val progress: ScanProgress) : ScanEvent
     /** Not on Wi-Fi or Ethernet: only TVs that announce themselves (or add-by-IP) can be found. */
     data object NoLan : ScanEvent
+    /** On Wi-Fi or Ethernet, but a VPN is up, so there's no sweep: mDNS and add-by-IP still work. */
+    data object Vpn : ScanEvent
     data object Done : ScanEvent
 }
 
@@ -230,4 +232,6 @@ data class TvTweaks(
     val dnsSupported: Boolean = true,
     /** Clearing caches over ADB came in Android 8: before it, the shell lacks CLEAR_APP_CACHE (#286). */
     val cachesSupported: Boolean = true,
+    /** Fire OS 8's side menu breaks with animations sped up (#356), so Faster animations is hidden there. */
+    val fireOs: Boolean = false,
 )

@@ -6,11 +6,25 @@ for the people using the app. Headings are `## <version> — <date>`, where
 **New:**, **Improved:** or **Fixed:**, in that order within a section, then a
 plain line of at most about twelve words, ending with a link to its PR.
 
-Changes merged into `dev` collect under `## Unreleased`. A release renames
-that heading to its version and date. A pull request into `main` fails CI
-until this file has a section for its version.
+Pull requests don't edit this file. Each one puts its line in its
+description instead, as `Changelog: **Fixed:** …`. The `[release]` pull
+request for an alpha copies the lines of the pull requests merged since the
+last release under `## Unreleased`, and changes nothing else. A release
+renames that heading to its version and date. A pull request into `main`
+fails CI until this file has a section for its version.
 
 ## Unreleased
+
+## 0.15.1 — 2026-11-06
+
+- **Improved:** Reset TV to how it shipped also puts Private DNS back to Automatic and animations back to normal speed, when they've been changed. Undo puts them back too. [#360](../../pull/360)
+- **Fixed:** Fire TVs no longer offer Faster animations, which broke their side menu. [#359](../../pull/359)
+- **Fixed:** Started off Wi-Fi, the Remote's app buttons now load once the phone is back online, without a restart. [#341](../../pull/341)
+- **Fixed:** Forgetting your last TV starts looking for TVs right away. [#358](../../pull/358)
+- **Fixed:** With a VPN on, the scan says so instead of "not on Wi-Fi". [#354](../../pull/354)
+- **Fixed:** TVs on wireless debugging reconnect on their own after their port changes. [#353](../../pull/353)
+- **Fixed:** History's Restore everything count now matches what Restore actually turns back on. [#336](../../pull/336)
+- **Fixed:** Restore everything puts the TV back as it was before Tellyscope's first change: apps on or off however often they flipped, Home, Private DNS and animation speed. A step the TV refuses no longer stops the rest. [#340](../../pull/340)
 
 ## 0.15.0 — 2026-11-04
 

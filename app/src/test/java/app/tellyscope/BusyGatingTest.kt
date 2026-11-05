@@ -13,6 +13,7 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceList
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Suggested
 import app.tellyscope.data.SuggestedGroup
 import app.tellyscope.data.Suggestions
@@ -60,21 +61,21 @@ class BusyGatingTest {
 
     @Test fun undoAndRestoreWaitWhileTheTvIsBusy() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}, busy = true) }
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, restore = RestoreSummary(turnOn = 1), busy = true) }
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
         compose.onNodeWithText("Restore everything (1)").assertIsNotEnabled()
     }
 
     @Test fun restoreKeepsItsOwnLabel() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}, restoring = true) }
-        compose.onNodeWithText("Turning apps back on…").assertIsNotEnabled()
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, restore = RestoreSummary(turnOn = 1), restoring = true) }
+        compose.onNodeWithText("Putting back…").assertIsNotEnabled()
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
     }
 
     @Test fun idleUndoStillWorks() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
-        compose.setContent { HistoryList(history, 0L, onUndo = {}) }
+        compose.setContent { HistoryList(history, 0L, onUndo = {}, restore = RestoreSummary(turnOn = 1)) }
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsEnabled()
     }
 

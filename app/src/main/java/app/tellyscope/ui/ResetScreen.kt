@@ -205,9 +205,11 @@ private fun count(plan: ResetPlan, part: ResetPart) = when (part) {
     ResetPart.TurnOn -> plan.turnOn.size
     ResetPart.BringBack -> plan.bringBack.size
     ResetPart.Home -> if (plan.home != null) 1 else 0
+    ResetPart.Dns -> if (plan.dns != null) 1 else 0
+    ResetPart.Animations -> if (plan.animations != null) 1 else 0
 }
 
-/** One part of the reset; tapping it, before a run, lists the apps it changes. */
+/** One part of the reset; tapping it, before a run, lists the apps it changes. A setting has no list. */
 @Composable
 private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
     val c = MaterialTheme.colorScheme
@@ -216,10 +218,13 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
         ResetPart.TurnOn -> Triple(HistoryIcons.TurnedOn, Copy.turnOnApps(plan.turnOn.size).resolve(), Copy.TURN_ON_TEXT.resolve())
         ResetPart.BringBack -> Triple(ResetIcons.BringBack, Copy.bringBackApps(plan.bringBack.size).resolve(), Copy.BRING_BACK_TEXT.resolve())
         ResetPart.Home -> plan.home!!.let { Triple(Icons.Default.Home, Copy.resetHome(it.toLabel).resolve(), Copy.resetHomeText(it.fromLabel, it.service).resolve()) }
+        ResetPart.Dns -> Triple(ResetIcons.Dns, Copy.RESET_DNS.resolve(), Copy.resetWas(Copy.dnsWas(plan.dns!!)).resolve())
+        ResetPart.Animations -> Triple(ResetIcons.Animations, Copy.RESET_ANIMATIONS.resolve(), Copy.resetWas(Copy.animationsWas(plan.animations!!)).resolve())
     }
+    val list = part == ResetPart.TurnOn || part == ResetPart.BringBack || part == ResetPart.Home
     Column {
         Row(
-            Modifier.fillMaxWidth().clickable(enabled = status == null) { open = !open }.padding(16.dp),
+            Modifier.fillMaxWidth().clickable(enabled = list && status == null) { open = !open }.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(icon, contentDescription = null, tint = c.onSurfaceVariant)
@@ -230,18 +235,19 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
             }
             Spacer(Modifier.width(16.dp))
             when (status) {
-                null -> Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = stringResource(if (open) R.string.reset_hide_list else R.string.reset_show_list))
+                null -> if (list) Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = stringResource(if (open) R.string.reset_hide_list else R.string.reset_show_list))
                 Status.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = stringResource(R.string.screen_waiting), tint = c.onSurfaceVariant)
                 Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = stringResource(R.string.screen_done), tint = c.primary)
             }
         }
-        if (open && status == null) {
+        if (open && list && status == null) {
             HorizontalDivider(Modifier.padding(horizontal = 16.dp), color = c.outlineVariant)
             when (part) {
                 ResetPart.TurnOn -> AppList(plan.turnOn)
                 ResetPart.BringBack -> AppList(plan.bringBack)
                 ResetPart.Home -> plan.home!!.let { AppList(listOf(ResetApp(it.from, it.fromLabel), ResetApp(it.to, it.toLabel))) }
+                ResetPart.Dns, ResetPart.Animations -> Unit
             }
         }
     }
@@ -272,9 +278,11 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
     val on = plan.turnOn.size - failures(ResetPart.TurnOn).size
     val back = plan.bringBack.size - failures(ResetPart.BringBack).size
     val home = plan.home?.takeIf { failures(ResetPart.Home).isEmpty() }
+    val dns = plan.dns != null && failures(ResetPart.Dns).isEmpty()
+    val animations = plan.animations != null && failures(ResetPart.Animations).isEmpty()
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item {
-            ResultHead(ok, if (ok) Copy.RESET_DONE.resolve() else Copy.RESET_PARTLY.resolve(), if (ok) Copy.resetDoneText(on + back, home?.toLabel).resolve() else Copy.resetPartlyText(failed.size).resolve())
+            ResultHead(ok, if (ok) Copy.RESET_DONE.resolve() else Copy.RESET_PARTLY.resolve(), if (ok) Copy.resetDoneText(on + back, home?.toLabel, dns, animations).resolve() else Copy.resetPartlyText(failed.size).resolve())
         }
         val rows = ResetPart.entries.filter { count(plan, it) > 0 }
         itemsIndexed(rows) { i, part ->
@@ -284,6 +292,8 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
                 ResetPart.BringBack -> Copy.broughtBack(back, plan.bringBack.size).resolve()
                 // A miss with an app is only the service: Home did move.
                 ResetPart.Home -> plan.home!!.let { if (miss.all { m -> m.app != null }) Copy.isHome(it.toLabel).resolve() else Copy.stillHome(it.fromLabel).resolve() }
+                ResetPart.Dns -> (if (miss.isEmpty()) Copy.DNS_AUTOMATIC else Copy.dnsStill(Copy.dnsWas(plan.dns!!))).resolve()
+                ResetPart.Animations -> (if (miss.isEmpty()) Copy.ANIMATIONS_NORMAL else Copy.animationsStill(Copy.animationsWas(plan.animations!!))).resolve()
             }
             val why = miss.firstOrNull()?.let { f ->
                 val reason = UiText.Capitalized(f.reason).resolve().trimEnd('.')
@@ -341,6 +351,14 @@ private fun makerOf(device: Device) = device.manufacturer ?: device.hit.maker
 internal object ResetIcons {
     // Material's download and schedule (a ring cut out by even-odd, hands inside). Absolute commands only, as in TileIcons.
     val BringBack = icon("BringBack", "M5 20H19V18H5ZM19 9H15V3H9V9H5L12 16Z")
+    // Two server boxes, each with a light cut out, after Material's dns.
+    val Dns = icon("Dns", "M3 3H21V11H3ZM7 5A2 2 0 1 0 7 9A2 2 0 1 0 7 5ZM3 13H21V21H3ZM7 15A2 2 0 1 0 7 19A2 2 0 1 0 7 15Z")
+    // A ring trailing two dots, smaller as they fall behind: motion.
+    val Animations = icon(
+        "Animations",
+        "M16.5 6.5A5.5 5.5 0 1 0 16.5 17.5A5.5 5.5 0 1 0 16.5 6.5ZM16.5 8.5A3.5 3.5 0 1 1 16.5 15.5A3.5 3.5 0 1 1 16.5 8.5Z" +
+            "M7 9.5A2.5 2.5 0 1 0 7 14.5A2.5 2.5 0 1 0 7 9.5ZM2 10.5A1.5 1.5 0 1 0 2 13.5A1.5 1.5 0 1 0 2 10.5Z",
+    )
     val Waiting = icon(
         "Waiting",
         "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4Z" +

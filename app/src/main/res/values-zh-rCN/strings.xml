@@ -400,6 +400,11 @@
     <string name="copy_reset_home">将 %1$s 设为主屏幕</string>
     <string name="copy_reset_home_text">替代 %1$s。%1$s 仍保持安装。</string>
     <string name="copy_reset_home_text_service">替代 %1$s，并关闭其无障碍服务。%1$s 仍保持安装。</string>
+    <string name="copy_reset_dns">私人 DNS 恢复为“自动”</string>
+    <string name="copy_reset_animations">动画恢复正常速度</string>
+    <string name="copy_reset_was">原为 %1$s</string>
+    <string name="copy_dns_off">关闭</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="other">%2$s 出厂时就停用的 %1$d 个应用保持停用。</item>
     </plurals>
@@ -412,6 +417,8 @@
     <string name="copy_resetting_turn_on">正在启用应用：%1$d / %2$d。</string>
     <string name="copy_resetting_bring_back">正在恢复应用：%1$d / %2$d。</string>
     <string name="copy_resetting_home">正在将 %1$s 设为主屏幕。</string>
+    <string name="copy_resetting_dns">正在将私人 DNS 恢复为“自动”。</string>
+    <string name="copy_resetting_animations">正在将动画恢复正常速度。</string>
     <string name="copy_keep_tv_on">请保持电视开机并保持连接。</string>
     <string name="copy_resetting">正在重置…</string>
     <string name="copy_reset_apps_stale">重置已完成，但应用列表未刷新。请重新打开电视查看。</string>
@@ -419,13 +426,16 @@
     <string name="copy_reset_done">电视已恢复为出厂时的状态</string>
     <string name="copy_reset_partly">重置部分完成</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="other">%1$d 个预装应用已恢复，且 %2$s 是主屏幕。应用数据和登录信息均已保留。</item>
+        <item quantity="other">%1$d 个预装应用已恢复，且 %2$s 是主屏幕。</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="other">%1$d 个预装应用已恢复。应用数据和登录信息均已保留。</item>
+        <item quantity="other">%1$d 个预装应用已恢复。</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s 是主屏幕。应用数据和登录信息均已保留。</string>
-    <string name="copy_reset_done_nothing">。应用数据和登录信息均已保留。</string>
+    <string name="copy_reset_done_home">%1$s 是主屏幕。</string>
+    <string name="copy_reset_done_settings">私人 DNS 和动画已恢复为默认设置。</string>
+    <string name="copy_reset_done_dns">私人 DNS 已恢复为“自动”。</string>
+    <string name="copy_reset_done_animations">动画已恢复正常速度。</string>
+    <string name="copy_reset_kept_data">应用数据和登录信息均已保留。</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="other">有 %1$d 个步骤未成功。其他所有内容都已恢复为出厂状态，没有丢失任何内容。</item>
     </plurals>
@@ -443,6 +453,10 @@
     </plurals>
     <string name="copy_is_home">%1$s 是主屏幕</string>
     <string name="copy_still_home">%1$s 仍是主屏幕</string>
+    <string name="copy_dns_automatic">私人 DNS 为“自动”</string>
+    <string name="copy_dns_still">私人 DNS 仍为 %1$s</string>
+    <string name="copy_animations_normal">动画为正常速度</string>
+    <string name="copy_animations_still">动画仍为 %1$s</string>
     <string name="copy_try_app_again">重试 %1$s</string>
     <string name="copy_try_again">重试</string>
     <string name="copy_disabling_apps">正在停用应用：%1$d / %2$d。请保持电视开机并保持连接。</string>
@@ -458,13 +472,29 @@
         <item quantity="other">已停用 %1$d 个应用（共 %2$d 个）</item>
     </plurals>
     <string name="copy_still_on">%1$s 仍处于启用状态</string>
-    <plurals name="copy_still_off">
-        <item quantity="other">%1$d 个应用仍处于停用状态</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="other">%1$d 处更改待恢复</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="other">Tellyscope 停用的 %1$d 个应用仍处于停用状态</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="other">Tellyscope 做出的 %1$d 处更改仍然有效</item>
     </plurals>
-    <string name="copy_still_off_text">“全部恢复”会重新启用它们。在 Tellyscope 首次更改之前就已停用的应用会保持停用。</string>
+    <string name="copy_put_back_text">“全部恢复”会把此电视恢复到 Tellyscope 首次更改之前的状态：</string>
+    <plurals name="copy_restore_on">
+        <item quantity="other">重新启用 %1$d 个应用</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="other">重新停用 %1$d 个应用</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="other">移除“重置电视”找回的 %1$d 个应用</item>
+    </plurals>
+    <string name="copy_restore_home">恢复主屏幕</string>
+    <string name="copy_restore_dns">恢复私人 DNS</string>
+    <string name="copy_restore_animations">恢复动画速度</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="other">%1$d 个应用已卸载，无法恢复</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="other">当前还有 %1$d 个其他连接</item>
     </plurals>
@@ -553,9 +583,12 @@
     <string name="vm_not_an_ip">这看起来不像 IP 地址。它应该是用点分隔的四组数字，就像电视网络设置中显示的那样。</string>
     <string name="vm_bad_port">冒号后的端口应为 1 到 65535 之间的数字，例如 5555。</string>
     <string name="vm_didnt_work">操作未成功。</string>
-    <string name="vm_nothing_to_turn_on">没有需要重新启用的内容。</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="other">已重新启用 %1$d 个应用。</item>
+    <string name="vm_nothing_to_put_back">没有需要恢复的内容。</string>
+    <plurals name="vm_put_back">
+        <item quantity="other">已恢复 %1$d 处更改。</item>
+    </plurals>
+    <plurals name="vm_put_back_partly">
+        <item quantity="other">已恢复 %2$d 处更改中的 %1$d 处。%3$d 处未能恢复，其中 %4$s：%5$s</item>
     </plurals>
     <string name="vm_tv_refused">电视拒绝了</string>
     <string name="vm_tv_didnt_answer">电视没有响应。</string>
@@ -593,10 +626,9 @@
     <string name="data_no_home_to_switch_back">没有可切换回去的主屏幕</string>
     <string name="data_uninstall_after_service">%1$s。未卸载任何内容</string>
     <string name="data_uninstall_home_not_back">主屏幕未能切换回去：%1$s。未卸载任何内容</string>
-    <string name="data_restore_none">无法重新启用应用：%1$s</string>
-    <plurals name="data_restore_some">
-        <item quantity="other">已重新启用 %1$d 个应用，随后停止：%2$s</item>
-    </plurals>
+    <string name="data_restore_home">主屏幕</string>
+    <string name="data_restore_dns">私人 DNS</string>
+    <string name="data_restore_animations">动画速度</string>
     <string name="data_no_reset_to_undo">没有可撤消的重置</string>
     <string name="data_reset_already_undone">该重置已被撤消</string>
     <string name="data_reset_tv_kept_home">电视仍将 %1$s 作为主屏幕</string>
@@ -614,6 +646,7 @@
     <string name="data_lists_not_a_list">此来源不是 Tellyscope 列表</string>
     <string name="data_app_names_system">Android 系统</string>
     <string name="data_history_service_off">已关闭 %1$s 的无障碍服务</string>
+    <string name="data_history_service_on">已开启 %1$s 的无障碍服务</string>
     <string name="data_history_reset_undone">已恢复“重置电视”所做的更改</string>
     <plurals name="data_history_reset">
         <item quantity="other">重置电视 · %1$d 处更改</item>
@@ -852,10 +885,10 @@
     <string name="device_disable_title">要停用 %1$s 吗？</string>
     <string name="device_cancel">取消</string>
     <plurals name="device_restore_title">
-        <item quantity="other">要重新启用 %1$d 个应用吗？</item>
+        <item quantity="other">要恢复 %1$d 处更改吗？</item>
     </plurals>
-    <string name="device_restore_text">重新启用 Tellyscope 在此电视上停用的所有应用。在 Tellyscope 首次更改之前就已停用的应用会保持停用。</string>
-    <string name="device_restore_button">重新启用</string>
+    <string name="device_restore_text">此电视将恢复到 Tellyscope 首次更改之前的状态：</string>
+    <string name="device_restore_button">恢复</string>
     <string name="device_rename_title">重命名此电视</string>
     <string name="device_rename_text">只有此手机能看到这个名称。电视上不会有任何更改。</string>
     <string name="device_save">保存</string>
@@ -1057,6 +1090,7 @@
     <string name="scan_back">返回</string>
     <string name="scan_title">添加你的电视</string>
     <string name="scan_no_lan">你未连接 Wi-Fi，因此只会显示主动广播自身的电视。请连接电视所在的 Wi-Fi。</string>
+    <string name="scan_vpn">VPN 已开启，因此 Tellyscope 无法搜索你的 Wi-Fi。主动广播自身的电视仍会显示。请通过 IP 地址添加电视，或在 VPN 应用中允许访问本地网络。</string>
     <string name="scan_same_wifi">请让手机和电视连接同一 Wi-Fi。</string>
     <string name="scan_add_by_ip">通过 IP 地址添加</string>
     <string name="scan_cant_find">找不到你的电视？</string>
@@ -1095,7 +1129,7 @@
     <string name="launcher_ok">确定</string>
     <string name="history_empty_title">尚未进行任何更改</string>
     <string name="history_empty_text">你停止、停用或启用的任何应用都会显示在这里，并可撤消。</string>
-    <string name="history_restoring">正在重新启用应用…</string>
+    <string name="history_restoring">正在恢复…</string>
     <string name="history_restore_all">全部恢复（%1$d）</string>
     <string name="history_undone">已撤消</string>
     <string name="debloat_title">精简</string>

@@ -53,6 +53,24 @@ class PairingPortTest {
         assertFalse(mdns.running)
     }
 
+    @Test fun findsTheConnectPortOfThatTvOnly() = runBlocking {
+        // A second TV took over the address; only the saved instance name counts.
+        val mdns = FakeMdns(
+            MdnsEndpoint("adb-QV7124ZK-3fRb2c", "192.0.2.31", 37001, MdnsServiceType.TLS_CONNECT),
+            MdnsEndpoint("adb-XK03H1234-a81Fq0", tv, 39115, MdnsServiceType.TLS_CONNECT),
+            MdnsEndpoint("adb-QV7124ZK-3fRb2c", tv, 41089, MdnsServiceType.TLS_PAIRING),
+            MdnsEndpoint("adb-QV7124ZK-3fRb2c", tv, 46237, MdnsServiceType.TLS_CONNECT),
+        )
+        assertEquals(46237, LanScanner(mdns, mdnsWindow = 200.milliseconds).connectPort(tv, "adb-QV7124ZK-3fRb2c"))
+        assertFalse(mdns.running)
+    }
+
+    @Test fun anotherTvOnTheAddressIsNoConnectPort() = runBlocking {
+        val mdns = FakeMdns(MdnsEndpoint("adb-XK03H1234-a81Fq0", tv, 39115, MdnsServiceType.TLS_CONNECT))
+        assertNull(LanScanner(mdns, mdnsWindow = 200.milliseconds).connectPort(tv, "adb-QV7124ZK-3fRb2c"))
+        assertFalse(mdns.running)
+    }
+
     @Test fun unknownPortIsFoundAtPairTime() = runBlocking {
         val t = Tv(open = 41089)
         assertEquals(PairResult.Paired, pairOnFreshPort(hint = null, find = { 41089 }, pair = t::pair))

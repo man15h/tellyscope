@@ -430,6 +430,11 @@
     <string name="copy_reset_home">Usar %1$s como pantalla de inicio</string>
     <string name="copy_reset_home_text">En lugar de %1$s. %1$s sigue instalado.</string>
     <string name="copy_reset_home_text_service">En lugar de %1$s, con su servicio de accesibilidad desactivado. %1$s sigue instalado.</string>
+    <string name="copy_reset_dns">DNS privado de vuelta en Automático</string>
+    <string name="copy_reset_animations">Animaciones de vuelta a velocidad normal</string>
+    <string name="copy_reset_was">Era %1$s</string>
+    <string name="copy_dns_off">desactivado</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d app que %2$s entregó desactivada sigue desactivada.</item>
         <item quantity="many">%1$d apps que %2$s entregó desactivadas siguen desactivadas.</item>
@@ -444,6 +449,8 @@
     <string name="copy_resetting_turn_on">Activando apps: %1$d de %2$d.</string>
     <string name="copy_resetting_bring_back">Recuperando apps: %1$d de %2$d.</string>
     <string name="copy_resetting_home">Poniendo %1$s como pantalla de inicio.</string>
+    <string name="copy_resetting_dns">Volviendo a poner el DNS privado en Automático.</string>
+    <string name="copy_resetting_animations">Volviendo a poner las animaciones a velocidad normal.</string>
     <string name="copy_keep_tv_on">Mantén la TV encendida y conectada.</string>
     <string name="copy_resetting">Restableciendo…</string>
     <string name="copy_reset_apps_stale">Restablecimiento terminado, pero la lista de apps no se actualizó. Vuelve a abrir la TV para verla.</string>
@@ -451,17 +458,20 @@
     <string name="copy_reset_done">La TV volvió a como venía de fábrica</string>
     <string name="copy_reset_partly">Restablecimiento parcial</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">Volvió %1$d app preinstalada, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="many">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="other">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</item>
+        <item quantity="one">Volvió %1$d app preinstalada, y %2$s es la pantalla de inicio.</item>
+        <item quantity="many">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio.</item>
+        <item quantity="other">Volvieron %1$d apps preinstaladas, y %2$s es la pantalla de inicio.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">Volvió %1$d app preinstalada. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="many">Volvieron %1$d apps preinstaladas. Los datos y los inicios de sesión de las apps se conservaron.</item>
-        <item quantity="other">Volvieron %1$d apps preinstaladas. Los datos y los inicios de sesión de las apps se conservaron.</item>
+        <item quantity="one">Volvió %1$d app preinstalada.</item>
+        <item quantity="many">Volvieron %1$d apps preinstaladas.</item>
+        <item quantity="other">Volvieron %1$d apps preinstaladas.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s es la pantalla de inicio. Los datos y los inicios de sesión de las apps se conservaron.</string>
-    <string name="copy_reset_done_nothing">. Los datos y los inicios de sesión de las apps se conservaron.</string>
+    <string name="copy_reset_done_home">%1$s es la pantalla de inicio.</string>
+    <string name="copy_reset_done_settings">El DNS privado y las animaciones volvieron a sus valores predeterminados.</string>
+    <string name="copy_reset_done_dns">El DNS privado volvió a Automático.</string>
+    <string name="copy_reset_done_animations">Las animaciones volvieron a velocidad normal.</string>
+    <string name="copy_reset_kept_data">Los datos y los inicios de sesión de las apps se conservaron.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">Un paso no funcionó. Todo lo demás volvió a como venía de fábrica. No se perdió nada.</item>
         <item quantity="many">%1$d pasos no funcionaron. Todo lo demás volvió a como venía de fábrica. No se perdió nada.</item>
@@ -489,6 +499,10 @@
     </plurals>
     <string name="copy_is_home">%1$s es la pantalla de inicio</string>
     <string name="copy_still_home">%1$s sigue siendo la pantalla de inicio</string>
+    <string name="copy_dns_automatic">El DNS privado está en Automático</string>
+    <string name="copy_dns_still">El DNS privado sigue en %1$s</string>
+    <string name="copy_animations_normal">Las animaciones están a velocidad normal</string>
+    <string name="copy_animations_still">Las animaciones siguen a %1$s</string>
     <string name="copy_try_app_again">Reintentar %1$s</string>
     <string name="copy_try_again">Reintentar</string>
     <string name="copy_disabling_apps">Desactivando apps: %1$d de %2$d. Mantén la TV encendida y conectada.</string>
@@ -508,17 +522,41 @@
         <item quantity="other">Se desactivaron %1$d de %2$d apps</item>
     </plurals>
     <string name="copy_still_on">%1$s sigue activada</string>
-    <plurals name="copy_still_off">
-        <item quantity="one">%1$d app sigue desactivada</item>
-        <item quantity="many">%1$d apps siguen desactivadas</item>
-        <item quantity="other">%1$d apps siguen desactivadas</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d cambio por revertir</item>
+        <item quantity="many">%1$d cambios por revertir</item>
+        <item quantity="other">%1$d cambios por revertir</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="one">%1$d app que desactivó Tellyscope sigue desactivada</item>
-        <item quantity="many">%1$d apps que desactivó Tellyscope siguen desactivadas</item>
-        <item quantity="other">%1$d apps que desactivó Tellyscope siguen desactivadas</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">%1$d cambio de Tellyscope sigue aplicado</item>
+        <item quantity="many">%1$d cambios de Tellyscope siguen aplicados</item>
+        <item quantity="other">%1$d cambios de Tellyscope siguen aplicados</item>
     </plurals>
-    <string name="copy_still_off_text">Restaurar todo las vuelve a activar. Las apps que ya estaban desactivadas antes del primer cambio de Tellyscope siguen desactivadas.</string>
+    <string name="copy_put_back_text">Restaurar todo deja esta TV como estaba antes del primer cambio de Tellyscope:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">Reactiva %1$d app</item>
+        <item quantity="many">Reactiva %1$d apps</item>
+        <item quantity="other">Reactiva %1$d apps</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">Vuelve a desactivar %1$d app</item>
+        <item quantity="many">Vuelve a desactivar %1$d apps</item>
+        <item quantity="other">Vuelve a desactivar %1$d apps</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">Quita %1$d app que Restablecer TV recuperó</item>
+        <item quantity="many">Quita %1$d apps que Restablecer TV recuperó</item>
+        <item quantity="other">Quita %1$d apps que Restablecer TV recuperó</item>
+    </plurals>
+    <string name="copy_restore_home">Devuelve Inicio a como estaba</string>
+    <string name="copy_restore_dns">Devuelve el DNS privado a como estaba</string>
+    <string name="copy_restore_animations">Devuelve la velocidad de las animaciones a como estaba</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d app se desinstaló y no puede volver</item>
+        <item quantity="many">%1$d apps se desinstalaron y no pueden volver</item>
+        <item quantity="other">%1$d apps se desinstalaron y no pueden volver</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="one">%1$d más conectada ahora</item>
         <item quantity="many">%1$d más conectadas ahora</item>
@@ -615,11 +653,16 @@
     <string name="vm_not_an_ip">Eso no parece una dirección IP. Debería ser cuatro números separados por puntos, como la de los ajustes de red de tu TV.</string>
     <string name="vm_bad_port">El puerto después de los dos puntos debe ser un número del 1 al 65535, como 5555.</string>
     <string name="vm_didnt_work">No funcionó.</string>
-    <string name="vm_nothing_to_turn_on">No hay nada que reactivar.</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="one">Se reactivó %1$d app.</item>
-        <item quantity="many">Se reactivaron %1$d apps.</item>
-        <item quantity="other">Se reactivaron %1$d apps.</item>
+    <string name="vm_nothing_to_put_back">No hay nada que revertir.</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">Se revirtió %1$d cambio.</item>
+        <item quantity="many">Se revirtieron %1$d cambios.</item>
+        <item quantity="other">Se revirtieron %1$d cambios.</item>
+    </plurals>
+    <plurals name="vm_put_back_partly">
+        <item quantity="one">Revertidos: %1$d de %2$d. %4$s no se revirtió: %5$s</item>
+        <item quantity="many">Revertidos: %1$d de %2$d. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
+        <item quantity="other">Revertidos: %1$d de %2$d. %3$d no se revirtieron, entre ellos %4$s: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">la TV se negó</string>
     <string name="vm_tv_didnt_answer">La TV no respondió.</string>
@@ -657,12 +700,9 @@
     <string name="data_no_home_to_switch_back">no hay ninguna pantalla de inicio a la que volver</string>
     <string name="data_uninstall_after_service">%1$s. No se desinstaló nada</string>
     <string name="data_uninstall_home_not_back">Inicio no volvió al anterior: %1$s. No se desinstaló nada</string>
-    <string name="data_restore_none">no se pudieron reactivar las apps: %1$s</string>
-    <plurals name="data_restore_some">
-        <item quantity="one">se reactivó %1$d app y luego se detuvo: %2$s</item>
-        <item quantity="many">se reactivaron %1$d apps y luego se detuvo: %2$s</item>
-        <item quantity="other">se reactivaron %1$d apps y luego se detuvo: %2$s</item>
-    </plurals>
+    <string name="data_restore_home">Inicio</string>
+    <string name="data_restore_dns">DNS privado</string>
+    <string name="data_restore_animations">Velocidad de las animaciones</string>
     <string name="data_no_reset_to_undo">no hay ningún restablecimiento que deshacer</string>
     <string name="data_reset_already_undone">ese restablecimiento ya se deshizo</string>
     <string name="data_reset_tv_kept_home">la TV mantuvo %1$s como pantalla de inicio</string>
@@ -682,6 +722,7 @@
     <string name="data_lists_not_a_list">esta fuente no es una lista de Tellyscope</string>
     <string name="data_app_names_system">Sistema Android</string>
     <string name="data_history_service_off">Se desactivó el servicio de accesibilidad de %1$s</string>
+    <string name="data_history_service_on">Se activó el servicio de accesibilidad de %1$s</string>
     <string name="data_history_reset_undone">Se revirtió lo que cambió Restablecer TV</string>
     <plurals name="data_history_reset">
         <item quantity="one">Restablecer TV · %1$d cambio</item>
@@ -939,12 +980,12 @@
     <string name="device_disable_title">¿Desactivar %1$s?</string>
     <string name="device_cancel">Cancelar</string>
     <plurals name="device_restore_title">
-        <item quantity="one">¿Reactivar %1$d app?</item>
-        <item quantity="many">¿Reactivar %1$d apps?</item>
-        <item quantity="other">¿Reactivar %1$d apps?</item>
+        <item quantity="one">¿Revertir %1$d cambio?</item>
+        <item quantity="many">¿Revertir %1$d cambios?</item>
+        <item quantity="other">¿Revertir %1$d cambios?</item>
     </plurals>
-    <string name="device_restore_text">Reactiva todas las apps que Tellyscope desactivó en esta TV. Las apps que ya estaban desactivadas antes del primer cambio de Tellyscope siguen desactivadas.</string>
-    <string name="device_restore_button">Reactivar</string>
+    <string name="device_restore_text">Esta TV vuelve a como estaba antes del primer cambio de Tellyscope:</string>
+    <string name="device_restore_button">Revertir</string>
     <string name="device_rename_title">Cambiar nombre de esta TV</string>
     <string name="device_rename_text">Solo este teléfono ve el nombre. En la TV no cambia nada.</string>
     <string name="device_save">Guardar</string>
@@ -1150,6 +1191,7 @@
     <string name="scan_back">Atrás</string>
     <string name="scan_title">Añade tu TV</string>
     <string name="scan_no_lan">No estás conectado a una red Wi-Fi, así que solo aparecen las TV que se anuncian solas. Conéctate a la red Wi-Fi de tu TV.</string>
+    <string name="scan_vpn">Hay una VPN activa, así que Tellyscope no puede buscar en tu red Wi-Fi. Las TV que se anuncian solas siguen apareciendo. Añade tu TV por su dirección IP o permite el acceso a la red local en tu app de VPN.</string>
     <string name="scan_same_wifi">Mantén el teléfono y la TV en la misma red Wi-Fi.</string>
     <string name="scan_add_by_ip">Añadir por dirección IP</string>
     <string name="scan_cant_find">¿No encuentras tu TV?</string>
@@ -1188,7 +1230,7 @@
     <string name="launcher_ok">Aceptar</string>
     <string name="history_empty_title">Aún no ha cambiado nada</string>
     <string name="history_empty_text">Todo lo que detengas, desactives o actives aparece aquí, con una forma de deshacerlo.</string>
-    <string name="history_restoring">Reactivando apps…</string>
+    <string name="history_restoring">Revirtiendo…</string>
     <string name="history_restore_all">Restaurar todo (%1$d)</string>
     <string name="history_undone">Deshecho</string>
     <string name="debloat_title">Limpiar</string>

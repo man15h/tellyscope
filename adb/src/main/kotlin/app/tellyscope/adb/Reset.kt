@@ -38,8 +38,9 @@ class Reset(private val shell: AdbShell) {
     suspend fun bringBack(pkg: String) = exec("pm install-existing --user 0 ${checked(pkg)}") { "installed for user" in it }
 
     /**
-     * Uninstalls [pkg] for this user again, keeping its data, for Undo of [bringBack]. The only
-     * `--user 0` uninstall Tellyscope runs, and only on apps Reset itself brought back.
+     * Uninstalls [pkg] for this user again, keeping its data, for Undo of [bringBack] and for
+     * Restore everything. The only `--user 0` uninstall Tellyscope runs, and only on apps Reset
+     * itself brought back.
      */
     suspend fun remove(pkg: String) = exec("pm uninstall -k --user 0 ${checked(pkg)}") { "Success" in it }
 

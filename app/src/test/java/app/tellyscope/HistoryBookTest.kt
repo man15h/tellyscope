@@ -3,14 +3,14 @@
 package app.tellyscope
 
 import app.tellyscope.data.Action
+import app.tellyscope.data.AppBefore
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryBook
-import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.ResetRecord
-import app.tellyscope.data.UiTextException
+import app.tellyscope.data.Was
 import app.tellyscope.data.firstHomeService
 import app.tellyscope.data.historyKey
-import app.tellyscope.data.restoreEach
+import app.tellyscope.ui.DeviceUi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,13 +46,11 @@ class HistoryBookTest {
     @Test fun historyAndUndoSurviveARestart() {
         val file = tmp.root.resolve("history.tsv")
         val before = HistoryBook(file)
-        before.setBaseline(tv, setOf("com.old.off"))
         val disabled = before.record(tv, 1_000, Action.Disable, "com.netflix.ninja", "Netflix", undo = Action.Enable)
 
         // Next launch: same file, new book. The entry is there and can still be undone.
         val after = HistoryBook(file)
         assertEquals(listOf(disabled), after.entries(tv))
-        assertTrue(after.hasBaseline(tv))
         after.record(tv, 2_000, Action.Enable, "com.netflix.ninja", "Netflix", undo = Action.Disable, undoing = disabled.id)
 
         val again = HistoryBook(file).entries(tv)
@@ -68,11 +66,11 @@ class HistoryBookTest {
         val switch = HistoryBook(file).record(tv, 1_000, Action.Home, "com.google.android.tvlauncher", "Projectivy Launcher", Action.Enable, previous = previous)
         val after = HistoryBook(file)
         assertEquals(listOf(switch), after.entries(tv))
-        assertEquals(listOf("com.google.android.tvlauncher"), after.restorable(tv))
+        assertEquals(listOf("com.google.android.tvlauncher"), after.restorable(tv).plan { Was.Off }.turnOn)
         assertEquals(switch.id, after.openDisable(tv, "com.google.android.tvlauncher"))
 
         after.record(tv, 2_000, Action.Enable, "com.google.android.tvlauncher", "Android TV Home", undo = null, undoing = switch.id)
-        assertTrue(after.restorable(tv).isEmpty())
+        assertEquals(Was.On, after.restorable(tv).apps.getValue("com.google.android.tvlauncher").last)
     }
 
     @Test fun anOlderSwitchBackLosesItsUndoOnceANewerChangeTakesHome() {
@@ -94,24 +92,26 @@ class HistoryBookTest {
         assertNull(book.entries(tv).first { it.id == back2.id }.undo)
     }
 
-    @Test fun baselineIsWrittenOnlyOnce() {
-        val book = HistoryBook(tmp.root.resolve("history.tsv"))
-        book.setBaseline(tv, setOf("com.old.off"))
-        book.setBaseline(tv, emptySet())
-        book.record(tv, 1, Action.Disable, "com.old.off", "Old", Action.Enable)
-        assertEquals(emptyList<String>(), book.restorable(tv))
+    @Test fun anOlderFilesBaselineLinesAreSkipped() {
+        // Before Restore read each app's first change, files kept the apps off before it as "b" lines.
+        val file = tmp.root.resolve("history.tsv")
+        file.writeText("v1\tb\t$tv\tcom.old.off\n")
+        val book = HistoryBook(file)
+        book.record(tv, 1, Action.Disable, "com.netflix.ninja", "Netflix", Action.Enable)
+        assertEquals(setOf("com.netflix.ninja"), HistoryBook(file).restorable(tv).apps.keys)
+        assertFalse(file.readText().contains("\tb\t"))
     }
 
-    @Test fun restoreSkipsWhatWasOffBeforeAndWhatWasTurnedBackOn() {
+    @Test fun restoreSkipsWhatWasTurnedBackOnAndWhatOtherTvsChanged() {
         val book = HistoryBook()
-        book.setBaseline(tv, setOf("com.old.off"))
         book.record(tv, 1, Action.Disable, "com.netflix.ninja", "Netflix", Action.Enable)
         book.record(tv, 2, Action.Disable, "org.jellyfin.androidtv", "Jellyfin", Action.Enable)
         book.record(tv, 3, Action.Enable, "org.jellyfin.androidtv", "Jellyfin", Action.Disable)
-        book.record(tv, 4, Action.Disable, "com.old.off", "Old", Action.Enable)
         book.record(tv, 5, Action.Stop, "com.google.android.youtube.tv", "YouTube", Action.Open)
         book.record("other-tv", 6, Action.Disable, "com.xgimi.ota", "XGIMI Updates", Action.Enable)
-        assertEquals(listOf("com.netflix.ninja"), book.restorable(tv))
+        val restorable = book.restorable(tv)
+        assertEquals(setOf("com.netflix.ninja", "org.jellyfin.androidtv"), restorable.apps.keys)
+        assertEquals(listOf("com.netflix.ninja"), restorable.plan { if (it == "com.netflix.ninja") Was.Off else Was.On }.turnOn)
     }
 
     @Test fun damagedLinesCostOnlyThemselves() {
@@ -132,15 +132,17 @@ class HistoryBookTest {
 
         assertNull(gone.undo)
         assertTrue(source.apps(id).none { it.packageName == "com.netflix.ninja" })
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(source.history(id)))
-        assertEquals(emptyList<String>(), source.restoreAll(id).map { it.packageName })
+        // Uninstalled since: there's nothing to turn on, and the card says it can't come back.
+        assertEquals(listOf("com.netflix.ninja"), source.restorable(id).plan { Was.Gone }.gone)
+        assertEquals(1, DeviceUi(apps = source.apps(id), restorable = source.restorable(id)).restore.gone)
+        assertEquals(0, source.restoreAll(id).done)
     }
 
     @Test fun aHomeSwitchThatReplacedNothingLeavesNothingToRestore() {
         val book = HistoryBook()
         book.record("tv", 0L, Action.Home, "com.google.android.tvlauncher", "Projectivy Launcher", undo = Action.Enable)
         book.record("tv", 1L, Action.Home, "me.efesser.flauncher", "FLauncher", undo = null)
-        assertEquals(listOf("com.google.android.tvlauncher"), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(setOf("com.google.android.tvlauncher"), book.restorable("tv").apps.keys)
         assertNull(book.openDisable("tv", "me.efesser.flauncher"))
     }
 
@@ -153,7 +155,7 @@ class HistoryBookTest {
         assertEquals(service, first.firstHomeService)
         // The Undo the consent promised, and still nothing for Restore to turn on.
         assertEquals(Action.Enable, first.undo)
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(emptySet<String>(), book.restorable("tv").apps.keys)
         // Turning the service off leaves Home where it is, so an older switch back keeps its Undo.
         book.record("tv", 2L, Action.Change, "com.spocky.projengmenu", "Turned off Projectivy Launcher's accessibility service", undo = null, undoing = first.id)
         assertEquals(Action.Home, book.entries("tv").first { it.id == back.id }.undo)
@@ -169,11 +171,11 @@ class HistoryBookTest {
         val book = HistoryBook()
         val pkg = "com.spocky.projengmenu"
         book.record("tv", 0L, Action.Home, pkg, "Projectivy Launcher", undo = Action.Enable, previous = mapOf("to" to "$pkg/.Home", "service" to "$pkg/.Service"))
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(emptySet<String>(), book.restorable("tv").apps.keys)
         assertNull(book.openDisable("tv", pkg))
     }
 
-    @Test fun restoreAllTurnsOnOnlyWhatTellyscopeDisabled() = runTest {
+    @Test fun restoreAllLeavesOffWhatWasOffBefore() = runTest {
         // The fake TV starts with TV Recommendations already disabled.
         val source = FakeDeviceSource()
         val id = "tv"
@@ -182,14 +184,32 @@ class HistoryBookTest {
         source.act(id, Action.Enable, "com.google.android.tvrecommendations")
         source.act(id, Action.Disable, "com.google.android.tvrecommendations")
 
-        val restored = source.restoreAll(id)
+        assertEquals(2, source.restoreAll(id).done)
 
-        assertEquals(setOf("com.netflix.ninja", "org.jellyfin.androidtv"), restored.map { it.packageName }.toSet())
         val apps = source.apps(id).associateBy { it.packageName }
         assertTrue(apps.getValue("com.netflix.ninja").enabled)
         assertTrue(apps.getValue("org.jellyfin.androidtv").enabled)
         assertFalse(apps.getValue("com.google.android.tvrecommendations").enabled)
-        assertEquals(emptyList<String>(), source.restoreAll(id).map { it.packageName })
+        assertEquals(0, source.restoreAll(id).done)
+    }
+
+    @Test fun theRestoreCountIsWhatRestoreTurnsOn() = runTest {
+        // History counted apps off before Tellyscope's first change too, so it offered 96 and Restore turned on none.
+        val source = FakeDeviceSource()
+        val id = "tv"
+        source.act(id, Action.Disable, "com.netflix.ninja")
+        source.act(id, Action.Disable, "org.jellyfin.androidtv")
+        source.act(id, Action.Enable, "com.google.android.tvrecommendations")
+        source.act(id, Action.Disable, "com.google.android.tvrecommendations")
+        val apps = source.apps(id)
+        val ui = DeviceUi(apps = apps, history = source.history(id), restorable = source.restorable(id))
+
+        assertEquals(2, ui.restore.count)
+        // Turned back on from the TV: Restore skips it, so the count does too.
+        val onAgain = ui.copy(apps = apps.map { if (it.packageName == "org.jellyfin.androidtv") it.copy(enabled = true) else it })
+        assertEquals(1, onAgain.restore.count)
+        assertEquals(ui.restore.count, source.restoreAll(id).done)
+        assertEquals(0, DeviceUi(apps = source.apps(id), history = source.history(id), restorable = source.restorable(id)).restore.count)
     }
 
     @Test fun historyFollowsTheSerialNotTheAddress() {
@@ -204,15 +224,14 @@ class HistoryBookTest {
     @Test fun historyRecordedBeforeTheKeyMovesOverToIt() {
         val file = tmp.root.resolve("history.tsv")
         val book = HistoryBook(file)
-        book.setBaseline(tv, setOf("com.old.off"))
         book.record(tv, 1, Action.Disable, "com.netflix.ninja", "Netflix", Action.Enable)
         book.rekey(tv, "sn:XK03H1234")
 
         val after = HistoryBook(file)
         assertEquals(emptyList<Any>(), after.entries(tv))
         assertEquals(listOf("com.netflix.ninja"), after.entries("sn:XK03H1234").map { it.packageName })
-        assertEquals(listOf("com.netflix.ninja"), after.restorable("sn:XK03H1234"))
-        assertFalse(after.hasBaseline(tv))
+        assertEquals(setOf("com.netflix.ninja"), after.restorable("sn:XK03H1234").apps.keys)
+        assertEquals(emptySet<String>(), after.restorable(tv).apps.keys)
     }
 
     @Test fun restoreMarksTheDisablesItReversed() = runTest {
@@ -225,55 +244,18 @@ class HistoryBookTest {
         assertTrue(disable.undoneAt != null)
     }
 
-    @Test fun restoreAfterTwoSwitchesEndsOnTheTvsOwnHome() = runTest {
-        // L→A→B, where L sorts before A: alphabetical order undid L→A first and ended on A.
-        val own = "com.google.android.tvlauncher"
-        val first = "me.efesser.launcher"
-        val book = HistoryBook(tmp.root.resolve("history.tsv"))
-        book.record(tv, 1_000, Action.Home, own, "A", Action.Enable, previous = mapOf("from" to "$own/.Main", "to" to "$first/.Main"))
-        book.record(tv, 2_000, Action.Home, first, "B", Action.Enable, previous = mapOf("from" to "$first/.Main", "to" to "com.spocky.projengmenu/.Main"))
-        // As the source does: turning on a launcher a switch turned off makes it Home again.
-        var home = "com.spocky.projengmenu/.Main"
-        restoreEach(book.restorable(tv)) { pkg ->
-            val switch = book.openDisable(tv, pkg)!!
-            book.entries(tv).single { it.id == switch }.previous?.get("from")?.let { home = it }
-            book.record(tv, 3_000, Action.Enable, pkg, pkg, null, undoing = switch)
-        }
-        assertEquals("$own/.Main", home)
-        assertTrue(book.restorable(tv).isEmpty())
-    }
-
-    @Test fun aStoppedRestoreSaysHowFarItGot() = runTest {
-        var calls = 0
-        val e = runCatching {
-            restoreEach(listOf("a", "b", "c")) { pkg ->
-                if (++calls == 3) throw IllegalStateException("the TV refused")
-                HistoryEntry(calls.toLong(), tv, 0, Action.Enable, pkg, pkg, Action.Disable, null)
-            }
-        }.exceptionOrNull()
-        assertEquals("turned 2 apps back on, then stopped: the TV refused", (e as UiTextException).text.text())
-    }
-
-    @Test fun aDroppedConnectionStillSaysHowFarItGot() = runTest {
-        val e = runCatching {
-            restoreEach(listOf("a", "b")) { pkg ->
-                if (pkg == "b") throw java.io.IOException("connection reset")
-                HistoryEntry(1, tv, 0, Action.Enable, pkg, pkg, Action.Disable, null)
-            }
-        }.exceptionOrNull()
-        assertEquals("turned 1 app back on, then stopped: connection reset", (e as UiTextException).text.text())
-    }
-
     @Test fun aResetTurnsOnWhatTellyscopeLeftOffAndItsUndoPutsItBack() {
         val book = HistoryBook()
         book.record("tv", 0L, Action.Disable, "com.xgimi.ota", "XGIMI Updates", undo = Action.Enable)
         val reset = book.record("tv", 1L, Action.Reset, "reset", ResetRecord.label(2).text(), undo = Action.Reset,
             previous = mapOf(ResetRecord.ON to "com.xgimi.ota,com.google.android.videos"))
         assertEquals("Reset TV · 2 changes", reset.label)
-        assertEquals(emptyList<String>(), HistoryBook.leftDisabled(book.entries("tv")))
-        // Undone, the reset's Enables no longer count, so the earlier disable is Restore's again.
+        val after = book.restorable("tv").apps
+        assertEquals(Was.On, after.getValue("com.xgimi.ota").last)
+        assertEquals(AppBefore(Was.Off, Was.On), after.getValue("com.google.android.videos"))
+        // Undone, the reset's Enables no longer count for how it left them.
         book.record("tv", 2L, Action.Change, "reset", "Put back what Reset TV changed", undo = null, undoing = reset.id)
-        assertEquals(listOf("com.xgimi.ota"), HistoryBook.leftDisabled(book.entries("tv")))
+        assertEquals(AppBefore(Was.On, Was.Off), book.restorable("tv").apps.getValue("com.xgimi.ota"))
     }
 
     @Test fun amendRelabelsAPartlyUndoneReset() {

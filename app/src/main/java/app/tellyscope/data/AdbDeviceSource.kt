@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.Sink
@@ -111,6 +112,8 @@ class AdbDeviceSource(
     private val keys = ConcurrentHashMap<String, String>()
     /** Wireless debugging advertises pairing and connect on different ports. */
     private val pairingPorts = ConcurrentHashMap<String, Int>()
+    /** Address → a wireless-debugging TV's `_adb-tls-connect` instance name, see [SavedDevice.service]. */
+    private val services = ConcurrentHashMap<String, String>()
     private val book = HistoryBook(File(appContext.filesDir, "history.tsv"))
     private val names = NameBook(File(appContext.filesDir, "names.tsv"))
     private val docks = DockBook(File(appContext.filesDir, "docks.tsv"))
@@ -146,6 +149,8 @@ class AdbDeviceSource(
         store.load().forEach { d ->
             saved[d.host] = d
             d.historyKey?.let { keys[d.host] = it }
+            // Saved before the service had a field of its own: a wireless TV's name was its instance name.
+            (d.service ?: d.name?.takeIf { d.kind == ScanKind.Wireless && it.startsWith("adb-") })?.let { services[d.host] = it }
             hits[d.host] = ScanHit(d.host, d.port, d.kind, d.name, null)
             // A TV that logged this phone out stays quiet: reconnecting would prompt on it again.
             if (d.loggedOutAt == null) restoring += d.host
@@ -156,12 +161,25 @@ class AdbDeviceSource(
     /**
      * Starts the reconnecting link for a TV and keeps its saved entry current as it comes and goes.
      * A TV [loggedOutAt] a time gets its link without a connect.
+     *
+     * A wireless-debugging TV is looked up by its instance name before each retry, as its port moves.
+     * Whatever answers a retry must be the same TV ([sameTv]): another one that took the address or the
+     * port is let go, and the saved TV stays offline.
      */
     private fun link(host: String, port: Int, first: AdbConnectResult?, knownGood: Boolean, loggedOutAt: Long? = null) {
         var pending = first
-        val link = DeviceLink(host, port, scope, knownGood = knownGood, open = { h, p ->
-            pending?.also { pending = null } ?: connector(h, p)
-        })
+        // What the link was made for: a later scan can put a Classic hit on this address.
+        val wireless = hits[host]?.kind == ScanKind.Wireless
+        val link = DeviceLink(
+            host, port, scope, knownGood = knownGood,
+            open = { h, p ->
+                // The user picked [first] off the scan: that one is the TV they meant.
+                pending?.also { pending = null } ?: connector(h, p).let { r ->
+                    if (!wireless) r else sameTv(r, keys[host]) { keyOf(it, host) }
+                }
+            },
+            findPort = { services[host]?.let { LanScanner(KadbMdnsAndroid(appContext)).connectPort(host, it) } },
+        )
         link.gate.profile.value = statsFor?.takeIf { it.first == host }?.second ?: StatsProfile.OTHER
         link.gate.paused.value = paused
         links.put(host, link)?.disconnect()
@@ -210,6 +228,7 @@ class AdbDeviceSource(
             historyKey = keys[host] ?: old?.historyKey,
             lastKnown = link.stats.value?.let { lastKnown(it, kept) } ?: kept,
             loggedOutAt = link.loggedOutAt.value,
+            service = services[host],
         )
         persist()
     }
@@ -259,6 +278,7 @@ class AdbDeviceSource(
         volumeSteps -= deviceId
         links.remove(deviceId)?.disconnect()
         hits.remove(deviceId)
+        services.remove(deviceId)
         restoring -= deviceId
         if (saved.remove(deviceId) != null) persist()
     }
@@ -295,6 +315,12 @@ class AdbDeviceSource(
         }
     }
 
+    private fun onVpn(): Boolean {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: return false
+        val network = cm.activeNetwork ?: return false
+        return cm.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+
     override fun lanLost() = links.values.forEach(DeviceLink::lanLost)
 
     override fun lanUp(): Flow<Unit> = callbackFlow {
@@ -309,9 +335,30 @@ class AdbDeviceSource(
         awaitClose { cm.unregisterNetworkCallback(callback) }
     }
 
+    override suspend fun refreshListsOnNetwork() = callbackFlow {
+        val cm = appContext.getSystemService(ConnectivityManager::class.java) ?: run { close(); return@callbackFlow }
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            private var last: Network? = null
+            // Validated comes after onAvailable, so wait for it here; the network's other changes don't count.
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) {
+                if (network == last || !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)) return
+                last = network
+                trySend(Unit)
+            }
+        }
+        cm.registerDefaultNetworkCallback(callback)
+        awaitClose { cm.unregisterNetworkCallback(callback) }
+    }.collect {
+        // Paused, [pause] refreshes on the way back.
+        if (!paused) withContext(Dispatchers.IO) { SharedLists.refresh() }
+    }
+
     override fun scan(): Flow<ScanEvent> = flow {
         val hosts = lanHosts()
-        if (hosts.isEmpty()) emit(ScanEvent.NoLan)
+        if (hosts.isEmpty()) when {
+            !onLan() -> emit(ScanEvent.NoLan)
+            onVpn() -> emit(ScanEvent.Vpn)
+        }
         LanScanner(KadbMdnsAndroid(appContext)).scan(hosts).collect { h ->
             if (h.kind == AdbHit.Kind.PAIRING) {
                 pairingPorts[h.host] = h.port
@@ -333,6 +380,7 @@ class AdbDeviceSource(
     override suspend fun connect(hit: ScanHit): ConnectResult = when (val r = connector(hit.ip, hit.port)) {
         is AdbConnectResult.Online -> {
             hits[hit.ip] = hit
+            hit.hostname?.takeIf { hit.kind == ScanKind.Wireless }?.let { services[hit.ip] = it } ?: services.remove(hit.ip)
             restoring -= hit.ip
             // Hand the open session to a link, which reconnects on its own from here on.
             link(hit.ip, hit.port, first = r, knownGood = false)
@@ -563,9 +611,7 @@ class AdbDeviceSource(
     private suspend fun actNow(deviceId: String, action: Action, packageName: String, undoing: Long?, service: Boolean = true): HistoryEntry {
         fireHomes -= deviceId // undoing a home switch moves Home back
         val shell = session(deviceId)
-        // Before the first change on a TV, note what was already off: Restore must leave those alone.
         val key = key(deviceId)
-        if (!book.hasBaseline(key)) book.setBaseline(key, disabledPackages(deviceId))
         // The list's keep entries only warn, in the confirm; Actions.run holds the hard locks.
         if (action == Action.Home) {
             // Undoing a switch back turns the service on again only if that switch turned it off.
@@ -706,6 +752,8 @@ class AdbDeviceSource(
 
     override suspend fun history(deviceId: String): List<HistoryEntry> = book.entries(key(deviceId))
 
+    override suspend fun restorable(deviceId: String): Restorable = book.restorable(key(deviceId))
+
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
         // Only a launcher the list names: the Store link is the one thing this opens.
         if (SharedLists.launchers.none { it.pkg == packageName }) return false
@@ -725,16 +773,55 @@ class AdbDeviceSource(
 
     override suspend fun hideLauncherCard(deviceId: String) = launcherCards.set(key(deviceId), true)
 
-    override suspend fun restoreAll(deviceId: String): List<HistoryEntry> {
-        // Only what is still off now: the user may have turned some back on from the TV itself.
-        val off = disabledPackages(deviceId)
+    /**
+     * Puts back, as it was before Tellyscope's first change to it, everything History says it
+     * changed and the TV doesn't already show that way: apps on first, as turning on a launcher a
+     * switch turned off makes it Home again; then Home and its services; then apps off; then apps
+     * Reset TV brought back; then settings. A step the TV refuses doesn't stop the rest.
+     */
+    override suspend fun restoreAll(deviceId: String): RestoreResult = batch(deviceId) {
         val key = key(deviceId)
-        // One change for them all: the stats are read again once, after the last app.
-        return batch(deviceId) {
-            restoreEach(book.restorable(key).filter { it in off }) { pkg ->
-                act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg))
+        val target = book.restorable(key)
+        val shell = session(deviceId)
+        val actions = Actions(shell)
+        // `pm list packages` lists off apps too; an app it doesn't list isn't installed for the user.
+        val listed = Parsers.packages(shell.shell("pm list packages").output).map { it.name }.toSet()
+        val off = disabledPackages(deviceId)
+        val plan = target.plan { if (it !in listed) Was.Gone else if (it in off) Was.Off else Was.On }
+        val run = RestoreRun()
+        fun app(pkg: String) = labelOf(pkg).asUiText()
+        for (pkg in plan.turnOn) run.step(app(pkg)) { act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg)) }
+        // Home and its services, one step: turning a launcher on may have put them back already.
+        val home = target.home?.takeIf { it.substringBefore('/') in listed }
+        val homeNow = home?.let { actions.currentHome() }
+        val moveTo = home?.takeIf { homeNow?.substringBefore('/') != it.substringBefore('/') }
+        val services = target.services.filter { (service, wasOn) -> service.substringBefore('/') in listed && actions.serviceOn(service) != wasOn }
+        if (moveTo != null || services.isNotEmpty()) run.step(UiText(R.string.data_restore_home)) {
+            moveTo?.let { to ->
+                if (!actions.setHome(to)) throw UiTextException(UiText(R.string.data_tv_refused))
+                // Its Undo makes the launcher it left Home again, as a switch back's does.
+                val left = homeNow?.substringBefore('/')
+                book.record(key, System.currentTimeMillis(), Action.HomeBack, left ?: to.substringBefore('/'), labelOf(to.substringBefore('/')),
+                    undo = left?.let { Action.Home }, previous = listOfNotNull(homeNow?.let { "from" to it }, "to" to to).toMap())
+            }
+            for ((service, wasOn) in services) {
+                val pkg = service.substringBefore('/')
+                if (!(if (wasOn) actions.grant(service) else actions.setService(service, false))) throw UiTextException(UiText(R.string.data_tv_refused))
+                val label = UiText(if (wasOn) R.string.data_history_service_on else R.string.data_history_service_off, labelOf(pkg)).text()
+                book.record(key, System.currentTimeMillis(), Action.Change, pkg, label, undo = null)
             }
         }
+        for (pkg in plan.turnOff) run.step(app(pkg)) { act(deviceId, Action.Disable, pkg, undoing = book.openEnable(key, pkg)) }
+        for (pkg in plan.remove) run.step(app(pkg)) {
+            TvReset(shell).remove(pkg)
+            book.record(key, System.currentTimeMillis(), Action.Uninstall, pkg, labelOf(pkg), undo = null)
+        }
+        val tweaks = Tweaks(shell)
+        for ((tweak, before) in target.settings) {
+            if (tweaks.read(tweak).filterKeys { it in before } == before) continue
+            run.step(TvSettings.name(tweak)) { changeNow(deviceId, tweak, before, null) }
+        }
+        run.result()
     }
 
     override suspend fun resetPlan(deviceId: String): ResetPlan = busy(deviceId) {
@@ -749,6 +836,8 @@ class AdbDeviceSource(
         val to = added?.let { homeBackTarget(it, book.entries(key(deviceId)), own) }?.pkg?.takeIf { it in system } ?: own.firstOrNull()
         // Fire OS keeps Amazon's launcher the default; a launcher whose service is on holds Home instead.
         val held = if (added == null && fireOs(deviceId, FIRE_TV_LAUNCHER in system)) Actions(shell).fireServiceHolder(listedServiceLaunchers)?.first else null
+        val tweaks = Tweaks(shell)
+        suspend fun offDefault(tweak: Tweak) = tweaks.read(tweak).takeIf { TvSettings.offDefault(tweak, it) }
         ResetPlan(
             turnOn = scan.turnOn.map { ResetApp(it, labelOf(it)) },
             bringBack = scan.bringBack.map { ResetApp(it, labelOf(it)) },
@@ -759,14 +848,14 @@ class AdbDeviceSource(
             },
             shippedOff = scan.shippedOff.size,
             ownHome = (options?.current?.takeIf { it in system } ?: to ?: own.firstOrNull())?.let(::labelOf),
+            dns = offDefault(Tweak.PRIVATE_DNS),
+            animations = offDefault(Tweak.ANIMATIONS),
         )
     }
 
     override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
         fireHomes -= deviceId
         val key = key(deviceId)
-        // Like any first change: what was off before stays out of Restore everything.
-        if (!book.hasBaseline(key)) book.setBaseline(key, disabledPackages(deviceId))
         val shell = session(deviceId)
         val tv = TvReset(shell)
         val failed = mutableListOf<ResetFailure>()
@@ -799,10 +888,24 @@ class AdbDeviceSource(
                 null
             }
         }
+        val tweaks = Tweaks(shell)
+        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?): Map<String, String?>? = planned?.let {
+            onProgress(ResetProgress(part, 0, 1))
+            try {
+                resetSetting(tweaks, tweak)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failed += ResetFailure(part, null, e.why(R.string.data_tv_refused))
+                null
+            }
+        }
+        val dns = setting(ResetPart.Dns, Tweak.PRIVATE_DNS, plan.dns)
+        val animations = setting(ResetPart.Animations, Tweak.ANIMATIONS, plan.animations)
         val old = into?.let { id -> book.entries(key).firstOrNull { it.id == id && it.undoneAt == null } }
-        if (on.isEmpty() && back.isEmpty() && home == null) return@busy old?.id to failed
+        if (on.isEmpty() && back.isEmpty() && home == null && dns == null && animations == null) return@busy old?.id to failed
         fun merge(k: String, new: List<String>) = k to (ResetRecord.list(old?.previous, k) + new).distinct().joinToString(",")
-        val previous = mapOf(merge(ResetRecord.ON, on), merge(ResetRecord.BACK, back)) + home.orEmpty()
+        val previous = mapOf(merge(ResetRecord.ON, on), merge(ResetRecord.BACK, back)) + home.orEmpty() + dns.orEmpty() + animations.orEmpty()
         val label = ResetRecord.label(ResetRecord.changes(old?.previous.orEmpty() + previous)).text()
         val id = if (old != null) old.id.also { book.amend(it, previous, label) }
         else book.record(key, System.currentTimeMillis(), Action.Reset, RESET, label, undo = Action.Reset, previous = previous).id
@@ -879,14 +982,22 @@ class AdbDeviceSource(
         }
         val on = each(ResetRecord.list(p, ResetRecord.ON), tv::turnOff)
         val back = each(ResetRecord.list(p, ResetRecord.BACK), tv::remove)
+        val tweaks = Tweaks(shell)
+        // Each setting back as it was; one the TV refuses stays marked, for Undo to try again.
+        val settingsLeft = Tweak.entries.filterNot { tweak ->
+            undoResetSetting(tweaks, tweak, p).also { put ->
+                if (!put) errors += UiText(R.string.data_app_reason, TvSettings.name(tweak), UiText(R.string.data_tweak_refused))
+            }
+        }
         // Only the service left on: every change is back, so the reset is undone, with a warning.
-        if (errors.isEmpty() || (on.isEmpty() && back.isEmpty() && !homeLeft)) {
+        if (errors.isEmpty() || (on.isEmpty() && back.isEmpty() && !homeLeft && settingsLeft.isEmpty())) {
             val undone = book.record(key, System.currentTimeMillis(), Action.Change, RESET, UiText(R.string.data_history_reset_undone).text(), undo = null, undoing = id)
             if (errors.isEmpty()) return undone
             throw UiTextException(UiText(R.string.data_reset_undo_service_left, errors.first()))
         }
         val left = mapOf(ResetRecord.ON to on.joinToString(","), ResetRecord.BACK to back.joinToString(",")) +
-            if (homeLeft) emptyMap() else mapOf(ResetRecord.FROM to null, ResetRecord.TO to null, ResetRecord.SERVICE to null)
+            (if (homeLeft) emptyMap() else mapOf(ResetRecord.FROM to null, ResetRecord.TO to null, ResetRecord.SERVICE to null)) +
+            (Tweak.entries - settingsLeft.toSet()).associate { ResetRecord.mark(it) to null }
         val before = ResetRecord.changes(p)
         val now = ResetRecord.changes(p + left)
         book.amend(id, left, ResetRecord.label(now).text())
@@ -1023,7 +1134,8 @@ class AdbDeviceSource(
 
     override suspend fun tweaks(deviceId: String): TvTweaks {
         val t = Tweaks(session(deviceId))
-        return TvSettings.tweaks(t.read(Tweak.PRIVATE_DNS), t.read(Tweak.ANIMATIONS), sdk(deviceId))
+        val fire = fireOs(deviceId, Actions(session(deviceId)).installed(FIRE_TV_LAUNCHER))
+        return TvSettings.tweaks(t.read(Tweak.PRIVATE_DNS), t.read(Tweak.ANIMATIONS), sdk(deviceId), fire)
     }
 
     private suspend fun sdk(deviceId: String) = session(deviceId).shell("getprop ro.build.version.sdk").output.trim().toIntOrNull()
@@ -1130,9 +1242,8 @@ class AdbDeviceSource(
 
     private suspend fun readKey(deviceId: String): String {
         val shell = links[deviceId]?.session ?: return keys[deviceId] ?: deviceId
-        suspend fun prop(cmd: String) = shell.shell(cmd).takeIf { it.exitCode == 0 }?.output
         val key = try {
-            historyKey(prop("getprop ro.serialno"), prop("settings get secure android_id"), deviceId)
+            keyOf(shell, deviceId)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
@@ -1147,6 +1258,12 @@ class AdbDeviceSource(
             remember(deviceId)
         }
         return key
+    }
+
+    /** The [historyKey] of the TV on [shell], read from it; [deviceId] stands in when it has none. */
+    private suspend fun keyOf(shell: AdbSession, deviceId: String): String {
+        suspend fun prop(cmd: String) = shell.shell(cmd).takeIf { it.exitCode == 0 }?.output
+        return historyKey(prop("getprop ro.serialno"), prop("settings get secure android_id"), deviceId)
     }
 
     private suspend fun disabledPackages(deviceId: String) =
@@ -1475,6 +1592,34 @@ internal suspend fun applyTweak(
 }
 
 /**
+ * Reset TV's step for [tweak]: deleting its keys brings back the TV's own default. They're read
+ * just before, so Undo writes back exactly what was there; returns that, marked, for the reset's
+ * History entry, or null when [tweak] is at its default already and nothing changed. Throws
+ * when the TV refuses.
+ */
+internal suspend fun resetSetting(t: Tweaks, tweak: Tweak): Map<String, String?>? {
+    val was = t.read(tweak)
+    if (!TvSettings.offDefault(tweak, was)) return null
+    if (!t.write(tweak, tweak.keys.associateWith { null })) throw UiTextException(UiText(R.string.data_tweak_refused))
+    return was + (ResetRecord.mark(tweak) to "1")
+}
+
+/**
+ * Undo of [resetSetting]: [tweak]'s keys back as the reset's [previous] holds them. True when
+ * they're back, or the reset didn't change [tweak]; false when the TV refused.
+ */
+internal suspend fun undoResetSetting(t: Tweaks, tweak: Tweak, previous: Map<String, String?>): Boolean {
+    val was = ResetRecord.setting(previous, tweak) ?: return true
+    return try {
+        t.write(tweak, was)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
+    }
+}
+
+/**
  * Runs [switchBack] (Home to the TV's own, the launcher's service off), and [uninstall] only once
  * it worked. A failure says which step stopped it. Once it's gone, the switch's Undo, which would
  * make it Home again, can't work: [dropUndo] takes it away.
@@ -1491,4 +1636,24 @@ internal suspend fun uninstallAfterHomeBack(switchBack: suspend () -> HistoryEnt
         throw UiTextException(UiText(if (switchedBack) R.string.data_uninstall_after_service else R.string.data_uninstall_home_not_back, why))
     }
     return uninstall().also { dropUndo(back.id) }
+}
+
+/**
+ * [r], unless it is a different TV than the one whose [historyKey] is [expected]: that one is let go
+ * and counts as unreachable, so a saved TV is never re-pointed at another. A TV that can't be read
+ * counts as different. Null [expected]: not known yet, so there is nothing to tell apart.
+ */
+internal suspend fun sameTv(r: AdbConnectResult, expected: String?, keyOf: suspend (AdbSession) -> String): AdbConnectResult {
+    if (r !is AdbConnectResult.Online || expected == null) return r
+    val key = try {
+        keyOf(r.session)
+    } catch (e: CancellationException) {
+        r.session.close()
+        throw e
+    } catch (_: Exception) {
+        null
+    }
+    if (key == expected) return r
+    r.session.close()
+    return AdbConnectResult.Unreachable("A different TV answers here")
 }

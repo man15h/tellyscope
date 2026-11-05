@@ -24,13 +24,24 @@ object TvSettings {
 
     fun animations(fast: Boolean): Map<String, String?> = Tweak.ANIMATIONS.keys.associateWith { if (fast) FAST else "1.0" }
 
-    fun tweaks(dns: Map<String, String?>, animations: Map<String, String?>, sdk: Int?) = TvTweaks(
+    fun tweaks(dns: Map<String, String?>, animations: Map<String, String?>, sdk: Int?, fireOs: Boolean = false) = TvTweaks(
         dnsHost = dns["private_dns_specifier"]?.takeIf { dns["private_dns_mode"] == "hostname" },
         animationScale = animations["window_animation_scale"],
         // A TV that doesn't say is let through: the lookup check after the change still guards it.
         dnsSupported = sdk == null || sdk >= DNS_SDK,
         cachesSupported = sdk == null || sdk >= CACHES_SDK,
+        fireOs = fireOs,
     )
+
+    /**
+     * Whether [values], read for [tweak], are off the TV's default: a Private DNS mode other than
+     * Automatic (unset, or `opportunistic` as Tellyscope's off writes it), or an animation scale
+     * other than 1×. Reset TV puts those back by deleting the keys.
+     */
+    fun offDefault(tweak: Tweak, values: Map<String, String?>): Boolean = when (tweak) {
+        Tweak.PRIVATE_DNS -> values["private_dns_mode"].let { it != null && it != "opportunistic" }
+        Tweak.ANIMATIONS -> values.values.any { it != null && it.toFloatOrNull() != 1f }
+    }
 
     /** History's line for a change that left the TV at [values]. */
     fun label(tweak: Tweak, values: Map<String, String?>): UiText = when (tweak) {
@@ -44,6 +55,12 @@ object TvSettings {
             0f -> UiText(R.string.data_history_animations_off)
             else -> UiText(R.string.data_history_animations_scale, v.toString().removeSuffix(".0"))
         }
+    }
+
+    /** How Restore everything names [tweak] when it didn't go back. */
+    fun name(tweak: Tweak): UiText = when (tweak) {
+        Tweak.PRIVATE_DNS -> UiText(R.string.data_restore_dns)
+        Tweak.ANIMATIONS -> UiText(R.string.data_restore_animations)
     }
 
     val DNS_TOO_OLD: UiText = UiText(R.string.data_dns_too_old)

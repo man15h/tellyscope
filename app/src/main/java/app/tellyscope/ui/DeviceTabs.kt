@@ -111,7 +111,6 @@ import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceState
-import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Suggestions
 import app.tellyscope.data.resolve
@@ -506,10 +505,10 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
                     if (line.isNotEmpty()) Text(line, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
                 }
             }
-            val off = HistoryBook.leftDisabled(state.device.history).size
+            val off = state.device.restore.count
             SheetGroup(
                 { MenuRow(Icons.Default.Edit, stringResource(R.string.tabs_rename)) { pick { renaming = true } } },
-                { MenuRow(HistoryIcons.History, Copy.HISTORY.resolve(), Copy.stillOff(off).resolve().takeIf { off > 0 }, dot = { if (fresh) MenuDot(false, true) }) { pick(actions.history) } },
+                { MenuRow(HistoryIcons.History, Copy.HISTORY.resolve(), Copy.toPutBack(off).resolve().takeIf { off > 0 }, dot = { if (fresh) MenuDot(false, true) }) { pick(actions.history) } },
                 {
                     MenuRow(
                         AccessIcons.Shield, Copy.WHO_HAS_ACCESS.resolve(),

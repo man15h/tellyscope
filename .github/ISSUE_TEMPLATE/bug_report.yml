@@ -1,0 +1,61 @@
+name: Bug report
+description: Something in Tellyscope doesn't work the way it should.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it! One bug per issue, please.
+        Please don't paste serial numbers, IP addresses or account names.
+  - type: input
+    id: app-version
+    attributes:
+      label: Tellyscope version
+      description: ⋮ More options → About & licences.
+      placeholder: e.g. 0.15.0
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: TV make and model
+      placeholder: e.g. Chromecast with Google TV (4K), Sony Bravia XR-55A80L
+    validations:
+      required: true
+  - type: input
+    id: android-version
+    attributes:
+      label: Android TV / Google TV version
+      description: Settings → System → About → Android TV OS version. On Fire TV, the Fire OS version.
+      placeholder: e.g. Android TV OS 14
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Apps
+        2. Tap …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened instead
+      description: Include any error message as it appears.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot (optional)
+      description: Drag an image in here. Crop out anything personal first.

@@ -445,6 +445,11 @@
     <string name="copy_reset_home">Сделать %1$s главным экраном</string>
     <string name="copy_reset_home_text">Вместо %1$s. %1$s останется установленным.</string>
     <string name="copy_reset_home_text_service">Вместо %1$s, с отключенной службой специальных возможностей. %1$s останется установленным.</string>
+    <string name="copy_reset_dns">Частный DNS снова автоматически</string>
+    <string name="copy_reset_animations">Анимация снова с обычной скоростью</string>
+    <string name="copy_reset_was">Было: %1$s</string>
+    <string name="copy_dns_off">отключен</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d приложение, которое %2$s поставляет отключенным, не будет включено.</item>
         <item quantity="few">%1$d приложения, которые %2$s поставляет отключенными, не будут включены.</item>
@@ -460,6 +465,8 @@
     <string name="copy_resetting_turn_on">Включение приложений: %1$d из %2$d.</string>
     <string name="copy_resetting_bring_back">Возврат приложений: %1$d из %2$d.</string>
     <string name="copy_resetting_home">%1$s становится главным экраном.</string>
+    <string name="copy_resetting_dns">Частный DNS возвращается в автоматический режим.</string>
+    <string name="copy_resetting_animations">Анимация возвращается к обычной скорости.</string>
     <string name="copy_keep_tv_on">Не выключайте телевизор и не отключайте его от сети.</string>
     <string name="copy_resetting">Сброс…</string>
     <string name="copy_reset_apps_stale">Сброс выполнен, но список приложений не обновился. Откройте телевизор снова, чтобы увидеть его.</string>
@@ -467,19 +474,22 @@
     <string name="copy_reset_done">Телевизор возвращен к заводскому виду</string>
     <string name="copy_reset_partly">Сброс выполнен частично</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">%1$d предустановленное приложение возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="few">%1$d предустановленных приложения возвращены, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="many">%1$d предустановленных приложений возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="other">%1$d предустановленного приложения возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
+        <item quantity="one">%1$d предустановленное приложение возвращено, а %2$s — главный экран.</item>
+        <item quantity="few">%1$d предустановленных приложения возвращены, а %2$s — главный экран.</item>
+        <item quantity="many">%1$d предустановленных приложений возвращено, а %2$s — главный экран.</item>
+        <item quantity="other">%1$d предустановленного приложения возвращено, а %2$s — главный экран.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">%1$d предустановленное приложение возвращено. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="few">%1$d предустановленных приложения возвращены. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="many">%1$d предустановленных приложений возвращено. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="other">%1$d предустановленного приложения возвращено. Данные приложений и входы в аккаунты сохранены.</item>
+        <item quantity="one">%1$d предустановленное приложение возвращено.</item>
+        <item quantity="few">%1$d предустановленных приложения возвращены.</item>
+        <item quantity="many">%1$d предустановленных приложений возвращено.</item>
+        <item quantity="other">%1$d предустановленного приложения возвращено.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s — главный экран. Данные приложений и входы в аккаунты сохранены.</string>
-    <string name="copy_reset_done_nothing">. Данные приложений и входы в аккаунты сохранены.</string>
+    <string name="copy_reset_done_home">%1$s — главный экран.</string>
+    <string name="copy_reset_done_settings">Частный DNS и анимация возвращены к значениям по умолчанию.</string>
+    <string name="copy_reset_done_dns">Частный DNS снова в автоматическом режиме.</string>
+    <string name="copy_reset_done_animations">Анимация снова с обычной скоростью.</string>
+    <string name="copy_reset_kept_data">Данные приложений и входы в аккаунты сохранены.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">%1$d шаг не удался. Все остальное возвращено к заводскому виду. Ничего не потеряно.</item>
         <item quantity="few">%1$d шага не удались. Все остальное возвращено к заводскому виду. Ничего не потеряно.</item>
@@ -512,6 +522,10 @@
     </plurals>
     <string name="copy_is_home">%1$s — главный экран</string>
     <string name="copy_still_home">%1$s по-прежнему главный экран</string>
+    <string name="copy_dns_automatic">Частный DNS: автоматически</string>
+    <string name="copy_dns_still">Частный DNS по-прежнему: %1$s</string>
+    <string name="copy_animations_normal">Анимация с обычной скоростью</string>
+    <string name="copy_animations_still">Анимация по-прежнему %1$s</string>
     <string name="copy_try_app_again">Повторить для %1$s</string>
     <string name="copy_try_again">Повторить</string>
     <string name="copy_disabling_apps">Отключение приложений: %1$d из %2$d. Не выключайте телевизор и не отключайте его от сети.</string>
@@ -533,19 +547,47 @@
         <item quantity="other">Отключено %1$d из %2$d приложения</item>
     </plurals>
     <string name="copy_still_on">%1$s по-прежнему включено</string>
-    <plurals name="copy_still_off">
-        <item quantity="one">%1$d приложение по-прежнему отключено</item>
-        <item quantity="few">%1$d приложения по-прежнему отключены</item>
-        <item quantity="many">%1$d приложений по-прежнему отключено</item>
-        <item quantity="other">%1$d приложения по-прежнему отключено</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d изменение нужно вернуть</item>
+        <item quantity="few">%1$d изменения нужно вернуть</item>
+        <item quantity="many">%1$d изменений нужно вернуть</item>
+        <item quantity="other">%1$d изменения нужно вернуть</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="one">%1$d приложение, отключенное Tellyscope, по-прежнему отключено</item>
-        <item quantity="few">%1$d приложения, отключенные Tellyscope, по-прежнему отключены</item>
-        <item quantity="many">%1$d приложений, отключенных Tellyscope, по-прежнему отключено</item>
-        <item quantity="other">%1$d приложения, отключенного Tellyscope, по-прежнему отключено</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">%1$d изменение Tellyscope всё ещё действует</item>
+        <item quantity="few">%1$d изменения Tellyscope всё ещё действуют</item>
+        <item quantity="many">%1$d изменений Tellyscope всё ещё действуют</item>
+        <item quantity="other">%1$d изменения Tellyscope всё ещё действуют</item>
     </plurals>
-    <string name="copy_still_off_text">«Восстановить все» снова включит их. Приложения, которые были отключены до первого изменения Tellyscope, останутся отключенными.</string>
+    <string name="copy_put_back_text">«Восстановить все» вернет телевизор к состоянию до первого изменения Tellyscope:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">Снова включит %1$d приложение</item>
+        <item quantity="few">Снова включит %1$d приложения</item>
+        <item quantity="many">Снова включит %1$d приложений</item>
+        <item quantity="other">Снова включит %1$d приложения</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">Снова отключит %1$d приложение</item>
+        <item quantity="few">Снова отключит %1$d приложения</item>
+        <item quantity="many">Снова отключит %1$d приложений</item>
+        <item quantity="other">Снова отключит %1$d приложения</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">Удалит %1$d приложение, возвращенное сбросом телевизора</item>
+        <item quantity="few">Удалит %1$d приложения, возвращенные сбросом телевизора</item>
+        <item quantity="many">Удалит %1$d приложений, возвращенных сбросом телевизора</item>
+        <item quantity="other">Удалит %1$d приложения, возвращенного сбросом телевизора</item>
+    </plurals>
+    <string name="copy_restore_home">Вернет главный экран</string>
+    <string name="copy_restore_dns">Вернет частный DNS</string>
+    <string name="copy_restore_animations">Вернет скорость анимации</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d приложение удалено и не может вернуться</item>
+        <item quantity="few">%1$d приложения удалены и не могут вернуться</item>
+        <item quantity="many">%1$d приложений удалено и не может вернуться</item>
+        <item quantity="other">%1$d приложения удалено и не может вернуться</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="one">Сейчас подключено еще %1$d устройство</item>
         <item quantity="few">Сейчас подключено еще %1$d устройства</item>
@@ -646,12 +688,18 @@
     <string name="vm_not_an_ip">Это не похоже на IP-адрес. Он должен выглядеть как четыре числа через точки, как в настройках сети телевизора.</string>
     <string name="vm_bad_port">Порт после двоеточия должен быть числом от 1 до 65535, например 5555.</string>
     <string name="vm_didnt_work">Не получилось.</string>
-    <string name="vm_nothing_to_turn_on">Нечего включать.</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="one">Снова включено %1$d приложение.</item>
-        <item quantity="few">Снова включено %1$d приложения.</item>
-        <item quantity="many">Снова включено %1$d приложений.</item>
-        <item quantity="other">Снова включено %1$d приложения.</item>
+    <string name="vm_nothing_to_put_back">Нечего возвращать.</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">Возвращено %1$d изменение.</item>
+        <item quantity="few">Возвращено %1$d изменения.</item>
+        <item quantity="many">Возвращено %1$d изменений.</item>
+        <item quantity="other">Возвращено %1$d изменения.</item>
+    </plurals>
+    <plurals name="vm_put_back_partly">
+        <item quantity="one">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
+        <item quantity="few">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
+        <item quantity="many">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
+        <item quantity="other">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">телевизор отказал</string>
     <string name="vm_tv_didnt_answer">Телевизор не ответил.</string>
@@ -689,13 +737,9 @@
     <string name="data_no_home_to_switch_back">нет главного экрана, на который можно вернуться</string>
     <string name="data_uninstall_after_service">%1$s. Ничего не удалено</string>
     <string name="data_uninstall_home_not_back">Главный экран не вернулся: %1$s. Ничего не удалено</string>
-    <string name="data_restore_none">не удалось снова включить приложения: %1$s</string>
-    <plurals name="data_restore_some">
-        <item quantity="one">снова включено %1$d приложение, затем произошла остановка: %2$s</item>
-        <item quantity="few">снова включено %1$d приложения, затем произошла остановка: %2$s</item>
-        <item quantity="many">снова включено %1$d приложений, затем произошла остановка: %2$s</item>
-        <item quantity="other">снова включено %1$d приложения, затем произошла остановка: %2$s</item>
-    </plurals>
+    <string name="data_restore_home">Главный экран</string>
+    <string name="data_restore_dns">Частный DNS</string>
+    <string name="data_restore_animations">Скорость анимации</string>
     <string name="data_no_reset_to_undo">нет сброса, который можно отменить</string>
     <string name="data_reset_already_undone">этот сброс уже отменен</string>
     <string name="data_reset_tv_kept_home">телевизор оставил главным экраном %1$s</string>
@@ -716,6 +760,7 @@
     <string name="data_lists_not_a_list">этот источник — не список Tellyscope</string>
     <string name="data_app_names_system">Система Android</string>
     <string name="data_history_service_off">Отключена служба специальных возможностей %1$s</string>
+    <string name="data_history_service_on">Включена служба специальных возможностей %1$s</string>
     <string name="data_history_reset_undone">Отменены изменения после сброса телевизора</string>
     <plurals name="data_history_reset">
         <item quantity="one">Сброс телевизора · %1$d изменение</item>
@@ -990,13 +1035,13 @@
     <string name="device_disable_title">Отключить %1$s?</string>
     <string name="device_cancel">Отмена</string>
     <plurals name="device_restore_title">
-        <item quantity="one">Снова включить %1$d приложение?</item>
-        <item quantity="few">Снова включить %1$d приложения?</item>
-        <item quantity="many">Снова включить %1$d приложений?</item>
-        <item quantity="other">Снова включить %1$d приложения?</item>
+        <item quantity="one">Вернуть %1$d изменение?</item>
+        <item quantity="few">Вернуть %1$d изменения?</item>
+        <item quantity="many">Вернуть %1$d изменений?</item>
+        <item quantity="other">Вернуть %1$d изменения?</item>
     </plurals>
-    <string name="device_restore_text">Снова включает все приложения, которые Tellyscope отключил на этом телевизоре. Приложения, отключенные до первого изменения Tellyscope, останутся отключенными.</string>
-    <string name="device_restore_button">Включить снова</string>
+    <string name="device_restore_text">Телевизор вернется к состоянию до первого изменения Tellyscope:</string>
+    <string name="device_restore_button">Вернуть</string>
     <string name="device_rename_title">Переименовать телевизор</string>
     <string name="device_rename_text">Это название видно только на этом телефоне. На телевизоре ничего не изменится.</string>
     <string name="device_save">Сохранить</string>
@@ -1204,6 +1249,7 @@
     <string name="scan_back">Назад</string>
     <string name="scan_title">Добавьте телевизор</string>
     <string name="scan_no_lan">Телефон не подключен к Wi-Fi, поэтому видны только телевизоры, которые сами сообщают о себе. Подключитесь к той же сети Wi-Fi, что и телевизор.</string>
+    <string name="scan_vpn">Включён VPN, поэтому Tellyscope не может искать в вашей сети Wi-Fi. Телевизоры, которые сами сообщают о себе, по-прежнему видны. Добавьте телевизор по IP-адресу или разрешите доступ к локальной сети в приложении VPN.</string>
     <string name="scan_same_wifi">Телефон и телевизор должны быть в одной сети Wi-Fi.</string>
     <string name="scan_add_by_ip">Добавить по IP-адресу</string>
     <string name="scan_cant_find">Не удается найти телевизор?</string>
@@ -1242,7 +1288,7 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">Изменений пока нет</string>
     <string name="history_empty_text">Здесь появится все, что вы остановите, отключите или включите, и это можно будет отменить.</string>
-    <string name="history_restoring">Снова включаем приложения…</string>
+    <string name="history_restoring">Возвращаем…</string>
     <string name="history_restore_all">Восстановить все (%1$d)</string>
     <string name="history_undone">Отменено</string>
     <string name="debloat_title">Очистка</string>

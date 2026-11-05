@@ -513,6 +513,14 @@
     <!-- %1$s is the launcher Home moves away from -->
     <string name="copy_reset_home_text">Instead of %1$s. %1$s stays installed.</string>
     <string name="copy_reset_home_text_service">Instead of %1$s, with its accessibility service turned off. %1$s stays installed.</string>
+    <string name="copy_reset_dns">Private DNS back to Automatic</string>
+    <string name="copy_reset_animations">Animations back to normal speed</string>
+    <!-- Under a setting Reset TV puts back: %1$s is the Private DNS provider ("dns.adguard-dns.com", or "off"), or an animation scale ("0.5×"). -->
+    <string name="copy_reset_was">Was %1$s</string>
+    <!-- Private DNS turned off, as "Was off" and "Private DNS is still off" name it. -->
+    <string name="copy_dns_off">off</string>
+    <!-- An animation scale; %1$s is a number such as 0.5. -->
+    <string name="copy_animation_scale">%1$s×</string>
     <!-- %2$s is the TV's brand, or copy_the_maker -->
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d app %2$s shipped switched off stay off.</item>
@@ -529,6 +537,8 @@
     <string name="copy_resetting_turn_on">Turning on apps: %1$d of %2$d.</string>
     <string name="copy_resetting_bring_back">Bringing back apps: %1$d of %2$d.</string>
     <string name="copy_resetting_home">Making %1$s the home screen.</string>
+    <string name="copy_resetting_dns">Putting Private DNS back to Automatic.</string>
+    <string name="copy_resetting_animations">Putting animations back to normal speed.</string>
     <string name="copy_keep_tv_on">Keep the TV on and connected.</string>
     <string name="copy_resetting">Resetting…</string>
     <string name="copy_reset_apps_stale">Reset done, but the app list didn\'t refresh. Open the TV again to see it.</string>
@@ -537,16 +547,18 @@
     <string name="copy_reset_partly">Reset partly done</string>
     <!-- After a reset; %2$s is the launcher now on Home -->
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">%1$d preinstalled app is back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
-        <item quantity="other">%1$d preinstalled apps are back, and %2$s is the home screen. Apps\' data and sign-ins stayed.</item>
+        <item quantity="one">%1$d preinstalled app is back, and %2$s is the home screen.</item>
+        <item quantity="other">%1$d preinstalled apps are back, and %2$s is the home screen.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">%1$d preinstalled app is back. Apps\' data and sign-ins stayed.</item>
-        <item quantity="other">%1$d preinstalled apps are back. Apps\' data and sign-ins stayed.</item>
+        <item quantity="one">%1$d preinstalled app is back.</item>
+        <item quantity="other">%1$d preinstalled apps are back.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s is the home screen. Apps\' data and sign-ins stayed.</string>
-    <!-- Only reached when a reset changed nothing; the leading ". " is as the app always showed it -->
-    <string name="copy_reset_done_nothing">. Apps\' data and sign-ins stayed.</string>
+    <string name="copy_reset_done_home">%1$s is the home screen.</string>
+    <string name="copy_reset_done_settings">Private DNS and animations are back to their defaults.</string>
+    <string name="copy_reset_done_dns">Private DNS is back to Automatic.</string>
+    <string name="copy_reset_done_animations">Animations are back to normal speed.</string>
+    <string name="copy_reset_kept_data">Apps\' data and sign-ins stayed.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">One step didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
         <item quantity="other">%1$d steps didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
@@ -570,6 +582,12 @@
     </plurals>
     <string name="copy_is_home">%1$s is the home screen</string>
     <string name="copy_still_home">%1$s is still the home screen</string>
+    <string name="copy_dns_automatic">Private DNS is Automatic</string>
+    <!-- %1$s is the Private DNS provider, or "off". -->
+    <string name="copy_dns_still">Private DNS is still %1$s</string>
+    <string name="copy_animations_normal">Animations are at normal speed</string>
+    <!-- %1$s is an animation scale, such as "0.5×". -->
+    <string name="copy_animations_still">Animations are still at %1$s</string>
     <string name="copy_try_app_again">Try %1$s again</string>
     <string name="copy_try_again">Try again</string>
 
@@ -590,15 +608,36 @@
     </plurals>
     <string name="copy_still_on">%1$s is still on</string>
 
-    <plurals name="copy_still_off">
-        <item quantity="one">%1$d app still off</item>
-        <item quantity="other">%1$d apps still off</item>
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d change to put back</item>
+        <item quantity="other">%1$d changes to put back</item>
     </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="one">%1$d app Tellyscope turned off is still off</item>
-        <item quantity="other">%1$d apps Tellyscope turned off are still off</item>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">%1$d change Tellyscope made is still in place</item>
+        <item quantity="other">%1$d changes Tellyscope made are still in place</item>
     </plurals>
-    <string name="copy_still_off_text">Restore everything turns them back on. Apps that were off before Tellyscope\'s first change stay off.</string>
+    <string name="copy_put_back_text">Restore everything puts this TV back as it was before Tellyscope\'s first change:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">Turns %1$d app back on</item>
+        <item quantity="other">Turns %1$d apps back on</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">Turns %1$d app off again</item>
+        <item quantity="other">Turns %1$d apps off again</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">Removes %1$d app Reset TV brought back</item>
+        <item quantity="other">Removes %1$d apps Reset TV brought back</item>
+    </plurals>
+    <string name="copy_restore_home">Puts Home back</string>
+    <string name="copy_restore_dns">Puts Private DNS back</string>
+    <string name="copy_restore_animations">Puts animation speed back</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d app was uninstalled and can\'t come back</item>
+        <item quantity="other">%1$d apps were uninstalled and can\'t come back</item>
+    </plurals>
+    <!-- One line of what Restore everything does, under the card and in its confirm. -->
+    <string name="copy_restore_line">• %1$s</string>
     <plurals name="copy_others_connected">
         <item quantity="one">%1$d other connected now</item>
         <item quantity="other">%1$d others connected now</item>
@@ -709,10 +748,15 @@
 
     <!-- Snackbar when an action failed and the TV gave no reason -->
     <string name="vm_didnt_work">That didn\'t work.</string>
-    <string name="vm_nothing_to_turn_on">Nothing to turn back on.</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="one">Turned %1$d app back on.</item>
-        <item quantity="other">Turned %1$d apps back on.</item>
+    <string name="vm_nothing_to_put_back">Nothing to put back.</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">Put back %1$d change.</item>
+        <item quantity="other">Put back %1$d changes.</item>
+    </plurals>
+    <!-- The count is what didn't go back. %4$s names the first of them; %5$s is a lowercase reason. -->
+    <plurals name="vm_put_back_partly">
+        <item quantity="one">Put back %1$d of %2$d. %4$s didn\'t go back: %5$s</item>
+        <item quantity="other">Put back %1$d of %2$d. %3$d didn\'t go back, %4$s among them: %5$s</item>
     </plurals>
 
     <!-- A reason shown mid-sentence after an app's name, so lower case -->
@@ -771,13 +815,9 @@
     <!-- %1$s is a lowercase reason. -->
     <string name="data_uninstall_home_not_back">Home didn\'t switch back: %1$s. Nothing was uninstalled</string>
 
-    <!-- %1$s is a lowercase reason. -->
-    <string name="data_restore_none">couldn\'t turn apps back on: %1$s</string>
-    <!-- %2$s is a lowercase reason. -->
-    <plurals name="data_restore_some">
-        <item quantity="one">turned %1$d app back on, then stopped: %2$s</item>
-        <item quantity="other">turned %1$d apps back on, then stopped: %2$s</item>
-    </plurals>
+    <string name="data_restore_home">Home</string>
+    <string name="data_restore_dns">Private DNS</string>
+    <string name="data_restore_animations">Animation speed</string>
 
     <string name="data_no_reset_to_undo">there\'s no reset to undo</string>
     <string name="data_reset_already_undone">that reset is already undone</string>
@@ -807,6 +847,7 @@
 
     <!-- History lines, saved with the entry in the language of the moment. -->
     <string name="data_history_service_off">Turned off %1$s\'s accessibility service</string>
+    <string name="data_history_service_on">Turned on %1$s\'s accessibility service</string>
     <string name="data_history_reset_undone">Put back what Reset TV changed</string>
     <plurals name="data_history_reset">
         <item quantity="one">Reset TV · %1$d change</item>
@@ -1107,11 +1148,11 @@
     <string name="device_disable_title">Disable %1$s?</string>
     <string name="device_cancel">Cancel</string>
     <plurals name="device_restore_title">
-        <item quantity="one">Turn %1$d app back on?</item>
-        <item quantity="other">Turn %1$d apps back on?</item>
+        <item quantity="one">Put back %1$d change?</item>
+        <item quantity="other">Put back %1$d changes?</item>
     </plurals>
-    <string name="device_restore_text">Turns back on every app Tellyscope disabled on this TV. Apps that were already off before Tellyscope\'s first change stay off.</string>
-    <string name="device_restore_button">Turn back on</string>
+    <string name="device_restore_text">This TV goes back to how it was before Tellyscope\'s first change:</string>
+    <string name="device_restore_button">Put back</string>
     <string name="device_rename_title">Rename this TV</string>
     <string name="device_rename_text">Only this phone sees the name. Nothing on the TV changes.</string>
     <string name="device_save">Save</string>
@@ -1371,6 +1412,7 @@
     <string name="scan_back">Back</string>
     <string name="scan_title">Add your TV</string>
     <string name="scan_no_lan">You\'re not on Wi-Fi, so only TVs that announce themselves show up. Join your TV\'s Wi-Fi.</string>
+    <string name="scan_vpn">A VPN is on, so Tellyscope can\'t search your Wi-Fi. TVs that announce themselves still show up. Add your TV by IP address, or allow local network access in your VPN app.</string>
     <string name="scan_same_wifi">Keep your phone and TV on the same Wi-Fi.</string>
     <string name="scan_add_by_ip">Add by IP address</string>
     <string name="scan_cant_find">Can\'t find your TV?</string>
@@ -1428,8 +1470,8 @@
     <!-- History -->
     <string name="history_empty_title">Nothing changed yet</string>
     <string name="history_empty_text">Anything you stop, disable or turn on shows up here, with a way to undo it.</string>
-    <string name="history_restoring">Turning apps back on…</string>
-    <!-- Button; the number is how many apps are still off. -->
+    <string name="history_restoring">Putting back…</string>
+    <!-- Button; the number is how many changes Restore puts back. -->
     <string name="history_restore_all">Restore everything (%1$d)</string>
     <string name="history_undone">Undone</string>
 

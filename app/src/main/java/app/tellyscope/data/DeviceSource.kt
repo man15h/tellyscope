@@ -35,6 +35,12 @@ interface DeviceSource {
     /** Emits whenever the phone is on a Wi-Fi or Ethernet network a [scan] can sweep. */
     fun lanUp(): Flow<Unit> = emptyFlow()
 
+    /**
+     * Until cancelled, each new network that reaches the internet gives the shared lists another go, so ones
+     * that couldn't be downloaded at launch (the phone offline, nothing cached) arrive without a restart.
+     */
+    suspend fun refreshListsOnNetwork() {}
+
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
 
@@ -110,8 +116,14 @@ interface DeviceSource {
     /** Everything Tellyscope changed on this TV, newest first. Survives app restarts. */
     suspend fun history(deviceId: String): List<HistoryEntry>
 
-    /** Turns back on every app Tellyscope disabled, and nothing that was off before. */
-    suspend fun restoreAll(deviceId: String): List<HistoryEntry>
+    /**
+     * Everything Tellyscope changed on this TV, as it was before its first change to each: what
+     * [restoreAll] puts back. Read on the phone; [restoreAll] then skips what the TV already shows so.
+     */
+    suspend fun restorable(deviceId: String): Restorable
+
+    /** Puts everything Tellyscope changed back as it was before its first change, on past any step the TV refuses. */
+    suspend fun restoreAll(deviceId: String): RestoreResult
 
     /** What Reset TV would change, read from the TV itself, whoever changed it. Throws if it's gone. */
     suspend fun resetPlan(deviceId: String): ResetPlan = ResetPlan()
