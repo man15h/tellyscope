@@ -702,10 +702,6 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList)
 }
 
-/**
- * The list in one line of plain text, with See changes beside it. When apps Tellyscope turned off
- * are on again, one red line says so; the Debloat tile above carries the count and the fix.
- */
 /** How far the Remote's button rises above the bottom bar's top edge. */
 private val RemoteRise = 17.dp
 
@@ -729,6 +725,10 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
     }
 }
 
+/**
+ * The list in one line of plain text, with See changes beside it. When apps Tellyscope turned off
+ * are on again, one red line says so; the Debloat tile above carries the count and the fix.
+ */
 @Composable
 private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
     val c = MaterialTheme.colorScheme
