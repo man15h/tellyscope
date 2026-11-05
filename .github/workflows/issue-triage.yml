@@ -3,6 +3,8 @@ name: Issue triage
 on:
   issues:
     types: [opened]
+  issue_comment:
+    types: [created]
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
@@ -100,8 +102,25 @@ jobs:
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body: comments.join('\n\n') });
             }
 
+  reporter-reply:
+    if: github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const { issue, comment } = context.payload;
+            if (issue.pull_request || issue.state !== 'open') return;
+            if (comment.user.id !== issue.user.id) return;
+            if (!issue.labels.some(l => l.name === 'needs-info')) return;
+            await github.rest.issues.removeLabel({
+              ...context.repo, issue_number: issue.number, name: 'needs-info',
+            });
+
   stale:
-    if: github.event_name != 'issues'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       issues: write
