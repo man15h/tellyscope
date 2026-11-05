@@ -114,6 +114,10 @@ data class Restorable(
                         ResetRecord.list(p, ResetRecord.BACK).forEach { app(e, it, Was.Gone, Was.On) }
                         if (p[ResetRecord.TO] != null) home(p[ResetRecord.FROM])
                         p[ResetRecord.SERVICE]?.let { service(e, it, true) }
+                        // A setting it put back to its default, as it was before; kept once undone, as a change's is.
+                        Tweak.entries.forEach { tweak ->
+                            p.filterKeys { it in tweak.keys }.forEach { (k, v) -> settings.getOrPut(tweak) { mutableMapOf() }.putIfAbsent(k, v) }
+                        }
                     }
                     Action.Change -> Tweak.entries.firstOrNull { it.name == e.packageName }?.let { tweak ->
                         // Not putIfAbsent: it takes a key held as null, "wasn't set", for one not seen yet.

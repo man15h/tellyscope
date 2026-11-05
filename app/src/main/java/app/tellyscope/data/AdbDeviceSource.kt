@@ -836,6 +836,8 @@ class AdbDeviceSource(
         val to = added?.let { homeBackTarget(it, book.entries(key(deviceId)), own) }?.pkg?.takeIf { it in system } ?: own.firstOrNull()
         // Fire OS keeps Amazon's launcher the default; a launcher whose service is on holds Home instead.
         val held = if (added == null && fireOs(deviceId, FIRE_TV_LAUNCHER in system)) Actions(shell).fireServiceHolder(listedServiceLaunchers)?.first else null
+        val tweaks = Tweaks(shell)
+        suspend fun offDefault(tweak: Tweak) = tweaks.read(tweak).takeIf { TvSettings.offDefault(tweak, it) }
         ResetPlan(
             turnOn = scan.turnOn.map { ResetApp(it, labelOf(it)) },
             bringBack = scan.bringBack.map { ResetApp(it, labelOf(it)) },
@@ -846,6 +848,8 @@ class AdbDeviceSource(
             },
             shippedOff = scan.shippedOff.size,
             ownHome = (options?.current?.takeIf { it in system } ?: to ?: own.firstOrNull())?.let(::labelOf),
+            dns = offDefault(Tweak.PRIVATE_DNS),
+            animations = offDefault(Tweak.ANIMATIONS),
         )
     }
 
@@ -884,10 +888,24 @@ class AdbDeviceSource(
                 null
             }
         }
+        val tweaks = Tweaks(shell)
+        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?): Map<String, String?>? = planned?.let {
+            onProgress(ResetProgress(part, 0, 1))
+            try {
+                resetSetting(tweaks, tweak)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failed += ResetFailure(part, null, e.why(R.string.data_tv_refused))
+                null
+            }
+        }
+        val dns = setting(ResetPart.Dns, Tweak.PRIVATE_DNS, plan.dns)
+        val animations = setting(ResetPart.Animations, Tweak.ANIMATIONS, plan.animations)
         val old = into?.let { id -> book.entries(key).firstOrNull { it.id == id && it.undoneAt == null } }
-        if (on.isEmpty() && back.isEmpty() && home == null) return@busy old?.id to failed
+        if (on.isEmpty() && back.isEmpty() && home == null && dns == null && animations == null) return@busy old?.id to failed
         fun merge(k: String, new: List<String>) = k to (ResetRecord.list(old?.previous, k) + new).distinct().joinToString(",")
-        val previous = mapOf(merge(ResetRecord.ON, on), merge(ResetRecord.BACK, back)) + home.orEmpty()
+        val previous = mapOf(merge(ResetRecord.ON, on), merge(ResetRecord.BACK, back)) + home.orEmpty() + dns.orEmpty() + animations.orEmpty()
         val label = ResetRecord.label(ResetRecord.changes(old?.previous.orEmpty() + previous)).text()
         val id = if (old != null) old.id.also { book.amend(it, previous, label) }
         else book.record(key, System.currentTimeMillis(), Action.Reset, RESET, label, undo = Action.Reset, previous = previous).id
@@ -964,14 +982,22 @@ class AdbDeviceSource(
         }
         val on = each(ResetRecord.list(p, ResetRecord.ON), tv::turnOff)
         val back = each(ResetRecord.list(p, ResetRecord.BACK), tv::remove)
+        val tweaks = Tweaks(shell)
+        // Each setting back as it was; one the TV refuses stays marked, for Undo to try again.
+        val settingsLeft = Tweak.entries.filterNot { tweak ->
+            undoResetSetting(tweaks, tweak, p).also { put ->
+                if (!put) errors += UiText(R.string.data_app_reason, TvSettings.name(tweak), UiText(R.string.data_tweak_refused))
+            }
+        }
         // Only the service left on: every change is back, so the reset is undone, with a warning.
-        if (errors.isEmpty() || (on.isEmpty() && back.isEmpty() && !homeLeft)) {
+        if (errors.isEmpty() || (on.isEmpty() && back.isEmpty() && !homeLeft && settingsLeft.isEmpty())) {
             val undone = book.record(key, System.currentTimeMillis(), Action.Change, RESET, UiText(R.string.data_history_reset_undone).text(), undo = null, undoing = id)
             if (errors.isEmpty()) return undone
             throw UiTextException(UiText(R.string.data_reset_undo_service_left, errors.first()))
         }
         val left = mapOf(ResetRecord.ON to on.joinToString(","), ResetRecord.BACK to back.joinToString(",")) +
-            if (homeLeft) emptyMap() else mapOf(ResetRecord.FROM to null, ResetRecord.TO to null, ResetRecord.SERVICE to null)
+            (if (homeLeft) emptyMap() else mapOf(ResetRecord.FROM to null, ResetRecord.TO to null, ResetRecord.SERVICE to null)) +
+            (Tweak.entries - settingsLeft.toSet()).associate { ResetRecord.mark(it) to null }
         val before = ResetRecord.changes(p)
         val now = ResetRecord.changes(p + left)
         book.amend(id, left, ResetRecord.label(now).text())
@@ -1563,6 +1589,34 @@ internal suspend fun applyTweak(
         throw UiTextException(TvSettings.dnsStuck(values["private_dns_specifier"]))
     }
     return record(TvSettings.label(tweak, t.read(tweak)), before)
+}
+
+/**
+ * Reset TV's step for [tweak]: deleting its keys brings back the TV's own default. They're read
+ * just before, so Undo writes back exactly what was there; returns that, marked, for the reset's
+ * History entry, or null when [tweak] is at its default already and nothing changed. Throws
+ * when the TV refuses.
+ */
+internal suspend fun resetSetting(t: Tweaks, tweak: Tweak): Map<String, String?>? {
+    val was = t.read(tweak)
+    if (!TvSettings.offDefault(tweak, was)) return null
+    if (!t.write(tweak, tweak.keys.associateWith { null })) throw UiTextException(UiText(R.string.data_tweak_refused))
+    return was + (ResetRecord.mark(tweak) to "1")
+}
+
+/**
+ * Undo of [resetSetting]: [tweak]'s keys back as the reset's [previous] holds them. True when
+ * they're back, or the reset didn't change [tweak]; false when the TV refused.
+ */
+internal suspend fun undoResetSetting(t: Tweaks, tweak: Tweak, previous: Map<String, String?>): Boolean {
+    val was = ResetRecord.setting(previous, tweak) ?: return true
+    return try {
+        t.write(tweak, was)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        false
+    }
 }
 
 /**

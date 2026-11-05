@@ -445,6 +445,11 @@
     <string name="copy_reset_home">Сделать %1$s главным экраном</string>
     <string name="copy_reset_home_text">Вместо %1$s. %1$s останется установленным.</string>
     <string name="copy_reset_home_text_service">Вместо %1$s, с отключенной службой специальных возможностей. %1$s останется установленным.</string>
+    <string name="copy_reset_dns">Частный DNS снова автоматически</string>
+    <string name="copy_reset_animations">Анимация снова с обычной скоростью</string>
+    <string name="copy_reset_was">Было: %1$s</string>
+    <string name="copy_dns_off">отключен</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d приложение, которое %2$s поставляет отключенным, не будет включено.</item>
         <item quantity="few">%1$d приложения, которые %2$s поставляет отключенными, не будут включены.</item>
@@ -460,6 +465,8 @@
     <string name="copy_resetting_turn_on">Включение приложений: %1$d из %2$d.</string>
     <string name="copy_resetting_bring_back">Возврат приложений: %1$d из %2$d.</string>
     <string name="copy_resetting_home">%1$s становится главным экраном.</string>
+    <string name="copy_resetting_dns">Частный DNS возвращается в автоматический режим.</string>
+    <string name="copy_resetting_animations">Анимация возвращается к обычной скорости.</string>
     <string name="copy_keep_tv_on">Не выключайте телевизор и не отключайте его от сети.</string>
     <string name="copy_resetting">Сброс…</string>
     <string name="copy_reset_apps_stale">Сброс выполнен, но список приложений не обновился. Откройте телевизор снова, чтобы увидеть его.</string>
@@ -467,19 +474,22 @@
     <string name="copy_reset_done">Телевизор возвращен к заводскому виду</string>
     <string name="copy_reset_partly">Сброс выполнен частично</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">%1$d предустановленное приложение возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="few">%1$d предустановленных приложения возвращены, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="many">%1$d предустановленных приложений возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="other">%1$d предустановленного приложения возвращено, а %2$s — главный экран. Данные приложений и входы в аккаунты сохранены.</item>
+        <item quantity="one">%1$d предустановленное приложение возвращено, а %2$s — главный экран.</item>
+        <item quantity="few">%1$d предустановленных приложения возвращены, а %2$s — главный экран.</item>
+        <item quantity="many">%1$d предустановленных приложений возвращено, а %2$s — главный экран.</item>
+        <item quantity="other">%1$d предустановленного приложения возвращено, а %2$s — главный экран.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">%1$d предустановленное приложение возвращено. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="few">%1$d предустановленных приложения возвращены. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="many">%1$d предустановленных приложений возвращено. Данные приложений и входы в аккаунты сохранены.</item>
-        <item quantity="other">%1$d предустановленного приложения возвращено. Данные приложений и входы в аккаунты сохранены.</item>
+        <item quantity="one">%1$d предустановленное приложение возвращено.</item>
+        <item quantity="few">%1$d предустановленных приложения возвращены.</item>
+        <item quantity="many">%1$d предустановленных приложений возвращено.</item>
+        <item quantity="other">%1$d предустановленного приложения возвращено.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s — главный экран. Данные приложений и входы в аккаунты сохранены.</string>
-    <string name="copy_reset_done_nothing">. Данные приложений и входы в аккаунты сохранены.</string>
+    <string name="copy_reset_done_home">%1$s — главный экран.</string>
+    <string name="copy_reset_done_settings">Частный DNS и анимация возвращены к значениям по умолчанию.</string>
+    <string name="copy_reset_done_dns">Частный DNS снова в автоматическом режиме.</string>
+    <string name="copy_reset_done_animations">Анимация снова с обычной скоростью.</string>
+    <string name="copy_reset_kept_data">Данные приложений и входы в аккаунты сохранены.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">%1$d шаг не удался. Все остальное возвращено к заводскому виду. Ничего не потеряно.</item>
         <item quantity="few">%1$d шага не удались. Все остальное возвращено к заводскому виду. Ничего не потеряно.</item>
@@ -512,6 +522,10 @@
     </plurals>
     <string name="copy_is_home">%1$s — главный экран</string>
     <string name="copy_still_home">%1$s по-прежнему главный экран</string>
+    <string name="copy_dns_automatic">Частный DNS: автоматически</string>
+    <string name="copy_dns_still">Частный DNS по-прежнему: %1$s</string>
+    <string name="copy_animations_normal">Анимация с обычной скоростью</string>
+    <string name="copy_animations_still">Анимация по-прежнему %1$s</string>
     <string name="copy_try_app_again">Повторить для %1$s</string>
     <string name="copy_try_again">Повторить</string>
     <string name="copy_disabling_apps">Отключение приложений: %1$d из %2$d. Не выключайте телевизор и не отключайте его от сети.</string>

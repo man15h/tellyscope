@@ -415,6 +415,11 @@
     <string name="copy_reset_home">%1$s को होम स्क्रीन बनाएं</string>
     <string name="copy_reset_home_text">%1$s की जगह। %1$s इंस्टॉल रहेगा।</string>
     <string name="copy_reset_home_text_service">%1$s की जगह, और उसकी सुलभता सेवा बंद करके। %1$s इंस्टॉल रहेगा।</string>
+    <string name="copy_reset_dns">निजी DNS वापस अपने-आप पर</string>
+    <string name="copy_reset_animations">ऐनिमेशन वापस सामान्य स्पीड पर</string>
+    <string name="copy_reset_was">पहले %1$s था</string>
+    <string name="copy_dns_off">बंद</string>
+    <string name="copy_animation_scale">%1$s×</string>
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%2$s ने जो %1$d ऐप बंद करके भेजा था, वह बंद रहेगा।</item>
         <item quantity="other">%2$s ने जो %1$d ऐप बंद करके भेजे थे, वे बंद रहेंगे।</item>
@@ -428,6 +433,8 @@
     <string name="copy_resetting_turn_on">ऐप चालू हो रहे हैं: %2$d में से %1$d.</string>
     <string name="copy_resetting_bring_back">ऐप वापस लाए जा रहे हैं: %2$d में से %1$d.</string>
     <string name="copy_resetting_home">%1$s को होम स्क्रीन बनाया जा रहा है।</string>
+    <string name="copy_resetting_dns">निजी DNS को वापस अपने-आप पर किया जा रहा है।</string>
+    <string name="copy_resetting_animations">ऐनिमेशन को वापस सामान्य स्पीड पर किया जा रहा है।</string>
     <string name="copy_keep_tv_on">TV को चालू और कनेक्ट रखें।</string>
     <string name="copy_resetting">रीसेट हो रहा है…</string>
     <string name="copy_reset_apps_stale">रीसेट हो गया, लेकिन ऐप की सूची रीफ़्रेश नहीं हुई। इसे देखने के लिए TV को फिर से खोलें।</string>
@@ -435,15 +442,18 @@
     <string name="copy_reset_done">TV फ़ैक्ट्री वाली स्थिति में रीसेट हो गया</string>
     <string name="copy_reset_partly">रीसेट कुछ हद तक हुआ</string>
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">पहले से इंस्टॉल %1$d ऐप वापस आ गया है, और %2$s होम स्क्रीन है। ऐप का डेटा और साइन-इन बने रहे।</item>
-        <item quantity="other">पहले से इंस्टॉल %1$d ऐप वापस आ गए हैं, और %2$s होम स्क्रीन है। ऐप का डेटा और साइन-इन बने रहे।</item>
+        <item quantity="one">पहले से इंस्टॉल %1$d ऐप वापस आ गया है, और %2$s होम स्क्रीन है।</item>
+        <item quantity="other">पहले से इंस्टॉल %1$d ऐप वापस आ गए हैं, और %2$s होम स्क्रीन है।</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">पहले से इंस्टॉल %1$d ऐप वापस आ गया है। ऐप का डेटा और साइन-इन बने रहे।</item>
-        <item quantity="other">पहले से इंस्टॉल %1$d ऐप वापस आ गए हैं। ऐप का डेटा और साइन-इन बने रहे।</item>
+        <item quantity="one">पहले से इंस्टॉल %1$d ऐप वापस आ गया है।</item>
+        <item quantity="other">पहले से इंस्टॉल %1$d ऐप वापस आ गए हैं।</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s होम स्क्रीन है। ऐप का डेटा और साइन-इन बने रहे।</string>
-    <string name="copy_reset_done_nothing">. ऐप का डेटा और साइन-इन बने रहे।</string>
+    <string name="copy_reset_done_home">%1$s होम स्क्रीन है।</string>
+    <string name="copy_reset_done_settings">निजी DNS और ऐनिमेशन अपनी डिफ़ॉल्ट सेटिंग पर वापस आ गए हैं।</string>
+    <string name="copy_reset_done_dns">निजी DNS वापस अपने-आप पर है।</string>
+    <string name="copy_reset_done_animations">ऐनिमेशन वापस सामान्य स्पीड पर हैं।</string>
+    <string name="copy_reset_kept_data">ऐप का डेटा और साइन-इन बने रहे।</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">%1$d चरण काम नहीं किया। बाकी सब फ़ैक्ट्री वाली स्थिति में वापस आ गया है। कुछ भी नहीं खोया।</item>
         <item quantity="other">%1$d चरण काम नहीं किए। बाकी सब फ़ैक्ट्री वाली स्थिति में वापस आ गया है। कुछ भी नहीं खोया।</item>
@@ -466,6 +476,10 @@
     </plurals>
     <string name="copy_is_home">%1$s होम स्क्रीन है</string>
     <string name="copy_still_home">%1$s अब भी होम स्क्रीन है</string>
+    <string name="copy_dns_automatic">निजी DNS अपने-आप पर है</string>
+    <string name="copy_dns_still">निजी DNS अब भी %1$s है</string>
+    <string name="copy_animations_normal">ऐनिमेशन सामान्य स्पीड पर हैं</string>
+    <string name="copy_animations_still">ऐनिमेशन अब भी %1$s पर हैं</string>
     <string name="copy_try_app_again">%1$s को फिर से आज़माएं</string>
     <string name="copy_try_again">फिर से कोशिश करें</string>
     <string name="copy_disabling_apps">ऐप बंद हो रहे हैं: %2$d में से %1$d. TV को चालू और कनेक्ट रखें।</string>

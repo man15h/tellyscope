@@ -17,6 +17,7 @@ import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.TvSettings
 import app.tellyscope.data.UiText
+import app.tellyscope.data.asUiText
 import app.tellyscope.data.sourceName
 import java.text.SimpleDateFormat
 import java.time.Instant
@@ -721,6 +722,24 @@ object Copy {
         " ",
     )
 
+    val RESET_DNS = UiText(R.string.copy_reset_dns)
+    val RESET_ANIMATIONS = UiText(R.string.copy_reset_animations)
+    /** "Was …", under a setting Reset found: the Private DNS provider, or the animation scale. */
+    fun resetWas(was: UiText) = UiText(R.string.copy_reset_was, was)
+
+    /** Private DNS as [values] have it, off Automatic: the provider, or off. */
+    fun dnsWas(values: Map<String, String?>): UiText = when (val mode = values["private_dns_mode"]) {
+        "hostname" -> values["private_dns_specifier"].orEmpty().asUiText()
+        "off" -> UiText(R.string.copy_dns_off)
+        else -> mode.orEmpty().asUiText()
+    }
+
+    /** The first animation scale in [values] that isn't 1×, as "0.5×". */
+    fun animationsWas(values: Map<String, String?>): UiText {
+        val v = values.values.firstOrNull { it != null && it.toFloatOrNull() != 1f }.orEmpty()
+        return UiText(R.string.copy_animation_scale, v.toFloatOrNull()?.toString()?.removeSuffix(".0") ?: v)
+    }
+
     val NOTHING_TO_RESET = UiText(R.string.copy_nothing_to_reset_title)
     fun nothingToReset(ownHome: String?, maker: String?): UiText = UiText.Join(
         listOf(
@@ -736,6 +755,8 @@ object Copy {
                 ResetPart.TurnOn -> UiText(R.string.copy_resetting_turn_on, p.done, p.of)
                 ResetPart.BringBack -> UiText(R.string.copy_resetting_bring_back, p.done, p.of)
                 ResetPart.Home -> UiText(R.string.copy_resetting_home, home ?: TV_OWN_LAUNCHER)
+                ResetPart.Dns -> UiText(R.string.copy_resetting_dns)
+                ResetPart.Animations -> UiText(R.string.copy_resetting_animations)
             },
             UiText(R.string.copy_keep_tv_on),
         ),
@@ -747,11 +768,27 @@ object Copy {
 
     val RESET_DONE = UiText(R.string.copy_reset_done)
     val RESET_PARTLY = UiText(R.string.copy_reset_partly)
-    fun resetDoneText(apps: Int, home: String?): UiText = when {
-        apps != 0 && home != null -> UiText.plural(R.plurals.copy_reset_done_apps_home, apps, apps, home)
-        apps != 0 -> UiText.plural(R.plurals.copy_reset_done_apps, apps)
-        home != null -> UiText(R.string.copy_reset_done_home, home)
-        else -> UiText(R.string.copy_reset_done_nothing)
+    /** After a reset: the apps and Home, then the settings it put back, then that data stayed. */
+    fun resetDoneText(apps: Int, home: String?, dns: Boolean = false, animations: Boolean = false): UiText {
+        val settings = when {
+            dns && animations -> UiText(R.string.copy_reset_done_settings)
+            dns -> UiText(R.string.copy_reset_done_dns)
+            animations -> UiText(R.string.copy_reset_done_animations)
+            else -> null
+        }
+        return UiText.Join(
+            listOfNotNull(
+                when {
+                    apps != 0 && home != null -> UiText.plural(R.plurals.copy_reset_done_apps_home, apps, apps, home)
+                    apps != 0 -> UiText.plural(R.plurals.copy_reset_done_apps, apps)
+                    home != null -> UiText(R.string.copy_reset_done_home, home)
+                    else -> null
+                },
+                settings,
+                UiText(R.string.copy_reset_kept_data),
+            ),
+            " ",
+        )
     }
     fun resetPartlyText(failed: Int) = UiText.plural(R.plurals.copy_reset_partly_text, failed)
     fun turnedOn(done: Int, of: Int) =
@@ -760,6 +797,10 @@ object Copy {
         if (done == of) UiText.plural(R.plurals.copy_brought_back_all, of) else UiText.plural(R.plurals.copy_brought_back_some, of, done, of)
     fun isHome(app: String) = UiText(R.string.copy_is_home, app)
     fun stillHome(app: String) = UiText(R.string.copy_still_home, app)
+    val DNS_AUTOMATIC = UiText(R.string.copy_dns_automatic)
+    fun dnsStill(was: UiText) = UiText(R.string.copy_dns_still, was)
+    val ANIMATIONS_NORMAL = UiText(R.string.copy_animations_normal)
+    fun animationsStill(was: UiText) = UiText(R.string.copy_animations_still, was)
     fun tryAgain(app: String?) = if (app != null) UiText(R.string.copy_try_app_again, app) else UiText(R.string.copy_try_again)
 
     /** Debloat while it turns the ticked apps off, then its result. */
