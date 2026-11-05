@@ -116,7 +116,9 @@ data class Restorable(
                         p[ResetRecord.SERVICE]?.let { service(e, it, true) }
                     }
                     Action.Change -> Tweak.entries.firstOrNull { it.name == e.packageName }?.let { tweak ->
-                        e.previous?.forEach { (k, v) -> settings.getOrPut(tweak) { mutableMapOf() }.putIfAbsent(k, v) }
+                        // Not putIfAbsent: it takes a key held as null, "wasn't set", for one not seen yet.
+                        val first = settings.getOrPut(tweak) { mutableMapOf() }
+                        e.previous?.forEach { (k, v) -> if (k !in first) first[k] = v }
                     }
                     Action.Stop, Action.Open, Action.ClearCaches -> Unit
                 }
