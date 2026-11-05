@@ -167,12 +167,14 @@ class AdbDeviceSource(
      */
     private fun link(host: String, port: Int, first: AdbConnectResult?, knownGood: Boolean, loggedOutAt: Long? = null) {
         var pending = first
+        // What the link was made for: a later scan can put a Classic hit on this address.
+        val wireless = hits[host]?.kind == ScanKind.Wireless
         val link = DeviceLink(
             host, port, scope, knownGood = knownGood,
             open = { h, p ->
                 // The user picked [first] off the scan: that one is the TV they meant.
                 pending?.also { pending = null } ?: connector(h, p).let { r ->
-                    if (hits[host]?.kind != ScanKind.Wireless) r else sameTv(r, keys[host]) { keyOf(it, host) }
+                    if (!wireless) r else sameTv(r, keys[host]) { keyOf(it, host) }
                 }
             },
             findPort = { services[host]?.let { LanScanner(KadbMdnsAndroid(appContext)).connectPort(host, it) } },
