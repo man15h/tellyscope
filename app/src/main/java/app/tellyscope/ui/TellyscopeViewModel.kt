@@ -883,6 +883,8 @@ class TellyscopeViewModel(
             _state.update { it.copy(devices = known, listSource = lists) }
             // Next TV, online ones first; none left means back to the scan screen.
             select((known.firstOrNull { it.state == DeviceState.Online } ?: known.firstOrNull())?.id)
+            // The scan skipped it while it was known, so look again; the TV turns up as a fresh hit.
+            if (known.isEmpty()) rescan()
         }
     }
 
