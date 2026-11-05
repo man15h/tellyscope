@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Index and sign data/, the lists the app downloads from this repo. Python 3.9+, standard library only.
 
-  tools/data.py index                          rebuild data/index.json from data/, unsigned; left alone
+  tools/data.py index                          rebuild data/index.json from data/ (the lists, and each PNG in
+                                               data/images/), unsigned; left alone
                                                while nothing changed
   tools/data.py sign --key <private key.pem>…  sign data/index.json with each key, on its line 2
   tools/data.py check [--unsigned]             fail if data/index.json is stale or its signature doesn't
@@ -40,6 +41,10 @@ def build_index():
         return {"file": path, "sha256": hashlib.sha256((DATA / path).read_bytes()).hexdigest()}
 
     index = {"lists": {name: file(f"{name}.json") for name in LISTS}}
+    # Only once there are images, so an index without them stays as it was signed.
+    images = sorted((DATA / "images").glob("*.png"))
+    if images:
+        index["images"] = {p.stem: file(f"images/{p.name}") for p in images}
     return {"schema": SCHEMA, "version": version(index), **index}
 
 

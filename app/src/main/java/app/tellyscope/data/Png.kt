@@ -13,6 +13,9 @@ object Png {
     /** The largest logo today is about 9 KB. */
     const val MAX_BYTES = 64 * 1024
 
+    /** A launcher's screenshot, 640 × 360 px, or its icon ([DeviceLists.image]). */
+    const val MAX_IMAGE_BYTES = 512 * 1024
+
     /** Logos are drawn at four times their size in dp, about 280 × 80 px. */
     const val MAX_SIDE = 1024
 
@@ -25,15 +28,15 @@ object Png {
         return int(b, 16) to int(b, 20)
     }
 
-    /** A PNG no larger than [MAX_BYTES] whose sides are 1 to [MAX_SIDE] pixels. */
-    fun ok(b: ByteArray): Boolean = b.size <= MAX_BYTES && fits(size(b))
+    /** A PNG no larger than [maxBytes] whose sides are 1 to [MAX_SIDE] pixels. */
+    fun ok(b: ByteArray, maxBytes: Int = MAX_BYTES): Boolean = b.size <= maxBytes && fits(size(b))
 
     /**
      * [b] as a bitmap after [ok], with the size the decoder itself reads (`inJustDecodeBounds`)
      * checked again before the pixels are; null for anything that fails either.
      */
-    fun decode(b: ByteArray): Bitmap? {
-        if (!ok(b)) return null
+    fun decode(b: ByteArray, maxBytes: Int = MAX_BYTES): Bitmap? {
+        if (!ok(b, maxBytes)) return null
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeByteArray(b, 0, b.size, bounds)
         if (bounds.outMimeType != "image/png" || !fits(bounds.outWidth to bounds.outHeight)) return null

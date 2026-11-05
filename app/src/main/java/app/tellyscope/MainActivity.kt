@@ -354,6 +354,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 open = vm::openLauncher,
                 later = vm::launcherLater,
                 fireCheck = vm::checkLauncherApk,
+                fireChoose = vm::chooseFireLauncher,
                 fireTrust = vm::trustLauncherList,
                 fireInstall = vm::installLauncherApk,
                 fireDismiss = vm::dismissLauncherApk,

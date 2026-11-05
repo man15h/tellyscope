@@ -8,8 +8,10 @@ import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.KnownLauncher
+import app.tellyscope.data.ListFile
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.hasServiceFrom
+import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseProtected
@@ -17,6 +19,7 @@ import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +87,25 @@ class LaunchersTest {
         assertTrue(parseLaunchers(text).none { it.accessibility != null })
         assertTrue(parseLaunchers(text.replace("\"schema\":1", "\"schema\":2")).isEmpty())
         assertTrue(parseLaunchers("{").isEmpty())
+    }
+
+    @Test fun imageNamesReadOnlyAsNamesInDataImages() {
+        fun one(fields: String) = parseLaunchers("""{"schema": 1, "launchers": [{"package": "a.b", "name": "A", $fields}]}""").single()
+        val l = one(""""icon": "monet-icon", "screenshot": "monet-home"""")
+        assertEquals("monet-icon" to "monet-home", l.icon to l.screenshot)
+        assertNull(one(""""icon": "../index"""").icon)
+        assertNull(one(""""icon": "Monet.png"""").icon)
+        assertNull(one(""""screenshot": "https://example.com/a.png"""").screenshot)
+    }
+
+    @Test fun theIndexNamesImagesUnderImagesOnly() {
+        val sha = "a".repeat(64)
+        val index = parseIndex("""{"schema": 1, "images": {
+            "monet-icon": {"file": "images/monet-icon.png", "sha256": "$sha"},
+            "away": {"file": "../away.png", "sha256": "$sha"},
+            "logo": {"file": "logos/netflix.png", "sha256": "$sha"}
+        }}""")!!
+        assertEquals(mapOf("monet-icon" to ListFile("images/monet-icon.png", sha)), index.images)
     }
 
     /** A list can't claim the home screen or the TV's own states, and a reason this app doesn't know still protects. */

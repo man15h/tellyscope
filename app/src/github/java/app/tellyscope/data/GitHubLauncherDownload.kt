@@ -22,13 +22,13 @@ private fun latestApi(releases: String) =
 
 /**
  * The latest release from GitHub's API, or null unless it is a full release on [launcher]'s own
- * repo with exactly one APK, served from that release.
+ * repo with exactly one APK, served from that release: the one named [KnownLauncher.apk], when the list names one.
  */
 fun parseRelease(json: String, launcher: KnownLauncher): LauncherRelease? = runCatching {
     val r = JSONObject(json)
     val tag = r.getString("tag_name")
     val assets = r.getJSONArray("assets")
-    val apk = (0 until assets.length()).map(assets::getJSONObject).singleOrNull { it.getString("name").endsWith(".apk") }
+    val apk = (0 until assets.length()).map(assets::getJSONObject).singleOrNull { isApk(it.getString("name"), launcher.apk) }
     val url = apk?.getString("browser_download_url")
     val size = apk?.getLong("size") ?: 0L
     LauncherRelease(tag, r.getString("html_url"), url.orEmpty(), size).takeIf {
@@ -46,11 +46,17 @@ private fun LauncherRelease.valid(launcher: KnownLauncher): Boolean {
 fun latestTag(location: String?, releases: String): String? =
     location?.removePrefix("$releases/tag/")?.takeIf { it != location && it.isNotEmpty() && '/' !in it && '?' !in it }
 
-/** The release page's one APK, from its asset list's links: the full URL, or null unless there is exactly one. */
-fun pageApk(html: String, tag: String, releases: String): String? {
+/** An asset that is the release's APK: any `.apk`, or only [name] when the list names one. */
+private fun isApk(asset: String, name: String?) = if (name != null) asset == name else asset.endsWith(".apk")
+
+/**
+ * The release page's one APK, from its asset list's links: the full URL, or null unless there is exactly one
+ * (named [name], when the list names one).
+ */
+fun pageApk(html: String, tag: String, releases: String, name: String? = null): String? {
     val path = releases.removePrefix("https://github.com") + "/download/$tag/"
     return Regex("href=\"(${Regex.escape(path)}[^\"/?#]+\\.apk)\"").findAll(html).map { it.groupValues[1] }.distinct()
-        .singleOrNull()?.let { "https://github.com$it" }
+        .filter { isApk(it.substringAfterLast('/'), name) }.singleOrNull()?.let { "https://github.com$it" }
 }
 
 class AndroidLauncherDownload(context: Context) : AndroidLauncherPick(context), LauncherDownload {
@@ -95,7 +101,7 @@ class AndroidLauncherDownload(context: Context) : AndroidLauncherPick(context), 
         } finally {
             c.disconnect()
         } ?: return null
-        val apk = pageApk(download("$releases/expanded_assets/$tag").decodeToString(), tag, releases) ?: return null
+        val apk = pageApk(download("$releases/expanded_assets/$tag").decodeToString(), tag, releases, launcher.apk) ?: return null
         val head = URL(apk).openConnection() as HttpURLConnection
         head.requestMethod = "HEAD"
         head.connectTimeout = 10_000

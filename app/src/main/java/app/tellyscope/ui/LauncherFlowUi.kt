@@ -4,7 +4,9 @@
 
 package app.tellyscope.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,6 +25,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -63,6 +68,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -72,10 +79,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -92,12 +102,17 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.LauncherRelease
+import app.tellyscope.data.Png
+import app.tellyscope.data.SharedLists
 import app.tellyscope.data.UiText
 import app.tellyscope.data.asUiText
 import app.tellyscope.data.isFireOs
 import app.tellyscope.data.sourceName
 import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.SmallNumber
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** The Play Store's package: a TV without it gets no card and no Tweaks row, unless it runs Fire OS ([fireInstall]). */
 const val PLAY_STORE = "com.android.vending"
@@ -113,8 +128,8 @@ internal fun hasPlayStore(apps: List<AppInfo>) = apps.any { it.packageName == PL
 internal fun hasAddedLauncher(apps: List<AppInfo>) = apps.any { it.listedLauncher || (it.removable && (it.home || it.answersHome)) }
 
 /**
- * Fire OS has no Play Store, so Install a home screen offers only the list's Fire OS launcher there ([fireLauncher]),
- * which Tellyscope downloads from its developer and installs itself. Without one on the list, nothing is offered.
+ * Fire OS has no Play Store, so Install a home screen offers only the list's Fire OS launchers there ([fireLaunchers]),
+ * which Tellyscope downloads from their developers and installs itself. Without one on the list, nothing is offered.
  */
 internal fun fireInstall(device: Device, apps: List<AppInfo>, recommended: List<Recommended> = RECOMMENDED) =
     isFireOs(device, apps) && fireLauncher(recommended) != null
@@ -132,7 +147,7 @@ internal fun downloadable(pkg: String) =
 /** [pkg] on the TV and on, so the picker offers Make Home or Open on it rather than the Store. */
 internal fun installedLauncher(apps: List<AppInfo>, pkg: String) = apps.firstOrNull { it.packageName == pkg && it.enabled }
 
-/** The picker's On this TV: launchers someone added that Recommended doesn't list, the TV's own left out. */
+/** The picker's On this TV: launchers someone added that Editor's choice doesn't list, the TV's own left out. */
 internal fun otherLaunchers(apps: List<AppInfo>) =
     apps.filter { a -> a.enabled && a.answersHome && !a.builtInLauncher && RECOMMENDED.none { it.pkg == a.packageName } }
 
@@ -151,6 +166,8 @@ data class LauncherActions(
     val later: () -> Unit = {},
     /** Fire OS: Install the launcher, which reads its latest release for the confirm dialog. Try again does the same. */
     val fireCheck: (String) -> Unit = {},
+    /** Fire OS: a row of its picker, when the list has more than one launcher for it. */
+    val fireChoose: (String) -> Unit = {},
     /** The tick on a launcher from a list that failed its check. */
     val fireTrust: (Boolean) -> Unit = {},
     /** Fire OS: Download and install on the confirm step. */
@@ -166,7 +183,7 @@ data class LauncherActions(
 fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, fire: Boolean = false) {
     HomeNoteCard(
         Icons.Outlined.Home, Copy.BETTER_HOME.resolve(), Copy.betterHomeText(current, fire).resolve(), Copy.NOT_NOW.resolve(), onNotNow,
-        (if (fire) Copy.INSTALL_ONE else Copy.CHOOSE_ONE).resolve(), onChoose,
+        (if (fire && fireLaunchers().size == 1) Copy.INSTALL_ONE else Copy.CHOOSE_ONE).resolve(), onChoose,
     )
 }
 
@@ -175,7 +192,7 @@ fun LauncherCard(current: String?, onNotNow: () -> Unit, onChoose: () -> Unit, f
  * Play Store, then the switch, which ends in the same yes for the accessibility service as Set as
  * default. A launcher already on the TV skips the Store: the picker offers Make Home or Open on it.
  * A TV that didn't open the Store says so; a Store closed without installing goes back to the picker.
- * On Fire OS ([LauncherFlow.fireOs]) the picker is the list's Fire OS launcher alone, which Tellyscope downloads and installs.
+ * On Fire OS ([LauncherFlow.fireOs]) the picker is the list's Fire OS launchers alone, which Tellyscope downloads and installs.
  * [direct]: a launcher that is [downloadable] also offers Download directly, under the Store and after a warning.
  * [play]: the Play build, where Fire OS's launcher is a file the user downloads in the browser and picks.
  */
@@ -228,7 +245,7 @@ fun LauncherScreen(
                 title = {
                     Text(
                         when {
-                            flow.fireOs -> Copy.installLauncher(label)
+                            flow.fireOs -> if (fire?.step == null && fireLaunchers().size > 1) Copy.CHOOSE_HOME else Copy.installLauncher(label)
                             flow.step == LauncherFlow.Step.Pick -> Copy.CHOOSE_HOME
                             else -> Copy.INSTALL_HOME
                         }.resolve(),
@@ -379,14 +396,7 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
         Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RECOMMENDED.forEachIndexed { i, l ->
-                PickRow(segment(i, RECOMMENDED.lastIndex), l.pkg == chosen, l.name, installedLauncher(apps, l.pkg), onClick = { onChoose(l.pkg) }) {
-                    Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-                    Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (l.accessibility) DeviceIcons.Accessibility else LauncherIcons.Code, null, Modifier.size(14.dp), tint = c.onSurfaceVariant)
-                        Spacer(Modifier.width(6.dp))
-                        Text(if (l.accessibility) Copy.USES_SERVICE.resolve() else Copy.NO_SERVICE.resolve(), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
-                    }
-                }
+                RecommendedRow(l, segment(i, RECOMMENDED.lastIndex), l.pkg == chosen, installedLauncher(apps, l.pkg)) { onChoose(l.pkg) }
             }
         }
         Text(Copy.OTHER_LAUNCHER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
@@ -394,21 +404,31 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
     }
 }
 
-/** Fire OS's picker: [l] alone, about it as the picker says it, and nothing to do on the TV ([play]: pick the file here). */
+/**
+ * Fire OS's picker, and nothing to do on the TV ([play]: pick the file here). With [onChoose] and more than one of
+ * [fireLaunchers], their rows with [pkg] chosen; else [pkg] alone, about it as the picker says it.
+ */
 @Composable
-private fun FirePick(l: Recommended?, play: Boolean = false) {
+private fun FirePick(pkg: String, play: Boolean = false, onChoose: ((String) -> Unit)? = null) {
     val c = MaterialTheme.colorScheme
     Text((if (play) Copy.FIRE_PICK_TEXT else Copy.FIRE_INSTALL_TEXT).resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
-    l ?: return
+    val all = fireLaunchers()
+    if (onChoose != null && all.size > 1) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                all.forEachIndexed { i, l -> RecommendedRow(l, segment(i, all.lastIndex), l.pkg == pkg, have = null) { onChoose(l.pkg) } }
+            }
+            Text(Copy.NOT_AFFILIATED.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
+        }
+        return
+    }
+    val l = RECOMMENDED.firstOrNull { it.pkg == pkg } ?: return
     Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(l.name, style = MaterialTheme.typography.bodyLarge)
             Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-            Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (l.accessibility) DeviceIcons.Accessibility else LauncherIcons.Code, null, Modifier.size(14.dp), tint = c.onSurfaceVariant)
-                Spacer(Modifier.width(6.dp))
-                Text((if (l.accessibility) Copy.USES_SERVICE else Copy.NO_SERVICE).resolve(), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
-            }
+            ServiceLine(l.accessibility, Modifier.padding(top = 4.dp))
         }
     }
 }
@@ -428,6 +448,7 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
     val uri = LocalUriHandler.current
     val l = RECOMMENDED.firstOrNull { it.pkg == pkg }
     val label = launcherName(pkg)
+    val choose = actions.fireChoose.takeIf { f.step == null }
     val releases = l?.launcher?.releases
     val release = f.release
     val openPage = { (release?.page ?: releases?.let { "$it/latest" })?.let(uri::openUri) ?: Unit }
@@ -443,10 +464,10 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
             Text(Copy.DIRECT_CHECK.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             Text(Copy.STORE_SAFER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         } else if (play) {
-            FirePick(l, play = true)
+            FirePick(pkg, play = true, onChoose = choose)
             Yourself(f, label, source, openPage, actions)
         } else {
-            FirePick(l)
+            FirePick(pkg, onChoose = choose)
             if (release != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(Copy.WHERE_FROM.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
@@ -759,7 +780,10 @@ private fun segment(i: Int, last: Int): RoundedCornerShape {
     return RoundedCornerShape(topStart = top, topEnd = top, bottomStart = bottom, bottomEnd = bottom)
 }
 
-/** One launcher in the picker: its name, a chip when [have] is on the TV, then [details]. */
+/**
+ * One launcher in the picker: [leading] (its icon), its name, a chip when [have] is on the TV, then [details].
+ * [footer] runs under them at the row's full width, and [top] (its home screen) above them all.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PickRow(
@@ -768,28 +792,114 @@ private fun PickRow(
     name: String,
     have: AppInfo?,
     vertical: Dp = 16.dp,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit,
+    top: @Composable () -> Unit = {},
+    leading: (@Composable () -> Unit)? = null,
+    footer: @Composable () -> Unit = {},
     details: @Composable () -> Unit = {},
 ) {
     val c = MaterialTheme.colorScheme
     Surface(
         shape = shape,
         color = if (on) c.secondaryContainer else c.surfaceContainer,
-        modifier = Modifier.fillMaxWidth().selectable(on, role = Role.RadioButton, onClick = onClick),
+        modifier = modifier.fillMaxWidth().selectable(on, role = Role.RadioButton, onClick = onClick),
     ) {
-        Row(Modifier.padding(start = 16.dp, top = vertical, bottom = vertical, end = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                // The chip drops under the name rather than squeezing it at large font sizes.
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                    Text(name, style = MaterialTheme.typography.bodyLarge)
-                    have?.let { InstalledChip(home = it.home) }
+        Column {
+            top()
+            Column(Modifier.padding(start = 16.dp, top = vertical, bottom = vertical, end = 8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    leading?.let {
+                        it()
+                        Spacer(Modifier.width(16.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        // The chip drops under the name rather than squeezing it at large font sizes.
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
+                            Text(name, style = MaterialTheme.typography.bodyLarge)
+                            have?.let { InstalledChip(home = it.home) }
+                        }
+                        details()
+                    }
+                    RadioButton(selected = on, onClick = null)
                 }
-                details()
+                footer()
             }
-            RadioButton(selected = on, onClick = null)
         }
     }
 }
+
+/**
+ * A launcher from `launchers.json` in a picker: its icon, name and about line, and whether it uses an accessibility
+ * service, under the icon at full width so it stays on one line. Chosen ([on]), it opens to its screenshot, then
+ * scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
+ */
+@Composable
+private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
+    val c = MaterialTheme.colorScheme
+    val icon = listImage(l.launcher.icon)
+    val shot = listImage(l.launcher.screenshot.takeIf { on })
+    val bring = remember { BringIntoViewRequester() }
+    val scope = rememberCoroutineScope()
+    PickRow(
+        shape, on, l.name, have,
+        modifier = Modifier.bringIntoViewRequester(bring).animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()) { _, _ ->
+            if (on) scope.launch { bring.bringIntoView() }
+        },
+        onClick = onClick,
+        top = {
+            if (shot != ListImage.Missing) {
+                val description = Copy.homeScreenOf(l.name).resolve()
+                Box(
+                    Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp).fillMaxWidth().aspectRatio(16f / 9f)
+                        .clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest),
+                ) {
+                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                }
+            }
+        },
+        leading = if (icon is ListImage.Ready) {
+            { Image(icon.bitmap, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop) }
+        } else {
+            null
+        },
+        footer = { ServiceLine(l.accessibility, Modifier.padding(top = 8.dp)) },
+    ) {
+        Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+    }
+}
+
+/** Uses an accessibility service, or Open source and none. */
+@Composable
+private fun ServiceLine(accessibility: Boolean, modifier: Modifier = Modifier) {
+    val c = MaterialTheme.colorScheme
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        Icon(if (accessibility) DeviceIcons.Accessibility else LauncherIcons.Code, null, Modifier.size(14.dp), tint = c.onSurfaceVariant)
+        Spacer(Modifier.width(6.dp))
+        Text((if (accessibility) Copy.USES_SERVICE else Copy.NO_SERVICE).resolve(), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
+    }
+}
+
+/** A launcher's image from `data/images/`, as [listImage] has it. */
+private sealed interface ListImage {
+    data object Loading : ListImage
+    /** None named, or it couldn't be had or decoded. */
+    data object Missing : ListImage
+    data class Ready(val bitmap: ImageBitmap) : ListImage
+}
+
+/**
+ * [name]'s image ([SharedLists.image]), decoded off the main thread; [ListImage.Missing] for a null [name]. The state
+ * outlives a change of [name], so each change starts over from Loading (or Missing) rather than the old image.
+ */
+@Composable
+private fun listImage(name: String?): ListImage = produceState<ListImage>(if (name == null) ListImage.Missing else ListImage.Loading, name) {
+    value = if (name == null) ListImage.Missing else ListImage.Loading
+    if (name == null) return@produceState
+    value = SharedLists.image(name)
+        ?.let { b -> withContext(Dispatchers.Default) { Png.decode(b, Png.MAX_IMAGE_BYTES) } }
+        ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Missing
+}.value
 
 /** Installed, outlined; Home now, filled, so it still stands out on the chosen row. */
 @Composable

@@ -40,6 +40,7 @@
     <string name="copy_get_launcher">別のランチャーを入手</string>
     <string name="copy_get_launcher_text">Play ストアからインストールしてください。いつでも元に戻せます。</string>
     <string name="copy_get_fire_launcher_text">%1$s をインストールしてください。いつでも元に戻せます。</string>
+    <string name="copy_get_fire_launchers_text">選んだものを Tellyscope がインストールします。いつでも元に戻せます。</string>
     <string name="copy_home_settings">ホーム画面の設定</string>
     <string name="copy_make_home_title">%1$s をホーム画面にしますか？</string>
     <string name="copy_explain_replace_opens">ホームボタンで %1$s が開くようになります。テレビが勝手に元に戻らないよう、Tellyscope はテレビ内蔵のランチャー %2$s を無効にします。</string>
@@ -76,11 +77,12 @@
     <string name="copy_choose_home_text">どれもテレビのホーム画面を置き換えます。Tellyscope がテレビの Play ストアで開くので、リモコンでインストールしてください。</string>
     <string name="copy_can_download">一部は直接ダウンロードすることもできます。</string>
     <string name="copy_no_launcher_list">ホーム画面のリストを読み込めませんでした。スマートフォンのインターネット接続を確認して、もう一度お試しください。</string>
-    <string name="copy_recommended">おすすめ</string>
+    <string name="copy_recommended">編集部のおすすめ</string>
     <string name="copy_on_this_tv">このテレビ上</string>
     <string name="copy_installed">インストール済み</string>
     <string name="copy_home_now">現在のホーム</string>
     <string name="copy_open">開く</string>
+    <string name="copy_home_screen_of">%1$s のホーム画面</string>
     <string name="copy_uses_service">ユーザー補助サービスを使用</string>
     <string name="copy_no_service">オープンソース・ユーザー補助サービスなし</string>
     <string name="copy_other_launcher">別のランチャーを使いたい場合は、テレビの Play ストアからインストールして、ここに戻ってください。%1$s に表示されます。</string>

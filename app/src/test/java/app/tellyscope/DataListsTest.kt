@@ -2,6 +2,7 @@
 
 package app.tellyscope
 
+import app.tellyscope.data.Png
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
@@ -33,6 +34,8 @@ class DataListsTest {
     // "." and ".." are not repo names; they would walk the URL out of the repo.
     private val releases = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
     private val checked = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
+    private val apkName = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
+    private val imageName = Regex("[a-z0-9][a-z0-9-]{0,39}")
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
@@ -48,11 +51,10 @@ class DataListsTest {
     @Test fun launchers() {
         val errors = mutableListOf<String>()
         val seen = mutableSetOf<String>()
-        val fire = mutableListOf<String>()
         val entries = schema1("launchers.json").getJSONArray("launchers").objects()
         entries.forEachIndexed { i, l ->
             val where = "launchers.json: launcher ${i + 1}"
-            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "fire_os", "accessibility")
+            val unknown = l.keys().asSequence().toSet() - setOf("package", "name", "about", "signers", "max_mb", "releases", "apk", "fire_os", "accessibility", "icon", "screenshot")
             if (unknown.isNotEmpty()) errors += "$where: unknown keys ${unknown.sorted()}"
             val pkg = l.optString("package")
             if (!package_.matches(pkg)) errors += "$where: not a package name: $pkg"
@@ -64,17 +66,27 @@ class DataListsTest {
             }
             if (l.has("max_mb") && (l.opt("max_mb") as? Int)?.takeIf { it in 1..256 } == null) errors += "$where: 'max_mb' must be a whole number from 1 to 256"
             if (l.has("releases") && !releases.matches(l.optString("releases"))) errors += "$where: 'releases' must be https://github.com/<owner>/<repo>/releases"
+            if (l.has("apk") && (l.opt("apk") as? String)?.takeIf(apkName::matches) == null) errors += "$where: 'apk' must be a file name ending in .apk"
+            if (l.has("apk") && !l.has("releases")) errors += "$where: 'apk' names an asset of 'releases', which is missing"
+            for (key in listOf("icon", "screenshot")) {
+                if (!l.has(key)) continue
+                val name = (l.opt(key) as? String)?.takeIf(imageName::matches)
+                val png = name?.let { File(data, "images/$it.png") }
+                when {
+                    name == null -> errors += "$where: '$key' must name an image in data/images/, lowercase letters, digits and -"
+                    !png!!.isFile -> errors += "$where: '$key' names data/images/$name.png, which isn't there"
+                    !Png.ok(png.readBytes(), Png.MAX_IMAGE_BYTES) -> errors += "$where: data/images/$name.png must be a PNG of at most ${Png.MAX_IMAGE_BYTES / 1024} KB and ${Png.MAX_SIDE} px a side"
+                }
+            }
             if (l.has("accessibility") && (l.opt("accessibility") as? String)?.takeIf(checked::matches) == null) {
                 errors += "$where: 'accessibility' must be the minimum version that has the service, like \"4.72\""
             }
             if (l.has("fire_os") && l.opt("fire_os") != true) errors += "$where: 'fire_os' can only be true; leave it out otherwise"
             if (l.opt("fire_os") == true) {
-                fire += pkg
                 if (!l.has("signers")) errors += "$where: 'fire_os' needs 'signers', or Fire OS has nothing to check the APK against"
             }
             if (!seen.add(pkg)) errors += "$where: $pkg is listed twice"
         }
-        if (fire.size > 1) errors += "launchers.json: 'fire_os' is on ${fire.size} launchers; Fire OS installs one"
         if (errors.isEmpty()) assertEquals("launchers.json: the app drops none", entries.size, parseLaunchers(text("launchers.json")).size)
         assertNone(errors)
     }
@@ -85,7 +97,7 @@ class DataListsTest {
      */
     @Test fun theLaunchersWithAnAccessibilityServiceAreNamed() {
         val named = parseLaunchers(text("launchers.json")).filter { it.accessibility != null }.associate { it.pkg to it.accessibility }
-        assertEquals(mapOf("com.spocky.projengmenu" to "4.72", "com.overdevs.at4k" to "1.2", "com.spauldhaliwal.dispatch" to "1.0.175"), named)
+        assertEquals(mapOf("com.spocky.projengmenu" to "4.72", "com.overdevs.at4k" to "1.2", "com.klevico.monet" to "1.1.1", "com.spauldhaliwal.dispatch" to "1.0.175"), named)
     }
 
     @Test fun labels() {
@@ -135,7 +147,7 @@ class DataListsTest {
         assertNone(errors)
     }
 
-    /** `index.json` names every list with its sha256, as the app checks each download, and nothing else. */
+    /** `index.json` names every list and every image in `images/` with its sha256, as the app checks each download, and nothing else. */
     @Test fun theIndexMatchesTheFiles() {
         val errors = mutableListOf<String>()
         val index = parseIndex(text("index.json"))
@@ -143,8 +155,10 @@ class DataListsTest {
             assertNone(listOf("index.json: not a schema 1 index the app reads"))
             return
         }
-        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" }
-        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" }
+        val images = File(data, "images").listFiles { f -> f.name.endsWith(".png") }.orEmpty().map { it.name }
+        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" } +
+            images.associate { "image ${it.removeSuffix(".png")}" to "images/$it" }
+        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" } + index.images.mapKeys { "image ${it.key}" }
         for ((name, path) in expected) {
             val entry = listed[name]
             val sha = sha256(File(data, path).readBytes())
