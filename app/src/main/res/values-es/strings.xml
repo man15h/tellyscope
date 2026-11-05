@@ -742,7 +742,7 @@
     <string name="tabs_apps">Apps</string>
     <string name="tabs_files">Archivos</string>
     <string name="tabs_tweaks">Mejoras</string>
-    <string name="tabs_remote">Control remoto</string>
+    <string name="tabs_remote">Control</string>
     <string name="tabs_install_app">Instalar app</string>
     <string name="tabs_upload_files">Subir archivos</string>
     <string name="tabs_last_visit">la última visita</string>
