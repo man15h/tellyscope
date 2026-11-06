@@ -481,11 +481,11 @@ internal fun AppRow(
                             if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                             else if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
                         }
-                    } else if (launcher && (opens || app.removable)) {
-                        // The launcher on Home: protected, but Open and Uninstall still go, Home moving first.
+                    } else if (opens || (launcher && app.removable)) {
+                        // Protected, but anything with an icon still opens; the launcher on Home also uninstalls, Home moving first.
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
-                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            if (launcher && app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {

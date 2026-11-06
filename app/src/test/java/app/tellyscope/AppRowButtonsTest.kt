@@ -6,6 +6,7 @@ import androidx.compose.ui.test.performClick
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Proc
+import app.tellyscope.data.UiText
 import app.tellyscope.ui.AppRow
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.DeviceActions
@@ -70,6 +71,16 @@ class AppRowButtonsTest {
 
     @Test fun aServiceWithNoIconStopsButDoesntOpen() {
         assertEquals(listOf(Action.Stop, Action.Disable), buttons(tvApp.copy(launchable = false), running))
+    }
+
+    private val protectedApp = tvApp.copy(protectedReason = UiText(R.string.data_protected_settings))
+
+    @Test fun aProtectedAppStillOpensButNeverStopsOrRemoves() {
+        assertEquals(listOf(Action.Open), buttons(protectedApp, running))
+    }
+
+    @Test fun aProtectedAppWithNoIconShowsNoButtons() {
+        assertEquals(emptyList<Action>(), buttons(protectedApp.copy(launchable = false), running))
     }
 
     @Test fun openRunsAtOnce() {
