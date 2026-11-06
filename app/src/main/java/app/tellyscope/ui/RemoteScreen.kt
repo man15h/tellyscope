@@ -296,7 +296,7 @@ fun RemoteScreen(
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
     val services = SharedLists.state.collectAsState().value.streaming
     val streamingApps = remember(state.device.apps, services) { RemoteButtons.streamingApps(state.device.apps, services) }
-    if (picking) OpenAppSheet(name(device), streamingApps, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
+    if (picking) OpenAppSheet(name(device), streamingApps, services, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
 
     ModalBottomSheet(
         onDismissRequest = actions.back,
@@ -952,12 +952,12 @@ private fun AppsKey(enabled: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * Open an app: the TV's streaming apps ([RemoteButtons.streamingApps]), A to Z, with a search box. A tap
- * opens it on the TV the way a Remote button does, and closes the sheet.
+ * Open an app: the TV's streaming apps ([RemoteButtons.streamingApps]), A to Z, with a search box, each
+ * on its brand pill from [services]. A tap opens it on the TV the way a Remote button does, and closes the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OpenAppSheet(tv: String, all: List<AppInfo>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
+private fun OpenAppSheet(tv: String, all: List<AppInfo>, services: List<StreamingService>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
     val q = query.trim()
     val shown = remember(all, q) { all.filter { q.isEmpty() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) } }
@@ -1006,7 +1006,10 @@ private fun OpenAppSheet(tv: String, all: List<AppInfo>, onOpen: (AppInfo) -> Un
                         .padding(horizontal = 32.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    AppIcon(app)
+                    // Wider than the picker's pill, so the widest logo (71 dp) keeps 12 dp either side.
+                    services.firstOrNull { app.packageName in it.packages }
+                        ?.let { ServicePill(it, Modifier.width(96.dp).height(40.dp)) }
+                        ?: AppIcon(app)
                     Spacer(Modifier.width(16.dp))
                     Text(app.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
