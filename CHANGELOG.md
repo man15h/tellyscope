@@ -18,13 +18,16 @@ fails CI until this file has a section for its version.
 ## 0.16.0 — 2026-11-06
 
 - **New:** The Remote can type Cyrillic, Arabic and other non-Latin text. [#371](../../pull/371)
-- **New:** The Remote has an Apps key that opens any app on the TV. [#373](../../pull/373)
-- **New:** AT4K and Monet launchers, with icons, and direct downloads for AT4K and FLauncher. [#367](../../pull/367)
+- **New:** The Remote has an Apps key that shows the streaming apps installed on the TV. [#373](../../pull/373), [#384](../../pull/384)
+- **New:** More home screens to choose from, on Fire TV too. [#367](../../pull/367), [#381](../../pull/381)
+- **New:** Apps has a row that opens the TV's app store: Play Store, or Appstore on Fire TV. [#385](../../pull/385)
+- **New:** Remote quick actions support more streaming apps, including regional, music and self-hosted ones. [#384](../../pull/384)
 - **Improved:** On Fire TV, the Android card shows the Fire OS version, and Check for updates opens About or Fire TV Settings with directions to the update screen. [#365](../../pull/365)
-- **Improved:** The Remote now has its own button in the middle of the bottom bar on every tab. [#368](../../pull/368)
+- **Improved:** The Remote now has its own round button, in a notch in the middle of the bottom bar, on every tab. [#368](../../pull/368), [#388](../../pull/388)
 - **Improved:** "Get a better home screen" moved from Apps to the TV page. [#368](../../pull/368)
 - **Improved:** One tap on the Remote's volume keys moves the volume in a single jump, without the lag of several key presses. [#372](../../pull/372)
 - **Improved:** The home screen suggestion now appears after the TV is debloated, not on first connect. [#374](../../pull/374)
+- **Improved:** Tweaks › Home screen always offers Change home screen, and the picker opens on your current launcher. [#386](../../pull/386)
 - **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
 - **Fixed:** Apps › Open on TV now opens any app that's on and has an icon. [#373](../../pull/373)
 
