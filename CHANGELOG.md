@@ -15,6 +15,12 @@ fails CI until this file has a section for its version.
 
 ## Unreleased
 
+## 0.16.0 — 2026-11-06
+
+- **Improved:** On Fire TV, the Android card shows the Fire OS version, and Check for updates opens About or Fire TV Settings with directions to the update screen. [#365](../../pull/365)
+- **Improved:** The Remote now has its own button in the middle of the bottom bar on every tab. [#368](../../pull/368)
+- **Improved:** "Get a better home screen" moved from Apps to the TV page. [#368](../../pull/368)
+
 ## 0.15.1 — 2026-11-06
 
 - **Improved:** Reset TV to how it shipped also puts Private DNS back to Automatic and animations back to normal speed, when they've been changed. Undo puts them back too. [#360](../../pull/360)
