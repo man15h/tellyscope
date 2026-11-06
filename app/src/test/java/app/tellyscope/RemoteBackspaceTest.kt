@@ -11,6 +11,7 @@ import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.Snapshot
+import app.tellyscope.ui.Copy
 import app.tellyscope.ui.TellyscopeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -32,6 +33,7 @@ import org.junit.Test
 /** One TV; what reached it is recorded in order. */
 private class TextBox : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val sent = mutableListOf<String>()
+    var takes = true
 
     override suspend fun known() = listOf(
         Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L),
@@ -41,7 +43,7 @@ private class TextBox : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
 
     override suspend fun type(deviceId: String, text: String): Boolean {
         sent += "type $text"
-        return true
+        return takes
     }
 
     override suspend fun press(deviceId: String, key: RemoteKey): Boolean {
@@ -95,6 +97,14 @@ class RemoteBackspaceTest {
         vm.type("да 🙂")
         test.runCurrent()
         repeat(4) { assertTrue(press(RemoteKey.DEL)) }
+        assertFalse(press(RemoteKey.DEL))
+    }
+
+    @Test fun aPasteTheBoxRefusedSaysSoAndLeavesNothingToDelete() {
+        tv.takes = false
+        vm.type("да")
+        test.runCurrent()
+        assertEquals(Copy.cantPaste("да"), vm.notice.value)
         assertFalse(press(RemoteKey.DEL))
     }
 
