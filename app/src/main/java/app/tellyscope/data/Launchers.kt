@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.update
  * launcher Fire OS offers, having no Play Store.
  *
  * [icon] is an `https` address on its developer's own page ([LauncherImages]): its app icon. [screenshot] is an image
- * in `data/images/` and its sha256 ([SharedLists.screenshot]): its home screen as it first comes up, shown on the chosen
+ * in `data/images/` and its sha256 ([SharedLists.screenshot]): its home screen as it looks on a TV in use, shown on the chosen
  * row. Its hash sits here rather than in the index, which covers it through this file's.
  * [credit] says where the screenshot comes from when it isn't ours, under it.
  */
