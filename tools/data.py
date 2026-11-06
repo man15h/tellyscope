@@ -177,7 +177,8 @@ def index():
 def bad_screenshots():
     """launchers.json screenshots the app wouldn't show: a file it doesn't read, or one whose sha256 doesn't match."""
     path = DATA / "launchers.json"
-    launchers = json.loads(path.read_text(encoding="utf-8")).get("launchers", []) if path.is_file() else []
+    doc = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    launchers = doc.get("launchers", []) if isinstance(doc, dict) else []
     errors = []
     for l in launchers:
         shot = l.get("screenshot") if isinstance(l, dict) else None
