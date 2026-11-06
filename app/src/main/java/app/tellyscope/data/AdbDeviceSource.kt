@@ -677,8 +677,9 @@ class AdbDeviceSource(
     private suspend fun firstHomeServiceOff(deviceId: String, launcher: String, service: String, fromService: String?, undoing: Long): HistoryEntry {
         val label = labelOf(launcher)
         val actions = Actions(session(deviceId))
+        // The other's back on first, so a TV that refuses leaves everything as it was.
+        fromService?.let { if (!actions.grant(it)) throw UiTextException(fireServiceNotOn(labelOf(it.substringBefore('/')))) }
         if (!actions.setService(service, false)) throw UiTextException(serviceStillOn(label))
-        fromService?.let { actions.grant(it) }
         return book.record(
             deviceId = key(deviceId),
             at = System.currentTimeMillis(),
