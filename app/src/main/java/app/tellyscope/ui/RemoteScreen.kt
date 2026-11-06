@@ -1006,9 +1006,8 @@ private fun OpenAppSheet(tv: String, all: List<AppInfo>, services: List<Streamin
                         .padding(horizontal = 32.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Wider than the picker's pill, so the widest logo (71 dp) keeps 12 dp either side.
                     services.firstOrNull { app.packageName in it.packages }
-                        ?.let { ServicePill(it, Modifier.width(96.dp).height(40.dp)) }
+                        ?.let { ServicePill(it, Modifier.width(SHEET_PILL).height(40.dp)) }
                         ?: AppIcon(app)
                     Spacer(Modifier.width(16.dp))
                     Text(app.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -1175,6 +1174,9 @@ private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setD
 
 private val SHEET_ROW = 56.dp
 
+/** A pill's width on the picker and the Open an app sheet: the widest logo (71 dp) keeps 12 dp either side. */
+private val SHEET_PILL = 96.dp
+
 /** A row of the picker: its tick, its pill and its name, and [trailing] for a ticked one's drag handle. */
 @Composable
 private fun ServiceRow(
@@ -1195,7 +1197,7 @@ private fun ServiceRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked, onCheckedChange = null, enabled = enabled, modifier = Modifier.size(48.dp))
-        ServicePill(s, Modifier.width(80.dp).height(40.dp))
+        ServicePill(s, Modifier.width(SHEET_PILL).height(40.dp))
         Spacer(Modifier.width(16.dp))
         Text(s.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         trailing()
