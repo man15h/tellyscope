@@ -344,6 +344,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">Телевизор принимает только одну строку за раз.</string>
     <string name="copy_cant_type_odd">Телевизор может вводить только обычные буквы, цифры и символы, но не «%1$s».</string>
+    <string name="copy_cant_paste">Телевизор не принял «%1$s». Такие буквы вставляются из буфера обмена, а это текстовое поле или телевизор вставку не принимает. Обычные буквы, цифры и символы по-прежнему вводятся.</string>
     <string name="copy_cant_type_percent_s" formatted="false">Телевизор понимает «%s» как пробел, поэтому не может это ввести.</string>
     <string name="copy_remote_restart">Перезапустить телевизор</string>
     <string name="copy_reboot_title">Перезапустить телевизор?</string>

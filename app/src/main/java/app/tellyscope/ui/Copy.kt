@@ -612,6 +612,10 @@ object Copy {
         }
     }
 
+    /** Past Latin goes in by pasting; [text] didn't land. Names its first letter the keymap can't type. */
+    fun cantPaste(text: String): UiText =
+        UiText(R.string.copy_cant_paste, (text.firstOrNull { it !in ' '..'~' } ?: text.first()).toString())
+
     val REMOTE_RESTART = UiText(R.string.copy_remote_restart)
     val REBOOT_TITLE = UiText(R.string.copy_reboot_title)
     val REBOOT_TEXT = UiText(R.string.copy_reboot_text)

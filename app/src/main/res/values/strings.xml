@@ -408,6 +408,8 @@
     <string name="copy_cant_type_one_line">The TV can only take one line at a time.</string>
     <!-- %1$s is the one character the TV can't type -->
     <string name="copy_cant_type_odd">The TV can only type plain letters, numbers and symbols, not “%1$s”.</string>
+    <!-- %1$s is the first character that had to be pasted -->
+    <string name="copy_cant_paste">The TV didn\'t take “%1$s”. Letters like it go in by pasting, and this text box or TV won\'t take a paste. Plain letters, numbers and symbols still type.</string>
     <!-- %s here is literal: the text the user typed contains it -->
     <string name="copy_cant_type_percent_s" formatted="false">The TV reads “%s” as a space, so it can\'t type that.</string>
 
