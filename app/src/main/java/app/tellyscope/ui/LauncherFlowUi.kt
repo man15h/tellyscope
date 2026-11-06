@@ -844,7 +844,7 @@ private fun PickRow(
 private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
     val c = MaterialTheme.colorScheme
     val icon = listImage(l.launcher.icon, SharedLists::image)
-    val shot = listImage(l.launcher.screenshot.takeIf { on }, SharedLists::screenshot)
+    val shot = listImage(l.launcher.screenshot.takeIf { on }, SharedLists::image)
     val bring = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     PickRow(

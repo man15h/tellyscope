@@ -28,7 +28,7 @@ DATA = REPO / "data"
 KEYS = REPO / "tools" / "data-keys"
 LISTS = ("launchers", "labels", "streaming")
 SIGS = b'  "sigs": '
-# The screenshot files the app reads (IMAGE_FILE in DeviceLists.kt); it drops any other without a word.
+# The icon and screenshot files the app reads (IMAGE_FILE in DeviceLists.kt); it drops any other without a word.
 IMAGE_FILE = re.compile(r"images/[a-z0-9][a-z0-9-]{0,39}\.png")
 # Every P-256 public key in SubjectPublicKeyInfo DER starts with these bytes, then 64 bytes of point.
 P256_SPKI = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200" "04")
@@ -174,24 +174,25 @@ def index():
         path.write_text(text, encoding="utf-8")
 
 
-def bad_screenshots():
-    """launchers.json screenshots the app wouldn't show: a file it doesn't read, or one whose sha256 doesn't match."""
+def bad_images():
+    """launchers.json icons and screenshots the app wouldn't show: a file it doesn't read, or one whose sha256 doesn't match."""
     path = DATA / "launchers.json"
     doc = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
     launchers = doc.get("launchers", []) if isinstance(doc, dict) else []
     errors = []
     for l in launchers:
-        shot = l.get("screenshot") if isinstance(l, dict) else None
-        if shot is None:
-            continue
-        where = f"data/launchers.json: {l.get('package')}'s screenshot"
-        name = shot.get("file") if isinstance(shot, dict) else None
-        if not isinstance(name, str) or not IMAGE_FILE.fullmatch(name):
-            errors.append(f'{where}: must be {{"file": "images/<name>.png", "sha256": …}}, <name> in lowercase letters, digits and -, at most 40')
-        elif not (DATA / name).is_file():
-            errors.append(f"{where}: data/{name} isn't there")
-        elif shot.get("sha256") != hashlib.sha256((DATA / name).read_bytes()).hexdigest():
-            errors.append(f"{where}: sha256 doesn't match data/{name}")
+        for key in ("icon", "screenshot"):
+            image = l.get(key) if isinstance(l, dict) else None
+            if image is None:
+                continue
+            where = f"data/launchers.json: {l.get('package')}'s {key}"
+            name = image.get("file") if isinstance(image, dict) else None
+            if not isinstance(name, str) or not IMAGE_FILE.fullmatch(name):
+                errors.append(f'{where}: must be {{"file": "images/<name>.png", "sha256": …}}, <name> in lowercase letters, digits and -, at most 40')
+            elif not (DATA / name).is_file():
+                errors.append(f"{where}: data/{name} isn't there")
+            elif image.get("sha256") != hashlib.sha256((DATA / name).read_bytes()).hexdigest():
+                errors.append(f"{where}: sha256 doesn't match data/{name}")
     return errors
 
 
@@ -201,7 +202,7 @@ def check(signed=True):
         errors = ["data/index.json is stale: run tools/data.py index"]
     else:
         errors = check_signature() if signed else []
-    errors = bad_screenshots() + errors
+    errors = bad_images() + errors
     for e in errors:
         print(e, file=sys.stderr)
     return 1 if errors else 0

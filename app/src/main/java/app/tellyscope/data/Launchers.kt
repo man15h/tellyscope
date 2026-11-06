@@ -26,9 +26,9 @@ import kotlinx.coroutines.flow.update
  * downloads it from, and [apk] the asset to take from a release that carries more than one APK. [fireOs]: a
  * launcher Fire OS offers, having no Play Store.
  *
- * [icon] is an `https` address on its developer's own page ([LauncherImages]): its app icon. [screenshot] is an image
- * in `data/images/` and its sha256 ([SharedLists.screenshot]): its home screen as it looks on a TV in use, shown on the chosen
- * row. Its hash sits here rather than in the index, which covers it through this file's.
+ * [icon] and [screenshot] are images in `data/images/` and their sha256s ([SharedLists.image]): its app icon, shown on
+ * every row, and its home screen as it looks on a TV in use, shown on the chosen row. Their hashes sit here rather than
+ * in the index, which covers them through this file's.
  * [credit] says where the screenshot comes from when it isn't ours, under it.
  */
 data class KnownLauncher(
@@ -41,7 +41,7 @@ data class KnownLauncher(
     val fireOs: Boolean = false,
     val accessibility: String? = null,
     val apk: String? = null,
-    val icon: String? = null,
+    val icon: ListFile? = null,
     val screenshot: ListFile? = null,
     val credit: String? = null,
 ) {
@@ -58,18 +58,10 @@ private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 private val APK_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
 /** An image's name in `data/images/`, without `.png`: the launcher's name in lowercase, like `projectivy`. */
 internal val IMAGE_NAME = Regex("[a-z0-9][a-z0-9-]{0,39}")
-private const val IMAGE_URL_MAX = 500
 
-/** [url] as an image address the app may fetch: `https`, with a host, and no user:password, else null. */
-internal fun imageUrl(url: String?): String? {
-    if (url == null || url.length > IMAGE_URL_MAX) return null
-    val u = try {
-        java.net.URI(url)
-    } catch (_: java.net.URISyntaxException) {
-        return null
-    }
-    return url.takeIf { u.scheme == "https" && !u.host.isNullOrEmpty() && u.rawUserInfo == null }
-}
+/** [key] as an image in `data/images/` with its sha256, else null: an `https` address an older list used reads as none. */
+private fun org.json.JSONObject.imageFile(key: String): ListFile? =
+    optJSONObject(key)?.let { ListFile(it.optString("file"), it.optString("sha256")) }?.takeIf { IMAGE_FILE.matches(it.file) && SHA256.matches(it.sha256) }
 private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
 /**
@@ -108,9 +100,8 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             fireOs = l.optBoolean("fire_os"),
             accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
             apk = l.optStringOrNull("apk")?.takeIf(APK_NAME::matches),
-            icon = imageUrl(l.optStringOrNull("icon")),
-            screenshot = l.optJSONObject("screenshot")?.let { ListFile(it.optString("file"), it.optString("sha256")) }
-                ?.takeIf { IMAGE_FILE.matches(it.file) && SHA256.matches(it.sha256) },
+            icon = l.imageFile("icon"),
+            screenshot = l.imageFile("screenshot"),
             credit = l.optStringOrNull("credit")?.let { plainText(it, NAME_MAX) }?.ifEmpty { null },
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
@@ -224,17 +215,8 @@ object SharedLists {
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
     suspend fun logo(name: String): ByteArray? = source?.logo(name)
 
-    /** Where launchers' icons are cached; set once by the app, null in tests that don't. */
-    @Volatile var images: LauncherImages? = null
-
-    /**
-     * A launcher's icon from its developer's page ([KnownLauncher.icon]); null until it can be had, and
-     * while `data/` fails its check ([unverified]), so a list that isn't ours can't send the phone to any host it names.
-     */
-    suspend fun image(url: String): ByteArray? = if (unverified != null) null else images?.get(url)
-
-    /** A launcher's screenshot from `data/images/` ([KnownLauncher.screenshot]); null until it can be had. */
-    suspend fun screenshot(file: ListFile): ByteArray? = data?.image(file)
+    /** A launcher's icon or screenshot from `data/images/` ([KnownLauncher.icon], [KnownLauncher.screenshot]); null until it can be had. */
+    suspend fun image(file: ListFile): ByteArray? = data?.image(file)
 
     /**
      * Launchers, labels and streaming from [data]; only the protected list from [source]. Whether [data] passes comes from

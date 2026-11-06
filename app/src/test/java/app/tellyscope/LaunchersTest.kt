@@ -88,15 +88,20 @@ class LaunchersTest {
         assertTrue(parseLaunchers("{").isEmpty())
     }
 
-    @Test fun iconsAreHttpsAddressesScreenshotsFilesInDataImages() {
+    @Test fun iconsAndScreenshotsAreFilesInDataImages() {
         fun one(fields: String) = parseLaunchers("""{"schema": 1, "launchers": [{"package": "a.b", "name": "A", $fields}]}""").single()
         val sha = "a".repeat(64)
         fun shot(file: String, hash: String = sha) = """"screenshot": {"file": "$file", "sha256": "$hash"}"""
-        val l = one(""""icon": "https://example.com/i.png", ${shot("images/flauncher.png")}, "credit": "Screenshot from A's Play Store page"""")
-        assertEquals(Triple("https://example.com/i.png", ListFile("images/flauncher.png", sha), "Screenshot from A's Play Store page"), Triple(l.icon, l.screenshot, l.credit))
-        assertNull(one(""""icon": "http://example.com/i.png"""").icon)
-        assertNull(one(""""icon": "https://user:pw@example.com/i.png"""").icon)
-        assertNull(one(""""icon": "file:///sdcard/i.png"""").icon)
+        fun icon(file: String, hash: String = sha) = """"icon": {"file": "$file", "sha256": "$hash"}"""
+        val l = one("""${icon("images/flauncher-icon.png")}, ${shot("images/flauncher.png")}, "credit": "Screenshot from A's Play Store page"""")
+        assertEquals(
+            Triple(ListFile("images/flauncher-icon.png", sha), ListFile("images/flauncher.png", sha), "Screenshot from A's Play Store page"),
+            Triple(l.icon, l.screenshot, l.credit),
+        )
+        // An address on another host, as lists before had: no icon, so the phone asks no one but data/.
+        assertEquals(KnownLauncher("a.b", "A"), one(""""icon": "https://example.com/i.png""""))
+        assertNull(one(icon("images/../index.json")).icon)
+        assertNull(one(icon("images/flauncher-icon.png", "not a hash")).icon)
         assertNull(one(shot("https://example.com/s.png")).screenshot)
         assertNull(one(shot("images/../index.json")).screenshot)
         assertNull(one(shot("images/Monet.png")).screenshot)
