@@ -91,8 +91,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
@@ -108,6 +114,8 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.adb.StatsProfile
@@ -119,6 +127,8 @@ import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Suggestions
 import app.tellyscope.data.resolve
 import kotlinx.coroutines.launch
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
 /** The TV page's destinations, one job each, in the bottom bar. */
 enum class TvTab(@StringRes val label: Int) { Overview(R.string.tabs_overview), Apps(R.string.tabs_apps), Files(R.string.tabs_files), Tweaks(R.string.tabs_tweaks) }
@@ -264,10 +274,11 @@ fun DeviceTabsScreen(
                 }
             },
             bottomBar = {
-                // The Remote sits in the middle of the bar on every tab: an action, never a selected tab. Its raised
-                // button is drawn over the bar, and is the same action as the label slot under it.
-                Box {
-                    ShortNavigationBar {
+                // The Remote sits in the middle of the bar on every tab: an action, never a selected tab. Its round
+                // button sits in a notch cut into the bar's top edge, and is the same action as the label slot under it.
+                // The bar's own container is clear, so the notched shape behind it is what shows.
+                Box(Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, NotchedBarShape)) {
+                    ShortNavigationBar(containerColor = Color.Transparent) {
                         TvTab.entries.forEach { t ->
                             if (t == TvTab.Files) ShortNavigationBarItem(
                                 selected = false,
@@ -315,7 +326,7 @@ fun DeviceTabsScreen(
                     .then(if (tab == TvTab.Apps && !searching) Modifier.swipeTabs(appsTab.ordinal, AppsTab.entries.size) { appsTab = AppsTab.entries[it] } else Modifier),
                 state = list,
                 // No top padding: the Apps tabs pin at the list's top edge, flush under the bar; the hero carries the 4dp.
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 109.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 val snap = ui.snapshot
@@ -711,11 +722,39 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
 internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolean = false) =
     ui.lists is Suggestions.Ready && !debloat.todo && offerLauncher(ui.apps, ui.launcherCardHidden, fire)
 
-/** How far the Remote's button rises above the bottom bar's top edge. */
-private val RemoteRise = 17.dp
+/** The Remote's round button, centred on the bottom bar's top edge, so it rises by half its size. */
+private val RemoteSize = 60.dp
+private val RemoteRise = RemoteSize / 2
 
-// The Remote's raised button over its slot in the bar. Offline it stays, greyed, so the bar doesn't shift; the grey
-// is solid (over the bar's surfaceContainer), so the page scrolling under its raised top doesn't show through.
+/**
+ * The bottom bar with a round notch cut into the middle of its top edge for the Remote's button: 6dp wider than the
+ * button all round, with the corners where it meets the edge rounded at 6dp.
+ */
+private val NotchedBarShape = object : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val notch = with(density) { (RemoteRise + 6.dp).toPx() }
+        val fillet = with(density) { 6.dp.toPx() }
+        val cx = size.width / 2
+        // Each rounded corner is a circle touching the top edge and the notch's circle.
+        val dx = sqrt((notch + fillet) * (notch + fillet) - fillet * fillet)
+        val meet = Math.toDegrees(atan2(fillet, dx).toDouble()).toFloat()
+        val path = Path().apply {
+            moveTo(0f, 0f)
+            lineTo(cx - dx, 0f)
+            arcTo(Rect(Offset(cx - dx, fillet), fillet), -90f, 90f - meet, false)
+            arcTo(Rect(Offset(cx, 0f), notch), 180f - meet, -(180f - 2 * meet), false)
+            arcTo(Rect(Offset(cx + dx, fillet), fillet), -180f + meet, 90f - meet, false)
+            lineTo(size.width, 0f)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+// The Remote's round button in the bar's notch. Offline it stays, greyed, so the bar doesn't shift; the grey is solid
+// (over the bar's surfaceContainerHigh), so the page under the notch doesn't show through it.
 // TalkBack reads the slot's label instead, so the button itself is left out.
 @Composable
 private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -724,9 +763,9 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
         Surface(
             onClick = onClick,
             enabled = enabled,
-            modifier = Modifier.size(62.dp, 57.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f).compositeOver(c.surfaceContainer),
+            modifier = Modifier.size(RemoteSize),
+            shape = CircleShape,
+            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f).compositeOver(c.surfaceContainerHigh),
             contentColor = if (enabled) c.onPrimary else c.onSurface.copy(alpha = 0.38f),
             shadowElevation = if (enabled) 6.dp else 0.dp,
         ) {
