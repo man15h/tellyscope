@@ -8,8 +8,12 @@ import com.flyfishxu.kadb.cert.OkioFilePrivateKeyStore
 import com.flyfishxu.kadb.exception.AdbPairAuthException
 import com.flyfishxu.kadb.shell.AdbShellPacket
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.Buffer
 import okio.Path.Companion.toPath
 import okio.Sink
@@ -22,6 +26,8 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.nio.channels.InterruptedByTimeoutException
 import javax.net.ssl.SSLException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import java.math.BigInteger
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -66,6 +72,7 @@ suspend fun pairOnFreshPort(hint: Int?, find: suspend () -> Int?, pair: suspend 
 object Connector {
     const val ALLOW_WAIT_MS = 60_000
     private const val TCP_TIMEOUT_MS = 3_000
+    private val PAIR_TIMEOUT = 30.seconds
 
     fun init(keyFile: File) {
         keyFile.parentFile?.mkdirs()
@@ -114,11 +121,7 @@ object Connector {
         // InetSocketAddress throws IllegalArgumentException outside this range.
         if (port !in 1..65535) return ConnectResult.Unreachable("port $port is not between 1 and 65535")
         // Probe TCP first: a refused or silent port is "unreachable", not "not allowed".
-        try {
-            runInterruptible(Dispatchers.IO) { Socket().use { it.connect(InetSocketAddress(host, port), TCP_TIMEOUT_MS) } }
-        } catch (e: IOException) {
-            return ConnectResult.Unreachable(e.message ?: e.javaClass.simpleName)
-        }
+        probe(host, port)?.let { return ConnectResult.Unreachable(it) }
         val kadb = Kadb.create(host, port, connectTimeout = TCP_TIMEOUT_MS, socketTimeout = allowWaitMs)
         return try {
             val out = runInterruptible(Dispatchers.IO) { kadb.shell("echo ok").output }
@@ -138,11 +141,20 @@ object Connector {
                 // maps only some alerts to AdbPairAuthException; the rest read as "didn't answer". Only
                 // an alert counts: a paired TV that drops mid-handshake must keep reconnecting.
                 e.isTlsAlert() && asksForTls(host, port) -> ConnectResult.NeedsPairing
-                // No answer times out; Deny makes adbd drop the socket. Both read as "not allowed".
-                e.isAuthFailure() -> ConnectResult.NotAllowed
+                // No answer times out; Deny makes adbd drop the socket. Both read as "not allowed", unless
+                // the port has stopped answering: then the TV went to sleep or off Wi-Fi mid-handshake.
+                e.isAuthFailure() -> probe(host, port)?.let { ConnectResult.Unreachable(it) } ?: ConnectResult.NotAllowed
                 else -> ConnectResult.Unreachable(e.message ?: e.javaClass.simpleName)
             }
         }
+    }
+
+    /** Null when [host]:[port] takes a TCP connection, else why not. */
+    private suspend fun probe(host: String, port: Int): String? = try {
+        runInterruptible(Dispatchers.IO) { Socket().use { it.connect(InetSocketAddress(host, port), TCP_TIMEOUT_MS) } }
+        null
+    } catch (e: IOException) {
+        e.message ?: e.javaClass.simpleName
     }
 
     /**
@@ -170,15 +182,21 @@ object Connector {
             .putInt(command).putInt(arg0).putInt(arg1).putInt(data.size)
             .putInt(data.sumOf { it.toInt() and 0xff }).putInt(command.inv()).put(data).array()
 
+    /** Where pairing runs, apart from its caller: see [pair]. */
+    private val pairing = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     /**
      * Android 11+ wireless debugging: pair once with the 6-digit code, then [connect] to the connect
-     * port. Never throws, except to cancel.
+     * port. Never throws, except to cancel. A TV that goes quiet mid-pair is unreachable after [timeout]:
+     * Kadb sets no socket timeout there, and a blocking read doesn't stop for a cancel, so the wait for
+     * it sits outside it.
      */
-    suspend fun pair(host: String, pairingPort: Int, code: String): PairResult {
+    suspend fun pair(host: String, pairingPort: Int, code: String, timeout: Duration = PAIR_TIMEOUT): PairResult {
         if (code.length != 6 || !code.all(Char::isDigit)) return PairResult.WrongCode("pairing code must be 6 digits")
         if (pairingPort !in 1..65535) return PairResult.Unreachable("port $pairingPort is not between 1 and 65535")
+        val paired = pairing.async { Kadb.pair(host, pairingPort, code) }
         return try {
-            Kadb.pair(host, pairingPort, code)
+            withTimeoutOrNull(timeout) { paired.await() } ?: return PairResult.Unreachable("the TV stopped answering")
             PairResult.Paired
         } catch (e: CancellationException) {
             throw e
@@ -187,6 +205,8 @@ object Connector {
         } catch (e: Exception) {
             // A Wi-Fi drop mid-handshake surfaces as an IOException, or as Kadb's IllegalStateException.
             PairResult.Unreachable(e.message ?: e.javaClass.simpleName)
+        } finally {
+            paired.cancel()
         }
     }
 
