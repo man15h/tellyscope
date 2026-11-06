@@ -431,12 +431,13 @@ internal fun AppRow(
     var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
     // A launcher can be protected and still open, for the way to the Home screen card.
     val launcher = app.answersHome || app.builtInLauncher
-    val changeable = (app.protectedReason == null || launcher) && !offline
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
     val shown = app.enabled && app.packageName == onScreen
     val running = ram > 0 || shown
     // Open only when there's somewhere to go: not for the app already on screen.
     val opens = app.opens && !shown
+    // A protected app still unfolds when there's an Open to show.
+    val changeable = (app.protectedReason == null || launcher || opens) && !offline
     val status = stringResource(
         when {
             !app.enabled -> R.string.device_app_disabled
@@ -481,11 +482,11 @@ internal fun AppRow(
                             if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                             else if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
                         }
-                    } else if (launcher && (opens || app.removable)) {
-                        // The launcher on Home: protected, but Open and Uninstall still go, Home moving first.
+                    } else if (opens || (launcher && app.removable)) {
+                        // Protected, but anything with an icon still opens; the launcher on Home also uninstalls, Home moving first.
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
-                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            if (launcher && app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {
