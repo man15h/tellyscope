@@ -40,11 +40,15 @@ import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.FIRE_HOME_STARTER
 import app.tellyscope.data.resolve
 
-/** The launchers the Home screen card lists: the one on Home, then the ones the user added, then the TV's own. */
+/**
+ * The launchers the Home screen card lists: the one on Home, then the ones the user added, then the TV's own.
+ * Fire OS's [FIRE_HOME_STARTER] is among the TV's own, with nothing to do on it.
+ */
 internal fun homeLaunchers(apps: List<AppInfo>): List<AppInfo> =
-    apps.filter { it.answersHome || it.builtInLauncher }
+    apps.filter { it.answersHome || it.builtInLauncher || it.packageName == FIRE_HOME_STARTER }
         .sortedWith(compareBy({ !it.home }, { it.system }, { it.label.lowercase() }))
 
 /**
