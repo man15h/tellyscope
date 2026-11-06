@@ -11,7 +11,7 @@ import java.io.File
 import java.security.MessageDigest
 
 /**
- * A launcher's icon and screenshot ([KnownLauncher.icon]), linked from its developer's own page rather than kept in
+ * A launcher's icon ([KnownLauncher.icon]), linked from its developer's own page rather than kept in
  * this repository, so the art stays theirs. Fetched only for launchers on `launchers.json`, over [download]
  * (`https` only, size and time capped), and cached under [dir] by the address, so each is fetched once.
  */

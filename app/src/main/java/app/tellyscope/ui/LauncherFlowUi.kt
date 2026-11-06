@@ -838,8 +838,8 @@ private fun PickRow(
 @Composable
 private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    val icon = listImage(l.launcher.icon)
-    val shot = listImage(l.launcher.screenshot.takeIf { on })
+    val icon = listImage(l.launcher.icon, SharedLists::image)
+    val shot = listImage(l.launcher.screenshot.takeIf { on }, SharedLists::screenshot)
     val bring = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     PickRow(
@@ -855,7 +855,7 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
                     Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp).fillMaxWidth().aspectRatio(16f / 9f)
                         .clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest),
                 ) {
-                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
+                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
                     Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Light,
@@ -885,7 +885,7 @@ private fun ServiceLine(accessibility: Boolean, modifier: Modifier = Modifier) {
     }
 }
 
-/** A launcher's image from its developer's page, as [listImage] has it. */
+/** A launcher's icon or screenshot, as [listImage] has it. */
 private sealed interface ListImage {
     data object Loading : ListImage
     /** None named, or it couldn't be had or decoded. */
@@ -894,14 +894,14 @@ private sealed interface ListImage {
 }
 
 /**
- * The image at [url] ([SharedLists.image]), decoded off the main thread; [ListImage.Missing] for a null [url]. The state
- * outlives a change of [url], so each change starts over from Loading (or Missing) rather than the old image.
+ * The image [load] gives for [key], decoded off the main thread; [ListImage.Missing] for a null [key]. The state
+ * outlives a change of [key], so each change starts over from Loading (or Missing) rather than the old image.
  */
 @Composable
-private fun listImage(url: String?): ListImage = produceState<ListImage>(if (url == null) ListImage.Missing else ListImage.Loading, url) {
-    value = if (url == null) ListImage.Missing else ListImage.Loading
-    if (url == null) return@produceState
-    value = SharedLists.image(url)
+private fun listImage(key: String?, load: suspend (String) -> ByteArray?): ListImage = produceState<ListImage>(if (key == null) ListImage.Missing else ListImage.Loading, key) {
+    value = if (key == null) ListImage.Missing else ListImage.Loading
+    if (key == null) return@produceState
+    value = load(key)
         ?.let { b -> withContext(Dispatchers.Default) { Picture.decode(b) } }
         ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Missing
 }.value

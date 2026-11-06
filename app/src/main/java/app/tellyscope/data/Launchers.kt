@@ -26,8 +26,9 @@ import kotlinx.coroutines.flow.update
  * downloads it from, and [apk] the asset to take from a release that carries more than one APK. [fireOs]: a
  * launcher Fire OS offers, having no Play Store.
  *
- * [icon] and [screenshot] are `https` addresses on its developer's own page ([LauncherImages]): its app icon, and its
- * home screen as the picker shows it on the chosen row. [credit] says where they come from, under the screenshot.
+ * [icon] is an `https` address on its developer's own page ([LauncherImages]): its app icon. [screenshot] names an
+ * image in `data/images/` ([SharedLists.screenshot]): its home screen as it first comes up, shown on the chosen row.
+ * [credit] says where the screenshot comes from when it isn't ours, under it.
  */
 data class KnownLauncher(
     val pkg: String,
@@ -54,6 +55,8 @@ private val SIGNER = Regex("[0-9a-f]{64}")
 private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
 private val APK_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
+/** An image's name in `data/images/`, without `.png`: the launcher's name in lowercase, like `projectivy`. */
+internal val IMAGE_NAME = Regex("[a-z0-9][a-z0-9-]{0,39}")
 private const val IMAGE_URL_MAX = 500
 
 /** [url] as an image address the app may fetch: `https`, with a host, and no user:password, else null. */
@@ -105,7 +108,7 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
             apk = l.optStringOrNull("apk")?.takeIf(APK_NAME::matches),
             icon = imageUrl(l.optStringOrNull("icon")),
-            screenshot = imageUrl(l.optStringOrNull("screenshot")),
+            screenshot = l.optStringOrNull("screenshot")?.takeIf(IMAGE_NAME::matches),
             credit = l.optStringOrNull("credit")?.let { plainText(it, NAME_MAX) }?.ifEmpty { null },
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
@@ -219,14 +222,17 @@ object SharedLists {
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
     suspend fun logo(name: String): ByteArray? = source?.logo(name)
 
-    /** Where launchers' icons and screenshots are cached; set once by the app, null in tests that don't. */
+    /** Where launchers' icons are cached; set once by the app, null in tests that don't. */
     @Volatile var images: LauncherImages? = null
 
     /**
-     * A launcher's icon or screenshot from its developer's page ([KnownLauncher.icon]); null until it can be had, and
+     * A launcher's icon from its developer's page ([KnownLauncher.icon]); null until it can be had, and
      * while `data/` fails its check ([unverified]), so a list that isn't ours can't send the phone to any host it names.
      */
     suspend fun image(url: String): ByteArray? = if (unverified != null) null else images?.get(url)
+
+    /** A launcher's screenshot from `data/images/` ([KnownLauncher.screenshot]); null until it can be had. */
+    suspend fun screenshot(name: String): ByteArray? = data?.image(name)
 
     /**
      * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out
