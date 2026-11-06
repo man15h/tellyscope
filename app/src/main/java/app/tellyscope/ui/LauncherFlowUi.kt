@@ -42,7 +42,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material3.AlertDialog
@@ -899,8 +898,6 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
                             Text(Copy.PICTURE_FAILED.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 8.dp))
                             TextButton(onClick = { tries++ }) {
-                                Icon(Icons.Filled.Refresh, null, Modifier.size(18.dp))
-                                Spacer(Modifier.width(8.dp))
                                 Text(Copy.TRY_AGAIN.resolve())
                             }
                         }
