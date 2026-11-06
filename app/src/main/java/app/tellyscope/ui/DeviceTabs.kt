@@ -363,7 +363,7 @@ fun DeviceTabsScreen(
                                 )
                             }
                             // A better home screen is a suggestion, so it sits with the actions rather than among the apps.
-                            if (offerLauncher(ui.apps, ui.launcherCardHidden, fire)) item(key = "launcherCard") {
+                            if (offerLauncherCard(ui, debloat, fire)) item(key = "launcherCard") {
                                 LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
                             }
                         }
@@ -701,6 +701,13 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val count = (on + back).size
     return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList)
 }
+
+/**
+ * The home screen card waits until the list has loaded and Debloat has nothing left on it, so the TV is cleaned up
+ * before a new home screen is suggested. A TV with no list never gets there.
+ */
+internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolean = false) =
+    ui.lists is Suggestions.Ready && !debloat.todo && offerLauncher(ui.apps, ui.launcherCardHidden, fire)
 
 /** How far the Remote's button rises above the bottom bar's top edge. */
 private val RemoteRise = 17.dp
