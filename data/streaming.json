@@ -21,7 +21,12 @@
         { "name": "Hulu", "packages": ["com.hulu.livingroomplus", "com.hulu.plus"], "color": "#1CE783", "logo": "hulu" },
         { "name": "Peacock", "packages": ["com.peacocktv.peacockandroid", "com.peacock.peacockfiretv"], "color": "#000000", "logo": "peacock", "dark": "#FFDC23" },
         { "name": "Tubi", "packages": ["com.tubitv", "com.tubitv.ott"], "color": "#5B1EB8", "logo": "tubi", "dark": "#FFFF13" },
-        { "name": "Pluto TV", "packages": ["tv.pluto.android"], "color": "#000000", "logo": "plutotv", "dark": "#FFDE2B" }
+        { "name": "Pluto TV", "packages": ["tv.pluto.android"], "color": "#000000", "logo": "plutotv", "dark": "#FFDE2B" },
+        { "name": "YouTube TV", "packages": ["com.google.android.youtube.tvunplugged", "com.amazon.firetv.youtube.tv"], "color": "#FF0000", "logo": "youtubetv" },
+        { "name": "Sling TV", "packages": ["com.sling"], "color": "#0E8AE6", "logo": "slingtv" },
+        { "name": "Fubo", "packages": ["com.fubo.firetv.screen"], "color": "#FA4616", "logo": "fubo" },
+        { "name": "Philo", "packages": ["com.philo.philo.google", "com.philo.philo"], "color": "#5B2D90", "logo": "philo" },
+        { "name": "Starz", "packages": ["com.bydeluxe.d3.android.program.starz", "com.starz.starzplay.firetv"], "color": "#000000", "logo": "starz" }
       ]
     },
     {
@@ -29,13 +34,106 @@
       "services": [
         { "name": "JioHotstar", "packages": ["in.startv.hotstar"], "color": "#0F1F7A", "logo": "jiohotstar" },
         { "name": "Zee5", "packages": ["com.graymatrix.did", "com.zee5.amazon"], "color": "#3B0A5C", "logo": "zee5", "dark": "#EC2B8D" },
-        { "name": "SonyLIV", "packages": ["com.sonyliv", "com.onemainstream.sonyliv.android"], "color": "#000000", "logo": "sonyliv" }
+        { "name": "SonyLIV", "packages": ["com.sonyliv", "com.onemainstream.sonyliv.android"], "color": "#000000", "logo": "sonyliv" },
+        { "name": "Sun NXT", "packages": ["com.suntv.sunnxt"], "color": "#F26522", "logo": "sunnxt" },
+        { "name": "aha", "packages": ["ahaflix.tv"], "color": "#FF6C2C", "logo": "aha" },
+        { "name": "Hoichoi", "packages": ["com.viewlift.hoichoi"], "color": "#E3000F", "logo": "hoichoi" },
+        { "name": "JioTV+", "packages": ["com.jio.media.jiotvplus"], "color": "#0F3CC9", "logo": "jiotvplus" }
+      ]
+    },
+    {
+      "name": "UK",
+      "services": [
+        { "name": "BBC iPlayer", "packages": ["bbc.iplayer.android", "uk.co.bbc.iplayer"], "color": "#F54997", "logo": "bbciplayer" },
+        { "name": "ITVX", "packages": ["air.ITVMobilePlayer"], "color": "#DEEB52", "logo": "itvx" },
+        { "name": "Channel 4", "packages": ["com.channel4.ondemand"], "color": "#000000", "logo": "channel4" },
+        { "name": "Channel 5", "packages": ["com.channel5.my5", "com.mobileiq.demand5"], "color": "#DF1E5A", "logo": "channel5" },
+        { "name": "NOW", "packages": ["com.bskyb.nowtv.beta"], "color": "#1BC8B0", "logo": "now" },
+        { "name": "U", "packages": ["uk.co.uktv.dave"], "color": "#000000", "logo": "uktv" }
+      ]
+    },
+    {
+      "name": "Canada",
+      "services": [
+        { "name": "Crave", "packages": ["ca.bellmedia.cravetv"], "color": "#1B3BD8", "logo": "crave" },
+        { "name": "CBC Gem", "packages": ["ca.cbc.android.cbctv"], "color": "#D52B1E", "logo": "cbcgem" },
+        { "name": "STACKTV", "packages": ["com.shawmedia.smglobal"], "color": "#000000", "logo": "stacktv" }
+      ]
+    },
+    {
+      "name": "Australia",
+      "services": [
+        { "name": "Stan", "packages": ["au.com.stan.and"], "color": "#0072FB", "logo": "stan" },
+        { "name": "Binge", "packages": ["au.com.streamotion.ares.tv"], "color": "#5925C9", "logo": "binge" },
+        { "name": "ABC iview", "packages": ["au.net.abc.iview"], "color": "#00838F", "logo": "abciview" },
+        { "name": "SBS On Demand", "packages": ["com.sbs.ondemand.tv"], "color": "#1B2E51", "logo": "sbsondemand" },
+        { "name": "7plus", "packages": ["com.swm.live"], "color": "#E5002B", "logo": "7plus" },
+        { "name": "9Now", "packages": ["au.com.ninenow.ctv"], "color": "#0062FF", "logo": "9now" },
+        { "name": "10", "packages": ["au.com.tenplay"], "color": "#000000", "logo": "ten" }
+      ]
+    },
+    {
+      "name": "Europe",
+      "services": [
+        { "name": "Joyn", "packages": ["de.prosiebensat1digital.seventv"], "color": "#000000", "logo": "joyn" },
+        { "name": "RTL+", "packages": ["de.rtli.tvnow", "de.cbc.tvnow.firetv"], "color": "#000000", "logo": "rtlplus" },
+        { "name": "ZDF", "packages": ["com.zdf.android.mediathek"], "color": "#FA7D19", "logo": "zdf" },
+        { "name": "ARD Mediathek", "packages": ["de.swr.avp.ard.tv", "de.swr.avp.ard"], "color": "#001A4B", "logo": "ardmediathek" },
+        { "name": "Canal+", "packages": ["com.canal.android.canal"], "color": "#000000", "logo": "canalplus" },
+        { "name": "france.tv", "packages": ["fr.francetv.pluzz"], "color": "#1E28C8", "logo": "francetv" },
+        { "name": "TF1+", "packages": ["fr.tf1.mytf1"], "color": "#1E3CFF", "logo": "tf1plus" },
+        { "name": "M6+", "packages": ["fr.m6.m6replay", "fr.m6.m6replay.firetv"], "color": "#D8201E", "logo": "m6plus" },
+        { "name": "Viaplay", "packages": ["com.viaplay.android"], "color": "#2B0D47", "logo": "viaplay" },
+        { "name": "SVT Play", "packages": ["se.svt.android.svtplay"], "color": "#1F9D55", "logo": "svtplay" },
+        { "name": "NRK TV", "packages": ["no.nrk.tv"], "color": "#1F2433", "logo": "nrktv" },
+        { "name": "DRTV", "packages": ["dk.dr.tvplayer"], "color": "#E2001A", "logo": "drtv" },
+        { "name": "NPO Start", "packages": ["nl.uitzendinggemist"], "color": "#FF6D00", "logo": "npostart" },
+        { "name": "Videoland", "packages": ["nl.rtl.videoland.v2", "nl.rtl.videoland.v2.firetv"], "color": "#E50040", "logo": "videoland" },
+        { "name": "RaiPlay", "packages": ["it.rainet.androidtv"], "color": "#1052A3", "logo": "raiplay" },
+        { "name": "Mediaset Infinity", "packages": ["it.mediaset.infinitytv"], "color": "#0B2A5A", "logo": "mediasetinfinity" },
+        { "name": "atresplayer", "packages": ["com.antena3.atresplayer.tv"], "color": "#FF6600", "logo": "atresplayer" },
+        { "name": "RTVE Play", "packages": ["com.rtve.androidtv"], "color": "#F65A0A", "logo": "rtveplay" },
+        { "name": "Rakuten TV", "packages": ["tv.wuaki.apptv"], "color": "#BF0000", "logo": "rakutentv" },
+        { "name": "SkyShowtime", "packages": ["com.skyshowtime.skyshowtime.google"], "color": "#6A2CF0", "logo": "skyshowtime" }
+      ]
+    },
+    {
+      "name": "Latin America",
+      "services": [
+        { "name": "Globoplay", "packages": ["com.globo.globotv"], "color": "#FB0D44", "logo": "globoplay" },
+        { "name": "ViX", "packages": ["com.univision.prendetv"], "color": "#FF5F00", "logo": "vix" },
+        { "name": "Claro video", "packages": ["com.amco.clarovideo_atv"], "color": "#DA291C", "logo": "clarovideo" }
+      ]
+    },
+    {
+      "name": "Asia",
+      "services": [
+        { "name": "Viu", "packages": ["com.viu.tv", "com.vuclip.viu"], "color": "#F5B700", "logo": "viu" },
+        { "name": "iQIYI", "packages": ["com.iqiyi.i18n.tv"], "color": "#00CC36", "logo": "iqiyi" },
+        { "name": "Rakuten Viki", "packages": ["com.viki.android", "com.viki.kindle"], "color": "#0098FF", "logo": "viki" },
+        { "name": "WeTV", "packages": ["com.tencent.qqlivei18n"], "color": "#FF5A1F", "logo": "wetv" },
+        { "name": "Bilibili", "packages": ["com.bstar.intl.tv"], "color": "#00A1D6", "logo": "bilibili" },
+        { "name": "U-Next", "packages": ["jp.unext.tv.player", "jp.unext.mediaplayer"], "color": "#000000", "logo": "unext" },
+        { "name": "TVer", "packages": ["jp.co.tver.tvapp"], "color": "#2D9CFF", "logo": "tver" },
+        { "name": "ABEMA", "packages": ["tv.abema"], "color": "#000000", "logo": "abema" },
+        { "name": "Hulu Japan", "packages": ["jp.happyon.android"], "color": "#1CE783", "logo": "hulujapan" },
+        { "name": "TVING", "packages": ["net.cj.em.tving"], "color": "#FF153C", "logo": "tving" },
+        { "name": "Coupang Play", "packages": ["com.coupang.mobile.play"], "color": "#000000", "logo": "coupangplay" }
+      ]
+    },
+    {
+      "name": "Middle East / Africa",
+      "services": [
+        { "name": "Shahid", "packages": ["net.mbc.shahidTV"], "color": "#00B140", "logo": "shahid" },
+        { "name": "OSN+", "packages": ["com.osn.go"], "color": "#000000", "logo": "osnplus" },
+        { "name": "DStv Stream", "packages": ["com.dstvmobile.android"], "color": "#0067C5", "logo": "dstvstream" }
       ]
     },
     {
       "name": "Sports",
       "services": [
-        { "name": "DAZN", "packages": ["com.dazn"], "color": "#000000", "logo": "dazn" }
+        { "name": "DAZN", "packages": ["com.dazn"], "color": "#000000", "logo": "dazn" },
+        { "name": "Kayo", "packages": ["au.com.kayosports.tv"], "color": "#00C77F", "logo": "kayo" }
       ]
     },
     {
