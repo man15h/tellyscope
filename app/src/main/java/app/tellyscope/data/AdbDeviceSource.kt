@@ -1169,7 +1169,7 @@ class AdbDeviceSource(
         return freed
     }
 
-    override suspend fun screenshot(deviceId: String, sink: Sink) = Tweaks(session(deviceId)).screenshot(sink)
+    override suspend fun screenshot(deviceId: String, sink: Sink) = Tweaks(liveSession(deviceId)).screenshot(sink)
 
     override suspend fun connectionRequest(deviceId: String) = ConnectionPrompt(session(deviceId)).pending()
 
@@ -1291,16 +1291,19 @@ class AdbDeviceSource(
         return busy(deviceId, reread = true) { Files(session).push(source, size, name, folder, onProgress) }
     }
 
-    override suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit) =
-        busy(deviceId) { Files(session(deviceId)).pull(folder, file, sink, onProgress) }
+    override suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit) {
+        val session = liveSession(deviceId)
+        busy(deviceId) { Files(session).pull(folder, file, sink, onProgress) }
+    }
 
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw UiTextException(UiText(R.string.data_offline, deviceId))
 
     /**
-     * The session for a file the user just picked. While the system picker is up the app is in the
-     * background, where Android cuts its network after a few seconds and no stats read notices: back
-     * in the app, the old session is dead (#290, #296). A quick shell call tells; a dead link starts
+     * The session for a file the user just picked, or just picked a place to save to. While the system
+     * picker is up the app is in the background, where Android cuts its network after a few seconds and
+     * no stats read notices: back in the app, the old session is dead (#290, #296). Naming the file
+     * keeps the picker up long enough. A quick shell call tells; a dead link starts
      * over and the transfer waits for the new session. The install's version check is the first call
      * after the picker, so it goes through here too.
      */
