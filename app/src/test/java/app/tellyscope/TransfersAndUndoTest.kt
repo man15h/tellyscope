@@ -26,6 +26,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.resetMain
@@ -75,6 +76,17 @@ private class Src : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.E
     }
 
     override suspend fun history(deviceId: String) = history
+
+    var apksResult = listOf("/data/app/com.x/base.apk")
+    val pulledFrom = mutableListOf<String>()
+    val apkPullGate = CompletableDeferred<Unit>()
+
+    override suspend fun apks(deviceId: String, packageName: String) = apksResult
+
+    override suspend fun pullApks(deviceId: String, paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit) {
+        pulledFrom += deviceId
+        apkPullGate.await()
+    }
 }
 
 private object Phone : PhoneStorage {
@@ -133,6 +145,34 @@ class TransfersAndUndoTest {
         runCurrent()
         assertEquals("tv-b", vm.state.value.selectedId)
         assertNotNull(vm.state.value.device.transfer)
+    }
+
+    @Test fun savingAnApkPullsFromTheTvItStartedOn() = with(test) {
+        vm = TellyscopeViewModel(source, Phone, clock = { 0L })
+        runCurrent()
+        val app = app.tellyscope.data.AppInfo("com.x", "X", null, false, true, null, "1.0")
+        var name: String? = "?"
+        launch { name = vm.apkName(app) }
+        runCurrent()
+        assertEquals("X.apk", name)
+        // TV B comes online behind the picker and takes the selection; the save must still read TV A.
+        vm.connect(ScanHit("tv-b", 5555, ScanKind.Classic, "tv-b", null))
+        runCurrent()
+        assertEquals("tv-b", vm.state.value.selectedId)
+        vm.apkTo(Uri.parse("content://x/X.apk"))
+        runCurrent()
+        assertEquals(listOf("tv-a"), source.pulledFrom)
+    }
+
+    @Test fun savingAnApkWithNoApksSaysSo() = with(test) {
+        source.apksResult = emptyList()
+        vm = TellyscopeViewModel(source, Phone, clock = { 0L })
+        runCurrent()
+        var name: String? = "?"
+        launch { name = vm.apkName(app.tellyscope.data.AppInfo("com.x", "X", null, false, true, null, "1.0")) }
+        runCurrent()
+        assertNull(name)
+        assertEquals(Copy.saveFailed("X"), vm.notice.value)
     }
 
     @Test fun anEntryAlreadyUndoneInHistoryIsNotUndoneAgain() = with(test) {

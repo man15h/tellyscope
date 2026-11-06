@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package app.tellyscope.adb
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import okio.Buffer
 import okio.sink
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.CountDownLatch
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -158,5 +164,35 @@ class SideloadTest {
 
     @Test fun anAppThatIsntThereHasNoApks() = runTest {
         assertEquals(emptyList(), Sideload(FakeShell()).apks("com.example.absent"))
+    }
+
+    @Test fun aStatFailureStillCopiesWithIndeterminateProgress() = runTest {
+        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ShellResult("stat: not found\n", 127)))
+        sh.transfer.files[base] = ByteArray(10_000) { 1 }
+        sh.transfer.files[split] = ByteArray(500) { 2 }
+        val s = Sideload(sh)
+        val seen = mutableListOf<Progress>()
+        val file = File(dir, "nostat.apks")
+        file.sink().use { s.pullApks(s.apks("com.example.player"), it) { p -> seen += p } }
+        assertEquals(listOf("base.apk", "split_config.arm64_v8a.apk"), ApkBundle.unpack(file, File(dir, "nostat")).map { it.name })
+        assertTrue(seen.isNotEmpty() && seen.all { it.total == null }, "a failed stat gives an indeterminate bar")
+    }
+
+    @Test fun aCancelMidBundleStopsAndThrows() = runBlocking {
+        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ok("200000\n200000\n")))
+        sh.transfer.files[base] = ByteArray(200_000) { 1 }
+        sh.transfer.files[split] = ByteArray(200_000) { 2 }
+        val started = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        var chunks = 0
+        sh.transfer.onChunk = { if (++chunks == 3) { started.countDown(); release.await() } }
+        val s = Sideload(sh)
+        val paths = s.apks("com.example.player")
+        val job = async(Dispatchers.Default) { s.pullApks(paths, Buffer()) }
+        withContext(Dispatchers.IO) { started.await() }
+        job.cancel()
+        release.countDown()
+        val thrown = runCatching { job.await() }.exceptionOrNull()
+        assertTrue(thrown is CancellationException, "a cancel mid-bundle surfaces as CancellationException, was $thrown")
     }
 }

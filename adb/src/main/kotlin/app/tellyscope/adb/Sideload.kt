@@ -2,7 +2,6 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.CancellationException
-import okio.ForwardingSink
 import okio.Sink
 import okio.buffer
 import okio.sink
@@ -131,21 +130,20 @@ class Sideload(private val session: AdbSession) {
         val total = sizes.takeIf { it.size == paths.size }?.sum()
         runTransfer { stopped ->
             if (paths.size == 1) return@runTransfer session.pull(sink.counting(total, stopped, onProgress), paths.single())
-            val out = sink.buffer()
-            // APKs are zips already: storing them as they are is as small, and far quicker on the phone.
-            val zip = ZipOutputStream(out.outputStream()).apply { setLevel(Deflater.NO_COMPRESSION) }
-            // One counter across every part, and a close that only flushes: closing would end the zip.
-            val part = object : ForwardingSink(zip.sink()) {
-                override fun close() = flush()
-            }.counting(total, stopped, onProgress)
-            paths.forEach { p ->
-                zip.putNextEntry(ZipEntry(p.substringAfterLast('/')))
-                session.pull(part, p)
-                part.flush()
-                zip.closeEntry()
+            // use{} closes the zip, freeing its Deflater, on success, failure or cancel. That also
+            // closes the caller's sink, which the caller's own use{} then closes again, harmlessly.
+            ZipOutputStream(sink.buffer().outputStream()).use { zip ->
+                // APKs are zips already: storing them as they are is as small, and far quicker on the phone.
+                zip.setLevel(Deflater.NO_COMPRESSION)
+                // One counter across every part. The part sink is only flushed, never closed: closing would end the zip.
+                val part = zip.sink().counting(total, stopped, onProgress)
+                paths.forEach { p ->
+                    zip.putNextEntry(ZipEntry(p.substringAfterLast('/')))
+                    session.pull(part, p)
+                    part.flush()
+                    zip.closeEntry()
+                }
             }
-            zip.finish()
-            out.flush()
         }
     }
 

@@ -160,7 +160,8 @@ interface DeviceSource {
     suspend fun apks(deviceId: String, packageName: String): List<String> = emptyList()
 
     /** Copies [paths], from [apks], to the phone: the APK, or a split app's parts as an .apks bundle. */
-    suspend fun pullApks(deviceId: String, paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit) {}
+    suspend fun pullApks(deviceId: String, paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit): Unit =
+        throw UnsupportedOperationException("this source can't copy APKs")
 
     /**
      * What the TV's list from tellyscope-devices suggests turning off. Never throws; offline it

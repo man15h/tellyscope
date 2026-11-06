@@ -1544,59 +1544,69 @@ class TellyscopeViewModel(
         }
     }
 
-    /** The file whose "save as" picker is open. Kept here so it survives the activity being recreated behind the picker. */
-    private var saving: TvFile? = null
+    /** The TV and file whose "save as" picker is open. Kept here so it survives the activity being recreated behind the picker. */
+    private var saving: Pair<String, TvFile>? = null
 
     fun saving(file: TvFile) {
-        saving = file
+        saving = (_state.value.selectedId ?: return) to file
     }
 
     /** The picker's answer: copies the file there, or does nothing if the user backed out. */
     fun saveTo(uri: Uri?) {
-        val file = saving ?: return
+        val (id, file) = saving ?: return
         saving = null
         val folder = _state.value.device.files.folder
-        if (uri != null) pull(uri, file.name, file.size) { id, sink, progress -> source.pull(id, folder, file, sink, progress) }
+        if (uri != null) pull(id, uri, file.name, file.size) { sink, progress -> source.pull(id, folder, file, sink, progress) }
     }
 
-    /** The app whose "save as" picker is open, as the name it was offered under and its APKs on the TV. */
-    private var savingApk: Pair<String, List<String>>? = null
+    /** The TV, offered name and APK paths of the app whose "save as" picker is open. */
+    private var savingApk: Triple<String, String, List<String>>? = null
 
-    /** Finds [app]'s APKs on the TV and returns the name to offer in the picker; null, with a notice, when there are none. */
+    /**
+     * Finds [app]'s APKs on the TV and returns the name to offer in the picker; null, with a notice,
+     * when there are none. Marks the TV busy while the lookup runs, which greys the row and stops a
+     * second tap from opening another picker.
+     */
     suspend fun apkName(app: AppInfo): String? {
         val id = _state.value.selectedId ?: return null
+        // busy != null locks every app button (DeviceTabs), so a tap during a running lookup is ignored.
+        if (_state.value.device.busy != null) return null
+        updateDevice(id) { it.copy(busy = app.packageName) }
         val paths = try {
             source.apks(id, app.packageName)
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             emptyList()
+        } finally {
+            updateDevice(id) { it.copy(busy = null) }
         }
         if (paths.isEmpty()) {
             _notice.value = Copy.saveFailed(app.label)
             return null
         }
-        val name = Files.safeName(app.label + if (paths.size == 1) ".apk" else ".apks")
-        savingApk = name to paths
+        // A blank label would make Files.safeName(" .apk") a hidden ".apk"; fall back to the package id.
+        val stem = app.label.ifBlank { app.packageName }
+        val name = Files.safeName(stem + if (paths.size == 1) ".apk" else ".apks")
+        savingApk = Triple(id, name, paths)
         return name
     }
 
     /** The APK picker's answer: copies the app there, or does nothing if the user backed out. */
     fun apkTo(uri: Uri?) {
-        val (name, paths) = savingApk ?: return
+        val (id, name, paths) = savingApk ?: return
         savingApk = null
-        if (uri != null) pull(uri, name, null) { id, sink, progress -> source.pullApks(id, paths, sink, progress) }
+        if (uri != null) pull(id, uri, name, null) { sink, progress -> source.pullApks(id, paths, sink, progress) }
     }
 
-    /** Copies from the TV into [uri] with [copy]. A cancelled or failed copy removes the partial file. */
-    private fun pull(uri: Uri, name: String, size: Long?, copy: suspend (id: String, Sink, (Progress) -> Unit) -> Unit) {
-        val id = _state.value.selectedId ?: return
+    /** Copies from TV [id] into [uri] with [copy]. A cancelled or failed copy removes the partial file. */
+    private fun pull(id: String, uri: Uri, name: String, size: Long?, copy: suspend (Sink, (Progress) -> Unit) -> Unit) {
         val storage = storage ?: return
-        setTransfer(id, TransferUi(name, toTv = false, folder = _state.value.device.files.folder, progress = Progress(0, size)))
+        setTransfer(id, TransferUi(name, toTv = false, folder = _state.value.device.files.folder, progress = size?.let { Progress(0, it) }))
         transferJobs[id] = viewModelScope.launch {
             try {
                 storage.create(uri).use { sink ->
-                    copy(id, sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
+                    copy(sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
                 }
                 _notice.value = Copy.saved(name)
             } catch (e: CancellationException) {

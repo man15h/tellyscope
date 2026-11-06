@@ -1305,7 +1305,8 @@ class AdbDeviceSource(
         busy(deviceId) { Files(session).pull(folder, file, sink, onProgress) }
     }
 
-    override suspend fun apks(deviceId: String, packageName: String) = Sideload(session(deviceId)).apks(packageName)
+    // liveSession, like installed(): the lookup is the first TV call after a wake, where the old link may be dead.
+    override suspend fun apks(deviceId: String, packageName: String) = Sideload(liveSession(deviceId)).apks(packageName)
 
     override suspend fun pullApks(deviceId: String, paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit) {
         val session = liveSession(deviceId)
