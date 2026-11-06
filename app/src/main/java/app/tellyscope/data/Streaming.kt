@@ -81,6 +81,12 @@ object RemoteButtons {
         return services.filter { s -> s.packages.any { it in installed } }
     }
 
+    /** What the Apps key lists: the TV's apps that open and are one of [services], any group, A to Z. */
+    fun streamingApps(apps: List<AppInfo>, services: List<StreamingService>): List<AppInfo> {
+        val known = services.flatMapTo(HashSet()) { it.packages }
+        return apps.filter { it.opens && it.packageName in known }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label })
+    }
+
     /** Ticks or unticks [service]; a tick past [cap] does nothing. */
     fun toggle(dock: List<Docked>, service: StreamingService, services: List<StreamingService>, cap: Int, apps: List<AppInfo>): List<Docked> {
         val mine = dock.filter { serviceOf(it, services) != null }

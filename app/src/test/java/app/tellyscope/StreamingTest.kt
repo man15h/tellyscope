@@ -79,6 +79,20 @@ class StreamingTest {
         assertEquals(emptyList<StreamingService>(), RemoteButtons.choices(services, emptyList()))
     }
 
+    @Test fun theAppsKeyListsOnlyStreamingAppsThatOpenAToZ() {
+        fun app(pkg: String, label: String, launchable: Boolean = true) = AppInfo(pkg, label, null, false, true, null, "", launchable = launchable)
+        val tv = listOf(
+            app("com.android.vending", "Google Play Store"),
+            app("com.netflix.ninja", "Netflix"),
+            app("org.jellyfin.androidtv", "jellyfin"),
+            app("com.example.files", "Files"),
+            app("org.xbmc.kodi", "Kodi", launchable = false),
+        )
+        assertEquals(listOf("jellyfin", "Netflix"), RemoteButtons.streamingApps(tv, services).map { it.label })
+        // No streaming app: the list is empty, and the Remote hides the Apps key.
+        assertEquals(emptyList<AppInfo>(), RemoteButtons.streamingApps(listOf(tv[0], tv[3]), services))
+    }
+
     private val lightSheet = 0xFFEEF5F4
     private val darkSheet = 0xFF161D1D
 

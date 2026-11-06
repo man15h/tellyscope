@@ -295,7 +295,9 @@ fun RemoteScreen(
     val talkBack = talkBackOn()
     val pad = state.touchpad && !talkBack
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
-    if (picking) OpenAppSheet(name(device), state.device.apps, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
+    val services = SharedLists.state.collectAsState().value.streaming
+    val streamingApps = remember(state.device.apps, services) { RemoteButtons.streamingApps(state.device.apps, services) }
+    if (picking) OpenAppSheet(name(device), streamingApps, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
 
     ModalBottomSheet(
         onDismissRequest = actions.back,
@@ -410,7 +412,7 @@ fun RemoteScreen(
                 if (!typing) {
                     Spacer(Modifier.height(if (tight) 8.dp else 16.dp))
                     CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) {
-                        ButtonsRow(RemoteButtons.shown(state.device.dock, SharedLists.state.collectAsState().value.streaming, cap), state.device.apps, live, actions, onEdit = { editing = true }, onApps = { picking = true })
+                        ButtonsRow(RemoteButtons.shown(state.device.dock, services, cap), state.device.apps, live, actions, appsKey = streamingApps.isNotEmpty(), onEdit = { editing = true }, onApps = { picking = true })
                     }
                 }
             }
@@ -912,11 +914,11 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
 
 /**
  * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some,
- * then the Apps key. A tap opens the service on the TV; holding one opens the picker, as ⋮ › Remote
- * buttons does.
+ * then the Apps key while the TV has a streaming app. A tap opens the service on the TV; holding one opens
+ * the picker, as ⋮ › Remote buttons does.
  */
 @Composable
-private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onEdit: () -> Unit, onApps: () -> Unit) {
+private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, appsKey: Boolean, onEdit: () -> Unit, onApps: () -> Unit) {
     val installed = remember(apps) { apps.mapTo(HashSet()) { it.packageName } }
     Row(Modifier.fillMaxWidth().height(48.dp).alpha(if (enabled) 1f else 0.38f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (buttons.isEmpty()) AddButtons(enabled, onEdit, Modifier.weight(1f))
@@ -925,11 +927,11 @@ private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, ena
                 ServiceButton(s, enabled, onOpen = { actions.launch(Docked(s.packageOn(installed), s.name)) }, onHold = onEdit, Modifier.weight(1f))
             }
         }
-        AppsKey(enabled, onApps)
+        if (appsKey) AppsKey(enabled, onApps)
     }
 }
 
-/** The key at the end of the row: a tonal pill, 40 dp tall in a 48 dp tall target, that lists every app to open. */
+/** The key at the end of the row: a tonal pill, 40 dp tall in a 48 dp tall target, that lists the streaming apps to open. */
 @Composable
 private fun AppsKey(enabled: Boolean, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
@@ -951,14 +953,13 @@ private fun AppsKey(enabled: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * Open an app: every app on the TV that opens, A to Z, with a search box. A tap opens it on the TV
- * the way a Remote button does, and closes the sheet.
+ * Open an app: the TV's streaming apps ([RemoteButtons.streamingApps]), A to Z, with a search box. A tap
+ * opens it on the TV the way a Remote button does, and closes the sheet.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun OpenAppSheet(tv: String, apps: List<AppInfo>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
+private fun OpenAppSheet(tv: String, all: List<AppInfo>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
     var query by rememberSaveable { mutableStateOf("") }
-    val all = remember(apps) { apps.filter { it.opens }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label }) }
     val q = query.trim()
     val shown = remember(all, q) { all.filter { q.isEmpty() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) } }
     ModalBottomSheet(onDismissRequest = onDismiss) {

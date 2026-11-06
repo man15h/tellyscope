@@ -362,7 +362,7 @@
     <string name="copy_back_online">Снова в сети. %1$s подключен.</string>
     <string name="copy_remote_buttons">Кнопки пульта</string>
     <string name="copy_open_an_app">Открыть приложение</string>
-    <string name="copy_open_an_app_hint">Приложения на %1$s. Нажмите, чтобы открыть.</string>
+    <string name="copy_open_an_app_hint">Стриминговые приложения на %1$s. Нажмите, чтобы открыть.</string>
     <string name="copy_more">Другие параметры</string>
     <string name="copy_buttons_hint">Выберите до %1$d. Перетащите, чтобы задать порядок. Чтобы выбрать другую, сначала снимите отметку с одной из выбранных.</string>
     <string name="copy_not_on_tv">%1$s нет на этом телевизоре. Установите его из Play Маркета на телевизоре.</string>
