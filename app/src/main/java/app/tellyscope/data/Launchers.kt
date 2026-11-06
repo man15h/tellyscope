@@ -26,8 +26,9 @@ import kotlinx.coroutines.flow.update
  * downloads it from, and [apk] the asset to take from a release that carries more than one APK. [fireOs]: a
  * launcher Fire OS offers, having no Play Store.
  *
- * [icon] is an `https` address on its developer's own page ([LauncherImages]): its app icon. [screenshot] names an
- * image in `data/images/` ([SharedLists.screenshot]): its home screen as it first comes up, shown on the chosen row.
+ * [icon] is an `https` address on its developer's own page ([LauncherImages]): its app icon. [screenshot] is an image
+ * in `data/images/` and its sha256 ([SharedLists.screenshot]): its home screen as it first comes up, shown on the chosen
+ * row. Its hash sits here rather than in the index, which covers it through this file's.
  * [credit] says where the screenshot comes from when it isn't ours, under it.
  */
 data class KnownLauncher(
@@ -41,7 +42,7 @@ data class KnownLauncher(
     val accessibility: String? = null,
     val apk: String? = null,
     val icon: String? = null,
-    val screenshot: String? = null,
+    val screenshot: ListFile? = null,
     val credit: String? = null,
 ) {
     /** It, signed only by its developer: [signers] are the SHA-256s of an APK's certificates. */
@@ -108,7 +109,8 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
             apk = l.optStringOrNull("apk")?.takeIf(APK_NAME::matches),
             icon = imageUrl(l.optStringOrNull("icon")),
-            screenshot = l.optStringOrNull("screenshot")?.takeIf(IMAGE_NAME::matches),
+            screenshot = l.optJSONObject("screenshot")?.let { ListFile(it.optString("file"), it.optString("sha256")) }
+                ?.takeIf { IMAGE_FILE.matches(it.file) && SHA256.matches(it.sha256) },
             credit = l.optStringOrNull("credit")?.let { plainText(it, NAME_MAX) }?.ifEmpty { null },
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
@@ -232,7 +234,7 @@ object SharedLists {
     suspend fun image(url: String): ByteArray? = if (unverified != null) null else images?.get(url)
 
     /** A launcher's screenshot from `data/images/` ([KnownLauncher.screenshot]); null until it can be had. */
-    suspend fun screenshot(name: String): ByteArray? = data?.image(name)
+    suspend fun screenshot(file: ListFile): ByteArray? = data?.image(file)
 
     /**
      * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out

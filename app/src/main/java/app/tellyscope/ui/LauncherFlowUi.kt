@@ -898,7 +898,7 @@ private sealed interface ListImage {
  * outlives a change of [key], so each change starts over from Loading (or Missing) rather than the old image.
  */
 @Composable
-private fun listImage(key: String?, load: suspend (String) -> ByteArray?): ListImage = produceState<ListImage>(if (key == null) ListImage.Missing else ListImage.Loading, key) {
+private fun <K : Any> listImage(key: K?, load: suspend (K) -> ByteArray?): ListImage = produceState<ListImage>(if (key == null) ListImage.Missing else ListImage.Loading, key) {
     value = if (key == null) ListImage.Missing else ListImage.Loading
     if (key == null) return@produceState
     value = load(key)
