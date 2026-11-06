@@ -1714,7 +1714,7 @@ class ScreenshotTest {
     @Test fun readme_tweaks() {
         val tweaks = TvTweaks(dnsHost = TvSettings.ADGUARD, animationScale = null)
         shot("29_readme_tweaks") { DeviceTabsScreen(deviceState { copy(tweaks = tweaks, apps = listOf(stockHome, playStore) + apps) }, DeviceActions(), startTab = TvTab.Tweaks) }
-        compose.onNodeWithText(Copy.GET_LAUNCHER_TEXT.text()).assertExists()
+        compose.onNodeWithText(Copy.CHANGE_HOME_TEXT.text()).assertExists()
     }
 
     private val stockHome = AppInfo(

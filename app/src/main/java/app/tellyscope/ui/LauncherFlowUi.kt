@@ -14,8 +14,6 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -274,7 +272,8 @@ fun LauncherScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when (flow.step) {
-                    LauncherFlow.Step.Pick -> if (fire != null) {
+                    // Fire OS's picker offers Install only on a launcher that isn't on the TV yet.
+                    LauncherFlow.Step.Pick -> if (fire != null && (fire.step != null || installedLauncher(apps, flow.pkg) == null)) {
                         FireButtons(fire, flow.pkg, actions, play, Modifier.weight(1f))
                     } else {
                         val have = installedLauncher(apps, chosen)
@@ -293,7 +292,7 @@ fun LauncherScreen(
                                     OutlinedButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
                                 }
                             }
-                            // Home now, or a TV that can't take it as Home: only Open.
+                            // Current, or a TV that can't take it as Home: only Open.
                             !have.home && current != null -> {
                                 TextButton(onClick = { actions.open(chosen) }) { Text(Copy.OPEN.resolve()) }
                                 IconButtonText(Icons.Outlined.Home, Copy.MAKE_HOME.resolve()) { if (have.homeService) askService = true else switch(false) }
@@ -330,7 +329,7 @@ fun LauncherScreen(
             }
             val c = MaterialTheme.colorScheme
             when (flow.step) {
-                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, play, actions) else Picker(chosen, apps, direct) { chosen = it }
+                LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, play, apps, actions) else Picker(chosen, apps, direct) { chosen = it }
                 LauncherFlow.Step.Waiting -> {
                     Hero(LauncherIcons.Download, c.secondaryContainer, c.onSecondaryContainer)
                     Headed(Copy.INSTALL_IT.resolve(), bold(Copy.installItText(label).resolve(), label, stringResource(R.string.launcher_install_word)))
@@ -383,7 +382,7 @@ private fun IconButtonText(icon: ImageVector, text: String, modifier: Modifier =
 /**
  * The recommended launchers as one segmented list, one chosen: rounded ends, small gaps, the chosen
  * one filled. Above them, On this TV lists any other launcher someone added, when there is one.
- * Rows never move: one on the TV carries an Installed or Home now chip where it stands.
+ * Rows never move: one on the TV carries an Installed or Current chip where it stands.
  */
 @Composable
 private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoose: (String) -> Unit) {
@@ -416,10 +415,10 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
 
 /**
  * Fire OS's picker, and nothing to do on the TV ([play]: pick the file here). With [onChoose] and more than one of
- * [fireLaunchers], their rows with [pkg] chosen; else [pkg] alone, about it as the picker says it.
+ * [fireLaunchers], their rows with [pkg] chosen, each one on the TV ([apps]) with its chip; else [pkg] alone, about it as the picker says it.
  */
 @Composable
-private fun FirePick(pkg: String, play: Boolean = false, onChoose: ((String) -> Unit)? = null) {
+private fun FirePick(pkg: String, apps: List<AppInfo>, play: Boolean = false, onChoose: ((String) -> Unit)? = null) {
     val c = MaterialTheme.colorScheme
     Text((if (play) Copy.FIRE_PICK_TEXT else Copy.FIRE_INSTALL_TEXT).resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
     val all = fireLaunchers()
@@ -427,7 +426,7 @@ private fun FirePick(pkg: String, play: Boolean = false, onChoose: ((String) -> 
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
             Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                all.forEachIndexed { i, l -> RecommendedRow(l, segment(i, all.lastIndex), l.pkg == pkg, have = null) { onChoose(l.pkg) } }
+                all.forEachIndexed { i, l -> RecommendedRow(l, segment(i, all.lastIndex), l.pkg == pkg, installedLauncher(apps, l.pkg)) { onChoose(l.pkg) } }
             }
             Text(Copy.NOT_AFFILIATED.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 12.dp))
         }
@@ -453,7 +452,7 @@ private fun FirePick(pkg: String, play: Boolean = false, onChoose: ((String) -> 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean, actions: LauncherActions) {
+private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean, apps: List<AppInfo>, actions: LauncherActions) {
     val c = MaterialTheme.colorScheme
     val uri = LocalUriHandler.current
     val l = RECOMMENDED.firstOrNull { it.pkg == pkg }
@@ -474,10 +473,10 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
             Text(Copy.DIRECT_CHECK.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             Text(Copy.STORE_SAFER.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         } else if (play) {
-            FirePick(pkg, play = true, onChoose = choose)
+            FirePick(pkg, apps, play = true, onChoose = choose)
             Yourself(f, label, source, openPage, actions)
         } else {
-            FirePick(pkg, onChoose = choose)
+            FirePick(pkg, apps, onChoose = choose)
             if (release != null) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(Copy.WHERE_FROM.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
@@ -549,7 +548,7 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, p
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
-            null, FireInstall.Step.Checking -> if (!play) IconButtonText(LauncherIcons.Download, Copy.installLauncher(launcherName(pkg)).resolve(), wide, enabled = f.step == null, onClick = check)
+            null, FireInstall.Step.Checking -> if (!play) IconButtonText(LauncherIcons.Download, Copy.INSTALL.resolve(), wide, enabled = f.step == null, onClick = check)
             // The safe way first and filled; the download only as the outlined second.
             FireInstall.Step.Confirm -> if (f.store) {
                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
@@ -791,10 +790,9 @@ private fun segment(i: Int, last: Int): RoundedCornerShape {
 }
 
 /**
- * One launcher in the picker: [leading] (its icon), its name, a chip when [have] is on the TV, then [details].
- * [footer] runs under them at the row's full width, and [top] (its home screen) above them all.
+ * One launcher in the picker: [leading] (its icon), its name and radio, and under the name a chip when [have] is on
+ * the TV. [footer] runs under them at the row's full width, and [below] (its home screen) last of all.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PickRow(
     shape: RoundedCornerShape,
@@ -804,10 +802,9 @@ private fun PickRow(
     vertical: Dp = 16.dp,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
-    top: @Composable () -> Unit = {},
     leading: (@Composable () -> Unit)? = null,
     footer: @Composable () -> Unit = {},
-    details: @Composable () -> Unit = {},
+    below: @Composable () -> Unit = {},
 ) {
     val c = MaterialTheme.colorScheme
     Surface(
@@ -816,33 +813,32 @@ private fun PickRow(
         modifier = modifier.fillMaxWidth().selectable(on, role = Role.RadioButton, onClick = onClick),
     ) {
         Column {
-            top()
             Column(Modifier.padding(start = 16.dp, top = vertical, bottom = vertical, end = 8.dp)) {
+                // The chip always sits under the name, so no name or language moves it; the icon centres on both.
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     leading?.let {
                         it()
                         Spacer(Modifier.width(16.dp))
                     }
-                    Column(Modifier.weight(1f)) {
-                        // The chip drops under the name rather than squeezing it at large font sizes.
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp), itemVerticalAlignment = Alignment.CenterVertically) {
-                            Text(name, style = MaterialTheme.typography.bodyLarge)
-                            have?.let { InstalledChip(home = it.home) }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                            RadioButton(selected = on, onClick = null)
                         }
-                        details()
+                        have?.let { InstalledChip(home = it.home) }
                     }
-                    RadioButton(selected = on, onClick = null)
                 }
                 footer()
             }
+            below()
         }
     }
 }
 
 /**
- * A launcher from `launchers.json` in a picker: its icon, name and about line, and whether it uses an accessibility
- * service, under the icon at full width so it stays on one line. Chosen ([on]), it opens to its screenshot and the
- * list's credit for it, then scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
+ * A launcher from `launchers.json` in a picker: its icon (or its first letter), name, then its about line and whether it
+ * uses an accessibility service, under the icon at full width. Chosen ([on]), it opens to its screenshot and the list's
+ * credit for it below those, then scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
  */
 @Composable
 private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
@@ -857,30 +853,34 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
             if (on) scope.launch { bring.bringIntoView() }
         },
         onClick = onClick,
-        top = {
-            if (shot != ListImage.Missing) {
+        leading = {
+            when {
+                icon is ListImage.Ready -> Image(icon.bitmap, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
+                // The list names no icon: the one Tweaks shows when it's on the TV, else its first letter, so names line up.
+                icon == ListImage.Missing && have != null -> AppIcon(have)
+                icon == ListImage.Missing -> Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(c.secondaryContainer), contentAlignment = Alignment.Center) {
+                    Text(l.name.take(1).uppercase(), style = MaterialTheme.typography.titleMedium, color = c.onSecondaryContainer)
+                }
+                else -> Spacer(Modifier.size(40.dp))
+            }
+        },
+        footer = {
+            Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
+            ServiceLine(l.accessibility, Modifier.padding(top = 4.dp))
+        },
+        below = {
+            if (shot != ListImage.Missing) Column(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
                 val description = Copy.homeScreenOf(l.name).resolve()
-                Box(
-                    Modifier.padding(start = 8.dp, top = 8.dp, end = 8.dp).fillMaxWidth().aspectRatio(16f / 9f)
-                        .clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest),
-                ) {
+                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest)) {
                     if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
                 }
                 l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
                     Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Light,
-                        modifier = Modifier.padding(start = 12.dp, top = 4.dp, end = 12.dp))
+                        modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp))
                 }
             }
         },
-        leading = if (icon is ListImage.Ready) {
-            { Image(icon.bitmap, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop) }
-        } else {
-            null
-        },
-        footer = { ServiceLine(l.accessibility, Modifier.padding(top = 8.dp)) },
-    ) {
-        Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-    }
+    )
 }
 
 /** Uses an accessibility service, or Open source and none. */
@@ -915,9 +915,9 @@ private fun <K : Any> listImage(key: K?, load: suspend (K) -> ByteArray?): ListI
         ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Missing
 }.value
 
-/** Installed, outlined; Home now, filled, so it still stands out on the chosen row. */
+/** Installed, outlined; Current, filled, so it still stands out on the chosen row. Tweaks shows the Current one too. */
 @Composable
-private fun InstalledChip(home: Boolean) {
+internal fun InstalledChip(home: Boolean) {
     val c = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(8.dp),
@@ -928,7 +928,7 @@ private fun InstalledChip(home: Boolean) {
         Row(Modifier.height(24.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(if (home) Icons.Outlined.Home else Icons.Default.Check, null, Modifier.size(14.dp))
             Spacer(Modifier.width(4.dp))
-            Text(if (home) Copy.HOME_NOW.resolve() else Copy.INSTALLED.resolve(), style = MaterialTheme.typography.labelMedium)
+            Text(if (home) Copy.CURRENT.resolve() else Copy.INSTALLED.resolve(), style = MaterialTheme.typography.labelMedium)
         }
     }
 }

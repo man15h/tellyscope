@@ -65,7 +65,7 @@ internal fun homeMove(app: AppInfo, current: AppInfo?): Action? = when {
 /**
  * The Home screen card at the top of Tweaks: every launcher on the TV, which one Home opens, and
  * the one place to change it. Make Home asks first; only the TV's own launcher is ever turned off.
- * [fire]: Fire OS ([fireInstall]), where Get another launcher installs one of the list's Fire OS ones ([fireLaunchers]) without a Play Store.
+ * [fire]: Fire OS ([fireInstall]), where Change home screen opens the list's Fire OS launchers ([fireLaunchers]), installed without a Play Store.
  */
 @Composable
 fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false) {
@@ -88,13 +88,12 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false)
             )
         }
     }
-    // Only before a launcher was added: after that, the rows above are the way to switch.
-    if (launchers.none { !it.system } && (hasPlayStore(ui.apps) || fire)) {
+    // Always, launcher added or not: the picker installs another or switches to one already on the TV.
+    if (hasPlayStore(ui.apps) || fire) {
         Column(Modifier.fillMaxWidth().padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(Copy.GET_LAUNCHER.resolve(), style = MaterialTheme.typography.bodyLarge)
-            val fireText = if (fire) fireLaunchers().singleOrNull()?.name?.let(Copy::getFireLauncherText) ?: Copy.GET_FIRE_LAUNCHERS_TEXT else null
-            Text((fireText ?: Copy.GET_LAUNCHER_TEXT).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FilledTonalButton(onClick = actions.installLauncher, enabled = !locked) { Text(Copy.GET_LAUNCHER.resolve()) }
+            Text(Copy.CHANGE_HOME.resolve(), style = MaterialTheme.typography.bodyLarge)
+            Text(Copy.CHANGE_HOME_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            FilledTonalButton(onClick = actions.installLauncher, enabled = !locked) { Text(Copy.CHANGE_HOME.resolve()) }
         }
     }
     val (pkg, action) = ui.pending ?: return
@@ -138,7 +137,14 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
             AppIcon(app, Modifier.alpha(if (app.enabled) 1f else 0.4f))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // The chip the picker shows on it too; the name gives way first.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                    if (app.home) {
+                        Spacer(Modifier.width(8.dp))
+                        InstalledChip(home = true)
+                    }
+                }
                 Text(
                     if (app.system) Copy.builtIn(off = !app.enabled).resolve() else Copy.ADDED.resolve(),
                     style = MaterialTheme.typography.bodyMedium,
@@ -148,15 +154,8 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(DeviceIcons.Accessibility, contentDescription = null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(4.dp))
-                        Text(if (app.homeServiceOff) Copy.SERVICE_OFF.resolve() else Copy.KEEPS_HOME.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(if (app.homeServiceOff) Copy.SERVICE_OFF.resolve() else Copy.USES_SERVICE.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                }
-            }
-            if (app.home) {
-                Row(Modifier.padding(start = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(HubIcons.CheckCircleOutline, contentDescription = null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                    Spacer(Modifier.width(4.dp))
-                    Text(Copy.CURRENT.resolve(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -210,7 +209,6 @@ private object HubIcons {
     // Absolute commands only: Compose's path parser misplaces a relative move after a close.
     private const val RING = "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4Z"
     val InfoOutline = icon("InfoOutline", RING + "M11 11H13V17H11ZM11 7H13V9H11Z")
-    val CheckCircleOutline = icon("CheckCircleOutline", RING + "M16.59 7.58L10 14.17L6.41 10.59L5 12L10 17L18 9Z")
 
     private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         .addPath(PathParser().parsePathString(path).toNodes(), pathFillType = PathFillType.EvenOdd, fill = SolidColor(Color.Black))

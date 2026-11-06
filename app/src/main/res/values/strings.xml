@@ -49,12 +49,9 @@
     <string name="copy_built_in">Built into the TV</string>
     <string name="copy_built_in_off">Built into the TV · turned off</string>
     <string name="copy_current">Current</string>
-    <string name="copy_keeps_home">Keeps Home with its accessibility service</string>
     <string name="copy_make_home">Make Home</string>
-    <string name="copy_get_launcher">Get another launcher</string>
-    <string name="copy_get_launcher_text">Install one from the Play Store. Switch back any time.</string>
-    <string name="copy_get_fire_launcher_text">Install %1$s. Switch back any time.</string>
-    <string name="copy_get_fire_launchers_text">Tellyscope installs the one you choose. Switch back any time.</string>
+    <string name="copy_change_home">Change home screen</string>
+    <string name="copy_change_home_text">Install another from Editor\'s choice, or switch to one that\'s already on the TV.</string>
     <string name="copy_home_settings">Home screen settings</string>
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
@@ -109,7 +106,7 @@
     <string name="copy_recommended">Editor\'s choice</string>
     <string name="copy_on_this_tv">On this TV</string>
     <string name="copy_installed">Installed</string>
-    <string name="copy_home_now">Home now</string>
+    <string name="copy_install">Install</string>
     <string name="copy_open">Open</string>
     <string name="copy_home_screen_of">%1$s home screen</string>
     <string name="copy_uses_service">Uses an accessibility service</string>
