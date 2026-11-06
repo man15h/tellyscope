@@ -22,13 +22,18 @@ import java.lang.reflect.Method;
  * {@code 0} when it didn't. Prints {@code ready} first. Only key codes are read, so nothing typed
  * reaches a shell. The argument is the jar's own path, deleted once the helper is up; it exits at
  * the end of stdin. A line starting with {@code t} is text instead: the rest is typed the way
- * {@code input text} types it, one key press per character. {@code p0} turns the TV's picture off
+ * {@code input text} types it, one key press per character. {@code v} and a signed count moves the
+ * media volume that many steps in one set, with the TV's volume bar, and answers {@code 0} when the
+ * volume didn't move, so the caller presses the keys instead. {@code p0} turns the TV's picture off
  * and {@code p2} back on, through SurfaceFlinger: the TV stays awake, so ADB stays connected, and
  * the picture stays off after the helper exits.
  */
 public final class Keys {
     /** InputManager's INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH: answers once the focused app is done with it. */
     private static final int WAIT_FOR_FINISH = 2;
+    /** AudioManager.STREAM_MUSIC and FLAG_SHOW_UI. */
+    private static final int STREAM_MUSIC = 3;
+    private static final int FLAG_SHOW_UI = 1;
 
     public static void main(String[] args) throws Exception {
         Object manager;
@@ -55,6 +60,11 @@ public final class Keys {
             try {
                 if (line.startsWith("p")) {
                     out.print(power(Integer.parseInt(line.substring(1).trim())) ? "1\n" : "0\n");
+                    out.flush();
+                    continue;
+                }
+                if (line.startsWith("v")) {
+                    out.print(volume(Integer.parseInt(line.substring(1).trim())) ? "1\n" : "0\n");
                     out.flush();
                     continue;
                 }
@@ -95,6 +105,56 @@ public final class Keys {
         } catch (Throwable t) {
             return false;
         }
+    }
+
+    /**
+     * Sets the media volume {@code delta} steps from where it is, kept inside the range, through
+     * IAudioService as the shell. False when it didn't move: already at the end, a fixed-volume
+     * output (which always reads full), volume handed to a soundbar over HDMI-CEC, or a refused
+     * set. The keys still reach the speaker in all of those, so the caller sends them.
+     */
+    private static boolean volume(int delta) {
+        try {
+            IBinder binder = (IBinder) Class.forName("android.os.ServiceManager")
+                .getMethod("getService", String.class).invoke(null, "audio");
+            if (binder == null) return false;
+            Object audio = Class.forName("android.media.IAudioService$Stub")
+                .getMethod("asInterface", IBinder.class).invoke(null, binder);
+            Method get = audio.getClass().getMethod("getStreamVolume", int.class);
+            int now = (Integer) get.invoke(audio, STREAM_MUSIC);
+            int max = (Integer) audio.getClass().getMethod("getStreamMaxVolume", int.class).invoke(audio, STREAM_MUSIC);
+            int target = Math.max(0, Math.min(max, now + delta));
+            if (target == now || !setVolume(audio, target)) return false;
+            return (Integer) get.invoke(audio, STREAM_MUSIC) != now;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    /**
+     * IAudioService.setStreamVolume(stream, index, flags, package), which Android 13 also has as
+     * setStreamVolumeWithAttribution with a tag after the package. Called as {@code com.android.shell}
+     * with a null tag, and FLAG_SHOW_UI so the TV shows its volume bar.
+     */
+    private static boolean setVolume(Object audio, int index) throws Exception {
+        for (Method m : audio.getClass().getMethods()) {
+            if (!m.getName().equals("setStreamVolume") && !m.getName().equals("setStreamVolumeWithAttribution")) continue;
+            Class<?>[] types = m.getParameterTypes();
+            if (types.length < 4 || types[0] != int.class || types[1] != int.class || types[2] != int.class) continue;
+            Object[] args = new Object[types.length];
+            args[0] = STREAM_MUSIC;
+            args[1] = index;
+            args[2] = FLAG_SHOW_UI;
+            boolean ok = true;
+            for (int i = 3; i < types.length; i++) {
+                if (types[i] != String.class) { ok = false; break; }
+                args[i] = i == 3 ? "com.android.shell" : null;
+            }
+            if (!ok) continue;
+            m.invoke(audio, args);
+            return true;
+        }
+        return false;
     }
 
     /** Null from getEvents means a character the keymap has no key for. */

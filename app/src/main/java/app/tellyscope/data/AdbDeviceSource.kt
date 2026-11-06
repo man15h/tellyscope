@@ -1066,7 +1066,7 @@ class AdbDeviceSource(
 
     override suspend fun press(deviceId: String, key: RemoteKey) = busy(deviceId) {
         if (key == RemoteKey.HOME && deviceKind(device(deviceId)) == DeviceKind.FireTv) remote(deviceId).home(fireHome(deviceId))
-        else if (key == RemoteKey.VOLUME_UP || key == RemoteKey.VOLUME_DOWN) remote(deviceId).press(key, volumeKeys(deviceId))
+        else if (key == RemoteKey.VOLUME_UP || key == RemoteKey.VOLUME_DOWN) remote(deviceId).volume(key, volumeKeys(deviceId))
         else remote(deviceId).press(key)
     }
 

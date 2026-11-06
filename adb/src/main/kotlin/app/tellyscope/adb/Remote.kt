@@ -49,6 +49,16 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
     /** [press] [times] over, stopping at the first key the TV didn't take. */
     suspend fun press(key: RemoteKey, times: Int): Boolean = (1..times).all { press(key) }
 
+    /**
+     * One volume tap of [steps]: a single jump through [keys], so the TV's bar moves once; [steps]
+     * key presses, as [press], when the helper isn't running or the volume didn't move that way.
+     */
+    suspend fun volume(key: RemoteKey, steps: Int): Boolean {
+        require(key == RemoteKey.VOLUME_UP || key == RemoteKey.VOLUME_DOWN)
+        if (keys?.volume(if (key == RemoteKey.VOLUME_UP) steps else -steps) == true) return true
+        return press(key, steps)
+    }
+
     /** The top of the TV's media volume, from `dumpsys audio`; null when it doesn't say. */
     suspend fun volumeMax(): Int? = musicMax(session.shell("dumpsys audio 2>/dev/null | grep -A12 '^- STREAM_MUSIC:'").output)
 
