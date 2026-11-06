@@ -1326,7 +1326,8 @@ class ScreenshotTest {
     // The README's Remote: a full row of streaming buttons, with their logos.
     @Test fun remote_dockFull() = withLogos("youtube", "netflix", "jellyfin") {
         val three = docked + Docked("org.jellyfin.androidtv", "Jellyfin")
-        shot("12_remote_dock_full", screen = true) { RemoteScreen(remoteState(apps = three), RemoteActions()) }
+        // Each pill reads its logo on the IO dispatcher, which the paused clock doesn't wait for.
+        shot("12_remote_dock_full", screen = true, before = { Thread.sleep(500) }) { RemoteScreen(remoteState(apps = three), RemoteActions()) }
         // A full row has no Remote buttons pill.
         compose.onNodeWithText(Copy.REMOTE_BUTTONS.text()).assertDoesNotExist()
     }
