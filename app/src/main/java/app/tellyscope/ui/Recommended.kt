@@ -19,9 +19,12 @@ data class Recommended(
     val launcher: KnownLauncher = KnownLauncher(pkg, name, about),
 )
 
-/** In the picker's order: the launchers on `launchers.json` that have an `about` line, in file order. */
+/**
+ * In the picker's order: the launchers on `launchers.json` that have an `about` line, in file order. [Recommended.accessibility]
+ * says what the launcher has, signed or not; whether its service may go on is [SharedLists.serviceLaunchers].
+ */
 val RECOMMENDED: List<Recommended> get() =
-    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.pkg in SharedLists.serviceLaunchers, l) } }
+    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.pkg in SharedLists.listedServiceLaunchers, l) } }
 
 fun launcherName(pkg: String) = RECOMMENDED.firstOrNull { it.pkg == pkg }?.name ?: AppNames.fallback(pkg)
 

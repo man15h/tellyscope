@@ -8,6 +8,7 @@ import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.verifyIndex
+import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
@@ -181,6 +182,21 @@ class DataSignatureTest {
         assertEquals(DATA_BASE, SharedLists.unverified)
         assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
         assertEquals(setOf("com.good.home"), SharedLists.listedServiceLaunchers)
+    }
+
+    /** The picker labels a launcher by what it has, so unsigned `data/` still shows Monet and Projectivy using a service. */
+    @Test fun unverifiedDataStillLabelsServiceLaunchers() = runTest {
+        val file = """{"schema":1,"launchers":[
+            {"package":"com.spocky.projengmenu","name":"Projectivy Launcher","about":"a","accessibility":"4.21"},
+            {"package":"me.efesser.flauncher","name":"FLauncher","about":"b"},
+            {"package":"com.klevico.monet","name":"Monet Launcher","about":"c","accessibility":"1.0.50"}]}""".toByteArray()
+        val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
+        SharedLists.load(lists(tmp.newFolder(), Served(mapOf("index.json" to index(2026110301, file), "launchers.json" to file))), none, fresh = true)
+        assertEquals(DATA_BASE, SharedLists.unverified)
+        assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
+
+        val uses = RECOMMENDED.associate { it.pkg to it.accessibility }
+        assertEquals(mapOf("com.spocky.projengmenu" to true, "me.efesser.flauncher" to false, "com.klevico.monet" to true), uses)
     }
 
     /**
