@@ -51,8 +51,11 @@ private const val TV_HOME = "com.google.android.tvlauncher"
 private const val PROJECTIVY = "com.spocky.projengmenu"
 private const val FLAUNCHER = "me.efesser.flauncher"
 private const val PROJECTIVY_SERVICE = "$PROJECTIVY/.HomeService"
+/** On Fire OS only by its service, which takes the Home key like Projectivy's. */
+private const val MONET = "com.klevico.monet"
+private const val MONET_SERVICE = "$MONET/.HomeKeyService"
 
-/** A TV with its own launcher and two the user added; Projectivy has an accessibility service. */
+/** A TV with its own launcher and two the user added; Projectivy has an accessibility service, and so does Monet. */
 private class LauncherTv(var home: String?) : AdbSession {
     val activities = mapOf(TV_HOME to "$TV_HOME/.MainActivity", PROJECTIVY to "$PROJECTIVY/.Main", FLAUNCHER to "$FLAUNCHER/.MainActivity")
     val enabled = activities.keys.toMutableSet()
@@ -75,7 +78,7 @@ private class LauncherTv(var home: String?) : AdbSession {
             command.startsWith("pm list packages -3") -> ok(user.joinToString("") { "package:$it\n" })
             command.startsWith("pm disable-user") -> ok("Package $pkg new state: disabled-user\n").also { enabled -= pkg }
             command.startsWith("pm enable") -> ok("Package $pkg new state: enabled\n").also { enabled += pkg }
-            command.startsWith("cmd package query-services") -> ok("$PROJECTIVY_SERVICE\n")
+            command.startsWith("cmd package query-services") -> ok("$PROJECTIVY_SERVICE\n$MONET_SERVICE\n")
             command.startsWith("dumpsys package ") -> command.removePrefix("dumpsys package ").let { p ->
                 ok(versions[p]?.let { "Packages:\n  Package [$p] (1a2b3c):\n    versionCode=1 minSdk=21 targetSdk=34\n    versionName=$it\n" }.orEmpty())
             }
@@ -268,8 +271,8 @@ class HomeSwitchTest {
     }
 
     private suspend fun fire(tv: LauncherTv, withService: Boolean = true): HistoryEntry =
-        fireServiceHome(Actions(tv), PROJECTIVY, withService, { it }) { previous ->
-            book.record("tv", 0, Action.Home, PROJECTIVY, PROJECTIVY, Action.Enable.takeIf { previous.isNotEmpty() }, previous = previous)
+        fireServiceHome(Actions(tv), PROJECTIVY, withService, listOf(PROJECTIVY, MONET), { it }) { previous ->
+            book.record("tv", 0, Action.Home, PROJECTIVY, PROJECTIVY, Action.Enable.takeIf { "service" in previous }, previous = previous)
         }
 
     @Test fun onFireOsOnlyTheServiceGoesOnAndItsUndoIsTheServiceAlone() = runTest {
@@ -286,6 +289,18 @@ class HomeSwitchTest {
         assertEquals(Action.Enable, entry.undo)
         // Then Projectivy opens, so the TV shows it without a Home press.
         assertTrue(tv.ran.toString(), tv.ran.any { it.startsWith("am start") && it.contains(tv.activities.getValue(PROJECTIVY)) })
+    }
+
+    @Test fun onFireOsTheOtherLaunchersServiceGoesOffBeforeTheNewOneOpens() = runTest {
+        // Monet's service still on would take the Home key too, and either could win.
+        val tv = LauncherTv(home = TV_HOME).apply { services += MONET_SERVICE }
+        val entry = fire(tv)
+        assertEquals(listOf(PROJECTIVY_SERVICE), tv.services)
+        assertEquals(mapOf("service" to PROJECTIVY_SERVICE, "fromService" to MONET_SERVICE), entry.previous)
+        assertEquals(Action.Enable, entry.undo)
+        val off = tv.ran.indexOfLast { it.startsWith("settings put secure enabled_accessibility_services") }
+        val opened = tv.ran.indexOfFirst { it.startsWith("am start") && it.contains(tv.activities.getValue(PROJECTIVY)) }
+        assertTrue(tv.ran.toString(), off >= 0 && opened > off)
     }
 
     @Test fun onFireOsAServiceAlreadyOnChangesNothing() = runTest {
