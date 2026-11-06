@@ -17,10 +17,16 @@ fails CI until this file has a section for its version.
 
 ## 0.16.0 — 2026-11-06
 
+- **New:** The Remote can type Cyrillic, Arabic and other non-Latin text. [#371](../../pull/371)
+- **New:** The Remote has an Apps key that opens any app on the TV. [#373](../../pull/373)
+- **New:** AT4K and Monet launchers, with icons, and direct downloads for AT4K and FLauncher. [#367](../../pull/367)
 - **Improved:** On Fire TV, the Android card shows the Fire OS version, and Check for updates opens About or Fire TV Settings with directions to the update screen. [#365](../../pull/365)
 - **Improved:** The Remote now has its own button in the middle of the bottom bar on every tab. [#368](../../pull/368)
 - **Improved:** "Get a better home screen" moved from Apps to the TV page. [#368](../../pull/368)
+- **Improved:** One tap on the Remote's volume keys moves the volume in a single jump, without the lag of several key presses. [#372](../../pull/372)
+- **Improved:** The home screen suggestion now appears after the TV is debloated, not on first connect. [#374](../../pull/374)
 - **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
+- **Fixed:** Apps › Open on TV now opens any app that's on and has an icon. [#373](../../pull/373)
 
 ## 0.15.1 — 2026-11-06
 
