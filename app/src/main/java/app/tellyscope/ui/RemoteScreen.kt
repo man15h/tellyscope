@@ -39,6 +39,11 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -277,6 +282,7 @@ fun RemoteScreen(
     val short = LocalConfiguration.current.screenHeightDp < SHORT_PHONE_DP
     val cap = RemoteButtons.cap(LocalConfiguration.current.screenWidthDp)
     var editing by rememberSaveable { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf(false) }
     // The text box shows only once the keyboard key opens it, and goes again with the phone's keyboard.
     var keyboard by rememberSaveable { mutableStateOf(false) }
     var keyboardShown by remember { mutableStateOf(false) }
@@ -288,6 +294,9 @@ fun RemoteScreen(
     val talkBack = talkBackOn()
     val pad = state.touchpad && !talkBack
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
+    val services = SharedLists.state.collectAsState().value.streaming
+    val streamingApps = remember(state.device.apps, services) { RemoteButtons.streamingApps(state.device.apps, services) }
+    if (picking) OpenAppSheet(name(device), streamingApps, services, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
 
     ModalBottomSheet(
         onDismissRequest = actions.back,
@@ -402,7 +411,7 @@ fun RemoteScreen(
                 if (!typing) {
                     Spacer(Modifier.height(if (tight) 8.dp else 16.dp))
                     CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) {
-                        ButtonsRow(RemoteButtons.shown(state.device.dock, SharedLists.state.collectAsState().value.streaming, cap), state.device.apps, live, actions, onEdit = { editing = true })
+                        ButtonsRow(RemoteButtons.shown(state.device.dock, services, cap), state.device.apps, live, actions, appsKey = streamingApps.isNotEmpty(), onEdit = { editing = true }, onApps = { picking = true })
                     }
                 }
             }
@@ -903,17 +912,106 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some.
- * A tap opens the service on the TV; holding one opens the picker, as ⋮ › Remote buttons does.
+ * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some,
+ * then the Apps key while the TV has a streaming app. A tap opens the service on the TV; holding one opens
+ * the picker, as ⋮ › Remote buttons does.
  */
 @Composable
-private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onEdit: () -> Unit) {
+private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, appsKey: Boolean, onEdit: () -> Unit, onApps: () -> Unit) {
     val installed = remember(apps) { apps.mapTo(HashSet()) { it.packageName } }
     Row(Modifier.fillMaxWidth().height(48.dp).alpha(if (enabled) 1f else 0.38f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (buttons.isEmpty()) AddButtons(enabled, onEdit, Modifier.weight(1f))
         buttons.forEach { s ->
             key(s.name) {
                 ServiceButton(s, enabled, onOpen = { actions.launch(Docked(s.packageOn(installed), s.name)) }, onHold = onEdit, Modifier.weight(1f))
+            }
+        }
+        if (appsKey) AppsKey(enabled, onApps)
+    }
+}
+
+/** The key at the end of the row: a tonal pill, 40 dp tall in a 48 dp tall target, that lists the streaming apps to open. */
+@Composable
+private fun AppsKey(enabled: Boolean, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalKeyHaptics.current
+    Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+        Surface(
+            onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onClick() },
+            enabled = enabled,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.size(width = 56.dp, height = 40.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(TabIcons.Apps, contentDescription = Copy.OPEN_AN_APP.resolve(), Modifier.size(24.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Open an app: the TV's streaming apps ([RemoteButtons.streamingApps]), A to Z, with a search box, each
+ * on its brand pill from [services]. A tap opens it on the TV the way a Remote button does, and closes the sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OpenAppSheet(tv: String, all: List<AppInfo>, services: List<StreamingService>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val q = query.trim()
+    val shown = remember(all, q) { all.filter { q.isEmpty() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) } }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
+            Text(Copy.OPEN_AN_APP.resolve(), style = MaterialTheme.typography.titleLarge)
+            Text(Copy.openAnAppHint(tv).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+        ) {
+            Row(Modifier.padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        LazyColumn(Modifier.padding(bottom = 16.dp)) {
+            if (shown.isEmpty() && q.isNotEmpty()) item {
+                Text(
+                    stringResource(R.string.device_nothing_matches, q),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                )
+            }
+            items(shown, key = { it.packageName }) { app ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(SHEET_ROW)
+                        .clickable(onClickLabel = Copy.OPEN_ON_TV.resolve()) { onOpen(app) }
+                        .padding(horizontal = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    services.firstOrNull { app.packageName in it.packages }
+                        ?.let { ServicePill(it, Modifier.width(SHEET_PILL).height(40.dp)) }
+                        ?: AppIcon(app)
+                    Spacer(Modifier.width(16.dp))
+                    Text(app.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
         }
     }
@@ -1076,6 +1174,9 @@ private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setD
 
 private val SHEET_ROW = 56.dp
 
+/** A pill's width on the picker and the Open an app sheet: the widest logo (71 dp) keeps 12 dp either side. */
+private val SHEET_PILL = 96.dp
+
 /** A row of the picker: its tick, its pill and its name, and [trailing] for a ticked one's drag handle. */
 @Composable
 private fun ServiceRow(
@@ -1096,7 +1197,7 @@ private fun ServiceRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked, onCheckedChange = null, enabled = enabled, modifier = Modifier.size(48.dp))
-        ServicePill(s, Modifier.width(80.dp).height(40.dp))
+        ServicePill(s, Modifier.width(SHEET_PILL).height(40.dp))
         Spacer(Modifier.width(16.dp))
         Text(s.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         trailing()

@@ -22,6 +22,7 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -204,7 +205,7 @@ data class ResetUi(
 data class LauncherFlow(val step: Step = Step.Pick, val pkg: String = RECOMMENDED.first().pkg, val fire: FireInstall? = null) {
     enum class Step { Pick, Waiting, NoStore, Left, Installed }
 
-    /** Fire OS: its launcher alone ([fireLauncher]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
+    /** Fire OS: its launchers alone ([fireLaunchers]), with no Play Store; not Download directly beside the Store ([FireInstall.store]). */
     val fireOs get() = fire != null && !fire.store
 }
 
@@ -982,16 +983,28 @@ class TellyscopeViewModel(
     /** Opens Install a home screen on its picker; not before the launcher list has been downloaded once. */
     fun openLauncherFlow() {
         val id = _state.value.selectedId ?: return
-        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, _state.value.device.apps) } == true }
+        val apps = _state.value.device.apps
+        // The picker opens on the launcher Home opens now, when it has a row there.
+        val home = apps.firstOrNull { it.home }?.packageName
+        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, apps) } == true }
         if (fire != null) {
-            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = unverified()))) }
+            val pkg = fireLaunchers().firstOrNull { it.pkg == home }?.pkg ?: fire.pkg
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = pkg, fire = FireInstall(list = unverified()))) }
             return
         }
         if (RECOMMENDED.isEmpty()) {
             _notice.value = Copy.NO_LAUNCHER_LIST
             return
         }
-        updateDevice(id) { it.copy(launcher = LauncherFlow()) }
+        val listed = home?.takeIf { h -> RECOMMENDED.any { it.pkg == h } || otherLaunchers(apps).any { it.packageName == h } }
+        updateDevice(id) { it.copy(launcher = listed?.let { pkg -> LauncherFlow(pkg = pkg) } ?: LauncherFlow()) }
+    }
+
+    /** Fire OS's picker, before anything started: [pkg], one of [fireLaunchers], is the one Install acts on. */
+    fun chooseFireLauncher(pkg: String) {
+        val id = _state.value.selectedId ?: return
+        if (fireLaunchers().none { it.pkg == pkg }) return
+        updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> if (l.fireOs && l.fire?.step == null) l.copy(pkg = pkg) else l }) }
     }
 
     private fun setFire(id: String, f: (FireInstall) -> FireInstall) =
@@ -1255,7 +1268,7 @@ class TellyscopeViewModel(
     /** Open in the picker: shows the launcher [pkg] on the TV. The picker stays. */
     fun openLauncher(pkg: String) {
         val label = _state.value.device.apps.firstOrNull { it.packageName == pkg }?.label ?: launcherName(pkg)
-        open(pkg, label)
+        open(pkg, Copy.cantOpen(label))
     }
 
     /** Not now on the installed launcher: where to switch later. */
@@ -1473,6 +1486,9 @@ class TellyscopeViewModel(
         storage?.clearApp()
         setSideload(null)
     }
+
+    /** Open on TV in an app's row, kept in History like the other actions. */
+    fun openApp(pkg: String) = run(pkg, Action.Open)
 
     /** "Open on TV" after a successful install. */
     fun openInstalled() {
@@ -2194,14 +2210,18 @@ class TellyscopeViewModel(
 
     /** Types on the TV. Returns why it can't, or null once it's on its way. */
     fun type(text: String): UiText? {
-        if (!Remote.typeable(text)) return Copy.cantType(text)
+        if (!Remote.sendable(text)) return Copy.cantType(text)
         val id = _state.value.selectedId ?: return null
         viewModelScope.launch {
             keys.withLock {
                 _notice.value = try {
                     if (source.type(id, text)) {
-                        typed[id] = (typed[id] ?: 0) + text.length
+                        // Backspace takes one character, and an emoji is two chars.
+                        typed[id] = (typed[id] ?: 0) + text.codePointCount(0, text.length)
                         null
+                    } else if (!Remote.typeable(text)) {
+                        // Past Latin needs the key helper, which this TV wouldn't run.
+                        Copy.cantType(text)
                     } else {
                         Copy.TYPE_REFUSED
                     }
@@ -2219,7 +2239,7 @@ class TellyscopeViewModel(
     fun checkUpdates() {
         val id = _state.value.selectedId ?: return
         viewModelScope.launch {
-            val ok = try {
+            val opened = try {
                 source.openUpdates(id)
             } catch (e: CancellationException) {
                 throw e
@@ -2227,7 +2247,12 @@ class TellyscopeViewModel(
                 _notice.value = Copy.REMOTE_LOST
                 return@launch
             }
-            _notice.value = if (ok) Copy.UPDATES_OPENED else Copy.NO_UPDATE_SCREEN
+            _notice.value = when (opened) {
+                UpdateScreen.UPDATES -> Copy.UPDATES_OPENED
+                UpdateScreen.FIRE_SETTINGS -> Copy.FIRE_SETTINGS_OPENED
+                UpdateScreen.FIRE_NONE -> Copy.NO_FIRE_UPDATE_SCREEN
+                UpdateScreen.NONE -> Copy.NO_UPDATE_SCREEN
+            }
         }
     }
 
@@ -2283,10 +2308,16 @@ class TellyscopeViewModel(
             _notice.value = Copy.notOnTv(app.label)
             return
         }
-        open(app.packageName, app.label)
+        open(app.packageName, Copy.cantOpen(app.label))
     }
 
-    private fun open(pkg: String, label: String) {
+    /** The Apps tab's store row: opens [name], the TV's app store, without a history entry, and says whether it did. */
+    fun openStore(pkg: String, name: String) = open(pkg, Copy.storeCantOpen(name), opened = Copy.storeOpened(name))
+
+    /** The store row's Turn on: the same change, kept in History, as Turn on in the store's own row. */
+    fun turnOnStore(pkg: String) = run(pkg, Action.Enable)
+
+    private fun open(pkg: String, failed: UiText, opened: UiText? = null) {
         val id = _state.value.selectedId ?: return
         viewModelScope.launch {
             val ok = try {
@@ -2297,7 +2328,7 @@ class TellyscopeViewModel(
                 _notice.value = Copy.REMOTE_LOST
                 return@launch
             }
-            if (!ok) _notice.value = Copy.cantOpen(label)
+            if (!ok) _notice.value = failed else opened?.let { _notice.value = it }
         }
     }
 

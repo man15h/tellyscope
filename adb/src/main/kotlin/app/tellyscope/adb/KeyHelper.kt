@@ -30,8 +30,15 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
      */
     suspend fun press(code: Int): Boolean? = send("$code")
 
-    /** Types [text], already checked with [Remote.typeable]; answers like [press]. */
+    /** Types [text], already checked with [Remote.sendable]; answers like [press]. */
     suspend fun type(text: String): Boolean? = send("t$text")
+
+    /**
+     * Moves the media volume [delta] steps in one set, or by one Volume key where a set can't move
+     * it (already at the end, or volume held at full: a fixed output or HDMI-CEC). False when the
+     * helper couldn't read or set the volume at all, and the keys should go instead.
+     */
+    suspend fun volume(delta: Int): Boolean? = send("v$delta")
 
     /** Turns the TV's picture off or on; the TV stays awake and connected. Answers like [press]. */
     suspend fun screen(on: Boolean): Boolean? = send(if (on) "p2" else "p0")

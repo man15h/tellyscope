@@ -35,11 +35,9 @@
     <string name="copy_built_in">Integrado en la TV</string>
     <string name="copy_built_in_off">Integrado en la TV · desactivado</string>
     <string name="copy_current">Actual</string>
-    <string name="copy_keeps_home">Mantiene Inicio con su servicio de accesibilidad</string>
     <string name="copy_make_home">Usar como inicio</string>
-    <string name="copy_get_launcher">Conseguir otro launcher</string>
-    <string name="copy_get_launcher_text">Instala uno desde Play Store. Puedes volver al anterior cuando quieras.</string>
-    <string name="copy_get_fire_launcher_text">Instala %1$s. Puedes volver al anterior cuando quieras.</string>
+    <string name="copy_change_home">Cambiar pantalla de inicio</string>
+    <string name="copy_change_home_text">Instala otra de Selección del editor o cambia a una que ya esté en la TV.</string>
     <string name="copy_home_settings">Ajustes de la pantalla de inicio</string>
     <string name="copy_make_home_title">¿Usar %1$s como pantalla de inicio?</string>
     <string name="copy_explain_replace_opens">Inicio abre %1$s. Para que la TV no vuelva al anterior por su cuenta, Tellyscope desactiva %2$s, el launcher integrado de la TV.</string>
@@ -76,11 +74,13 @@
     <string name="copy_choose_home_text">Cada una reemplaza la pantalla de inicio de la TV. Tellyscope la abre en Play Store en la TV; la instalas con el control remoto.</string>
     <string name="copy_can_download">Algunas también se pueden descargar directamente.</string>
     <string name="copy_no_launcher_list">No se pudo cargar la lista de pantallas de inicio. Revisa la conexión a internet del teléfono y vuelve a intentarlo.</string>
-    <string name="copy_recommended">Recomendado</string>
+    <string name="copy_recommended">Selección del editor</string>
     <string name="copy_on_this_tv">En esta TV</string>
     <string name="copy_installed">Instalado</string>
-    <string name="copy_home_now">Inicio actual</string>
+    <string name="copy_install">Instalar</string>
     <string name="copy_open">Abrir</string>
+    <string name="copy_home_screen_of">Pantalla de inicio de %1$s</string>
+    <string name="copy_picture_failed">No se pudo cargar la imagen</string>
     <string name="copy_uses_service">Usa un servicio de accesibilidad</string>
     <string name="copy_no_service">Código abierto · sin servicio de accesibilidad</string>
     <string name="copy_other_launcher">¿Prefieres otro launcher? Instálalo desde Play Store en tu TV y vuelve aquí. Aparecerá en %1$s.</string>
@@ -312,6 +312,10 @@
     <string name="copy_remote_lost">Se perdió la conexión con la TV. Comprueba que siga encendida y conectada.</string>
     <string name="copy_no_update_screen">Esta TV no tiene una pantalla de actualizaciones que Tellyscope pueda abrir. Búscala en sus Ajustes, en Sistema o Información.</string>
     <string name="copy_updates_opened">Se abrió la pantalla de actualizaciones en la TV. Mira la TV para buscar actualizaciones.</string>
+    <string name="copy_store_opened">Se abrió %1$s en la TV.</string>
+    <string name="copy_store_cant_open">La TV no pudo abrir %1$s.</string>
+    <string name="copy_fire_settings_opened">Se abrieron los Ajustes en la TV. Ve a Mi Fire TV (Dispositivo y software en las TV), luego a Acerca de y luego a Buscar actualizaciones.</string>
+    <string name="copy_no_fire_update_screen">Tellyscope no puede abrir los Ajustes en esta TV. En la TV, ve a Ajustes, luego a Mi Fire TV (Dispositivo y software en las TV), luego a Acerca de y luego a Buscar actualizaciones.</string>
     <string name="copy_reboot_refused">La TV no aceptó reiniciarse. Usa su propio control remoto o su botón de encendido.</string>
     <string name="copy_reboot_ignored">La TV no se reinició. Usa su propio control remoto o su botón de encendido.</string>
     <string name="copy_remote_offline_wake">vuelve a funcionar cuando se reconecte</string>
@@ -345,6 +349,8 @@
     <string name="copy_restart_lost">Sigue sin poder conectarse con %1$s</string>
     <string name="copy_back_online">De nuevo en línea. %1$s se reconectó.</string>
     <string name="copy_remote_buttons">Botones del control remoto</string>
+    <string name="copy_open_an_app">Abrir una app</string>
+    <string name="copy_open_an_app_hint">Apps de streaming en %1$s. Toca una para abrirla.</string>
     <string name="copy_more">Más opciones</string>
     <string name="copy_buttons_hint">Elige hasta %1$d. Arrastra para ordenarlos. Para elegir otro, desmarca uno primero.</string>
     <string name="copy_not_on_tv">%1$s no está en esta TV. Instálala desde Play Store en la TV.</string>
@@ -740,7 +746,7 @@
     <string name="tabs_apps">Apps</string>
     <string name="tabs_files">Archivos</string>
     <string name="tabs_tweaks">Mejoras</string>
-    <string name="tabs_remote">Control remoto</string>
+    <string name="tabs_remote">Control</string>
     <string name="tabs_install_app">Instalar app</string>
     <string name="tabs_upload_files">Subir archivos</string>
     <string name="tabs_last_visit">la última visita</string>
@@ -786,6 +792,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">Actualizado: %1$s</string>
     <string name="tabs_check_updates">Buscar actualizaciones</string>
+    <string name="tabs_store_sub">Consigue apps y sus actualizaciones</string>
+    <string name="tabs_store_off">Desactivada en esta TV</string>
     <string name="lists_apps_on_tv">Apps de esta TV</string>
     <string name="lists_which_tv">¿Qué TV es esta?</string>
     <string name="lists_debloat">Limpiar</string>
@@ -1004,6 +1012,8 @@
     <string name="device_nothing_matches">Nada coincide con \"%1$s\".</string>
     <string name="device_app_disabled">Desactivada</string>
     <string name="device_app_running">En ejecución</string>
+    <string name="device_app_background">En segundo plano</string>
+    <string name="device_app_on_screen">En pantalla</string>
     <string name="device_app_not_running">No se está ejecutando</string>
     <string name="device_app_protected">Protegida: %1$s</string>
     <string name="guide_brand_other">Otra</string>

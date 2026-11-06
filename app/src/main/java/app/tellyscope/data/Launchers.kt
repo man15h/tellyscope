@@ -23,7 +23,13 @@ import kotlinx.coroutines.flow.update
  * Installing it from an APK rather than the Play Store: [signers] are the SHA-256s of the only
  * certificates it may be signed with (empty: never from an APK), [maxBytes] is past any real copy of
  * it, and [releases] is its developer's GitHub releases page, the only place the GitHub build
- * downloads it from. [fireOs]: the launcher Fire OS installs, having no Play Store.
+ * downloads it from, and [apk] the asset to take from a release that carries more than one APK. [fireOs]: a
+ * launcher Fire OS offers, having no Play Store.
+ *
+ * [icon] and [screenshot] are images in `data/images/` and their sha256s ([SharedLists.image]): its app icon, shown on
+ * every row, and its home screen as it looks on a TV in use, shown on the chosen row. Their hashes sit here rather than
+ * in the index, which covers them through this file's.
+ * [credit] says where the screenshot comes from when it isn't ours, under it.
  */
 data class KnownLauncher(
     val pkg: String,
@@ -34,6 +40,10 @@ data class KnownLauncher(
     val releases: String? = null,
     val fireOs: Boolean = false,
     val accessibility: String? = null,
+    val apk: String? = null,
+    val icon: ListFile? = null,
+    val screenshot: ListFile? = null,
+    val credit: String? = null,
 ) {
     /** It, signed only by its developer: [signers] are the SHA-256s of an APK's certificates. */
     fun accepts(packageName: String, signers: Set<String>) =
@@ -45,6 +55,13 @@ private const val MAX_MB = 256L
 private val SIGNER = Regex("[0-9a-f]{64}")
 private val CHECKED = Regex("[0-9][0-9A-Za-z.+-]{0,31}")
 // "." and ".." are not repo names; they would walk the URL out of the repo.
+private val APK_NAME = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,99}\\.apk")
+/** An image's name in `data/images/`, without `.png`: the launcher's name in lowercase, like `projectivy`. */
+internal val IMAGE_NAME = Regex("[a-z0-9][a-z0-9-]{0,39}")
+
+/** [key] as an image in `data/images/` with its sha256, else null: an `https` address an older list used reads as none. */
+private fun org.json.JSONObject.imageFile(key: String): ListFile? =
+    optJSONObject(key)?.let { ListFile(it.optString("file"), it.optString("sha256")) }?.takeIf { IMAGE_FILE.matches(it.file) && SHA256.matches(it.sha256) }
 private val RELEASES_PAGE = Regex("https://github\\.com/[A-Za-z0-9-]+/(?!\\.\\.?/)[A-Za-z0-9._-]+/releases")
 
 /**
@@ -82,6 +99,10 @@ fun parseLaunchers(text: String): List<KnownLauncher> = try {
             releases = l.optStringOrNull("releases")?.takeIf(RELEASES_PAGE::matches),
             fireOs = l.optBoolean("fire_os"),
             accessibility = (l.opt("accessibility") as? String)?.takeIf(CHECKED::matches),
+            apk = l.optStringOrNull("apk")?.takeIf(APK_NAME::matches),
+            icon = l.imageFile("icon"),
+            screenshot = l.imageFile("screenshot"),
+            credit = l.optStringOrNull("credit")?.let { plainText(it, NAME_MAX) }?.ifEmpty { null },
         ).takeIf { PACKAGE.matches(it.pkg) && it.name.isNotEmpty() }
     }
 } catch (_: org.json.JSONException) {
@@ -180,7 +201,7 @@ object SharedLists {
         this.data = data
         source = lists
         if (fresh) reset(_state.value.copy(protected = emptyMap()))
-        apply(data.cachedVerified(), data::cachedShared, lists::cachedShared)
+        apply(data.cachedSnapshot(), lists.cachedSnapshot())
         refresh()
     }
 
@@ -188,22 +209,26 @@ object SharedLists {
     suspend fun refresh() {
         val data = data ?: return
         val source = source ?: return
-        apply(data.verified(), data::shared, source::shared)
+        apply(data.snapshot(), source.snapshot())
     }
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
     suspend fun logo(name: String): ByteArray? = source?.logo(name)
 
+    /** A launcher's icon or screenshot from `data/images/` ([KnownLauncher.icon], [KnownLauncher.screenshot]); null until it can be had. */
+    suspend fun image(file: ListFile): ByteArray? = data?.image(file)
+
     /**
-     * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out
-     * first and set in the same update, so new launchers never sit behind an old [unverified].
+     * Launchers, labels and streaming from [data]; only the protected list from [source]. Whether [data] passes comes from
+     * the same index as its lists, is worked out first and set in the same update, so new launchers never sit behind an old [unverified].
      */
-    private suspend fun apply(verified: Boolean, data: suspend (String) -> String?, source: suspend (String) -> String?) {
+    private suspend fun apply(data: DeviceLists.Snapshot, source: DeviceLists.Snapshot) {
         val base = this.data?.base
-        val launchers = data("launchers")?.let(::parseLaunchers)
-        val labels = data("labels")?.let(::parseLabels)
-        val streaming = data("streaming")?.let(::parseStreaming)
-        val protected = source("protected")?.let(::parseProtected)
+        val verified = data.verified()
+        val launchers = data.shared("launchers")?.let(::parseLaunchers)
+        val labels = data.shared("labels")?.let(::parseLabels)
+        val streaming = data.shared("streaming")?.let(::parseStreaming)
+        val protected = source.shared("protected")?.let(::parseProtected)
         _state.update { now ->
             now.copy(
                 launchers = launchers?.ifEmpty { null } ?: now.launchers,

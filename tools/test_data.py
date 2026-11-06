@@ -117,6 +117,44 @@ class Signing(unittest.TestCase):
         data.index()
         self.assertIsNone(data.split(self.index().read_bytes())[1])
 
+    def test_images_stay_out_of_the_index(self):
+        for name in data.LISTS:
+            (self.root / "data" / f"{name}.json").write_text("[]\n")
+        (self.root / "data" / "images").mkdir()
+        (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
+        self.assertEqual(list(data.build_index()), ["schema", "version", "lists"])
+
+    def test_a_screenshot_the_app_would_not_show_fails_check(self):
+        (self.root / "data" / "images").mkdir()
+        (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
+        sha = data.hashlib.sha256(b"png").hexdigest()
+        shots = {
+            "a.good": {"file": "images/monet.png", "sha256": sha},
+            "a.name": {"file": "images/Monet-Home.png", "sha256": sha},
+            "a.away": {"file": "../monet.png", "sha256": sha},
+            "a.old": "monet",
+            "a.gone": {"file": "images/at4k.png", "sha256": sha},
+            "a.hash": {"file": "images/monet.png", "sha256": "0" * 64},
+        }
+        launchers = [{"package": p, "name": p, "screenshot": s} for p, s in shots.items()] + [{"package": "a.none", "name": "None"}]
+        (self.root / "data" / "launchers.json").write_text(data.json.dumps({"schema": 1, "launchers": launchers}))
+        bad = [e.split("'")[0].split(": ")[1] for e in data.bad_images()]
+        self.assertEqual(bad, ["a.name", "a.away", "a.old", "a.gone", "a.hash"])
+
+    def test_an_icon_the_app_would_not_show_fails_check(self):
+        (self.root / "data" / "images").mkdir()
+        (self.root / "data" / "images" / "monet-icon.png").write_bytes(b"png")
+        sha = data.hashlib.sha256(b"png").hexdigest()
+        icons = {
+            "a.good": {"file": "images/monet-icon.png", "sha256": sha},
+            "a.url": "https://example.com/monet.png",
+            "a.hash": {"file": "images/monet-icon.png", "sha256": "0" * 64},
+        }
+        launchers = [{"package": p, "name": p, "icon": i} for p, i in icons.items()]
+        (self.root / "data" / "launchers.json").write_text(data.json.dumps({"schema": 1, "launchers": launchers}))
+        bad = [e.split(": ")[1] for e in data.bad_images()]
+        self.assertEqual(bad, ["a.url's icon", "a.hash's icon"])
+
     def test_a_key_that_is_not_p256_is_caught(self):
         (self.root / "keys" / "backup.pub").write_text("bm90IGEga2V5\n")
         self.assertIn("not a base64 P-256 public key", "\n".join(data.public_keys()[1]))

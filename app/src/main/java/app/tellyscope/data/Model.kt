@@ -58,6 +58,8 @@ data class Device(
      * (state stays [DeviceState.NotAllowed]). Null otherwise; cleared by a reconnect.
      */
     val loggedOutAt: Long? = null,
+    /** Fire OS's version, like `8.1.4.9`, shown instead of [android]; null on anything else. */
+    val fireOs: String? = null,
 )
 
 /**
@@ -71,6 +73,7 @@ data class LastKnown(
     val softwareMonth: YearMonth? = null,
     val storageUsedGb: Double? = null,
     val storageTotalGb: Double? = null,
+    val fireOs: String? = null,
 )
 
 sealed interface ConnectResult {
@@ -102,6 +105,8 @@ data class Snapshot(
     val uptimeSeconds: Long,
     val screenOn: Boolean?,
     val procs: List<Proc>,
+    /** The package on screen, read only on Apps; null when nothing is or it wasn't read. */
+    val onScreen: String? = null,
     /** Whole-TV network traffic, in and out. */
     val netBytesPerSec: Long? = null,
     /** When the TV's software was last updated. */
@@ -172,7 +177,10 @@ data class AppInfo(
     val tvHome: Boolean = true,
     /** Off, and the TV turned it off itself rather than the user: Android won't let ADB turn it back on. */
     val disabledByTv: Boolean = false,
-)
+) {
+    /** On, and has a launcher icon or is a launcher (opened through HOME): its row's Open and the Remote's app list offer it. */
+    val opens: Boolean get() = enabled && (launchable || answersHome || builtInLauncher)
+}
 
 /** Where an install from the Play Store stands, read every few seconds while the TV shows the Store. */
 enum class StoreState { Installed, InStore, Elsewhere }

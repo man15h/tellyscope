@@ -17,6 +17,7 @@ import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
+import app.tellyscope.adb.UpdateScreen
 import java.io.File
 import java.io.IOException
 import java.time.YearMonth
@@ -175,6 +176,8 @@ class FakeDeviceSource(
             uptimeSeconds = 3 * 86_400L + 4 * 3_600L,
             screenOn = true,
             procs = procs,
+            // Home is on screen, so every other running app is in the background.
+            onScreen = "com.spocky.projengmenu",
             netBytesPerSec = rx + 200_000,
             softwareMonth = YearMonth.of(2023, 5),
             // Four cores around the average; apps and system add up to it, as on a real TV.
@@ -388,9 +391,9 @@ class FakeDeviceSource(
         return true
     }
 
-    override suspend fun openUpdates(deviceId: String): Boolean {
+    override suspend fun openUpdates(deviceId: String): UpdateScreen {
         delay(300)
-        return true
+        return UpdateScreen.UPDATES
     }
 
     override suspend fun launch(deviceId: String, packageName: String): Boolean {

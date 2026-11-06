@@ -35,11 +35,9 @@
     <string name="copy_built_in">TV में पहले से मौजूद</string>
     <string name="copy_built_in_off">TV में पहले से मौजूद · बंद है</string>
     <string name="copy_current">मौजूदा</string>
-    <string name="copy_keeps_home">अपनी सुलभता सेवा से Home को बनाए रखता है</string>
     <string name="copy_make_home">Home बनाएं</string>
-    <string name="copy_get_launcher">दूसरा लॉन्चर पाएं</string>
-    <string name="copy_get_launcher_text">Play Store से कोई लॉन्चर इंस्टॉल करें. कभी भी वापस बदल सकते हैं।</string>
-    <string name="copy_get_fire_launcher_text">%1$s इंस्टॉल करें। कभी भी वापस बदल सकते हैं।</string>
+    <string name="copy_change_home">होम स्क्रीन बदलें</string>
+    <string name="copy_change_home_text">संपादक की पसंद से दूसरा इंस्टॉल करें, या TV पर पहले से मौजूद किसी पर स्विच करें।</string>
     <string name="copy_home_settings">होम स्क्रीन सेटिंग्स</string>
     <string name="copy_make_home_title">%1$s को होम स्क्रीन बनाएं?</string>
     <string name="copy_explain_replace_opens">Home दबाने पर %1$s खुलेगा। TV अपने-आप वापस न बदल जाए, इसके लिए Tellyscope TV का पहले से मौजूद लॉन्चर %2$s बंद कर देता है।</string>
@@ -76,11 +74,13 @@
     <string name="copy_choose_home_text">हर एक TV की होम स्क्रीन की जगह ले लेता है। Tellyscope इसे TV पर Play Store में खोलता है; आप रिमोट से इसे इंस्टॉल करते हैं।</string>
     <string name="copy_can_download">कुछ को सीधे डाउनलोड भी किया जा सकता है।</string>
     <string name="copy_no_launcher_list">होम स्क्रीन की सूची लोड नहीं हो सकी। फ़ोन का इंटरनेट देखें और फिर से कोशिश करें।</string>
-    <string name="copy_recommended">सुझाया गया</string>
+    <string name="copy_recommended">संपादक की पसंद</string>
     <string name="copy_on_this_tv">इस TV पर</string>
     <string name="copy_installed">इंस्टॉल है</string>
-    <string name="copy_home_now">अभी Home है</string>
+    <string name="copy_install">इंस्टॉल करें</string>
     <string name="copy_open">खोलें</string>
+    <string name="copy_home_screen_of">%1$s की होम स्क्रीन</string>
+    <string name="copy_picture_failed">तस्वीर लोड नहीं हो सकी</string>
     <string name="copy_uses_service">सुलभता सेवा का इस्तेमाल करता है</string>
     <string name="copy_no_service">ओपन सोर्स · कोई सुलभता सेवा नहीं</string>
     <string name="copy_other_launcher">कोई दूसरा लॉन्चर चाहिए? उसे अपने TV पर Play Store से इंस्टॉल करें, फिर यहां वापस आएं। वह %1$s में दिखेगा।</string>
@@ -303,6 +303,10 @@
     <string name="copy_remote_lost">TV से कनेक्शन टूट गया। देखें कि वह अब भी चालू और कनेक्ट है।</string>
     <string name="copy_no_update_screen">इस TV में ऐसी कोई अपडेट स्क्रीन नहीं है जिसे Tellyscope खोल सके। TV की सेटिंग्स में, सिस्टम या जानकारी के अंदर देखें।</string>
     <string name="copy_updates_opened">TV पर अपडेट स्क्रीन खोल दी गई है। अपडेट देखने के लिए TV पर देखें।</string>
+    <string name="copy_store_opened">TV पर %1$s खोल दिया गया है।</string>
+    <string name="copy_store_cant_open">TV, %1$s को खोल नहीं सका।</string>
+    <string name="copy_fire_settings_opened">TV पर सेटिंग्स खोल दी गई हैं। My Fire TV (TV पर Device &amp; Software) पर जाएँ, फिर About, फिर Check for updates।</string>
+    <string name="copy_no_fire_update_screen">Tellyscope इस TV पर सेटिंग्स नहीं खोल सकता। TV पर Settings में जाएँ, फिर My Fire TV (TV पर Device &amp; Software), फिर About, फिर Check for updates।</string>
     <string name="copy_reboot_refused">TV ने रीस्टार्ट करने से मना कर दिया। इसके बजाय TV का अपना रिमोट या पावर बटन इस्तेमाल करें।</string>
     <string name="copy_reboot_ignored">TV रीस्टार्ट नहीं हुआ। इसके बजाय TV का अपना रिमोट या पावर बटन इस्तेमाल करें।</string>
     <string name="copy_remote_offline_wake">दोबारा कनेक्ट होने पर फिर से काम करेगा</string>
@@ -335,6 +339,8 @@
     <string name="copy_restart_lost">%1$s से अब भी संपर्क नहीं हो पा रहा</string>
     <string name="copy_back_online">फिर से ऑनलाइन। %1$s दोबारा कनेक्ट हो गया।</string>
     <string name="copy_remote_buttons">रिमोट बटन</string>
+    <string name="copy_open_an_app">कोई ऐप खोलें</string>
+    <string name="copy_open_an_app_hint">%1$s पर स्ट्रीमिंग ऐप। खोलने के लिए किसी पर टैप करें।</string>
     <string name="copy_more">ज़्यादा विकल्प</string>
     <string name="copy_buttons_hint">ज़्यादा से ज़्यादा %1$d चुनें। क्रम बदलने के लिए खींचें। कोई दूसरा चुनने के लिए पहले किसी एक से टिक हटाएं।</string>
     <string name="copy_not_on_tv">%1$s इस TV पर नहीं है। इसे TV पर Play Store से इंस्टॉल करें।</string>
@@ -744,6 +750,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">%1$s में अपडेट किया गया</string>
     <string name="tabs_check_updates">अपडेट देखें</string>
+    <string name="tabs_store_sub">ऐप्स और ऐप अपडेट पाएँ</string>
+    <string name="tabs_store_off">इस TV पर बंद है</string>
     <string name="lists_apps_on_tv">इस TV के ऐप</string>
     <string name="lists_which_tv">यह कौन सा TV है?</string>
     <string name="lists_debloat">डीब्लोट</string>
@@ -958,6 +966,8 @@
     <string name="device_nothing_matches">\"%1$s\" से कुछ नहीं मिला।</string>
     <string name="device_app_disabled">बंद है</string>
     <string name="device_app_running">चल रहा है</string>
+    <string name="device_app_background">बैकग्राउंड में चल रहा है</string>
+    <string name="device_app_on_screen">स्क्रीन पर</string>
     <string name="device_app_not_running">नहीं चल रहा</string>
     <string name="device_app_protected">सुरक्षित: %1$s</string>
     <string name="guide_brand_other">अन्य</string>

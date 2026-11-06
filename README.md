@@ -15,14 +15,22 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/man15h/tellyscope"><img src="docs/badges/get-it-on-obtainium.png" alt="Get it on Obtainium" height="60"></a>
 <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=tellyscope&icon=https%3A%2F%2Fraw.githubusercontent.com%2Fman15h%2Ftellyscope%2Fmain%2Fdocs%2Flogo%2Ficon.svg"><img src="docs/badges/get-it-on-orion.png" alt="Get it on Orion Store" height="60"></a>
 
+**Google Play (testing)**
+
+Tellyscope is in closed testing on Google Play. Join the testers group, accept the test, then install it from Play. Play keeps this build updated, so it has no in-app update check, and it doesn't download launchers from GitHub.
+
+<a href="https://play.google.com/store/apps/details?id=app.tellyscope"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
+
+1\. [Join the group](https://groups.google.com/g/tellyscope-testers) → 2. [Accept the test](https://play.google.com/apps/testing/app.tellyscope) → 3. [Install from Play](https://play.google.com/store/apps/details?id=app.tellyscope)
+
 [![Watch the demo](docs/site/demo-thumb.webp)](https://youtu.be/N_PeDw5GiCc)
 
 <table>
   <tr>
     <td width="25%"><img src="docs/screenshots/tv-page.png" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons"></td>
-    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, typing on the TV with a backspace key, and three streaming buttons along the bottom: YouTube, Netflix and Jellyfin"></td>
+    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, a keyboard key for typing on the TV, and along the bottom three streaming buttons, YouTube, Netflix and Jellyfin, then a key to open any app"></td>
     <td width="25%"><img src="docs/screenshots/debloat.png" alt="Debloat: the TV's model on top, then the apps it will turn off, each with its package name"></td>
-    <td width="25%"><img src="docs/screenshots/install.png" alt="Installing Kodi on the TV from an APK on the phone: the dialog says it is not on this TV yet"></td>
+    <td width="25%"><img src="docs/screenshots/install.png" alt="Updating Netflix on the TV from split APKs on the phone: the dialog says it updates the TV's copy from 11.2.0 to 11.3.0 and its settings stay"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your TV at a glance</sub></td>
@@ -32,7 +40,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
   </tr>
   <tr>
     <td><img src="docs/screenshots/send.png" alt="Sending a video from the phone to the TV's Movies folder"></td>
-    <td><img src="docs/screenshots/tweaks.png" alt="Tweaks: the Home screen card with Google TV Home as Current and Get another launcher, then ad-blocking Private DNS on, faster animations and clear caches"></td>
+    <td><img src="docs/screenshots/tweaks.png" alt="Tweaks: the Home screen card with Google TV Home as Current and Change home screen, then ad-blocking Private DNS on, faster animations and clear caches"></td>
     <td><img src="docs/screenshots/home.png" alt="Make Projectivy Launcher the home screen: the confirm says Google TV Home, the TV's built-in launcher, is the only one ever turned off"></td>
     <td><img src="docs/screenshots/this-tv.png" alt="Advanced monitor, This TV: CPU, memory and storage rings, the network's last minute, and the TV's facts"></td>
   </tr>
@@ -66,9 +74,9 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 - **See how it's doing.** Free space, CPU, RAM and network speed, plus what's paired or plugged in. **Advanced monitor** has four tabs: This TV, then CPU, RAM and Network by app, with processes, connections and data used.
 - **Shell.** In Advanced monitor: run any `adb shell` command on the TV. Anything that changes the TV asks first.
 - **Debloat.** Matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv), kept in [tellyscope-devices](../../../tellyscope-devices)) and shows every app it will turn off before it does. Untick anything you use, or a whole group from its heading, then watch each app turn off. No list for your model? Pick from the maker's lists, or by hand.
-- **Apps.** See what's running and what's on the TV. Turn off apps you don't want, turn them back on any time, and uninstall the ones you added yourself.
+- **Apps.** See what's running and what's on the TV. Open or stop any app, turn off the ones the TV came with (and back on any time), and uninstall the ones you added yourself.
 - **Install apps.** From an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone; the picker opens in Downloads and shows only apps. It says first whether it's new, an update or an older version.
-- **A better home screen.** Install Projectivy, FLauncher, AT4K or Dispatch and make it Home. Android TV installs it from the TV's Play Store, or Projectivy can be downloaded directly after a warning. Fire TV has no Play Store, so Tellyscope downloads Projectivy from its developer's GitHub releases. The Play Store build of Tellyscope downloads nothing from GitHub: on Fire TV you download Projectivy in the TV's browser and pick the file. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes. Signatures: see [what the lists can't do](#the-shared-lists).
+- **A better home screen.** Install Projectivy, FLauncher, AT4K or Monet and make it Home. Android TV installs it from the TV's Play Store, or it can be downloaded directly from its developer's GitHub releases after a warning (FLauncher from a community fork that keeps it updated). Fire TV has no Play Store, so Tellyscope downloads Projectivy from its developer's GitHub releases. The Play Store build of Tellyscope downloads nothing from GitHub: on Fire TV you download Projectivy in the TV's browser and pick the file. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes. Signatures: see [what the lists can't do](#the-shared-lists).
 - **Send files.** To and from the TV's Download and Movies folders.
 - **Remote.** D-pad, or a touchpad from ⋮ (swipe to move, tap for OK), Back, Home, Menu, mute and volume, typing on the TV, buttons that open Netflix, YouTube, Plex and 20 more streaming apps (hold one to pick up to three), restart the TV, and **Screen off** for music with the picture off (Android 13 or older).
 - **Reset TV.** In ⋮: turn the TV back to how it shipped, with one Undo. Preinstalled apps come back on, uninstalled ones too, and the TV's own launcher is Home again; apps the maker shipped off stay off.
@@ -114,6 +122,7 @@ Tellyscope downloads two sets of public lists from GitHub, so they can change wi
 ## Get it
 
 - **[GitHub Releases](../../releases/latest):** download `Tellyscope-<version>.apk` and open it on your phone. `-alpha` pre-releases are test builds that install next to the regular app.
+- **Google Play (testing):** follow the steps at the top of this page.
 - **[Obtainium](https://github.com/ImranR98/Obtainium)** or **[Orion Store](https://github.com/RookieEnough/Orion-Store):** tap the badge above on your phone for automatic updates.
 
 You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.

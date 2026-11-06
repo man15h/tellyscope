@@ -107,7 +107,8 @@ fun merge(maker: String, lists: List<DeviceList>): DeviceList = DeviceList(
 data class ListFile(val file: String, val sha256: String)
 
 /**
- * [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index without them.
+ * [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index
+ * without them. Launcher screenshots are named in `launchers.json` ([KnownLauncher.screenshot]), not here.
  * [version] goes up with each signed `data/` index. [signed]: a signature on its line 2 verifies against the keys
  * [DeviceLists] was given and its version is no lower than the newest signed one seen, so it is the one Tellyscope published.
  */
@@ -167,7 +168,8 @@ private val FILE = Regex("devices/[A-Za-z0-9][A-Za-z0-9._-]*\\.json")
 /** Under `lists/` in tellyscope-devices, at the top of `data/`; never the index's own name. */
 private val LIST_FILE = Regex("(lists/)?(?!index\\.json)[a-z]+\\.json")
 private val LOGO_FILE = Regex("logos/[a-z0-9]+\\.png")
-private val SHA256 = Regex("[0-9a-f]{64}")
+internal val IMAGE_FILE = Regex("images/${IMAGE_NAME.pattern}\\.png")
+internal val SHA256 = Regex("[0-9a-f]{64}")
 /** A list id goes into `picks.tsv`, one tab-separated line per TV, so no tab or newline. */
 private val LIST_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 private val COMMIT = Regex("[0-9a-f]{7,40}")
@@ -322,30 +324,50 @@ class DeviceLists(
 
     /**
      * Fetched once per process; later calls reuse it. Offline, the cached copy is returned and the
-     * next call tries the network again. Null when offline with no cache.
+     * next call tries the network again. Null when offline with no cache. An index that isn't
+     * [ListIndex.signed] never replaces a cached one that is: the cached lists are returned, not
+     * signed, so the fetch still fails the check, and neither is kept for the next call.
      */
     suspend fun index(): ListIndex? = lock.withLock {
         index ?: withContext(Dispatchers.IO) {
             dir.mkdirs()
             val bytes = attempt { fetch(base + "index.json") }
-            bytes?.let { b -> checked(b)?.also { save(b, it); index = it } } ?: cachedIndex()
+            val fresh = bytes?.let(::checked)
+            val cached = cachedIndex()
+            when {
+                bytes == null || fresh == null -> cached
+                !fresh.signed && cached != null && cached.signed -> cached.copy(signed = false)
+                else -> fresh.also { save(bytes, it); index = it }
+            }
         }
     }
 
-    /**
-     * Whether the index is [ListIndex.signed] and every list it names can be had and matches its sha256, so what
-     * is used is what was signed. False offline with nothing cached, and for a source without [keys].
-     */
-    suspend fun verified(): Boolean {
-        val index = index() ?: return false
-        return index.signed && index.lists.values.all { file(it.file, it.sha256) != null }
+    /** One index, read once, and the lists it names: whether they pass ([verified]) and what they hold ([shared]) can't come from two. */
+    class Snapshot internal constructor(private val index: ListIndex?, private val read: suspend (ListFile) -> ByteArray?) {
+        /**
+         * Whether the index is [ListIndex.signed] and every list it names can be had and matches its sha256, so what
+         * is used is what was signed. False offline with nothing cached, and for a source without keys.
+         */
+        suspend fun verified(): Boolean = index != null && index.signed && index.lists.values.all { read(it) != null }
+
+        /** The list the index names [name] (`launchers`, `labels`, `streaming` or `protected`); null when it can't be had. */
+        suspend fun shared(name: String): String? = index?.lists?.get(name)?.let { read(it) }?.decodeToString()
     }
 
-    /** [verified] from the cache alone, for the moment before the network answers. */
-    suspend fun cachedVerified(): Boolean = withContext(Dispatchers.IO) {
-        val index = cachedIndex() ?: return@withContext false
-        index.signed && index.lists.values.all { f -> cached(f.file)?.let { sha256(it) == f.sha256 } == true }
+    /** The [index] now, its lists from cache or the network. */
+    suspend fun snapshot(): Snapshot = Snapshot(index()) { file(it.file, it.sha256) }
+
+    /** The cached index, its signature checked again, and only lists cached; for the moment before the network answers. */
+    suspend fun cachedSnapshot(): Snapshot {
+        val index = lock.withLock { withContext(Dispatchers.IO) { cachedIndex() } }
+        return Snapshot(index) { f -> withContext(Dispatchers.IO) { cached(f.file)?.takeIf { sha256(it) == f.sha256 } } }
     }
+
+    /** [Snapshot.verified] of a fresh [snapshot]. */
+    suspend fun verified(): Boolean = snapshot().verified()
+
+    /** [verified] from the cache alone ([cachedSnapshot]). */
+    suspend fun cachedVerified(): Boolean = cachedSnapshot().verified()
 
     /** [bytes] read as an index; [ListIndex.signed] when its signature line ([verifyIndex]) passes and the version is no lower than [floor]. */
     private fun checked(bytes: ByteArray): ListIndex? {
@@ -372,18 +394,11 @@ class DeviceLists(
     suspend fun list(entry: ListEntry): DeviceList? =
         file(entry.file, entry.sha256)?.let { parseList(it.decodeToString(), entry.id) }
 
-    /**
-     * The list the index names [name] (`launchers`, `labels`, `streaming` or `protected`), from cache
-     * or the network. Null when it can't be had, so the caller keeps what it has.
-     */
-    suspend fun shared(name: String): String? =
-        index()?.lists?.get(name)?.let { file(it.file, it.sha256) }?.decodeToString()
+    /** [Snapshot.shared] of a fresh [snapshot]. Null when it can't be had, so the caller keeps what it has. */
+    suspend fun shared(name: String): String? = snapshot().shared(name)
 
-    /** [name]'s list as last cached, without the network, for the moment before [shared] answers; only while it matches the cached index. */
-    suspend fun cachedShared(name: String): String? = withContext(Dispatchers.IO) {
-        val lists = File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex)?.lists.orEmpty()
-        lists[name]?.let { f -> cached(f.file)?.takeIf { sha256(it) == f.sha256 } }?.decodeToString()
-    }
+    /** [name]'s list as last cached ([cachedSnapshot]), for the moment before [shared] answers. */
+    suspend fun cachedShared(name: String): String? = cachedSnapshot().shared(name)
 
     /**
      * A logo's PNG by the name `streaming.json` gives it; null when the index has none or it can't be
@@ -394,6 +409,9 @@ class DeviceLists(
         val known = index ?: withContext(Dispatchers.IO) { File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex) }
         return known?.logos?.get(name)?.let { file(it.file, it.sha256, Png::ok) }
     }
+
+    /** A launcher's screenshot, as `launchers.json` names it with its sha256 ([KnownLauncher.screenshot]); never fetching the index. */
+    suspend fun image(f: ListFile): ByteArray? = file(f.file, f.sha256, Picture::ok)
 
     /**
      * [path] under [dir] when its bytes match [sha] and pass [valid], else fetched from [base] and
@@ -411,7 +429,7 @@ class DeviceLists(
 
     /** Where [path] is cached: only a name [parseIndex] keeps, and only inside [dir] once resolved. */
     private fun cacheFile(path: String): File? {
-        if (!FILE.matches(path) && !LIST_FILE.matches(path) && !LOGO_FILE.matches(path)) return null
+        if (!FILE.matches(path) && !LIST_FILE.matches(path) && !LOGO_FILE.matches(path) && !IMAGE_FILE.matches(path)) return null
         val root = dir.canonicalFile
         return File(root, path).canonicalFile.takeIf { it.path.startsWith(root.path + File.separator) }
     }

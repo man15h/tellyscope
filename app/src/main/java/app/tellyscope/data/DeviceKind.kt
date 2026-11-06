@@ -20,6 +20,9 @@ fun deviceKind(d: Device): DeviceKind = kindOf(listOfNotNull(d.manufacturer, d.h
 /** Amazon's launcher, on every Fire OS device: Fire TV Edition TVs too, whose maker may not say Amazon. */
 const val FIRE_TV_LAUNCHER = "com.amazon.tv.launcher"
 
+/** Fire OS's backup Home, under [FIRE_TV_LAUNCHER]: no launcher to switch to, but the Home screen card lists it. */
+const val FIRE_HOME_STARTER = "com.amazon.firehomestarter"
+
 /** Fire OS: a Fire TV by name, or any TV with Amazon's launcher. No Play Store there. */
 fun isFireOs(d: Device, apps: List<AppInfo>) = deviceKind(d) == DeviceKind.FireTv || apps.any { it.packageName == FIRE_TV_LAUNCHER }
 

@@ -170,6 +170,15 @@ class ParsersTest {
         assertNull(Parsers.screenOn(""))
     }
 
+    @Test fun resumedPackageUpToAndFromAndroid14() {
+        assertEquals("com.netflix.ninja", Parsers.resumedPackage("    mResumedActivity: ActivityRecord{4a1f u0 com.netflix.ninja/.MainActivity t31}\n"))
+        assertEquals(
+            "com.google.android.youtube.tv",
+            Parsers.resumedPackage("  topResumedActivity=ActivityRecord{1d2 u0 com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity t12}\n"),
+        )
+        assertNull(Parsers.resumedPackage(""))
+    }
+
     @Test fun tcpSocketsDecodeKernelByteOrder() {
         val tcp = """
               sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode
@@ -256,6 +265,18 @@ class ParsersTest {
         // 1600000000 is 13 September 2020, UTC.
         assertEquals(java.time.YearMonth.of(2020, 9), Parsers.softwareMonth(mapOf("ro.build.date.utc" to "1600000000")))
         assertEquals(null, Parsers.softwareMonth(mapOf("ro.build.version.security_patch" to "", "ro.build.date.utc" to "0")))
+    }
+
+    @Test fun fireOsVersionFromItsBuildName() {
+        val amazon = mapOf("ro.product.manufacturer" to "Amazon")
+        assertEquals("8.1.4.9", Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "Fire OS 8.1.4.9 (RS8149/3133)")))
+        assertEquals("7.7.1.7", Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "7.7.1.7 (PS7717/5741)")))
+        // Fire OS 5 has its own prop, read first.
+        assertEquals("5.2.2.0", Parsers.fireOsVersion(mapOf("ro.build.version.fireos" to "5.2.2.0", "ro.build.version.name" to "Fire OS 5.2.2.0 (555164120)")))
+        // Another maker's build name isn't Fire OS.
+        assertEquals(null, Parsers.fireOsVersion(mapOf("ro.product.manufacturer" to "XGIMI", "ro.build.version.name" to "V1.2.3")))
+        assertEquals(null, Parsers.fireOsVersion(amazon + ("ro.build.version.name" to "")))
+        assertEquals(null, Parsers.fireOsVersion(amazon))
     }
 
     @Test fun psProcessesFromToyboxAndToolbox() {

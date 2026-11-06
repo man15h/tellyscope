@@ -95,20 +95,18 @@ class HomeServiceTest {
         card(stock, projectivy, actions = DeviceActions(propose = { p, a -> proposed += p to a }))
         compose.onNodeWithText(Copy.opensOnHome("Google TV Home").text()).assertExists()
         compose.onNodeWithText(Copy.CURRENT.text()).assertExists()
-        compose.onNodeWithText(Copy.KEEPS_HOME.text()).assertExists()
+        compose.onNodeWithText(Copy.USES_SERVICE.text()).assertExists()
         compose.onNodeWithText(Copy.MAKE_HOME.text()).performClick()
         compose.onNodeWithText(Copy.button(Action.Uninstall).text()).performClick()
         assertEquals(listOf(pkg to Action.Home, pkg to Action.Uninstall), proposed)
-        // A launcher was added, so the card no longer offers to get one.
-        compose.onNodeWithText(Copy.GET_LAUNCHER_TEXT.text()).assertDoesNotExist()
     }
 
-    @Test fun withNothingAddedTheCardOffersAnotherLauncher() {
+    @Test fun withALauncherAddedTheCardStillOffersChangeHomeScreen() {
         var installs = 0
         val store = AppInfo("com.android.vending", "Google Play Store", null, true, true, null, "1.0")
-        card(stock, store, actions = DeviceActions(installLauncher = { installs++ }))
-        compose.onNodeWithText(Copy.GET_LAUNCHER_TEXT.text()).assertExists()
-        compose.onNode(hasText(Copy.GET_LAUNCHER.text()) and androidx.compose.ui.test.hasClickAction()).performClick()
+        card(stock, projectivy, store, actions = DeviceActions(installLauncher = { installs++ }))
+        compose.onNodeWithText(Copy.CHANGE_HOME_TEXT.text()).assertExists()
+        compose.onNode(hasText(Copy.CHANGE_HOME.text()) and androidx.compose.ui.test.hasClickAction()).performClick()
         assertEquals(1, installs)
     }
 

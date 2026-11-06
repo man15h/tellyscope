@@ -36,6 +36,23 @@ class KeyHelperTest {
         assertEquals("20\nt hello tv \n", sh.execInput.readUtf8())
     }
 
+    @Test fun volumeTheHelperCannotReachKeepsTheHelper() = runBlocking {
+        // "0" to a volume line means send the keys, not a broken helper: the next key still goes through it.
+        val sh = FakeShell().apply { execOutput = "ready\n0\n1\n" }
+        val keys = KeyHelper(sh, dex)
+        assertEquals(false, keys.volume(-7))
+        assertEquals(true, keys.press(25))
+        assertEquals("v-7\n25\n", sh.execInput.readUtf8())
+        assertEquals(1, sh.execs.size)
+    }
+
+    @Test fun nonLatinTextReachesTheHelperWhole() = runBlocking {
+        // The helper pastes what its keymap can't type; the pipe carries it as UTF-8.
+        val sh = FakeShell().apply { execOutput = "ready\n1\n" }
+        assertEquals(true, KeyHelper(sh, dex).type("Привет مرحبا"))
+        assertEquals("tПривет مرحبا\n", sh.execInput.readUtf8())
+    }
+
     @Test fun tvRefusingAKeyIsFalse() = runBlocking {
         val sh = FakeShell().apply { execOutput = "ready\n0\n" }
         assertEquals(false, KeyHelper(sh, dex).press(4))

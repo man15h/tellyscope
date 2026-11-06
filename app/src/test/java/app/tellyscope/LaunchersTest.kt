@@ -8,6 +8,7 @@ import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.KnownLauncher
+import app.tellyscope.data.ListFile
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.hasServiceFrom
 import app.tellyscope.data.parseLabels
@@ -17,6 +18,7 @@ import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -84,6 +86,38 @@ class LaunchersTest {
         assertTrue(parseLaunchers(text).none { it.accessibility != null })
         assertTrue(parseLaunchers(text.replace("\"schema\":1", "\"schema\":2")).isEmpty())
         assertTrue(parseLaunchers("{").isEmpty())
+    }
+
+    @Test fun iconsAndScreenshotsAreFilesInDataImages() {
+        fun one(fields: String) = parseLaunchers("""{"schema": 1, "launchers": [{"package": "a.b", "name": "A", $fields}]}""").single()
+        val sha = "a".repeat(64)
+        fun shot(file: String, hash: String = sha) = """"screenshot": {"file": "$file", "sha256": "$hash"}"""
+        fun icon(file: String, hash: String = sha) = """"icon": {"file": "$file", "sha256": "$hash"}"""
+        val l = one("""${icon("images/flauncher-icon.png")}, ${shot("images/flauncher.png")}, "credit": "Screenshot from A's Play Store page"""")
+        assertEquals(
+            Triple(ListFile("images/flauncher-icon.png", sha), ListFile("images/flauncher.png", sha), "Screenshot from A's Play Store page"),
+            Triple(l.icon, l.screenshot, l.credit),
+        )
+        // An address on another host, as lists before had: no icon, so the phone asks no one but data/.
+        assertEquals(KnownLauncher("a.b", "A"), one(""""icon": "https://example.com/i.png""""))
+        assertNull(one(icon("images/../index.json")).icon)
+        assertNull(one(icon("images/flauncher-icon.png", "not a hash")).icon)
+        assertNull(one(shot("https://example.com/s.png")).screenshot)
+        assertNull(one(shot("images/../index.json")).screenshot)
+        assertNull(one(shot("images/Monet.png")).screenshot)
+        assertNull(one(shot("logos/netflix.png")).screenshot)
+        assertNull(one(shot("images/monet.png", "not a hash")).screenshot)
+        // The bare name an earlier draft used: no picture, and the launcher is still read.
+        assertEquals(KnownLauncher("a.b", "A"), one(""""screenshot": "monet""""))
+        assertNull(one(""""credit": "  """").credit)
+    }
+
+    /** An app that predates screenshots reads the same launchers from today's list, as only the keys it knows count. */
+    @Test fun aScreenshotObjectDoesNotDropTheLauncher() {
+        val text = """{"schema": 1, "launchers": [{"package": "a.b", "name": "A", "accessibility": "1.0",
+            "screenshot": {"file": "images/a.png", "sha256": "${"a".repeat(64)}"}, "credit": "Screenshot from A's page"}]}"""
+        val l = parseLaunchers(text).single()
+        assertEquals(KnownLauncher("a.b", "A", accessibility = "1.0"), l.copy(screenshot = null, credit = null))
     }
 
     /** A list can't claim the home screen or the TV's own states, and a reason this app doesn't know still protects. */

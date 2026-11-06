@@ -429,6 +429,19 @@ class ActionsTest {
         assertTrue(sh.ran.none { it.startsWith("pm ") || "set-home" in it })
     }
 
+    @Test fun fireHomeStarterIsNotALauncher() = runTest {
+        // Fire OS answers Home with its launcher, a backup starter and Settings' fallback; only the first is one.
+        val sh = FakeShell(mapOf(
+            "cmd package resolve-activity" to ok("priority=950 preferredOrder=0\ncom.amazon.tv.launcher/.ui.HomeActivity_vNext\n"),
+            "cmd package query-activities" to ok(
+                "priority=950 preferredOrder=0\ncom.amazon.tv.launcher/.ui.HomeActivity_vNext\n" +
+                    "priority=1 preferredOrder=0\ncom.amazon.firehomestarter/.HomeStarterActivity\n" +
+                    "priority=-1000 preferredOrder=0\ncom.amazon.tv.settings.v2/.system.FallbackHome\n",
+            ),
+        ))
+        assertEquals(HomeOptions("com.amazon.tv.launcher", emptySet()), Actions(sh).homeOptions())
+    }
+
     @Test fun homeBackTurnsTheOldLauncherOnAndLeavesTheNewOneOn() = runTest {
         val sh = twoLaunchers()
         Actions(sh).makeHome("com.spocky.projengmenu")

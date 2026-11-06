@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -27,6 +28,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -89,9 +91,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
@@ -100,10 +109,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.adb.StatsProfile
@@ -115,11 +127,13 @@ import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Suggestions
 import app.tellyscope.data.resolve
 import kotlinx.coroutines.launch
+import kotlin.math.atan2
+import kotlin.math.sqrt
 
 /** The TV page's destinations, one job each, in the bottom bar. */
 enum class TvTab(@StringRes val label: Int) { Overview(R.string.tabs_overview), Apps(R.string.tabs_apps), Files(R.string.tabs_files), Tweaks(R.string.tabs_tweaks) }
 
-private object TabIcons {
+internal object TabIcons {
     val Apps = icon(
         "Apps",
         "M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z",
@@ -235,11 +249,11 @@ fun DeviceTabsScreen(
 
     Box {
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbar) },
-            // Each tab's main action as Material's extended FAB: the Remote on Overview, install on Apps, upload on Files.
+            // Lifted by the Remote's rise, so a message isn't hidden behind the button.
+            snackbarHost = { SnackbarHost(snackbar, Modifier.padding(bottom = RemoteRise)) },
+            // Install on Apps and upload on Files as Material's extended FAB; the Remote has its own button in the bar.
             floatingActionButton = {
                 if (!offline) when (tab) {
-                    TvTab.Overview -> ExtendedFloatingActionButton(onClick = actions.remote, icon = { Icon(TileIcons.Remote, null) }, text = { Text(stringResource(R.string.tabs_remote)) })
                     TvTab.Apps -> ExtendedFloatingActionButton(onClick = actions.pickApp, icon = { Icon(Icons.Default.Add, null) }, text = { Text(stringResource(R.string.tabs_install_app)) })
                     TvTab.Files -> ExtendedFloatingActionButton(onClick = { actions.pickFile(ui.files.folder) }, icon = { Icon(TileIcons.Upload, null) }, text = { Text(stringResource(R.string.tabs_upload_files)) })
                     else -> {}
@@ -260,19 +274,33 @@ fun DeviceTabsScreen(
                 }
             },
             bottomBar = {
-                ShortNavigationBar {
-                    TvTab.entries.forEach { t ->
-                        ShortNavigationBarItem(
-                            selected = tab == t,
-                            onClick = {
-                                // Leaving Apps closes the search, so the list isn't still filtered on return.
-                                if (t != TvTab.Apps && searching) closeSearch()
-                                tab = t
-                            },
-                            icon = { Icon(t.icon(), contentDescription = null) },
-                            label = { Text(stringResource(t.label)) },
-                        )
+                // The Remote sits in the middle of the bar on every tab: an action, never a selected tab. Its round
+                // button sits in a notch cut into the bar's top edge, and is the same action as the label slot under it.
+                // The bar's own container is clear, so the notched shape behind it is what shows.
+                Box(Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh, NotchedBarShape)) {
+                    ShortNavigationBar(containerColor = Color.Transparent) {
+                        TvTab.entries.forEach { t ->
+                            if (t == TvTab.Files) ShortNavigationBarItem(
+                                selected = false,
+                                onClick = actions.remote,
+                                icon = { Spacer(Modifier.size(24.dp)) },
+                                label = { Text(stringResource(R.string.tabs_remote)) },
+                                enabled = !offline,
+                                modifier = Modifier.testTag("barRemote"),
+                            )
+                            ShortNavigationBarItem(
+                                selected = tab == t,
+                                onClick = {
+                                    // Leaving Apps closes the search, so the list isn't still filtered on return.
+                                    if (t != TvTab.Apps && searching) closeSearch()
+                                    tab = t
+                                },
+                                icon = { Icon(t.icon(), contentDescription = null) },
+                                label = { Text(stringResource(t.label)) },
+                            )
+                        }
                     }
+                    RemoteButton(enabled = !offline, onClick = actions.remote, modifier = Modifier.align(Alignment.TopCenter))
                 }
             },
         ) { pad ->
@@ -298,7 +326,7 @@ fun DeviceTabsScreen(
                     .then(if (tab == TvTab.Apps && !searching) Modifier.swipeTabs(appsTab.ordinal, AppsTab.entries.size) { appsTab = AppsTab.entries[it] } else Modifier),
                 state = list,
                 // No top padding: the Apps tabs pin at the list's top edge, flush under the bar; the hero carries the 4dp.
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 96.dp),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 109.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 val snap = ui.snapshot
@@ -346,6 +374,10 @@ fun DeviceTabsScreen(
                                     },
                                 )
                             }
+                            // A better home screen is a suggestion, so it sits with the actions rather than among the apps.
+                            if (offerLauncherCard(ui, debloat, fire)) item(key = "launcherCard") {
+                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
+                            }
                         }
                         // The list, what's plugged in, and Android.
                         item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history) }
@@ -354,7 +386,7 @@ fun DeviceTabsScreen(
                     }
                     TvTab.Apps -> {
                         fun rows(apps: List<AppInfo>) = items(apps, key = { it.packageName }) { app ->
-                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline)
+                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline, onScreen = ui.snapshot?.onScreen)
                         }
                         // Until the first read lands, an empty list means "not yet", not "none".
                         val loading = ui.appsLoading && !offline
@@ -364,15 +396,13 @@ fun DeviceTabsScreen(
                             if (found.isEmpty()) item { if (loading) AppsLoading() else EmptyLine(q) }
                             rows(found)
                         } else {
+                            tvStore(device, ui.apps)?.let { store -> item(key = "store") { StoreCard(store, offline, locked = ui.busy != null, actions) } }
                             stickyHeader(key = "appsTabs") {
                                 PinnedSegments(
                                     AppsTab.entries.map { stringResource(it.label) }, appsTab.ordinal,
                                     lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp,
                                     below = { SearchPill(enabled = !offline) { searching = true } },
                                 ) { appsTab = AppsTab.entries[it] }
-                            }
-                            if (!offline && offerLauncher(ui.apps, ui.launcherCardHidden, fire)) item(key = "launcherCard") {
-                                LauncherCard(ui.apps.firstOrNull { it.home }?.label, onNotNow = actions.hideLauncherCard, onChoose = actions.installLauncher, fire = fire)
                             }
                             if (split != null) {
                                 if (split.apps.isEmpty() && split.system.isEmpty()) item {
@@ -639,6 +669,8 @@ internal data class DebloatState(
     val count: Int,
     /** Debloat has something to show: apps to turn off, or that this TV has no list. */
     val todo: Boolean,
+    /** Of [total], the ones off right now, however they were turned off. */
+    val off: Int = 0,
 )
 
 /**
@@ -682,7 +714,72 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val candidates = ui.apps.filter { it.packageName in listed && (!it.enabled || it.protectedReason == null) }
     val on = candidates.filter { it.enabled }.map { it.packageName }.toSet()
     val count = (on + back).size
-    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList)
+    val off = candidates.count { !it.enabled }
+    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off)
+}
+
+/**
+ * The home screen card waits until the list has loaded and the TV has been debloated: at least one app on the list is
+ * off, even one turned off before Tellyscope, or nothing on it is left on. Apps someone keeps on don't hold it back. A
+ * TV with no list has nothing to debloat, so it gets the card once that's known.
+ */
+internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolean = false) =
+    when (ui.lists) {
+        is Suggestions.Ready -> debloat.off > 0 || !debloat.todo
+        is Suggestions.NoList -> true
+        else -> false
+    } && offerLauncher(ui.apps, ui.launcherCardHidden, fire)
+
+/** The Remote's round button, centred on the bottom bar's top edge, so it rises by half its size. */
+private val RemoteSize = 60.dp
+private val RemoteRise = RemoteSize / 2
+
+/**
+ * The bottom bar with a round notch cut into the middle of its top edge for the Remote's button: 6dp wider than the
+ * button all round, with the corners where it meets the edge rounded at 6dp.
+ */
+private val NotchedBarShape = object : Shape {
+    override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+        val notch = with(density) { (RemoteRise + 6.dp).toPx() }
+        val fillet = with(density) { 6.dp.toPx() }
+        val cx = size.width / 2
+        // Each rounded corner is a circle touching the top edge and the notch's circle.
+        val dx = sqrt((notch + fillet) * (notch + fillet) - fillet * fillet)
+        val meet = Math.toDegrees(atan2(fillet, dx).toDouble()).toFloat()
+        val path = Path().apply {
+            moveTo(0f, 0f)
+            lineTo(cx - dx, 0f)
+            arcTo(Rect(Offset(cx - dx, fillet), fillet), -90f, 90f - meet, false)
+            arcTo(Rect(Offset(cx, 0f), notch), 180f - meet, -(180f - 2 * meet), false)
+            arcTo(Rect(Offset(cx + dx, fillet), fillet), -180f + meet, 90f - meet, false)
+            lineTo(size.width, 0f)
+            lineTo(size.width, size.height)
+            lineTo(0f, size.height)
+            close()
+        }
+        return Outline.Generic(path)
+    }
+}
+
+// The Remote's round button in the bar's notch. Offline it stays, greyed, so the bar doesn't shift; the grey is solid
+// (over the bar's surfaceContainerHigh), so the page under the notch doesn't show through it.
+// TalkBack reads the slot's label instead, so the button itself is left out.
+@Composable
+private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val c = MaterialTheme.colorScheme
+    Box(modifier.offset(y = -RemoteRise).clearAndSetSemantics {}) {
+        Surface(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = Modifier.size(RemoteSize),
+            shape = CircleShape,
+            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f).compositeOver(c.surfaceContainerHigh),
+            contentColor = if (enabled) c.onPrimary else c.onSurface.copy(alpha = 0.38f),
+            shadowElevation = if (enabled) 6.dp else 0.dp,
+        ) {
+            Box(contentAlignment = Alignment.Center) { Icon(TileIcons.Remote, null, Modifier.size(26.dp)) }
+        }
+    }
 }
 
 /**
@@ -739,18 +836,36 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
     }
 }
 
-/** Which Android and when it last updated, with a way to make the TV look for a newer one. */
+/** Which Android, or Fire OS, and when it last updated, with a way to make the TV look for a newer one. */
 @Composable
 private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpdates: () -> Unit) {
     val device = state.selected ?: return
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         StatusRow(
             Icons.Default.Info,
-            device.android?.let { stringResource(R.string.tabs_android_version, it) } ?: "Android",
+            device.fireOs?.let { stringResource(R.string.tabs_fire_os_version, it) }
+                ?: device.android?.let { stringResource(R.string.tabs_android_version, it) } ?: "Android",
             (snap?.softwareMonth ?: device.lastKnown?.softwareMonth)?.let { stringResource(R.string.tabs_updated, Copy.month(it)) },
             stringResource(R.string.tabs_check_updates), !offline, onUpdates,
 
         )
+    }
+}
+
+/** The TV's app store, on top of Apps: Open shows it on the TV, and Turn on puts back one that's off. */
+@Composable
+private fun StoreCard(store: AppInfo, offline: Boolean, locked: Boolean, actions: DeviceActions) {
+    val name = stringResource(if (store.packageName == AMAZON_APPSTORE) R.string.tabs_store_amazon else R.string.tabs_store_play)
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+        if (store.enabled) {
+            StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_sub), Copy.button(Action.Open).resolve(), !offline && !locked) {
+                actions.openStore(store.packageName, name)
+            }
+        } else {
+            StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_off), Copy.button(Action.Enable).resolve(), !offline && !locked) {
+                actions.turnOnStore(store.packageName)
+            }
+        }
     }
 }
 
@@ -776,6 +891,13 @@ internal object TileIcons {
             "M12 11A2 2 0 1 0 12 15A2 2 0 1 0 12 11Z" +
             "M7.05 6.05L8.46 7.46A5 5 0 0 1 15.54 7.46L16.95 6.05A7 7 0 0 0 7.05 6.05Z" +
             "M4.22 3.22L5.63 4.63A9 9 0 0 1 18.37 4.63L19.78 3.22A11 11 0 0 0 4.22 3.22Z",
+    )
+    // A storefront after Material's: a scalloped awning over a shop with an open door.
+    val Store = icon(
+        "Store",
+        "M4 4H20L22 9A2.5 2.5 0 0 1 17 9A2.5 2.5 0 0 1 12 9A2.5 2.5 0 0 1 7 9A2.5 2.5 0 0 1 2 9Z" +
+            "M4 13H20V20H4Z" +
+            "M10 15V20H14V15Z",
     )
     val Movie = icon("Movie", "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z")
 

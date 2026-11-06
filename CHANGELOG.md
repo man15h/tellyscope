@@ -15,6 +15,28 @@ fails CI until this file has a section for its version.
 
 ## Unreleased
 
+## 0.16.0 — 2026-11-06
+
+- **New:** The Remote has an Apps key that shows the streaming apps installed on the TV. [#373](../../pull/373), [#384](../../pull/384)
+- **New:** More home screens to choose from, on Fire TV too. [#367](../../pull/367), [#381](../../pull/381)
+- **New:** Apps has a row that opens the TV's app store: Play Store, or Appstore on Fire TV. [#385](../../pull/385)
+- **New:** Remote quick actions support more streaming apps, including regional, music and self-hosted ones. [#384](../../pull/384)
+- **Improved:** On Fire TV, the Android card shows the Fire OS version, and Check for updates opens About or Fire TV Settings with directions to the update screen. [#365](../../pull/365)
+- **Improved:** The Remote now has its own round button, in a notch in the middle of the bottom bar, on every tab. [#368](../../pull/368), [#388](../../pull/388)
+- **Improved:** "Get a better home screen" moved from Apps to the Overview page. [#368](../../pull/368)
+- **Improved:** One tap on the Remote's volume keys moves the volume in a single jump, without the lag of several key presses. [#372](../../pull/372)
+- **Improved:** The home screen suggestion now appears after the TV is debloated, not on first connect. [#374](../../pull/374)
+- **Improved:** Tweaks › Home screen always offers Change home screen, and the picker opens on your current launcher. [#386](../../pull/386)
+- **Improved:** Each app on Apps shows Open and Stop by state, and one remove button. [#403](../../pull/403)
+- **Fixed:** On Fire TV, Tweaks › Home screen no longer offers Firehomestarter as a launcher. [#409](../../pull/409), [#411](../../pull/411)
+- **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
+- **Fixed:** A dropped connection no longer logs you out of a TV. [#402](../../pull/402)
+- **Fixed:** A TV added by IP:port is found again after its port changes. [#402](../../pull/402)
+- **Fixed:** Pairing gives up after 30 seconds instead of hanging. [#402](../../pull/402)
+- **Fixed:** Tweaks › Private DNS: a provider that doesn't work is undone. [#400](../../pull/400)
+- **Fixed:** History keeps a Home switch or reset even if the TV drops mid-way. [#399](../../pull/399)
+- **Fixed:** An unsigned list never replaces Tellyscope's signed one. [#392](../../pull/392)
+
 ## 0.15.1 — 2026-11-06
 
 - **Improved:** Reset TV to how it shipped also puts Private DNS back to Automatic and animations back to normal speed, when they've been changed. Undo puts them back too. [#360](../../pull/360)

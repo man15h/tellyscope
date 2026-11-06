@@ -20,6 +20,7 @@ import app.tellyscope.data.StoreState
 import app.tellyscope.data.Suggestions
 import app.tellyscope.data.UiText
 import app.tellyscope.ui.Copy
+import app.tellyscope.ui.FireInstall
 import app.tellyscope.ui.LauncherActions
 import app.tellyscope.ui.LauncherCard
 import app.tellyscope.ui.LauncherFlow
@@ -69,6 +70,8 @@ private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
     var installed = false
     var onHome = false
     var hidden = false
+    /** A listed launcher on Home in place of the TV's own. */
+    var homeOn: String? = null
     val switched = mutableListOf<Pair<String, Boolean>>()
 
     override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
@@ -76,7 +79,8 @@ private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>) = Suggestions.Unavailable
     override suspend fun history(deviceId: String) = emptyList<HistoryEntry>()
 
-    override suspend fun apps(deviceId: String) = listOf(store, stock) +
+    override suspend fun apps(deviceId: String) = listOf(store, if (homeOn != null) stock.copy(home = false) else stock) +
+        listOfNotNull(homeOn?.let { AppInfo(it, "FLauncher", null, false, true, null, "1.0", removable = true, answersHome = true, home = true, listedLauncher = true) }) +
         when {
             onHome -> listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, UiText(R.string.data_protected_home_screen), "1.0", home = true, listedLauncher = true))
             installed -> listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", homeInstead = TV_HOME, homeService = true))
@@ -226,6 +230,12 @@ class LauncherFlowTest {
         assertEquals(Copy.launcherIsHome("Projectivy Launcher"), vm.notice.value)
     }
 
+    @Test fun thePickerOpensOnTheLauncherOnHome() = with(test) {
+        source.homeOn = FLAUNCHER
+        started()
+        assertEquals(FLAUNCHER, vm.state.value.device.launcher?.pkg)
+    }
+
     @Test fun closingStopsTheWait() = with(test) {
         started().installLauncher(PROJECTIVY)
         runCurrent()
@@ -261,6 +271,12 @@ class LauncherScreenTest {
         assertFalse(offerLauncher(listOf(stock), hidden = false)) // Fire TV: no Play Store
         val other = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", homeInstead = TV_HOME)
         assertFalse(offerLauncher(listOf(store, stock, other), hidden = false))
+    }
+
+    @Test fun aSecondLauncherTheTvCameWithStillGetsTheCard() {
+        // Both built in and answering Home: the one that isn't Home is offered Make Home, but nothing was added.
+        val builtIn = AppInfo("com.google.android.apps.tv.launcherx", "Google TV Home", null, true, true, null, "1.0", homeInstead = TV_HOME, answersHome = true, builtInLauncher = true)
+        assertTrue(offerLauncher(listOf(store, stock, builtIn), hidden = false))
     }
 
     @Test fun anAddedLauncherOnHomeWithTheStockOneOffGetsNoCardButKeepsTheTweaksRow() {
@@ -366,9 +382,22 @@ class LauncherScreenTest {
     @Test fun theLauncherOnHomeOffersOnlyOpen() {
         val flauncher = AppInfo(FLAUNCHER, "FLauncher", null, false, true, null, "1.0", removable = true, answersHome = true, home = true, homeBack = "Google TV Home")
         compose.setContent { LauncherScreen(tv, LauncherFlow(pkg = FLAUNCHER), listOf(store, stock.copy(home = false), flauncher), LauncherActions()) }
-        compose.onNodeWithText(Copy.HOME_NOW.text()).assertExists()
+        compose.onNodeWithText(Copy.CURRENT.text()).assertExists()
         compose.onNodeWithText(Copy.OPEN.text()).assertExists()
         compose.onNodeWithText(Copy.MAKE_HOME.text()).assertDoesNotExist()
+    }
+
+    @Test fun fireOsOffersOpenRatherThanInstallOnALauncherAlreadyOnTheTv() {
+        val opens = mutableListOf<String>()
+        val checks = mutableListOf<String>()
+        val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", removable = true, answersHome = true)
+        compose.setContent {
+            LauncherScreen(tv, LauncherFlow(pkg = PROJECTIVY, fire = FireInstall()), listOf(stock, projectivy), LauncherActions(open = { opens += it }, fireCheck = { checks += it }))
+        }
+        compose.onNodeWithText(Copy.INSTALL.text()).assertDoesNotExist()
+        compose.onNodeWithText(Copy.OPEN.text()).performClick()
+        assertEquals(listOf(PROJECTIVY), opens)
+        assertTrue(checks.isEmpty())
     }
 
     @Test fun aLauncherNotRecommendedIsListedOnThisTv() {

@@ -19,12 +19,18 @@ data class Recommended(
     val launcher: KnownLauncher = KnownLauncher(pkg, name, about),
 )
 
-/** In the picker's order: the launchers on `launchers.json` that have an `about` line, in file order. */
+/**
+ * In the picker's order: the launchers on `launchers.json` that have an `about` line, in file order. [Recommended.accessibility]
+ * says what the launcher has, signed or not; whether its service may go on is [SharedLists.serviceLaunchers].
+ */
 val RECOMMENDED: List<Recommended> get() =
-    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.pkg in SharedLists.serviceLaunchers, l) } }
+    SharedLists.launchers.mapNotNull { l -> l.about?.let { Recommended(l.pkg, l.name, it, l.pkg in SharedLists.listedServiceLaunchers, l) } }
 
 fun launcherName(pkg: String) = RECOMMENDED.firstOrNull { it.pkg == pkg }?.name ?: AppNames.fallback(pkg)
 
-/** The launcher Fire OS installs, having no Play Store: the list's `fire_os` one, if it says how to check the APK. */
-fun fireLauncher(recommended: List<Recommended> = RECOMMENDED) =
-    recommended.firstOrNull { it.launcher.fireOs && it.launcher.signers.isNotEmpty() }
+/** The launchers Fire OS offers, having no Play Store: the list's `fire_os` ones that say how to check the APK, in its order. */
+fun fireLaunchers(recommended: List<Recommended> = RECOMMENDED) =
+    recommended.filter { it.launcher.fireOs && it.launcher.signers.isNotEmpty() }
+
+/** The first of [fireLaunchers], which Fire OS's picker opens on. */
+fun fireLauncher(recommended: List<Recommended> = RECOMMENDED) = fireLaunchers(recommended).firstOrNull()

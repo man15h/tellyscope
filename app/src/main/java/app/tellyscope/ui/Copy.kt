@@ -97,11 +97,9 @@ object Copy {
     fun builtIn(off: Boolean) = UiText(if (off) R.string.copy_built_in_off else R.string.copy_built_in)
 
     val CURRENT = UiText(R.string.copy_current)
-    val KEEPS_HOME = UiText(R.string.copy_keeps_home)
     val MAKE_HOME = UiText(R.string.copy_make_home)
-    val GET_LAUNCHER = UiText(R.string.copy_get_launcher)
-    val GET_LAUNCHER_TEXT = UiText(R.string.copy_get_launcher_text)
-    fun getFireLauncherText(name: String) = UiText(R.string.copy_get_fire_launcher_text, name)
+    val CHANGE_HOME = UiText(R.string.copy_change_home)
+    val CHANGE_HOME_TEXT = UiText(R.string.copy_change_home_text)
 
     /** The Apps tab's launcher rows: switching lives in the card, this opens it. */
     val HOME_SETTINGS = UiText(R.string.copy_home_settings)
@@ -202,13 +200,19 @@ object Copy {
     /** After [CHOOSE_HOME_TEXT] when Download directly is offered. */
     val CAN_DOWNLOAD = UiText(R.string.copy_can_download)
     val NO_LAUNCHER_LIST = UiText(R.string.copy_no_launcher_list)
+    /** The picker's heading over the launchers from `launchers.json`: Editor's choice. */
     val RECOMMENDED = UiText(R.string.copy_recommended)
-    /** The picker's section for launchers on the TV that Recommended doesn't list. */
+    /** The picker's section for launchers on the TV that Editor's choice doesn't list. */
     val ON_THIS_TV = UiText(R.string.copy_on_this_tv)
     val INSTALLED = UiText(R.string.copy_installed)
-    val HOME_NOW = UiText(R.string.copy_home_now)
+    /** Fire OS's picker: installs the chosen launcher, named on its row. */
+    val INSTALL = UiText(R.string.copy_install)
     /** Shows a launcher on the TV, from the picker. */
     val OPEN = UiText(R.string.copy_open)
+    /** A launcher's screenshot in the picker, for screen readers. */
+    fun homeScreenOf(name: String) = UiText(R.string.copy_home_screen_of, name)
+    /** In a launcher's screenshot box when the picture couldn't be had; [TRY_AGAIN] under it loads it again. */
+    val PICTURE_FAILED = UiText(R.string.copy_picture_failed)
     val USES_SERVICE = UiText(R.string.copy_uses_service)
     val NO_SERVICE = UiText(R.string.copy_no_service)
     /** Under the picker's list: any other launcher works too, and comes back as On this TV. */
@@ -582,6 +586,8 @@ object Copy {
     val REMOTE_LOST = UiText(R.string.copy_remote_lost)
     val NO_UPDATE_SCREEN = UiText(R.string.copy_no_update_screen)
     val UPDATES_OPENED = UiText(R.string.copy_updates_opened)
+    val FIRE_SETTINGS_OPENED = UiText(R.string.copy_fire_settings_opened)
+    val NO_FIRE_UPDATE_SCREEN = UiText(R.string.copy_no_fire_update_screen)
     val REBOOT_REFUSED = UiText(R.string.copy_reboot_refused)
     val REBOOT_IGNORED = UiText(R.string.copy_reboot_ignored)
     val REMOTE_OFFLINE_WAKE = UiText(R.string.copy_remote_offline_wake)
@@ -595,12 +601,14 @@ object Copy {
     val SCREEN_ON_REFUSED = UiText(R.string.copy_screen_on_refused)
 
     fun cantType(text: String): UiText {
+        val control = text.firstOrNull { it.isISOControl() }
         val odd = text.firstOrNull { it !in ' '..'~' }
         return when {
             text.isEmpty() -> UiText(R.string.copy_cant_type_empty)
             text.length > app.tellyscope.adb.Remote.MAX_TEXT ->
                 UiText.plural(R.plurals.copy_cant_type_too_long, app.tellyscope.adb.Remote.MAX_TEXT)
-            odd == '\n' || odd == '\t' -> UiText(R.string.copy_cant_type_one_line)
+            control == '\n' || control == '\t' -> UiText(R.string.copy_cant_type_one_line)
+            control != null -> UiText(R.string.copy_cant_type_odd, control.toString())
             odd != null -> UiText(R.string.copy_cant_type_odd, odd.toString())
             else -> UiText(R.string.copy_cant_type_percent_s)
         }
@@ -632,6 +640,10 @@ object Copy {
     fun buttonsHint(cap: Int) = UiText(R.string.copy_buttons_hint, cap)
     fun notOnTv(name: String) = UiText(R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
+    fun storeOpened(name: String) = UiText(R.string.copy_store_opened, name)
+    fun storeCantOpen(name: String) = UiText(R.string.copy_store_cant_open, name)
+    val OPEN_AN_APP = UiText(R.string.copy_open_an_app)
+    fun openAnAppHint(tv: String) = UiText(R.string.copy_open_an_app_hint, tv)
 
     fun leftDock(labels: List<String>) =
         if (labels.size == 1) UiText(R.string.copy_left_dock_one, labels[0])

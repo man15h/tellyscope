@@ -15,6 +15,7 @@ import app.tellyscope.adb.TvFile
 import app.tellyscope.adb.TvFolder
 import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.TvShell
+import app.tellyscope.adb.UpdateScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import okio.Sink
@@ -187,7 +188,7 @@ interface DeviceSource {
      */
     suspend fun volumeFixed(deviceId: String): Boolean = false
 
-    /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.typeable] first. */
+    /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.sendable] first. */
     suspend fun type(deviceId: String, text: String): Boolean
 
     /**
@@ -210,8 +211,8 @@ interface DeviceSource {
 
     suspend fun setDock(deviceId: String, dock: List<Docked>)
 
-    /** Opens the TV's system update screen on the TV. False when the TV has no such screen. */
-    suspend fun openUpdates(deviceId: String): Boolean
+    /** Opens the TV's system update screen on the TV, or as near to it as the TV allows. */
+    suspend fun openUpdates(deviceId: String): UpdateScreen
 
     /** Private DNS and animation speed as the TV has them now. */
     suspend fun tweaks(deviceId: String): TvTweaks

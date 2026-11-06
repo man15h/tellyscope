@@ -35,11 +35,9 @@
     <string name="copy_built_in">Встроен в телевизор</string>
     <string name="copy_built_in_off">Встроен в телевизор · отключен</string>
     <string name="copy_current">Текущий</string>
-    <string name="copy_keeps_home">Удерживает главный экран с помощью службы специальных возможностей</string>
     <string name="copy_make_home">Сделать главным</string>
-    <string name="copy_get_launcher">Другой лаунчер</string>
-    <string name="copy_get_launcher_text">Установите лаунчер из Play Маркета. Вернуть прежний можно в любой момент.</string>
-    <string name="copy_get_fire_launcher_text">Установите %1$s. Вернуть прежний можно в любой момент.</string>
+    <string name="copy_change_home">Сменить главный экран</string>
+    <string name="copy_change_home_text">Установите другой из «Выбора редакции» или переключитесь на уже установленный на телевизоре.</string>
     <string name="copy_home_settings">Настройки главного экрана</string>
     <string name="copy_make_home_title">Сделать %1$s главным экраном?</string>
     <string name="copy_explain_replace_opens">Кнопка «Домой» будет открывать %1$s. Чтобы телевизор не возвращал прежний экран сам, Tellyscope отключит %2$s — встроенный лаунчер телевизора.</string>
@@ -76,11 +74,13 @@
     <string name="copy_choose_home_text">Любой из них заменяет главный экран телевизора. Tellyscope откроет его в Play Маркете на телевизоре, а установите вы его пультом.</string>
     <string name="copy_can_download">Некоторые можно скачать и напрямую.</string>
     <string name="copy_no_launcher_list">Не удалось загрузить список главных экранов. Проверьте подключение телефона к интернету и повторите попытку.</string>
-    <string name="copy_recommended">Рекомендуем</string>
+    <string name="copy_recommended">Выбор редакции</string>
     <string name="copy_on_this_tv">На этом телевизоре</string>
     <string name="copy_installed">Установлен</string>
-    <string name="copy_home_now">Сейчас главный</string>
+    <string name="copy_install">Установить</string>
     <string name="copy_open">Открыть</string>
+    <string name="copy_home_screen_of">Главный экран %1$s</string>
+    <string name="copy_picture_failed">Не удалось загрузить изображение</string>
     <string name="copy_uses_service">Использует службу специальных возможностей</string>
     <string name="copy_no_service">Открытый код · без службы специальных возможностей</string>
     <string name="copy_other_launcher">Хотите другой лаунчер? Установите его из Play Маркета на телевизоре и вернитесь сюда. Он появится в разделе «%1$s».</string>
@@ -321,6 +321,10 @@
     <string name="copy_remote_lost">Связь с телевизором потеряна. Убедитесь, что он включен и подключен.</string>
     <string name="copy_no_update_screen">На этом телевизоре нет экрана обновлений, который может открыть Tellyscope. Поищите его в настройках, в разделе «Система» или «Об устройстве».</string>
     <string name="copy_updates_opened">На телевизоре открыт экран обновлений. Проверьте наличие обновлений на телевизоре.</string>
+    <string name="copy_store_opened">На телевизоре открыто приложение %1$s.</string>
+    <string name="copy_store_cant_open">Телевизору не удалось открыть %1$s.</string>
+    <string name="copy_fire_settings_opened">На телевизоре открыты настройки. Перейдите в «My Fire TV» (на телевизорах «Device &amp; Software»), затем в «About» и «Check for updates».</string>
+    <string name="copy_no_fire_update_screen">Tellyscope не может открыть настройки на этом телевизоре. На телевизоре откройте «Settings», затем «My Fire TV» (на телевизорах «Device &amp; Software»), «About» и «Check for updates».</string>
     <string name="copy_reboot_refused">Телевизор отказался перезапускаться. Воспользуйтесь его пультом или кнопкой питания.</string>
     <string name="copy_reboot_ignored">Телевизор не перезапустился. Воспользуйтесь его пультом или кнопкой питания.</string>
     <string name="copy_remote_offline_wake">заработает снова после переподключения</string>
@@ -355,6 +359,8 @@
     <string name="copy_restart_lost">Не удается подключиться к %1$s</string>
     <string name="copy_back_online">Снова в сети. %1$s подключен.</string>
     <string name="copy_remote_buttons">Кнопки пульта</string>
+    <string name="copy_open_an_app">Открыть приложение</string>
+    <string name="copy_open_an_app_hint">Стриминговые приложения на %1$s. Нажмите, чтобы открыть.</string>
     <string name="copy_more">Другие параметры</string>
     <string name="copy_buttons_hint">Выберите до %1$d. Перетащите, чтобы задать порядок. Чтобы выбрать другую, сначала снимите отметку с одной из выбранных.</string>
     <string name="copy_not_on_tv">%1$s нет на этом телевизоре. Установите его из Play Маркета на телевизоре.</string>
@@ -828,6 +834,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">Обновлено: %1$s</string>
     <string name="tabs_check_updates">Проверить обновления</string>
+    <string name="tabs_store_sub">Приложения и их обновления</string>
+    <string name="tabs_store_off">Отключено на этом телевизоре</string>
     <string name="lists_apps_on_tv">Приложения на этом телевизоре</string>
     <string name="lists_which_tv">Какой у вас телевизор?</string>
     <string name="lists_debloat">Очистка</string>
@@ -1060,6 +1068,8 @@
     <string name="device_nothing_matches">Ничего не найдено по запросу «%1$s».</string>
     <string name="device_app_disabled">Отключено</string>
     <string name="device_app_running">Запущено</string>
+    <string name="device_app_background">Работает в фоне</string>
+    <string name="device_app_on_screen">На экране</string>
     <string name="device_app_not_running">Не запущено</string>
     <string name="device_app_protected">Защищено: %1$s</string>
     <string name="guide_brand_other">Другой</string>

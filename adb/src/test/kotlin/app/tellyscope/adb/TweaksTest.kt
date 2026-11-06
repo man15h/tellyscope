@@ -103,6 +103,36 @@ class TweaksTest {
         assertTrue(Tweaks(sh).resolves(wait = 0))
     }
 
+    /** One network's link properties as `dumpsys connectivity` prints them, cut down. */
+    private fun lp(host: String, validated: Boolean) =
+        "NetworkAgentInfo{ lp{{InterfaceName: wlan0 DnsAddresses: [ /192.0.2.1 ] UsePrivateDns: true PrivateDnsServerName: $host " +
+            (if (validated) "ValidatedPrivateDnsAddresses: [94.140.14.14] " else "") + "Domains: null MTU: 0 }} }\n"
+
+    @Test fun aValidatedProviderPasses() = runTest {
+        val sh = FakeShell(mapOf("dumpsys connectivity" to ShellResult(lp("dns.adguard-dns.com", validated = true), 0)))
+        assertEquals(true, Tweaks(sh).dnsValidated("dns.adguard-dns.com", wait = 0))
+        assertEquals("dumpsys connectivity | grep -F 'PrivateDnsServerName: dns.adguard-dns.com '", sh.ran.single())
+    }
+
+    /** Named but never validated: strict mode is on and the provider doesn't answer. A cached lookup can't pass it. */
+    @Test fun aProviderThatNeverValidatesFails() = runTest {
+        val sh = FakeShell(mapOf("dumpsys connectivity" to ShellResult(lp("dns.typo.example", validated = false), 0), "ping" to ShellResult("1 received", 0)))
+        assertEquals(false, Tweaks(sh).dnsValidated("dns.typo.example", tries = 3, wait = 0))
+        assertEquals(3, sh.ran.size)
+    }
+
+    /** Validation can take a moment after strict mode applies: a later poll still passes. */
+    @Test fun aProviderThatValidatesLaterPasses() = runTest {
+        var polls = 0
+        val sh = FakeShell().apply { answer = { ShellResult(lp("dns.adguard-dns.com", validated = ++polls == 3), 0) } }
+        assertEquals(true, Tweaks(sh).dnsValidated("dns.adguard-dns.com", wait = 0))
+        assertEquals(3, polls)
+    }
+
+    @Test fun aProviderTheTvNeverNamesIsUnknown() = runTest {
+        assertNull(Tweaks(FakeShell()).dnsValidated("dns.adguard-dns.com", tries = 2, wait = 0))
+    }
+
     @Test fun hostnames() {
         assertTrue(Tweaks.isHostname("dns.adguard-dns.com"))
         assertFalse(Tweaks.isHostname("94.140.14.14"))

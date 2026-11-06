@@ -49,11 +49,9 @@
     <string name="copy_built_in">Built into the TV</string>
     <string name="copy_built_in_off">Built into the TV · turned off</string>
     <string name="copy_current">Current</string>
-    <string name="copy_keeps_home">Keeps Home with its accessibility service</string>
     <string name="copy_make_home">Make Home</string>
-    <string name="copy_get_launcher">Get another launcher</string>
-    <string name="copy_get_launcher_text">Install one from the Play Store. Switch back any time.</string>
-    <string name="copy_get_fire_launcher_text">Install %1$s. Switch back any time.</string>
+    <string name="copy_change_home">Change home screen</string>
+    <string name="copy_change_home_text">Install another from Editor\'s choice, or switch to one that\'s already on the TV.</string>
     <string name="copy_home_settings">Home screen settings</string>
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
@@ -105,11 +103,13 @@
     <string name="copy_choose_home_text">Each one replaces the TV\'s home screen. Tellyscope opens it in the Play Store on the TV; you install it with the remote.</string>
     <string name="copy_can_download">Some can also be downloaded directly.</string>
     <string name="copy_no_launcher_list">Couldn\'t load the list of home screens. Check the phone\'s internet and try again.</string>
-    <string name="copy_recommended">Recommended</string>
+    <string name="copy_recommended">Editor\'s choice</string>
     <string name="copy_on_this_tv">On this TV</string>
     <string name="copy_installed">Installed</string>
-    <string name="copy_home_now">Home now</string>
+    <string name="copy_install">Install</string>
     <string name="copy_open">Open</string>
+    <string name="copy_home_screen_of">%1$s home screen</string>
+    <string name="copy_picture_failed">Couldn\'t load the picture</string>
     <string name="copy_uses_service">Uses an accessibility service</string>
     <string name="copy_no_service">Open source · no accessibility service</string>
     <!-- %1$s is copy_on_this_tv -->
@@ -384,6 +384,10 @@
     <string name="copy_remote_lost">Lost the TV. Check it\'s still on and connected.</string>
     <string name="copy_no_update_screen">This TV has no update screen Tellyscope can open. Look in its Settings, under System or About.</string>
     <string name="copy_updates_opened">Opened the update screen on the TV. Look at the TV to check for updates.</string>
+    <string name="copy_store_opened">Opened %1$s on the TV.</string>
+    <string name="copy_store_cant_open">Couldn\'t open %1$s on the TV.</string>
+    <string name="copy_fire_settings_opened">Opened Settings on the TV. Go to My Fire TV (Device &amp; Software on TVs), then About, then Check for updates.</string>
+    <string name="copy_no_fire_update_screen">Tellyscope can\'t open Settings on this TV. On the TV, go to Settings, then My Fire TV (Device &amp; Software on TVs), then About, then Check for updates.</string>
     <string name="copy_reboot_refused">The TV said no to restarting. Use its own remote or power button instead.</string>
     <string name="copy_reboot_ignored">The TV didn\'t restart. Use its own remote or power button instead.</string>
     <!-- Lower case: shown after the TV's state -->
@@ -424,6 +428,8 @@
 
     <!-- Remote buttons -->
     <string name="copy_remote_buttons">Remote buttons</string>
+    <string name="copy_open_an_app">Open an app</string>
+    <string name="copy_open_an_app_hint">Streaming apps on %1$s. Tap one to open it.</string>
     <string name="copy_more">More options</string>
     <string name="copy_buttons_hint">Pick up to %1$d. Drag to set the order. To pick another, untick one first.</string>
     <string name="copy_not_on_tv">%1$s isn\'t on this TV. Install it from the Play Store on the TV.</string>
@@ -919,9 +925,14 @@
     <string name="tabs_lists_credit">Lists adapted from cleanyourtv (MIT).</string>
     <!-- %1$s is the Android version, like 11 -->
     <string name="tabs_android_version">Android %1$s</string>
+    <string name="tabs_fire_os_version" translatable="false">Fire OS %1$s</string>
     <!-- %1$s is a month and year, like March 2026 -->
     <string name="tabs_updated">Updated %1$s</string>
     <string name="tabs_check_updates">Check for updates</string>
+    <string name="tabs_store_play" translatable="false">Play Store</string>
+    <string name="tabs_store_amazon" translatable="false">Appstore</string>
+    <string name="tabs_store_sub">Get apps and app updates</string>
+    <string name="tabs_store_off">Off on this TV</string>
 
     <!-- ListsCard.kt: the Debloat screen and About -->
     <!-- Title of the group of the TV's own apps when no debloat list fits the TV -->
@@ -1175,6 +1186,8 @@
     <string name="device_nothing_matches">Nothing matches \"%1$s\".</string>
     <string name="device_app_disabled">Disabled</string>
     <string name="device_app_running">Running</string>
+    <string name="device_app_background">Running in the background</string>
+    <string name="device_app_on_screen">On screen</string>
     <string name="device_app_not_running">Not running</string>
     <!-- %1$s is why the app can't be changed -->
     <string name="device_app_protected">Protected: %1$s</string>

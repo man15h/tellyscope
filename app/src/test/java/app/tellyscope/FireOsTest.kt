@@ -12,6 +12,7 @@ import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
+import app.tellyscope.data.FIRE_HOME_STARTER
 import app.tellyscope.data.FIRE_TV_LAUNCHER
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
@@ -32,16 +33,22 @@ import app.tellyscope.data.latestTag
 import app.tellyscope.data.pageApk
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseRelease
+import app.tellyscope.ui.AMAZON_APPSTORE
 import app.tellyscope.ui.FireInstall
 import app.tellyscope.ui.LauncherFlow
 import app.tellyscope.ui.PLAY_STORE
 import app.tellyscope.ui.RECOMMENDED
 import app.tellyscope.ui.TellyscopeViewModel
 import app.tellyscope.ui.fireInstall
+import app.tellyscope.ui.Recommended
 import app.tellyscope.ui.fireLauncher
+import app.tellyscope.ui.fireLaunchers
 import app.tellyscope.ui.groupedHex
+import app.tellyscope.ui.homeLaunchers
+import app.tellyscope.ui.homeMove
 import app.tellyscope.ui.offerChoose
 import app.tellyscope.ui.offerLauncher
+import app.tellyscope.ui.tvStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -172,11 +179,32 @@ class FireOsTest {
         assertFalse(fireInstall(androidTv, listOf(store, tvHome)))
     }
 
+    @Test fun theStoreRowShowsTheTvsOwnStore() {
+        val appstore = AppInfo(AMAZON_APPSTORE, "Appstore", null, true, true, null, "1.0")
+        assertEquals(AMAZON_APPSTORE, tvStore(amazon, listOf(fireHome, appstore, store))?.packageName)
+        assertEquals(PLAY_STORE, tvStore(androidTv, listOf(store, tvHome))?.packageName)
+        // Off, it still has a row, to turn it back on; with none of its own, there's no row.
+        assertFalse(tvStore(androidTv, listOf(store.copy(enabled = false), tvHome))!!.enabled)
+        assertNull(tvStore(amazon, listOf(fireHome, store)))
+        assertNull(tvStore(androidTv, listOf(tvHome)))
+    }
+
     @Test fun fireOsGetsTheCardWithoutAPlayStore() {
         val fire = fireInstall(amazon, listOf(fireHome))
         assertTrue(offerChoose(listOf(fireHome), fire))
         assertTrue(offerLauncher(listOf(fireHome), hidden = false, fire = fire))
         assertFalse(offerLauncher(listOf(fireHome), hidden = false))
+    }
+
+    @Test fun theHomeStarterIsListedWithNoMakeHome() {
+        val starter = AppInfo(FIRE_HOME_STARTER, "Amazon Firehomestarter", null, true, true, UiText(R.string.data_protected_system), "1.0")
+        // On a Fire TV, Fire TV Home answers Home and is the TV's own launcher.
+        val kftv = fireHome.copy(answersHome = true, builtInLauncher = true)
+        assertEquals(listOf(FIRE_TV_LAUNCHER, FIRE_HOME_STARTER), homeLaunchers(listOf(kftv, starter)).map { it.packageName })
+        assertNull(homeMove(starter, kftv))
+        // With an added launcher on Home, it still offers no way back: Fire TV Home is the TV's own.
+        val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", home = true, removable = true)
+        assertNull(homeMove(starter, projectivy))
     }
 
     @Test fun theListsFireOsLauncherIsTheOneFireOsInstalls() {
@@ -200,6 +228,17 @@ class FireOsTest {
         assertNull(one(""""releases": "https://github.com/x/../releases"""").releases)
         assertNull(one(""""releases": "https://github.com/x/./releases"""").releases)
         assertEquals("https://github.com/x/.github/releases", one(""""releases": "https://github.com/x/.github/releases"""").releases)
+        assertEquals("monet-launcher.apk", one(""""apk": "monet-launcher.apk"""").apk)
+        assertNull(one(""""apk": "../monet.apk"""").apk)
+        assertNull(one(""""apk": "monet.zip"""").apk)
+    }
+
+    @Test fun everySignedFireOsLauncherIsOfferedInListOrder() {
+        val monet = KnownLauncher("com.klevico.monet", "Monet Launcher", "Colors.", setOf(SIGNER), releases = RELEASES, fireOs = true)
+        val two = RECOMMENDED + Recommended(monet.pkg, monet.name, "Colors.", accessibility = false, launcher = monet)
+        assertEquals(listOf(PROJECTIVY, monet.pkg), fireLaunchers(two).map { it.pkg })
+        assertEquals(PROJECTIVY, fireLauncher(two)?.pkg)
+        assertEquals(listOf(monet.pkg), fireLaunchers(two.filter { it.pkg != PROJECTIVY }).map { it.pkg })
     }
 
     @Test fun theSignerReadsInGroupsOfEight() {
@@ -229,6 +268,18 @@ class FireOsTest {
         assertNull(parseRelease(release(size = 200L shl 20), projectivy))
         assertNull(parseRelease(release(), projectivy.copy(releases = null)))
         assertNull(parseRelease("not json", projectivy))
+    }
+
+    /** A release with the same APK under two names: the list's [KnownLauncher.apk] says which, and only it counts. */
+    @Test fun theListsApkNamePicksOneOfSeveral() {
+        val two = listOf("monet-1.1.1.apk" to APK.replace(".apk", "-a.apk"), "monet-launcher.apk" to APK)
+        assertNull(parseRelease(release(assets = two), projectivy))
+        assertEquals(APK, parseRelease(release(assets = two), projectivy.copy(apk = "monet-launcher.apk"))?.apk)
+        assertNull(parseRelease(release(), projectivy.copy(apk = "monet-launcher.apk")))
+        val link = APK.removePrefix("https://github.com")
+        val page = """<a href="${link.replace(".apk", "-a.apk")}">a</a><a href="$link">b</a>"""
+        assertNull(pageApk(page, TAG, RELEASES))
+        assertEquals(APK, pageApk(page, TAG, RELEASES, APK.substringAfterLast('/')))
     }
 
     @Test fun onlyTheLauncherSignedByItsDeveloper() {

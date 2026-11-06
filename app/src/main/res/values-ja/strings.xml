@@ -35,11 +35,9 @@
     <string name="copy_built_in">テレビに内蔵</string>
     <string name="copy_built_in_off">テレビに内蔵・無効</string>
     <string name="copy_current">現在</string>
-    <string name="copy_keeps_home">ユーザー補助サービスでホームを維持します</string>
     <string name="copy_make_home">ホームにする</string>
-    <string name="copy_get_launcher">別のランチャーを入手</string>
-    <string name="copy_get_launcher_text">Play ストアからインストールしてください。いつでも元に戻せます。</string>
-    <string name="copy_get_fire_launcher_text">%1$s をインストールしてください。いつでも元に戻せます。</string>
+    <string name="copy_change_home">ホーム画面を変更</string>
+    <string name="copy_change_home_text">編集部のおすすめから別のものをインストールするか、テレビにすでにあるものに切り替えます。</string>
     <string name="copy_home_settings">ホーム画面の設定</string>
     <string name="copy_make_home_title">%1$s をホーム画面にしますか？</string>
     <string name="copy_explain_replace_opens">ホームボタンで %1$s が開くようになります。テレビが勝手に元に戻らないよう、Tellyscope はテレビ内蔵のランチャー %2$s を無効にします。</string>
@@ -76,11 +74,13 @@
     <string name="copy_choose_home_text">どれもテレビのホーム画面を置き換えます。Tellyscope がテレビの Play ストアで開くので、リモコンでインストールしてください。</string>
     <string name="copy_can_download">一部は直接ダウンロードすることもできます。</string>
     <string name="copy_no_launcher_list">ホーム画面のリストを読み込めませんでした。スマートフォンのインターネット接続を確認して、もう一度お試しください。</string>
-    <string name="copy_recommended">おすすめ</string>
+    <string name="copy_recommended">編集部のおすすめ</string>
     <string name="copy_on_this_tv">このテレビ上</string>
     <string name="copy_installed">インストール済み</string>
-    <string name="copy_home_now">現在のホーム</string>
+    <string name="copy_install">インストール</string>
     <string name="copy_open">開く</string>
+    <string name="copy_home_screen_of">%1$s のホーム画面</string>
+    <string name="copy_picture_failed">画像を読み込めませんでした</string>
     <string name="copy_uses_service">ユーザー補助サービスを使用</string>
     <string name="copy_no_service">オープンソース・ユーザー補助サービスなし</string>
     <string name="copy_other_launcher">別のランチャーを使いたい場合は、テレビの Play ストアからインストールして、ここに戻ってください。%1$s に表示されます。</string>
@@ -294,6 +294,10 @@
     <string name="copy_remote_lost">テレビとの接続が切れました。テレビの電源が入っていて接続されていることを確認してください。</string>
     <string name="copy_no_update_screen">このテレビには、Tellyscope から開けるアップデート画面がありません。テレビの設定の「システム」または「デバイス情報」を確認してください。</string>
     <string name="copy_updates_opened">テレビでアップデート画面を開きました。テレビでアップデートを確認してください。</string>
+    <string name="copy_store_opened">テレビで %1$s を開きました。</string>
+    <string name="copy_store_cant_open">テレビで %1$s を開けませんでした。</string>
+    <string name="copy_fire_settings_opened">テレビで設定を開きました。「マイFire TV」（テレビでは「デバイスとソフトウェア」）、「バージョン情報」、「アップデートを確認」の順に進んでください。</string>
+    <string name="copy_no_fire_update_screen">Tellyscope はこのテレビの設定を開けません。テレビで「設定」、「マイFire TV」（テレビでは「デバイスとソフトウェア」）、「バージョン情報」、「アップデートを確認」の順に進んでください。</string>
     <string name="copy_reboot_refused">テレビが再起動を拒否しました。テレビ付属のリモコンか電源ボタンを使ってください。</string>
     <string name="copy_reboot_ignored">テレビが再起動しませんでした。テレビ付属のリモコンか電源ボタンを使ってください。</string>
     <string name="copy_remote_offline_wake">再接続すると使えるようになります</string>
@@ -325,6 +329,8 @@
     <string name="copy_restart_lost">%1$s にまだ接続できません</string>
     <string name="copy_back_online">オンラインに戻りました。%1$s に再接続しました。</string>
     <string name="copy_remote_buttons">リモコンのボタン</string>
+    <string name="copy_open_an_app">アプリを開く</string>
+    <string name="copy_open_an_app_hint">%1$s のストリーミングアプリ。タップすると開きます。</string>
     <string name="copy_more">その他のオプション</string>
     <string name="copy_buttons_hint">%1$d 個まで選べます。ドラッグで並べ替えます。別のものを選ぶには、先にどれかのチェックを外してください。</string>
     <string name="copy_not_on_tv">%1$s はこのテレビにありません。テレビの Play ストアからインストールしてください。</string>
@@ -702,6 +708,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">%1$s に更新</string>
     <string name="tabs_check_updates">アップデートを確認</string>
+    <string name="tabs_store_sub">アプリとアプリのアップデートを入手</string>
+    <string name="tabs_store_off">このテレビでは無効</string>
     <string name="lists_apps_on_tv">このテレビのアプリ</string>
     <string name="lists_which_tv">どのテレビですか？</string>
     <string name="lists_debloat">整理</string>
@@ -907,6 +915,8 @@
     <string name="device_nothing_matches">「%1$s」に一致するものはありません。</string>
     <string name="device_app_disabled">無効</string>
     <string name="device_app_running">実行中</string>
+    <string name="device_app_background">バックグラウンドで実行中</string>
+    <string name="device_app_on_screen">画面に表示中</string>
     <string name="device_app_not_running">停止中</string>
     <string name="device_app_protected">保護: %1$s</string>
     <string name="guide_brand_other">その他</string>

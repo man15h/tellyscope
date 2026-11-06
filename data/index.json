@@ -1,11 +1,11 @@
 {
-  "sigs": ["p256:MEYCIQCsg42Q6o74vbEkGcGPf+sfgronWcDqTQTFcUJCIRXEHAIhAMNE2R7RFy65/MkJHht+IViPbhWjcVFcEU8Fu8uiO2kB"],
+  "sigs": ["p256:MEQCIA/L/vf1XAOcP8Xa3yspkHufz3mtovrECu+6L4qs1xyOAiBPbPUum4PwdlO/fDRZJWsi23NPebkF6qbsMB6ZsylkVw=="],
   "schema": 1,
-  "version": 2026110303,
+  "version": 2026110607,
   "lists": {
     "launchers": {
       "file": "launchers.json",
-      "sha256": "532ba027e461185fbd9c7ef2e34db75d29c76f81292c65840abefa974b8fe0c7"
+      "sha256": "df5f37e180ef8ee5dc4e2002009f420c5dff23c8f595f4431428198ccfc18ae5"
     },
     "labels": {
       "file": "labels.json",
@@ -13,7 +13,7 @@
     },
     "streaming": {
       "file": "streaming.json",
-      "sha256": "907e47666b18673d634bd8a3840a32acbc7d9c083b14ae14bd6359b025db2d4f"
+      "sha256": "3bf79607de53abf06633ddd0f3f2b327b6070df7ccfa6278b5e4942eb227f7fd"
     }
   }
 }

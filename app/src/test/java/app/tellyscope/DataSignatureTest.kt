@@ -8,6 +8,7 @@ import app.tellyscope.data.DeviceLists
 import app.tellyscope.data.LISTS_BASE
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.verifyIndex
+import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.After
@@ -137,8 +138,9 @@ class DataSignatureTest {
         val dir = tmp.newFolder()
         assertTrue(lists(dir, Served(signed(version = 2026110302))).verified())
         // A new process, as after a restart: the older index is fetched and signed, but the newer one was seen.
+        // It fails the check, and the newer cached one is kept rather than replaced by it.
         val old = lists(dir, Served(signed(version = 2026110301)))
-        assertEquals(2026110301L, old.index()?.version)
+        assertEquals(2026110302L, old.index()?.version)
         assertFalse(old.verified())
         assertTrue(lists(dir, Served(signed(version = 2026110302))).verified())
     }
@@ -154,6 +156,35 @@ class DataSignatureTest {
         assertFalse(lists(dir, offline).cachedVerified())
         File(dir, "index.json").appendText(" ")
         assertFalse(lists(dir, offline).cachedVerified())
+    }
+
+    /**
+     * The check and the lists come from one index: a failed fetch that falls back to the signed cache, then an
+     * unsigned index on the next, leaves the signed cache's launchers in use and says `data/` fails its check.
+     */
+    @Test fun anUnsignedIndexNeverReplacesASignedCache() = runTest {
+        val dir = tmp.newFolder()
+        assertTrue(lists(dir, Served(signed())).verified())
+        val evil = """{"schema":1,"launchers":[{"package":"com.evil.home","name":"Evil","about":"x"}]}""".toByteArray()
+        var fetches = 0
+        val forged = DeviceLists(dir, DATA_BASE, keys) { url ->
+            when (url.removePrefix(DATA_BASE)) {
+                "index.json" -> if (fetches++ == 0) throw IOException("offline") else index(2026110302, evil)
+                "launchers.json" -> evil
+                else -> throw IOException("404 $url")
+            }
+        }
+        val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
+        SharedLists.load(forged, none, fresh = true)
+        assertNull(SharedLists.unverified)
+        assertEquals(listOf("com.good.home"), SharedLists.launchers.map { it.pkg })
+
+        SharedLists.refresh()
+        assertEquals(2, fetches)
+        assertEquals(DATA_BASE, SharedLists.unverified)
+        assertEquals(listOf("com.good.home"), SharedLists.launchers.map { it.pkg })
+        assertTrue(lists(dir, Served(emptyMap())).cachedVerified())
+        assertEquals(launchers.decodeToString(), forged.cachedShared("launchers"))
     }
 
     /** The list is still used when it fails, so the card can show it, but [SharedLists.unverified] says it failed. */
@@ -181,6 +212,21 @@ class DataSignatureTest {
         assertEquals(DATA_BASE, SharedLists.unverified)
         assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
         assertEquals(setOf("com.good.home"), SharedLists.listedServiceLaunchers)
+    }
+
+    /** The picker labels a launcher by what it has, so unsigned `data/` still shows Monet and Projectivy using a service. */
+    @Test fun unverifiedDataStillLabelsServiceLaunchers() = runTest {
+        val file = """{"schema":1,"launchers":[
+            {"package":"com.spocky.projengmenu","name":"Projectivy Launcher","about":"a","accessibility":"4.21"},
+            {"package":"me.efesser.flauncher","name":"FLauncher","about":"b"},
+            {"package":"com.klevico.monet","name":"Monet Launcher","about":"c","accessibility":"1.0.50"}]}""".toByteArray()
+        val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
+        SharedLists.load(lists(tmp.newFolder(), Served(mapOf("index.json" to index(2026110301, file), "launchers.json" to file))), none, fresh = true)
+        assertEquals(DATA_BASE, SharedLists.unverified)
+        assertEquals(emptySet<String>(), SharedLists.serviceLaunchers)
+
+        val uses = RECOMMENDED.associate { it.pkg to it.accessibility }
+        assertEquals(mapOf("com.spocky.projengmenu" to true, "me.efesser.flauncher" to false, "com.klevico.monet" to true), uses)
     }
 
     /**

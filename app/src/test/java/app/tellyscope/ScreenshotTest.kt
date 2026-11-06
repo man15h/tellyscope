@@ -932,8 +932,8 @@ class ScreenshotTest {
         // The list's card stands on its own, with no heading over it.
         compose.onNodeWithText("Suggested for this TV").assertDoesNotExist()
         compose.onNodeWithText("Updated ", substring = true).assertExists()
-        // The Remote is the page's FAB, no longer a button in the top bar.
-        compose.onNodeWithText("Remote", useUnmergedTree = true).assertExists()
+        // The Remote is the button in the middle of the bottom bar, not a FAB on the page.
+        compose.onNodeWithTag("barRemote").assertIsEnabled()
     }
 
     @Test fun device_overview_dark() = shot("04_device", dark = true) { DeviceTabsScreen(deviceState(), DeviceActions()) }
@@ -957,8 +957,8 @@ class ScreenshotTest {
         compose.onNodeWithText("Internal storage").assertExists()
         compose.onAllNodesWithText("\u2014").assertCountEquals(3)
         compose.onNodeWithText("Updated ", substring = true).assertExists()
-        // No Remote while the TV is away.
-        compose.onNodeWithText("Remote", useUnmergedTree = true).assertDoesNotExist()
+        // The Remote stays in the bar while the TV is away, greyed out, so the bar doesn't shift.
+        compose.onNodeWithTag("barRemote").assertIsNotEnabled()
     }
 
     @Test fun device_storageFull() {
@@ -1326,7 +1326,8 @@ class ScreenshotTest {
     // The README's Remote: a full row of streaming buttons, with their logos.
     @Test fun remote_dockFull() = withLogos("youtube", "netflix", "jellyfin") {
         val three = docked + Docked("org.jellyfin.androidtv", "Jellyfin")
-        shot("12_remote_dock_full", screen = true) { RemoteScreen(remoteState(apps = three), RemoteActions()) }
+        // Each pill reads its logo on the IO dispatcher, which the paused clock doesn't wait for.
+        shot("12_remote_dock_full", screen = true, before = { Thread.sleep(500) }) { RemoteScreen(remoteState(apps = three), RemoteActions()) }
         // A full row has no Remote buttons pill.
         compose.onNodeWithText(Copy.REMOTE_BUTTONS.text()).assertDoesNotExist()
     }
@@ -1714,7 +1715,7 @@ class ScreenshotTest {
     @Test fun readme_tweaks() {
         val tweaks = TvTweaks(dnsHost = TvSettings.ADGUARD, animationScale = null)
         shot("29_readme_tweaks") { DeviceTabsScreen(deviceState { copy(tweaks = tweaks, apps = listOf(stockHome, playStore) + apps) }, DeviceActions(), startTab = TvTab.Tweaks) }
-        compose.onNodeWithText(Copy.GET_LAUNCHER_TEXT.text()).assertExists()
+        compose.onNodeWithText(Copy.CHANGE_HOME_TEXT.text()).assertExists()
     }
 
     private val stockHome = AppInfo(

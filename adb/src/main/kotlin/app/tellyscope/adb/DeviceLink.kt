@@ -18,8 +18,9 @@ import kotlin.time.Duration.Companion.seconds
  * after the TV sleeps or drops off Wi-Fi. NOT_ALLOWED and NEEDS_PAIRING stop the loop until
  * [connect] is called again: every try puts a fresh "Allow debugging?" prompt on the TV.
  *
- * A device that let this phone in before and then refuses it has taken the key back (revoked, Remove
- * all other access from another build, a reset): that's a logout, stamped in [loggedOutAt]. [knownGood]
+ * A device that let this phone in before and then refuses it twice in a row has taken the key back (revoked,
+ * Remove all other access from another build, a reset): that's a logout, stamped in [loggedOutAt]. Once
+ * could be a handshake that dropped, which reads the same, so the first refusal is retried. [knownGood]
  * marks a device remembered from an earlier launch, which counts as let in before. After
  * `connect(asked = true)` the user is watching the prompt, so a refusal is a plain NOT_ALLOWED until
  * the TV lets the phone in again.
@@ -118,12 +119,17 @@ class DeviceLink(
     private suspend fun loop() {
         // The first try goes to the port we have; it is usually still right.
         var retry = false
+        // Refusals in a row from a TV that let this phone in before; see the class doc.
+        var refused = 0
         while (true) {
             gate.awaitResumed()
             if (retry) findPort()?.let { port = it }
             retry = true
-            when (val r = open(host, port)) {
-                is ConnectResult.NotAllowed -> {
+            val r = open(host, port)
+            refused = if (r is ConnectResult.NotAllowed && allowedBefore) refused + 1 else 0
+            when (r) {
+                // Once may be a handshake that dropped: tried again, like a TV out of reach.
+                is ConnectResult.NotAllowed -> if (refused == 1) _state.value = _state.value.on(DeviceEvent.Unreachable) else {
                     _loggedOutAt.value = if (allowedBefore) System.currentTimeMillis() else null
                     allowedBefore = false
                     _state.value = _state.value.on(DeviceEvent.AuthTimedOut)

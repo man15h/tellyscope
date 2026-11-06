@@ -35,11 +35,9 @@
     <string name="copy_built_in">电视内置</string>
     <string name="copy_built_in_off">电视内置 · 已停用</string>
     <string name="copy_current">当前</string>
-    <string name="copy_keeps_home">通过无障碍服务保持为主屏幕</string>
     <string name="copy_make_home">设为主屏幕</string>
-    <string name="copy_get_launcher">获取其他启动器</string>
-    <string name="copy_get_launcher_text">从 Play 商店安装一个。随时可以切换回来。</string>
-    <string name="copy_get_fire_launcher_text">安装 %1$s。随时可以切换回来。</string>
+    <string name="copy_change_home">更换主屏幕</string>
+    <string name="copy_change_home_text">从编辑精选中安装其他启动器，或切换到电视上已有的启动器。</string>
     <string name="copy_home_settings">主屏幕设置</string>
     <string name="copy_make_home_title">要将 %1$s 设为主屏幕吗？</string>
     <string name="copy_explain_replace_opens">按主页键将打开 %1$s。为防止电视自行切换回去，Tellyscope 会停用电视内置的启动器 %2$s。</string>
@@ -76,11 +74,13 @@
     <string name="copy_choose_home_text">每一个都会替换电视的主屏幕。Tellyscope 会在电视上的 Play 商店中打开它，你用遥控器进行安装。</string>
     <string name="copy_can_download">部分也可以直接下载。</string>
     <string name="copy_no_launcher_list">无法加载主屏幕列表。请检查手机的网络连接，然后重试。</string>
-    <string name="copy_recommended">推荐</string>
+    <string name="copy_recommended">编辑精选</string>
     <string name="copy_on_this_tv">在此电视上</string>
     <string name="copy_installed">已安装</string>
-    <string name="copy_home_now">当前主屏幕</string>
+    <string name="copy_install">安装</string>
     <string name="copy_open">打开</string>
+    <string name="copy_home_screen_of">%1$s 的主屏幕</string>
+    <string name="copy_picture_failed">无法加载图片</string>
     <string name="copy_uses_service">使用无障碍服务</string>
     <string name="copy_no_service">开源 · 不使用无障碍服务</string>
     <string name="copy_other_launcher">想用其他启动器？在电视上的 Play 商店中安装后再回到这里，它会显示在“%1$s”下。</string>
@@ -294,6 +294,10 @@
     <string name="copy_remote_lost">与电视断开连接。请确认电视仍开机并已连接。</string>
     <string name="copy_no_update_screen">此电视没有 Tellyscope 可以打开的更新界面。请在电视的“设置”中查看“系统”或“关于”。</string>
     <string name="copy_updates_opened">已在电视上打开更新界面。请在电视上检查更新。</string>
+    <string name="copy_store_opened">已在电视上打开 %1$s。</string>
+    <string name="copy_store_cant_open">电视无法打开 %1$s。</string>
+    <string name="copy_fire_settings_opened">已在电视上打开设置。请依次进入“My Fire TV”（电视上为“Device &amp; Software”）、“About”、“Check for updates”。</string>
+    <string name="copy_no_fire_update_screen">Tellyscope 无法在此电视上打开设置。请在电视上依次进入“Settings”、“My Fire TV”（电视上为“Device &amp; Software”）、“About”、“Check for updates”。</string>
     <string name="copy_reboot_refused">电视拒绝重启。请改用电视自带的遥控器或电源键。</string>
     <string name="copy_reboot_ignored">电视没有重启。请改用电视自带的遥控器或电源键。</string>
     <string name="copy_remote_offline_wake">重新连接后即可恢复使用</string>
@@ -325,6 +329,8 @@
     <string name="copy_restart_lost">仍无法连接到 %1$s</string>
     <string name="copy_back_online">已恢复在线。%1$s 已重新连接。</string>
     <string name="copy_remote_buttons">遥控器按钮</string>
+    <string name="copy_open_an_app">打开应用</string>
+    <string name="copy_open_an_app_hint">%1$s 上的流媒体应用。点按即可打开。</string>
     <string name="copy_more">更多选项</string>
     <string name="copy_buttons_hint">最多选择 %1$d 个。拖动可调整顺序。如需选择其他项，请先取消勾选一个。</string>
     <string name="copy_not_on_tv">此电视上没有 %1$s。请在电视上的 Play 商店中安装。</string>
@@ -702,6 +708,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">更新于 %1$s</string>
     <string name="tabs_check_updates">检查更新</string>
+    <string name="tabs_store_sub">获取应用和应用更新</string>
+    <string name="tabs_store_off">已在此电视上停用</string>
     <string name="lists_apps_on_tv">此电视上的应用</string>
     <string name="lists_which_tv">这是哪台电视？</string>
     <string name="lists_debloat">精简</string>
@@ -907,6 +915,8 @@
     <string name="device_nothing_matches">没有与“%1$s”匹配的内容。</string>
     <string name="device_app_disabled">已停用</string>
     <string name="device_app_running">正在运行</string>
+    <string name="device_app_background">正在后台运行</string>
+    <string name="device_app_on_screen">显示在屏幕上</string>
     <string name="device_app_not_running">未运行</string>
     <string name="device_app_protected">受保护：%1$s</string>
     <string name="guide_brand_other">其他</string>
