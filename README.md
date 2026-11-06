@@ -19,7 +19,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 
 Tellyscope is in closed testing on Google Play. Join the testers group, accept the test, then install it from Play. Play keeps this build updated, so it has no in-app update check, and it doesn't download launchers from GitHub.
 
-<a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
+<a href="https://play.google.com/store/apps/details?id=app.tellyscope"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 
 1\. [Join the group](https://groups.google.com/g/tellyscope-testers) → 2. [Accept the test](https://play.google.com/apps/testing/app.tellyscope) → 3. [Install from Play](https://play.google.com/store/apps/details?id=app.tellyscope)
 
