@@ -28,15 +28,32 @@ class DeviceLinkTest {
         assertEquals(1, calls)
     }
 
-    @Test fun rememberedDeviceRefusedOnceIsLoggedOut() = runTest {
-        // Each try shows "Allow debugging?" on the TV again, so a revoked key gets exactly one.
+    @Test fun rememberedDeviceRefusedTwiceIsLoggedOut() = runTest {
+        // Each try shows "Allow debugging?" on the TV again, so a revoked key gets two: once could be a dropped handshake.
         var calls = 0
         val link = DeviceLink("tv", 5555, backgroundScope, open = { _, _ -> calls++; ConnectResult.NotAllowed }, knownGood = true)
         link.connect(); runCurrent()
         advanceTimeBy(60_000)
         assertEquals(DeviceState.NOT_ALLOWED, link.state.value)
         assertTrue(link.loggedOutAt.value != null)
-        assertEquals(1, calls)
+        assertEquals(2, calls)
+    }
+
+    @Test fun rememberedDeviceRefusedOnceThenInIsNotLoggedOut() = runTest {
+        // A handshake that dropped reads as a refusal: the next try lets the phone in, and nothing is stamped.
+        var calls = 0
+        val link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ -> fakeMonitor(failFirst = false) },
+            open = { _, _ -> if (calls++ == 0) ConnectResult.NotAllowed else ConnectResult.Online(FakeShell()) },
+            knownGood = true,
+        )
+        link.connect(); runCurrent()
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        advanceTimeBy(6_000); runCurrent()
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(null, link.loggedOutAt.value)
+        assertEquals(2, calls)
     }
 
     @Test fun refusalAfterAskingIsNotALogout() = runTest {
@@ -174,8 +191,8 @@ class DeviceLinkTest {
         assertEquals(1, calls)
     }
 
-    @Test fun refusedAfterADropLogsOutAfterOneTry() = runTest {
-        // Online once, then the key is revoked: one try, then a logout instead of a prompt every 5 s.
+    @Test fun refusedAfterADropLogsOutAfterTwoTries() = runTest {
+        // Online once, then the key is revoked: two tries, then a logout instead of a prompt every 5 s.
         var calls = 0
         val link = DeviceLink(
             "tv", 5555, backgroundScope,
@@ -186,7 +203,7 @@ class DeviceLinkTest {
         advanceTimeBy(60_000)
         assertEquals(DeviceState.NOT_ALLOWED, link.state.value)
         assertTrue(link.loggedOutAt.value != null)
-        assertEquals(1 + 1, calls)
+        assertEquals(1 + 2, calls)
     }
 
     @Test fun disconnectClosesSessionAndResets() = runTest {

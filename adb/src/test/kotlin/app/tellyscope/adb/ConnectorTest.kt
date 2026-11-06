@@ -17,6 +17,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.net.ssl.KeyManagerFactory
 import javax.net.ssl.SSLContext
 import javax.net.ssl.SSLSocket
@@ -28,6 +29,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 class ConnectorTest {
     @BeforeTest fun key() = Connector.init(File(Files.createTempDirectory("adbkey").toFile(), "adbkey"))
@@ -69,6 +71,46 @@ class ConnectorTest {
     @Test fun pairingWithNothingListeningIsUnreachable() = runBlocking<Unit> {
         val port = ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { it.localPort }
         assertIs<PairResult.Unreachable>(withTimeout(30_000) { Connector.pair("127.0.0.1", port, "123456") })
+    }
+
+    @Test fun pairingThatGoesQuietIsUnreachableAfterTheTimeout() = runBlocking<Unit> {
+        // The TV sleeps mid-pair: the socket stays open and nothing answers, and Kadb would wait forever.
+        val held = CopyOnWriteArrayList<java.net.Socket>()
+        ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
+            thread(isDaemon = true) { runCatching { while (true) held += server.accept() } }
+            val r = withTimeout(10_000) { Connector.pair("127.0.0.1", server.localPort, "123456", timeout = 1.seconds) }
+            assertEquals(PairResult.Unreachable("the TV stopped answering"), r)
+        }
+        held.forEach { it.close() } // lets the read Kadb is parked in go
+    }
+
+    @Test fun aPortThatGoesAwayMidHandshakeIsUnreachable() = runBlocking<Unit> {
+        // The TV sleeps or leaves the Wi-Fi mid-handshake: the socket drops and the port stops answering.
+        // That's a TV out of reach, not one that refused this phone.
+        ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
+            thread(isDaemon = true) {
+                runCatching {
+                    server.accept().close() // the TCP probe
+                    server.accept().use { s ->
+                        java.io.DataInputStream(s.getInputStream()).readFully(ByteArray(24))
+                        server.close()
+                    }
+                }
+            }
+            val r = withTimeout(30_000) { Connector.connect("127.0.0.1", server.localPort, allowWaitMs = 10_000) }
+            assertIs<ConnectResult.Unreachable>(r)
+        }
+    }
+
+    @Test fun aPortThatDropsTheHandshakeButStillAnswersIsNotAllowed() = runBlocking<Unit> {
+        // Deny on the TV: adbd drops the socket and goes on listening.
+        ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
+            thread(isDaemon = true) {
+                while (true) runCatching { server.accept().use { s -> java.io.DataInputStream(s.getInputStream()).readFully(ByteArray(24)) } }
+            }
+            val r = withTimeout(30_000) { Connector.connect("127.0.0.1", server.localPort, allowWaitMs = 10_000) }
+            assertEquals(ConnectResult.NotAllowed, r)
+        }
     }
 
     @Test fun badCodeIsWrongCode() = runBlocking<Unit> {

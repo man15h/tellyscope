@@ -382,7 +382,9 @@ class AdbDeviceSource(
     override suspend fun connect(hit: ScanHit): ConnectResult = when (val r = connector(hit.ip, hit.port)) {
         is AdbConnectResult.Online -> {
             hits[hit.ip] = hit
-            hit.hostname?.takeIf { hit.kind == ScanKind.Wireless }?.let { services[hit.ip] = it } ?: services.remove(hit.ip)
+            // Added by IP:port, a wireless-debugging TV has no instance name from a scan to follow its port by; it keeps one in a prop.
+            val service = if (hit.kind != ScanKind.Wireless) null else hit.hostname ?: wifiGuid(r.session)
+            service?.let { services[hit.ip] = it } ?: services.remove(hit.ip)
             restoring -= hit.ip
             // Hand the open session to a link, which reconnects on its own from here on.
             link(hit.ip, hit.port, first = r, knownGood = false)
@@ -391,6 +393,15 @@ class AdbDeviceSource(
         AdbConnectResult.NotAllowed -> ConnectResult.NotAllowed
         AdbConnectResult.NeedsPairing -> ConnectResult.NeedsPairing
         is AdbConnectResult.Unreachable -> ConnectResult.Unreachable(r.reason)
+    }
+
+    /** The TV's wireless-debugging instance name, as mDNS shows it (`adb-<serial>-<tag>`); null when it has none. */
+    private suspend fun wifiGuid(session: AdbSession): String? = try {
+        session.shell("getprop persist.adb.wifi.guid").output.trim().takeIf { WIFI_GUID.matches(it) }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        null
     }
 
     override suspend fun pair(hit: ScanHit, code: String): ConnectResult {
@@ -1578,6 +1589,9 @@ internal suspend fun undoHomeSwitch(actions: Actions, switch: HistoryEntry, labe
         else -> null
     }
 }
+
+/** A wireless-debugging instance name: it's in the mDNS lookup that finds the TV's port. */
+private val WIFI_GUID = Regex("adb-[A-Za-z0-9._-]{1,60}")
 
 /** How long a picked file's session gets to answer before it counts as dropped. */
 private val PROBE_WAIT = 3.seconds
