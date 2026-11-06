@@ -94,6 +94,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
@@ -713,7 +714,8 @@ internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolea
 /** How far the Remote's button rises above the bottom bar's top edge. */
 private val RemoteRise = 17.dp
 
-// The Remote's raised button over its slot in the bar. Offline it stays, greyed, so the bar doesn't shift;
+// The Remote's raised button over its slot in the bar. Offline it stays, greyed, so the bar doesn't shift; the grey
+// is solid (over the bar's surfaceContainer), so the page scrolling under its raised top doesn't show through.
 // TalkBack reads the slot's label instead, so the button itself is left out.
 @Composable
 private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -724,7 +726,7 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
             enabled = enabled,
             modifier = Modifier.size(62.dp, 57.dp),
             shape = RoundedCornerShape(18.dp),
-            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f),
+            color = if (enabled) c.primary else c.onSurface.copy(alpha = 0.12f).compositeOver(c.surfaceContainer),
             contentColor = if (enabled) c.onPrimary else c.onSurface.copy(alpha = 0.38f),
             shadowElevation = if (enabled) 6.dp else 0.dp,
         ) {
