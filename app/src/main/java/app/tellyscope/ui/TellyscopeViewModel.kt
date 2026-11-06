@@ -1263,7 +1263,7 @@ class TellyscopeViewModel(
     /** Open in the picker: shows the launcher [pkg] on the TV. The picker stays. */
     fun openLauncher(pkg: String) {
         val label = _state.value.device.apps.firstOrNull { it.packageName == pkg }?.label ?: launcherName(pkg)
-        open(pkg, label)
+        open(pkg, Copy.cantOpen(label))
     }
 
     /** Not now on the installed launcher: where to switch later. */
@@ -2303,10 +2303,16 @@ class TellyscopeViewModel(
             _notice.value = Copy.notOnTv(app.label)
             return
         }
-        open(app.packageName, app.label)
+        open(app.packageName, Copy.cantOpen(app.label))
     }
 
-    private fun open(pkg: String, label: String) {
+    /** The Apps tab's store row: opens [name], the TV's app store, without a history entry, and says whether it did. */
+    fun openStore(pkg: String, name: String) = open(pkg, Copy.storeCantOpen(name), opened = Copy.storeOpened(name))
+
+    /** The store row's Turn on: the same change, kept in History, as Turn on in the store's own row. */
+    fun turnOnStore(pkg: String) = run(pkg, Action.Enable)
+
+    private fun open(pkg: String, failed: UiText, opened: UiText? = null) {
         val id = _state.value.selectedId ?: return
         viewModelScope.launch {
             val ok = try {
@@ -2317,7 +2323,7 @@ class TellyscopeViewModel(
                 _notice.value = Copy.REMOTE_LOST
                 return@launch
             }
-            if (!ok) _notice.value = Copy.cantOpen(label)
+            if (!ok) _notice.value = failed else opened?.let { _notice.value = it }
         }
     }
 

@@ -125,6 +125,10 @@ data class DeviceActions(
     val reset: () -> Unit = {},
     /** Opens the TV's own system update screen. */
     val checkUpdates: () -> Unit = {},
+    /** The Apps tab's store row: opens the TV's app store, by package and the name the row shows. */
+    val openStore: (String, String) -> Unit = { _, _ -> },
+    /** The store row's Turn on, for a store that's off: no step to confirm. */
+    val turnOnStore: (String) -> Unit = {},
     /** Ad-blocking Private DNS through the given hostname; null goes back to Automatic. */
     val setDns: (String?) -> Unit = {},
     val setFastAnimations: (Boolean) -> Unit = {},

@@ -384,6 +384,7 @@ fun DeviceTabsScreen(
                             if (found.isEmpty()) item { if (loading) AppsLoading() else EmptyLine(q) }
                             rows(found)
                         } else {
+                            tvStore(device, ui.apps)?.let { store -> item(key = "store") { StoreCard(store, offline, locked = ui.busy != null, actions) } }
                             stickyHeader(key = "appsTabs") {
                                 PinnedSegments(
                                     AppsTab.entries.map { stringResource(it.label) }, appsTab.ordinal,
@@ -802,6 +803,23 @@ private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpd
     }
 }
 
+/** The TV's app store, on top of Apps: Open shows it on the TV, and Turn on puts back one that's off. */
+@Composable
+private fun StoreCard(store: AppInfo, offline: Boolean, locked: Boolean, actions: DeviceActions) {
+    val name = stringResource(if (store.packageName == AMAZON_APPSTORE) R.string.tabs_store_amazon else R.string.tabs_store_play)
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+        if (store.enabled) {
+            StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_sub), Copy.button(Action.Open).resolve(), !offline && !locked) {
+                actions.openStore(store.packageName, name)
+            }
+        } else {
+            StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_off), Copy.button(Action.Enable).resolve(), !offline && !locked) {
+                actions.turnOnStore(store.packageName)
+            }
+        }
+    }
+}
+
 @Composable
 private fun StatusRow(icon: ImageVector, title: String, sub: String?, button: String, enabled: Boolean, onClick: () -> Unit) {
     ListItem(
@@ -824,6 +842,13 @@ internal object TileIcons {
             "M12 11A2 2 0 1 0 12 15A2 2 0 1 0 12 11Z" +
             "M7.05 6.05L8.46 7.46A5 5 0 0 1 15.54 7.46L16.95 6.05A7 7 0 0 0 7.05 6.05Z" +
             "M4.22 3.22L5.63 4.63A9 9 0 0 1 18.37 4.63L19.78 3.22A11 11 0 0 0 4.22 3.22Z",
+    )
+    // A storefront after Material's: a scalloped awning over a shop with an open door.
+    val Store = icon(
+        "Store",
+        "M4 4H20L22 9A2.5 2.5 0 0 1 17 9A2.5 2.5 0 0 1 12 9A2.5 2.5 0 0 1 7 9A2.5 2.5 0 0 1 2 9Z" +
+            "M4 13H20V20H4Z" +
+            "M10 15V20H14V15Z",
     )
     val Movie = icon("Movie", "M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z")
 

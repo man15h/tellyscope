@@ -641,6 +641,8 @@ object Copy {
     fun buttonsHint(cap: Int) = UiText(R.string.copy_buttons_hint, cap)
     fun notOnTv(name: String) = UiText(R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
+    fun storeOpened(name: String) = UiText(R.string.copy_store_opened, name)
+    fun storeCantOpen(name: String) = UiText(R.string.copy_store_cant_open, name)
     val OPEN_AN_APP = UiText(R.string.copy_open_an_app)
     fun openAnAppHint(tv: String) = UiText(R.string.copy_open_an_app_hint, tv)
 
