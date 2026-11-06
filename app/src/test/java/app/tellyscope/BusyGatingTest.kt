@@ -43,6 +43,7 @@ class BusyGatingTest {
         compose.onNodeWithText("Example").performClick()
         compose.onNodeWithText(Copy.button(Action.Disable).text()).assertIsNotEnabled()
         compose.onNodeWithText(Copy.button(Action.Uninstall).text()).assertIsNotEnabled()
+        compose.onNodeWithText(Copy.SAVE_APK.text()).assertIsNotEnabled()
     }
 
     @Test fun offlineRowSaysNothingAndWontOpen() {

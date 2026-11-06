@@ -2,8 +2,15 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.CancellationException
+import okio.ForwardingSink
+import okio.Sink
+import okio.buffer
+import okio.sink
 import okio.source
 import java.io.File
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /** What the phone read from the APK before sending it. */
 data class ApkInfo(val packageName: String, val versionCode: Long, val versionName: String?)
@@ -54,6 +61,7 @@ sealed interface InstallResult {
 /**
  * Installs APKs from the phone. Every install replaces in place (`-r`); a downgrade happens only
  * when the caller passes `allowDowngrade`, which the UI sets only after the user asked for it.
+ * Also copies an installed app's APKs back to the phone.
  */
 class Sideload(private val session: AdbSession) {
 
@@ -99,6 +107,45 @@ class Sideload(private val session: AdbSession) {
             // Kadb throws IllegalStateException or IOException with "Failure [INSTALL_...]" in it.
             val out = e.message.orEmpty()
             InstallResult.Refused(refusal(out), out.substringAfter("Install failed: ").trim())
+        }
+    }
+
+    /** Where [pkg]'s APKs are on the TV: one path, or several for a split app. Empty when it isn't installed. */
+    suspend fun apks(pkg: String): List<String> {
+        require(Actions.PACKAGE.matches(pkg)) { "not a package name: $pkg" }
+        return session.shell("pm path $pkg 2>/dev/null").output.lineSequence()
+            .filter { it.startsWith("package:") }
+            .map { it.removePrefix("package:").trim() }
+            .toList()
+    }
+
+    /**
+     * Copies [paths], from [apks], into [sink]: the APK itself, or a split app's parts zipped flat as
+     * an .apks bundle, which [ApkBundle.unpack] reads back for Install. On cancel the caller deletes
+     * what it was writing to.
+     */
+    suspend fun pullApks(paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit = {}) {
+        require(paths.isNotEmpty()) { "nothing to copy" }
+        val sizes = session.shell("stat -c %s " + paths.joinToString(" ") { shellQuote(it) }).output
+            .lines().mapNotNull { it.trim().toLongOrNull() }
+        val total = sizes.takeIf { it.size == paths.size }?.sum()
+        runTransfer { stopped ->
+            if (paths.size == 1) return@runTransfer session.pull(sink.counting(total, stopped, onProgress), paths.single())
+            val out = sink.buffer()
+            // APKs are zips already: storing them as they are is as small, and far quicker on the phone.
+            val zip = ZipOutputStream(out.outputStream()).apply { setLevel(Deflater.NO_COMPRESSION) }
+            // One counter across every part, and a close that only flushes: closing would end the zip.
+            val part = object : ForwardingSink(zip.sink()) {
+                override fun close() = flush()
+            }.counting(total, stopped, onProgress)
+            paths.forEach { p ->
+                zip.putNextEntry(ZipEntry(p.substringAfterLast('/')))
+                session.pull(part, p)
+                part.flush()
+                zip.closeEntry()
+            }
+            zip.finish()
+            out.flush()
         }
     }
 

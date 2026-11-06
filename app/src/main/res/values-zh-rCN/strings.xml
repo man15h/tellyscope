@@ -572,6 +572,7 @@
     <string name="copy_manual_step_1">在电视上打开“开发者选项”</string>
     <string name="copy_manual_step_1_text">Tellyscope 会为你打开。如果电视上没有反应，请前往“设置”→“设备偏好设置”→“开发者选项”。</string>
     <string name="copy_open_on_tv">在电视上打开</string>
+    <string name="copy_save_apk">将 APK 保存到手机</string>
     <string name="copy_manual_step_2">选择“撤消 USB 调试授权”</string>
     <string name="copy_manual_step_2_text">然后回到这里，Tellyscope 会请电视再次允许此手机。</string>
     <string name="copy_manual_done">我已撤消</string>

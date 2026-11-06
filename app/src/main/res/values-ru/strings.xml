@@ -677,6 +677,7 @@
     <string name="copy_manual_step_1">Откройте «Для разработчиков» на телевизоре</string>
     <string name="copy_manual_step_1_text">Tellyscope откроет этот раздел за вас. Если на телевизоре ничего не произошло, перейдите в «Настройки → Настройки устройства → Для разработчиков».</string>
     <string name="copy_open_on_tv">Открыть на телевизоре</string>
+    <string name="copy_save_apk">Сохранить APK на телефон</string>
     <string name="copy_manual_step_2">Выберите «Отозвать доступ для отладки по USB»</string>
     <string name="copy_manual_step_2_text">Затем вернитесь сюда, и Tellyscope снова попросит телевизор разрешить доступ этому телефону.</string>
     <string name="copy_manual_done">Доступ отозван</string>

@@ -2,6 +2,8 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.test.runTest
+import okio.Buffer
+import okio.sink
 import java.io.File
 import java.io.IOException
 import kotlin.io.path.createTempDirectory
@@ -121,5 +123,40 @@ class SideloadTest {
             "Kadb is closed" to InstallRefusal.UNKNOWN,
         )
         cases.forEach { (out, want) -> assertEquals(want, Sideload.refusal(out), out) }
+    }
+
+    private val base = "/data/app/~~x/com.example.player-y/base.apk"
+    private val split = "/data/app/~~x/com.example.player-y/split_config.arm64_v8a.apk"
+
+    @Test fun oneApkIsSavedAsItIs() = runTest {
+        val bytes = ByteArray(30_000) { (it % 251).toByte() }
+        val sh = FakeShell(mapOf("pm path" to ok("package:$base\n"), "stat" to ok("30000\n")))
+        sh.transfer.files[base] = bytes
+        val s = Sideload(sh)
+        val paths = s.apks("com.example.player")
+        assertEquals(listOf(base), paths)
+        val out = Buffer()
+        val seen = mutableListOf<Progress>()
+        s.pullApks(paths, out) { seen += it }
+        assertTrue(bytes.contentEquals(out.readByteArray()))
+        assertEquals(Progress(30_000, 30_000), seen.last())
+    }
+
+    @Test fun aSplitAppIsSavedAsABundleInstallReadsBack() = runTest {
+        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ok("20000\n500\n")))
+        sh.transfer.files[base] = ByteArray(20_000) { 1 }
+        sh.transfer.files[split] = ByteArray(500) { 2 }
+        val s = Sideload(sh)
+        val seen = mutableListOf<Progress>()
+        val file = File(dir, "player.apks")
+        file.sink().use { s.pullApks(s.apks("com.example.player"), it) { p -> seen += p } }
+        val parts = ApkBundle.unpack(file, File(dir, "parts"))
+        assertEquals(listOf("base.apk", "split_config.arm64_v8a.apk"), parts.map { it.name })
+        assertEquals(listOf(20_000L, 500L), parts.map { it.length() })
+        assertEquals(Progress(20_500, 20_500), seen.last())
+    }
+
+    @Test fun anAppThatIsntThereHasNoApks() = runTest {
+        assertEquals(emptyList(), Sideload(FakeShell()).apks("com.example.absent"))
     }
 }

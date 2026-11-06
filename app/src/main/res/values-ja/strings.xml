@@ -572,6 +572,7 @@
     <string name="copy_manual_step_1">テレビで開発者向けオプションを開く</string>
     <string name="copy_manual_step_1_text">Tellyscope が開きます。テレビで何も起こらない場合は、[設定] → [デバイス設定] → [開発者向けオプション] に移動してください。</string>
     <string name="copy_open_on_tv">テレビで開く</string>
+    <string name="copy_save_apk">APKをスマートフォンに保存</string>
     <string name="copy_manual_step_2">「USB デバッグの承認を取り消す」を選ぶ</string>
     <string name="copy_manual_step_2_text">その後ここに戻ると、Tellyscope がテレビにこのスマートフォンの許可を再度求めます。</string>
     <string name="copy_manual_done">取り消しました</string>

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import app.tellyscope.R
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.ConnectionRequest
+import app.tellyscope.adb.Files
 import app.tellyscope.adb.InstallKind
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.InstallResult
@@ -85,6 +86,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import okio.Sink
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1553,28 +1555,57 @@ class TellyscopeViewModel(
     fun saveTo(uri: Uri?) {
         val file = saving ?: return
         saving = null
-        if (uri != null) pull(file, uri)
+        val folder = _state.value.device.files.folder
+        if (uri != null) pull(uri, file.name, file.size) { id, sink, progress -> source.pull(id, folder, file, sink, progress) }
     }
 
-    /** A cancelled or failed copy removes the partial file. */
-    private fun pull(file: TvFile, uri: Uri) {
+    /** The app whose "save as" picker is open, as the name it was offered under and its APKs on the TV. */
+    private var savingApk: Pair<String, List<String>>? = null
+
+    /** Finds [app]'s APKs on the TV and returns the name to offer in the picker; null, with a notice, when there are none. */
+    suspend fun apkName(app: AppInfo): String? {
+        val id = _state.value.selectedId ?: return null
+        val paths = try {
+            source.apks(id, app.packageName)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        }
+        if (paths.isEmpty()) {
+            _notice.value = Copy.saveFailed(app.label)
+            return null
+        }
+        val name = Files.safeName(app.label + if (paths.size == 1) ".apk" else ".apks")
+        savingApk = name to paths
+        return name
+    }
+
+    /** The APK picker's answer: copies the app there, or does nothing if the user backed out. */
+    fun apkTo(uri: Uri?) {
+        val (name, paths) = savingApk ?: return
+        savingApk = null
+        if (uri != null) pull(uri, name, null) { id, sink, progress -> source.pullApks(id, paths, sink, progress) }
+    }
+
+    /** Copies from the TV into [uri] with [copy]. A cancelled or failed copy removes the partial file. */
+    private fun pull(uri: Uri, name: String, size: Long?, copy: suspend (id: String, Sink, (Progress) -> Unit) -> Unit) {
         val id = _state.value.selectedId ?: return
         val storage = storage ?: return
-        val folder = _state.value.device.files.folder
-        setTransfer(id, TransferUi(file.name, toTv = false, folder = folder, progress = Progress(0, file.size)))
+        setTransfer(id, TransferUi(name, toTv = false, folder = _state.value.device.files.folder, progress = Progress(0, size)))
         transferJobs[id] = viewModelScope.launch {
             try {
                 storage.create(uri).use { sink ->
-                    source.pull(id, folder, file, sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
+                    copy(id, sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
                 }
-                _notice.value = Copy.saved(file.name)
+                _notice.value = Copy.saved(name)
             } catch (e: CancellationException) {
                 storage.delete(uri)
                 _notice.value = Copy.CANCELLED_SAVE
                 throw e
             } catch (_: Exception) {
                 storage.delete(uri)
-                _notice.value = Copy.saveFailed(file.name)
+                _notice.value = Copy.saveFailed(name)
             } finally {
                 setTransfer(id, null)
             }

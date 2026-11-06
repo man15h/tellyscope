@@ -921,6 +921,7 @@ object Copy {
     val MANUAL_STEP_1 = UiText(R.string.copy_manual_step_1)
     val MANUAL_STEP_1_TEXT = UiText(R.string.copy_manual_step_1_text)
     val OPEN_ON_TV = UiText(R.string.copy_open_on_tv)
+    val SAVE_APK = UiText(R.string.copy_save_apk)
     val MANUAL_STEP_2 = UiText(R.string.copy_manual_step_2)
     val MANUAL_STEP_2_TEXT = UiText(R.string.copy_manual_step_2_text)
     val MANUAL_DONE = UiText(R.string.copy_manual_done)

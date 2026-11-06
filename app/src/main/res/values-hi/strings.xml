@@ -607,6 +607,7 @@
     <string name="copy_manual_step_1">TV पर डेवलपर विकल्प खोलें</string>
     <string name="copy_manual_step_1_text">Tellyscope इसे आपके लिए खोल देता है। अगर TV पर कुछ नहीं होता, तो सेटिंग्स → डिवाइस की प्राथमिकताएं → डेवलपर विकल्प पर जाएं।</string>
     <string name="copy_open_on_tv">TV पर खोलें</string>
+    <string name="copy_save_apk">APK फ़ोन में सेव करें</string>
     <string name="copy_manual_step_2">“USB डीबगिंग की अनुमतियां वापस लें” चुनें</string>
     <string name="copy_manual_step_2_text">फिर यहाँ वापस आएं, और Tellyscope, TV से इस फ़ोन को फिर से अनुमति देने के लिए कहेगा।</string>
     <string name="copy_manual_done">मैंने अनुमतियां वापस ले ली हैं</string>

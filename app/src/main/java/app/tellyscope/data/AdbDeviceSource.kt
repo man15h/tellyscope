@@ -1305,6 +1305,13 @@ class AdbDeviceSource(
         busy(deviceId) { Files(session).pull(folder, file, sink, onProgress) }
     }
 
+    override suspend fun apks(deviceId: String, packageName: String) = Sideload(session(deviceId)).apks(packageName)
+
+    override suspend fun pullApks(deviceId: String, paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit) {
+        val session = liveSession(deviceId)
+        busy(deviceId) { Sideload(session).pullApks(paths, sink, onProgress) }
+    }
+
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw UiTextException(UiText(R.string.data_offline, deviceId))
 
