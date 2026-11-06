@@ -12,6 +12,7 @@ import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
+import app.tellyscope.data.FIRE_HOME_STARTER
 import app.tellyscope.data.FIRE_TV_LAUNCHER
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
@@ -43,6 +44,8 @@ import app.tellyscope.ui.Recommended
 import app.tellyscope.ui.fireLauncher
 import app.tellyscope.ui.fireLaunchers
 import app.tellyscope.ui.groupedHex
+import app.tellyscope.ui.homeLaunchers
+import app.tellyscope.ui.homeMove
 import app.tellyscope.ui.offerChoose
 import app.tellyscope.ui.offerLauncher
 import app.tellyscope.ui.tvStore
@@ -191,6 +194,15 @@ class FireOsTest {
         assertTrue(offerChoose(listOf(fireHome), fire))
         assertTrue(offerLauncher(listOf(fireHome), hidden = false, fire = fire))
         assertFalse(offerLauncher(listOf(fireHome), hidden = false))
+    }
+
+    @Test fun theHomeStarterIsListedWithNoMakeHome() {
+        val starter = AppInfo(FIRE_HOME_STARTER, "Amazon Firehomestarter", null, true, true, UiText(R.string.data_protected_system), "1.0")
+        assertEquals(listOf(FIRE_TV_LAUNCHER, FIRE_HOME_STARTER), homeLaunchers(listOf(fireHome, starter)).map { it.packageName })
+        assertNull(homeMove(starter, fireHome))
+        // With an added launcher on Home, it still offers no way back: Fire TV Home is the TV's own.
+        val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", home = true, removable = true)
+        assertNull(homeMove(starter, projectivy))
     }
 
     @Test fun theListsFireOsLauncherIsTheOneFireOsInstalls() {
