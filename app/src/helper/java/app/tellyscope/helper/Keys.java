@@ -23,10 +23,10 @@ import java.lang.reflect.Method;
  * reaches a shell. The argument is the jar's own path, deleted once the helper is up; it exits at
  * the end of stdin. A line starting with {@code t} is text instead: the rest is typed the way
  * {@code input text} types it, one key press per character. {@code v} and a signed count moves the
- * media volume that many steps in one set, with the TV's volume bar, and answers {@code 0} when the
- * volume didn't move, so the caller presses the keys instead. {@code p0} turns the TV's picture off
- * and {@code p2} back on, through SurfaceFlinger: the TV stays awake, so ADB stays connected, and
- * the picture stays off after the helper exits.
+ * media volume that many steps in one set, with the TV's volume bar, or by one key press where a set
+ * can't move it; {@code 0} means neither worked, and the caller presses the keys instead.
+ * {@code p0} turns the TV's picture off and {@code p2} back on, through SurfaceFlinger: the TV stays
+ * awake, so ADB stays connected, and the picture stays off after the helper exits.
  */
 public final class Keys {
     /** InputManager's INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH: answers once the focused app is done with it. */
@@ -64,7 +64,7 @@ public final class Keys {
                     continue;
                 }
                 if (line.startsWith("v")) {
-                    out.print(volume(Integer.parseInt(line.substring(1).trim())) ? "1\n" : "0\n");
+                    out.print(volume(manager, inject, Integer.parseInt(line.substring(1).trim())) ? "1\n" : "0\n");
                     out.flush();
                     continue;
                 }
@@ -109,11 +109,14 @@ public final class Keys {
 
     /**
      * Sets the media volume {@code delta} steps from where it is, kept inside the range, through
-     * IAudioService as the shell. False when it didn't move: already at the end, a fixed-volume
-     * output (which always reads full), volume handed to a soundbar over HDMI-CEC, or a refused
-     * set. The keys still reach the speaker in all of those, so the caller sends them.
+     * IAudioService as the shell, and reads it back. Where the set can't move it, one Volume key
+     * goes instead: already at the end (the key shows the bar), or an output whose volume is held
+     * at full. That is a fixed output, or a box with HDMI-CEC, where AOSP drops the set and turns
+     * each key into one CEC press to the TV, so a tap is one step of the TV's own volume. False when
+     * the volume can't be read or set at all; the caller then presses the keys.
      */
-    private static boolean volume(int delta) {
+    private static boolean volume(Object manager, Method inject, int delta) throws Exception {
+        boolean moved;
         try {
             IBinder binder = (IBinder) Class.forName("android.os.ServiceManager")
                 .getMethod("getService", String.class).invoke(null, "audio");
@@ -124,11 +127,20 @@ public final class Keys {
             int now = (Integer) get.invoke(audio, STREAM_MUSIC);
             int max = (Integer) audio.getClass().getMethod("getStreamMaxVolume", int.class).invoke(audio, STREAM_MUSIC);
             int target = Math.max(0, Math.min(max, now + delta));
-            if (target == now || !setVolume(audio, target)) return false;
-            return (Integer) get.invoke(audio, STREAM_MUSIC) != now;
+            if (target == now) {
+                moved = false;
+            } else {
+                if (!setVolume(audio, target)) return false;
+                moved = (Integer) get.invoke(audio, STREAM_MUSIC) != now;
+            }
         } catch (Throwable t) {
             return false;
         }
+        if (moved) return true;
+        int code = delta > 0 ? KeyEvent.KEYCODE_VOLUME_UP : KeyEvent.KEYCODE_VOLUME_DOWN;
+        long down = SystemClock.uptimeMillis();
+        return send(manager, inject, down, KeyEvent.ACTION_DOWN, code, 0)
+            && send(manager, inject, down, KeyEvent.ACTION_UP, code, 0);
     }
 
     /**

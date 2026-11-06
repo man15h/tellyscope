@@ -249,7 +249,8 @@ fun RemoteScreen(
     val screenControl = (device.android?.substringBefore('.')?.toIntOrNull() ?: 0) < 14 || screenOff
     // A box on HDMI with its volume fixed ignores mute and volume: they gray out, with the reason under them.
     LaunchedEffect(device.id, live) { if (live) actions.checkVolume() }
-    val volumeFixed = live && device.id in state.volumeFixed
+    // On for Fire OS while volume over HDMI-CEC is tried there; drop `&& device.fireOs == null` to undo.
+    val volumeFixed = live && device.id in state.volumeFixed && device.fireOs == null
     val volume = live && !volumeFixed
     val volumeAlpha = if (volumeFixed) Modifier.alpha(0.38f) else Modifier
     var confirmReboot by rememberSaveable { mutableStateOf(false) }

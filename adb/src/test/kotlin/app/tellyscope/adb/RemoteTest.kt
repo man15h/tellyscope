@@ -233,8 +233,8 @@ class RemoteTest {
         assertTrue(sh.ran.none { it.startsWith("input") })
     }
 
-    @Test fun volumeThatDidNotMoveSendsTheKeys() = runBlocking {
-        // A fixed or HDMI-CEC output: the set changes nothing, and the keys reach the speaker.
+    @Test fun volumeTheHelperCannotReachSendsTheKeys() = runBlocking {
+        // A build whose IAudioService the helper can't call: the tap's keys go as before.
         val sh = FakeShell().apply { execOutput = "ready\n0\n1\n1\n1\n" }
         assertTrue(Remote(sh, KeyHelper(sh, byteArrayOf(1))).volume(RemoteKey.VOLUME_DOWN, 3))
         assertEquals("v-3\n25\n25\n25\n", sh.execInput.readUtf8())

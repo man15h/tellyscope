@@ -50,8 +50,9 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
     suspend fun press(key: RemoteKey, times: Int): Boolean = (1..times).all { press(key) }
 
     /**
-     * One volume tap of [steps]: a single jump through [keys], so the TV's bar moves once; [steps]
-     * key presses, as [press], when the helper isn't running or the volume didn't move that way.
+     * One volume tap of [steps]: a single jump through [keys], so the TV's bar moves once, or one
+     * key where the volume is held at full (see [KeyHelper.volume]); [steps] key presses, as
+     * [press], when the helper isn't running or can't reach the volume.
      */
     suspend fun volume(key: RemoteKey, steps: Int): Boolean {
         require(key == RemoteKey.VOLUME_UP || key == RemoteKey.VOLUME_DOWN)

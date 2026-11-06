@@ -36,8 +36,8 @@ class KeyHelperTest {
         assertEquals("20\nt hello tv \n", sh.execInput.readUtf8())
     }
 
-    @Test fun volumeThatDidNotMoveKeepsTheHelper() = runBlocking {
-        // "0" to a volume set means use the keys, not a broken helper: the next key still goes through it.
+    @Test fun volumeTheHelperCannotReachKeepsTheHelper() = runBlocking {
+        // "0" to a volume line means send the keys, not a broken helper: the next key still goes through it.
         val sh = FakeShell().apply { execOutput = "ready\n0\n1\n" }
         val keys = KeyHelper(sh, dex)
         assertEquals(false, keys.volume(-7))

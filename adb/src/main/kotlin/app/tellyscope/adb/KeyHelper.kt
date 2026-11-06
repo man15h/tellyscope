@@ -34,8 +34,9 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
     suspend fun type(text: String): Boolean? = send("t$text")
 
     /**
-     * Moves the media volume [delta] steps in one set. True when it moved; false when it couldn't
-     * (fixed or HDMI-CEC volume, already at the end, a refused set), and the keys should go instead.
+     * Moves the media volume [delta] steps in one set, or by one Volume key where a set can't move
+     * it (already at the end, or volume held at full: a fixed output or HDMI-CEC). False when the
+     * helper couldn't read or set the volume at all, and the keys should go instead.
      */
     suspend fun volume(delta: Int): Boolean? = send("v$delta")
 
