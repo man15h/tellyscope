@@ -114,6 +114,19 @@ class RemoteTest {
         assertFailsWith<IllegalArgumentException> { Remote.typeCommand("café") }
     }
 
+    @Test fun helperSendsAnyOneLine() {
+        listOf("Привет", "مرحبا", "café", "emoji 🙂", "100%sure", "x".repeat(Remote.MAX_TEXT))
+            .forEach { assertTrue(Remote.sendable(it), it) }
+        listOf("", "line\nbreak", "tab\there", "cr\rhere", "x".repeat(Remote.MAX_TEXT + 1))
+            .forEach { assertFalse(Remote.sendable(it), it) }
+    }
+
+    @Test fun nonLatinWithoutTheHelperIsFalseAndRunsNothing() = runTest {
+        val sh = FakeShell()
+        assertFalse(Remote(sh).type("Привет"))
+        assertEquals(emptyList<String>(), sh.ran)
+    }
+
     @Test fun typeRunsTheQuotedCommand() = runTest {
         val sh = FakeShell()
         assertTrue(Remote(sh).type("hello there"))

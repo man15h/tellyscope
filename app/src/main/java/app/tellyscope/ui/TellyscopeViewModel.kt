@@ -2195,14 +2195,18 @@ class TellyscopeViewModel(
 
     /** Types on the TV. Returns why it can't, or null once it's on its way. */
     fun type(text: String): UiText? {
-        if (!Remote.typeable(text)) return Copy.cantType(text)
+        if (!Remote.sendable(text)) return Copy.cantType(text)
         val id = _state.value.selectedId ?: return null
         viewModelScope.launch {
             keys.withLock {
                 _notice.value = try {
                     if (source.type(id, text)) {
-                        typed[id] = (typed[id] ?: 0) + text.length
+                        // Backspace takes one character, and an emoji is two chars.
+                        typed[id] = (typed[id] ?: 0) + text.codePointCount(0, text.length)
                         null
+                    } else if (!Remote.typeable(text)) {
+                        // Past Latin needs the key helper, which this TV wouldn't run.
+                        Copy.cantType(text)
                     } else {
                         Copy.TYPE_REFUSED
                     }

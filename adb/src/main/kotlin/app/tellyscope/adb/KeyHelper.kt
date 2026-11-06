@@ -30,7 +30,7 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
      */
     suspend fun press(code: Int): Boolean? = send("$code")
 
-    /** Types [text], already checked with [Remote.typeable]; answers like [press]. */
+    /** Types [text], already checked with [Remote.sendable]; answers like [press]. */
     suspend fun type(text: String): Boolean? = send("t$text")
 
     /**

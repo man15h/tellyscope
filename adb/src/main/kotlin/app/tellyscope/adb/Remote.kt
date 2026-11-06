@@ -101,8 +101,12 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
         return r.exitCode == 0 && !r.output.contains("Error") && !r.output.contains("Exception")
     }
 
-    /** Types [text] into whatever box has focus on the TV, through [keys] like [press]. Check [typeable] first. */
-    suspend fun type(text: String): Boolean = keys?.type(text) ?: (session.shell(typeCommand(text)).exitCode == 0)
+    /**
+     * Types [text] into whatever box has focus on the TV, through [keys] like [press]; check [sendable]
+     * first. Only the helper can send what isn't [typeable], so without it that text answers false.
+     */
+    suspend fun type(text: String): Boolean =
+        keys?.type(text) ?: (typeable(text) && session.shell(typeCommand(text)).exitCode == 0)
 
     /**
      * Turns the TV's picture off or back on, leaving the TV awake so the link stays up. Only the
@@ -181,6 +185,13 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
          */
         fun typeable(text: String): Boolean =
             text.isNotEmpty() && text.length <= MAX_TEXT && text.all { it in ' '..'~' } && "%s" !in text
+
+        /**
+         * What the key helper can send: any one line, typed or, past Latin, pasted (see [KeyHelper]).
+         * A line break or other control character would end its line early.
+         */
+        fun sendable(text: String): Boolean =
+            text.isNotEmpty() && text.length <= MAX_TEXT && text.none { it.isISOControl() }
 
         /** `input text` reads `%s` as a space, and the whole thing is single-quoted for the shell. */
         fun typeCommand(text: String): String {
