@@ -20,6 +20,7 @@ fails CI until this file has a section for its version.
 - **Improved:** On Fire TV, the Android card shows the Fire OS version, and Check for updates opens About or Fire TV Settings with directions to the update screen. [#365](../../pull/365)
 - **Improved:** The Remote now has its own button in the middle of the bottom bar on every tab. [#368](../../pull/368)
 - **Improved:** "Get a better home screen" moved from Apps to the TV page. [#368](../../pull/368)
+- **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
 
 ## 0.15.1 — 2026-11-06
 
