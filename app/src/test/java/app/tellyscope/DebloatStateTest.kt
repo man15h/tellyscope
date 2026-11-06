@@ -12,7 +12,9 @@ import app.tellyscope.data.Suggestions
 import app.tellyscope.data.UiText
 import app.tellyscope.data.suggest
 import app.tellyscope.ui.DeviceUi
+import app.tellyscope.ui.PLAY_STORE
 import app.tellyscope.ui.debloatState
+import app.tellyscope.ui.offerLauncherCard
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -64,5 +66,34 @@ class DebloatStateTest {
 
     @Test fun `an unknown TV still has something to do`() {
         assertTrue(debloatState(DeviceUi(lists = Suggestions.NoList(null, emptyList()))).todo)
+    }
+
+    private val store = AppInfo(PLAY_STORE, "Google Play Store", null, true, true, null, "1")
+
+    private fun card(ui: DeviceUi, hidden: Boolean = false) =
+        ui.copy(launcherCardHidden = hidden).let { offerLauncherCard(it, debloatState(it)) }
+
+    @Test fun `the home screen card waits for the list to load`() {
+        val apps = listOf(store, app("com.acme.a", false))
+        assertFalse(card(DeviceUi(apps = apps)))
+        assertFalse(card(DeviceUi(apps = apps, lists = Suggestions.Unavailable)))
+        assertTrue(card(ui(apps)))
+    }
+
+    @Test fun `the home screen card waits until Debloat has nothing left`() {
+        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", false)))))
+        assertTrue(card(ui(listOf(store, app("com.acme.a", false), app("com.acme.b", false)))))
+        // Turned off, then back on after a TV update: Debloat has it again, so the card waits again.
+        assertFalse(card(ui(listOf(store, app("com.acme.a", false), app("com.other", true)), listOf(turnedOff("com.other")))))
+    }
+
+    @Test fun `a TV with no list never gets the home screen card`() {
+        assertFalse(card(DeviceUi(apps = listOf(store), lists = Suggestions.NoList(null, emptyList()))))
+    }
+
+    @Test fun `the card's own gates still apply once the TV is cleaned up`() {
+        val done = ui(listOf(store, app("com.acme.a", false)))
+        assertFalse(card(done, hidden = true))
+        assertFalse(card(ui(listOf(app("com.acme.a", false))))) // no Play Store
     }
 }
