@@ -21,9 +21,7 @@ Tellyscope is in closed testing on Google Play. Join the testers group, accept t
 
 <a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 
-1. [Join the group](https://groups.google.com/g/tellyscope-testers)
-2. [Accept the test](https://play.google.com/apps/testing/app.tellyscope)
-3. [Install from Play](https://play.google.com/store/apps/details?id=app.tellyscope)
+1\. [Join the group](https://groups.google.com/g/tellyscope-testers) -> 2. [Accept the test](https://play.google.com/apps/testing/app.tellyscope) -> 3. [Install from Play](https://play.google.com/store/apps/details?id=app.tellyscope)
 
 [![Watch the demo](docs/site/demo-thumb.webp)](https://youtu.be/N_PeDw5GiCc)
 
