@@ -39,6 +39,9 @@ object Protected {
         "com.android.settings" to ProtectedReason.SETTINGS,
         "com.android.tv.settings" to ProtectedReason.SETTINGS,
         "com.amazon.tv.settings.v2" to ProtectedReason.SETTINGS, // Fire TV
+        // Fire TV's backup Home (priority 1 under the Fire TV launcher's 950); Fire OS refuses to turn it off.
+        // No launcher to offer, so it doesn't count as a second home screen.
+        "com.amazon.firehomestarter" to ProtectedReason.SYSTEM,
         "com.android.vending" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gms" to ProtectedReason.PLAY_SERVICES,
         "com.google.android.gsf" to ProtectedReason.PLAY_SERVICES,
