@@ -80,6 +80,7 @@
     <string name="copy_install">安装</string>
     <string name="copy_open">打开</string>
     <string name="copy_home_screen_of">%1$s 的主屏幕</string>
+    <string name="copy_picture_failed">无法加载图片</string>
     <string name="copy_uses_service">使用无障碍服务</string>
     <string name="copy_no_service">开源 · 不使用无障碍服务</string>
     <string name="copy_other_launcher">想用其他启动器？在电视上的 Play 商店中安装后再回到这里，它会显示在“%1$s”下。</string>
