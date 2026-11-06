@@ -199,6 +199,13 @@ object Parsers {
         return Regex("mScreenOn=(true|false)").find(power)?.groupValues?.get(1)?.toBooleanStrict()
     }
 
+    /**
+     * The package on screen, from [Commands.RESUMED]'s `ActivityRecord{… u0 com.example/.Main t12}`.
+     * Null when no activity is resumed, as while the screen is off.
+     */
+    fun resumedPackage(dumpsys: String): String? =
+        Regex("ResumedActivity.*? u\\d+ ([\\w.]+)/").find(dumpsys)?.groupValues?.get(1)
+
     data class TcpSocket(val uid: Int, val remoteIp: String, val remotePort: Int, val state: Int) {
         /** Loopback or unconnected: nothing leaves the TV. */
         val local get() = remotePort == 0 || remoteIp.startsWith("127.") || remoteIp == "0:0:0:0:0:0:0:1"

@@ -1067,6 +1067,8 @@
     <string name="device_nothing_matches">Ничего не найдено по запросу «%1$s».</string>
     <string name="device_app_disabled">Отключено</string>
     <string name="device_app_running">Запущено</string>
+    <string name="device_app_background">Работает в фоне</string>
+    <string name="device_app_on_screen">На экране</string>
     <string name="device_app_not_running">Не запущено</string>
     <string name="device_app_protected">Защищено: %1$s</string>
     <string name="guide_brand_other">Другой</string>

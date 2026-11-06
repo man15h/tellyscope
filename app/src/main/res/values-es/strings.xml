@@ -1011,6 +1011,8 @@
     <string name="device_nothing_matches">Nada coincide con \"%1$s\".</string>
     <string name="device_app_disabled">Desactivada</string>
     <string name="device_app_running">En ejecución</string>
+    <string name="device_app_background">En segundo plano</string>
+    <string name="device_app_on_screen">En pantalla</string>
     <string name="device_app_not_running">No se está ejecutando</string>
     <string name="device_app_protected">Protegida: %1$s</string>
     <string name="guide_brand_other">Otra</string>

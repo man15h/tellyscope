@@ -435,6 +435,7 @@ class AdbDeviceSource(
                     storageTotalGb = s.storage?.let { it.totalKb / 1_048_576.0 },
                     uptimeSeconds = s.uptimeSeconds ?: 0,
                     screenOn = s.screenOn,
+                    onScreen = s.onScreen,
                     procs = s.processes.map { Proc(it.pid, it.name, it.packageName, it.cpuPercent ?: 0.0, (it.rssKb / 1024).toInt()) },
                     netBytesPerSec = s.netBytesPerSec,
                     softwareMonth = s.softwareMonth,

@@ -914,6 +914,8 @@
     <string name="device_nothing_matches">「%1$s」に一致するものはありません。</string>
     <string name="device_app_disabled">無効</string>
     <string name="device_app_running">実行中</string>
+    <string name="device_app_background">バックグラウンドで実行中</string>
+    <string name="device_app_on_screen">画面に表示中</string>
     <string name="device_app_not_running">停止中</string>
     <string name="device_app_protected">保護: %1$s</string>
     <string name="guide_brand_other">その他</string>

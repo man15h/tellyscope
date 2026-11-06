@@ -914,6 +914,8 @@
     <string name="device_nothing_matches">没有与“%1$s”匹配的内容。</string>
     <string name="device_app_disabled">已停用</string>
     <string name="device_app_running">正在运行</string>
+    <string name="device_app_background">正在后台运行</string>
+    <string name="device_app_on_screen">显示在屏幕上</string>
     <string name="device_app_not_running">未运行</string>
     <string name="device_app_protected">受保护：%1$s</string>
     <string name="guide_brand_other">其他</string>

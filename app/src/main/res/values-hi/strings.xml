@@ -965,6 +965,8 @@
     <string name="device_nothing_matches">\"%1$s\" से कुछ नहीं मिला।</string>
     <string name="device_app_disabled">बंद है</string>
     <string name="device_app_running">चल रहा है</string>
+    <string name="device_app_background">बैकग्राउंड में चल रहा है</string>
+    <string name="device_app_on_screen">स्क्रीन पर</string>
     <string name="device_app_not_running">नहीं चल रहा</string>
     <string name="device_app_protected">सुरक्षित: %1$s</string>
     <string name="guide_brand_other">अन्य</string>
