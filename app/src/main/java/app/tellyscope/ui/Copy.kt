@@ -612,9 +612,14 @@ object Copy {
         }
     }
 
-    /** Past Latin goes in by pasting; [text] didn't land. Names its first letter the keymap can't type. */
-    fun cantPaste(text: String): UiText =
-        UiText(R.string.copy_cant_paste, (text.firstOrNull { it !in ' '..'~' } ?: text.first()).toString())
+    /**
+     * Past Latin goes in by pasting; [text] didn't land. Names its first letter the keymap can't
+     * type, a whole code point so an emoji isn't half of one.
+     */
+    fun cantPaste(text: String): UiText {
+        val i = text.indexOfFirst { it !in ' '..'~' }.coerceAtLeast(0)
+        return UiText(R.string.copy_cant_paste, text.substring(i, text.offsetByCodePoints(i, 1)))
+    }
 
     val REMOTE_RESTART = UiText(R.string.copy_remote_restart)
     val REBOOT_TITLE = UiText(R.string.copy_reboot_title)

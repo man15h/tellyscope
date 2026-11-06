@@ -11,6 +11,7 @@ import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.Snapshot
+import app.tellyscope.data.UiText
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.TellyscopeViewModel
 import kotlinx.coroutines.Dispatchers
@@ -106,6 +107,10 @@ class RemoteBackspaceTest {
         test.runCurrent()
         assertEquals(Copy.cantPaste("да"), vm.notice.value)
         assertFalse(press(RemoteKey.DEL))
+    }
+
+    @Test fun aRefusedEmojiIsNamedWhole() {
+        assertEquals(UiText(R.string.copy_cant_paste, "🙂"), Copy.cantPaste("ok 🙂"))
     }
 
     @Test fun anotherKeyForgetsTheTypedText() {

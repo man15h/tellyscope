@@ -44,6 +44,11 @@ public final class Keys {
     /** AudioManager.STREAM_MUSIC and FLAG_SHOW_UI. */
     private static final int STREAM_MUSIC = 3;
     private static final int FLAG_SHOW_UI = 1;
+    /**
+     * How long a paste may check and retry. Each accessibility call can block for up to 5 s past a
+     * check, so the answer still beats the phone's 15 s, which would turn the helper off.
+     */
+    private static final long PASTE_DEADLINE_MS = 8_000;
 
     public static void main(String[] args) throws Exception {
         Object manager;
@@ -204,10 +209,12 @@ public final class Keys {
      * keyboard is the suspect), or an app that can't read the clipboard, drops it without a word. So
      * from Android 7 the focused box is read through accessibility before and after; where the paste
      * didn't change it, its text is set with the pasted part inserted at the cursor (Android 8 and
-     * up, never a password box). False when there is no text box in focus or neither changed it.
-     * Where accessibility can't connect (another test tool holds it), the key's answer stands.
+     * up, never a password box). False when neither changed it, or past the deadline. Where
+     * accessibility can't connect (another test tool holds it) or sees no text box in focus (a
+     * custom view, some WebViews), the key's answer stands: unseen isn't refused.
      */
     private static boolean paste(Object manager, Method inject, String text) throws Exception {
+        long deadline = SystemClock.uptimeMillis() + PASTE_DEADLINE_MS;
         boolean clip;
         try {
             clip = setClip(ClipData.newPlainText(null, text));
@@ -221,18 +228,19 @@ public final class Keys {
         UiAutomation automation = connect(thread.getLooper());
         try {
             if (automation == null) return clip && pressPaste(manager, inject);
-            AccessibilityNodeInfo box = focusedBox(automation);
-            if (box == null) return false;
+            if (late(deadline)) return false;
+            AccessibilityNodeInfo box = focusedBox(automation, deadline);
+            if (box == null) return clip && !late(deadline) && pressPaste(manager, inject);
             String before = boxText(box);
-            if (clip && pressPaste(manager, inject) && changed(box, before)) return true;
-            if (Build.VERSION.SDK_INT < 26 || box.isPassword()) return false;
+            if (clip && !late(deadline) && pressPaste(manager, inject) && changed(box, before, deadline)) return true;
+            if (Build.VERSION.SDK_INT < 26 || box.isPassword() || late(deadline)) return false;
             int start = box.getTextSelectionStart();
             int end = box.getTextSelectionEnd();
             if (start < 0 || end < start || end > before.length()) start = end = before.length();
             Bundle args = new Bundle();
             args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
                 before.substring(0, start) + text + before.substring(end));
-            return box.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args) && changed(box, before);
+            return box.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args) && changed(box, before, deadline);
         } finally {
             if (automation != null) {
                 try {
@@ -283,13 +291,13 @@ public final class Keys {
      * The text box with input focus, or null. An app whose accessibility was off only answers once
      * it hears it is on, which is just after the connect, so this asks for up to a second.
      */
-    private static AccessibilityNodeInfo focusedBox(UiAutomation automation) throws InterruptedException {
-        for (int i = 0; i < 20; i++) {
+    private static AccessibilityNodeInfo focusedBox(UiAutomation automation, long deadline) throws InterruptedException {
+        for (int i = 1; ; i++) {
             AccessibilityNodeInfo node = automation.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
             if (node != null) return node.isEditable() ? node : null;
+            if (i == 20 || late(deadline)) return null;
             Thread.sleep(50);
         }
-        return null;
     }
 
     /** The box's text; an empty box reports its hint as its text, which isn't there to keep. */
@@ -300,15 +308,19 @@ public final class Keys {
     }
 
     /**
-     * Whether the box's text moved off {@code before} within a second. A plain text box has changed
+     * Whether the box's text moved off {@code before} within a second, checked at least once. A plain text box has changed
      * by the time the key's answer is back; a Compose one only reports it on its next frame.
      */
-    private static boolean changed(AccessibilityNodeInfo box, String before) throws InterruptedException {
-        for (int i = 0; i < 20; i++) {
+    private static boolean changed(AccessibilityNodeInfo box, String before, long deadline) throws InterruptedException {
+        for (int i = 1; ; i++) {
             if (box.refresh() && !before.equals(boxText(box))) return true;
+            if (i == 20 || late(deadline)) return false;
             Thread.sleep(50);
         }
-        return false;
+    }
+
+    private static boolean late(long deadline) {
+        return SystemClock.uptimeMillis() >= deadline;
     }
 
     /**
