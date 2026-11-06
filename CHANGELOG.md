@@ -28,6 +28,7 @@ fails CI until this file has a section for its version.
 - **Improved:** The home screen suggestion now appears after the TV is debloated, not on first connect. [#374](../../pull/374)
 - **Improved:** Tweaks › Home screen always offers Change home screen, and the picker opens on your current launcher. [#386](../../pull/386)
 - **Improved:** Each app on Apps shows Open and Stop by state, and one remove button. [#403](../../pull/403)
+- **Fixed:** On Fire TV, Tweaks › Home screen no longer offers Firehomestarter as a launcher. [#409](../../pull/409), [#411](../../pull/411)
 - **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
 - **Fixed:** A dropped connection no longer logs you out of a TV. [#402](../../pull/402)
 - **Fixed:** A TV added by IP:port is found again after its port changes. [#402](../../pull/402)
