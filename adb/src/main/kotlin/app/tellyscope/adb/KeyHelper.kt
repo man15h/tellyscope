@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -30,8 +31,11 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
      */
     suspend fun press(code: Int): Boolean? = send("$code")
 
-    /** Types [text], already checked with [Remote.sendable]; answers like [press]. */
-    suspend fun type(text: String): Boolean? = send("t$text")
+    /**
+     * Types [text], already checked with [Remote.sendable]; answers like [press]. Past Latin, false
+     * means the paste didn't land in the focused box, or no box had focus.
+     */
+    suspend fun type(text: String): Boolean? = send("t$text", PASTE_TIMEOUT)
 
     /**
      * Moves the media volume [delta] steps in one set, or by one Volume key where a set can't move
@@ -43,11 +47,11 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
     /** Turns the TV's picture off or on; the TV stays awake and connected. Answers like [press]. */
     suspend fun screen(on: Boolean): Boolean? = send(if (on) "p2" else "p0")
 
-    private suspend fun send(line: String): Boolean? = lock.withLock {
+    private suspend fun send(line: String, timeout: Duration = ANSWER_TIMEOUT): Boolean? = lock.withLock {
         if (failed) return null
         val p = pipe ?: start() ?: return null
         val answer = try {
-            withTimeoutOrNull(ANSWER_TIMEOUT) {
+            withTimeoutOrNull(timeout) {
                 runInterruptible(Dispatchers.IO) {
                     p.stdin.writeUtf8("$line\n").flush()
                     // A helper that exited answers "", not null: null is the timeout below.
@@ -118,5 +122,7 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
         val START_TIMEOUT = 15.seconds
         /** Past Android's own 5 s input dispatch timeout, so a key the TV dropped shows as dropped. */
         val ANSWER_TIMEOUT = 6.seconds
+        /** A paste connects to accessibility and waits on the box, up to a second per check. */
+        val PASTE_TIMEOUT = 15.seconds
     }
 }

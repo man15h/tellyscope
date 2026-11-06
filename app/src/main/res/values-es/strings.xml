@@ -334,6 +334,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">La TV solo acepta una línea cada vez.</string>
     <string name="copy_cant_type_odd">La TV solo puede escribir letras, números y símbolos simples, no “%1$s”.</string>
+    <string name="copy_cant_paste">La TV no aceptó “%1$s”. Esas letras se pegan, y este cuadro de texto o esta TV no acepta pegar. Las letras, números y símbolos simples sí se escriben.</string>
     <string name="copy_cant_type_percent_s" formatted="false">La TV lee “%s” como un espacio, así que no puede escribirlo.</string>
     <string name="copy_remote_restart">Reiniciar TV</string>
     <string name="copy_reboot_title">¿Reiniciar la TV?</string>

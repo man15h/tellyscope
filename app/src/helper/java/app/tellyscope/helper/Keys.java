@@ -2,18 +2,24 @@
 package app.tellyscope.helper;
 
 import android.content.ClipData;
+import android.app.UiAutomation;
 import android.os.Build;
+import android.os.Bundle;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.SystemClock;
 import android.view.InputDevice;
 import android.view.InputEvent;
 import android.view.KeyCharacterMap;
 import android.view.KeyEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
@@ -25,11 +31,12 @@ import java.lang.reflect.Method;
  * reaches a shell. The argument is the jar's own path, deleted once the helper is up; it exits at
  * the end of stdin. A line starting with {@code t} is text instead: the rest is typed the way
  * {@code input text} types it, one key press per character, or pasted when it holds a character
- * the keymap has no key for (Cyrillic, Arabic). {@code v} and a signed count moves the
- * media volume that many steps in one set, with the TV's volume bar, or by one key press where a set
- * can't move it; {@code 0} means neither worked, and the caller presses the keys instead.
- * {@code p0} turns the TV's picture off and {@code p2} back on, through SurfaceFlinger: the TV stays
- * awake, so ADB stays connected, and the picture stays off after the helper exits.
+ * the keymap has no key for (Cyrillic, Arabic); {@code 0} when the paste didn't land. {@code v}
+ * and a signed count moves the media volume that many steps in one set, with the TV's volume bar,
+ * or by one key press where a set can't move it; {@code 0} means neither worked, and the caller
+ * presses the keys instead. {@code p0} turns the TV's picture off and {@code p2} back on, through
+ * SurfaceFlinger: the TV stays awake, so ADB stays connected, and the picture stays off after the
+ * helper exits.
  */
 public final class Keys {
     /** InputManager's INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH: answers once the focused app is done with it. */
@@ -37,6 +44,11 @@ public final class Keys {
     /** AudioManager.STREAM_MUSIC and FLAG_SHOW_UI. */
     private static final int STREAM_MUSIC = 3;
     private static final int FLAG_SHOW_UI = 1;
+    /**
+     * How long a paste may check and retry. Each accessibility call can block for up to 5 s past a
+     * check, so the answer still beats the phone's 15 s, which would turn the helper off.
+     */
+    private static final long PASTE_DEADLINE_MS = 8_000;
 
     public static void main(String[] args) throws Exception {
         Object manager;
@@ -191,11 +203,58 @@ public final class Keys {
     /**
      * Puts {@code text} on the TV's clipboard as the shell, then presses Paste in the focused box. The
      * keymap only has keys for Latin, so this is the one way to non-Latin text without an input
-     * method on the TV. It replaces whatever the TV's clipboard held. Paste is its own key from
-     * Android 7; older text boxes take Ctrl+V.
+     * method on the TV. It replaces whatever the TV's clipboard held.
+     *
+     * Injecting the key only says the TV received it: an input method that eats Paste (Fire TV's
+     * keyboard is the suspect), or an app that can't read the clipboard, drops it without a word. So
+     * from Android 7 the focused box is read through accessibility before and after; where the paste
+     * didn't change it, its text is set with the pasted part inserted at the cursor (Android 8 and
+     * up, never a password box). False when neither changed it, or past the deadline. Where
+     * accessibility can't connect (another test tool holds it) or sees no text box in focus (a
+     * custom view, some WebViews), the key's answer stands: unseen isn't refused.
      */
     private static boolean paste(Object manager, Method inject, String text) throws Exception {
-        if (!setClip(ClipData.newPlainText(null, text))) return false;
+        long deadline = SystemClock.uptimeMillis() + PASTE_DEADLINE_MS;
+        boolean clip;
+        try {
+            clip = setClip(ClipData.newPlainText(null, text));
+        } catch (Throwable t) {
+            // A clipboard the shell can't write still leaves setting the text.
+            clip = false;
+        }
+        if (Build.VERSION.SDK_INT < 24) return clip && pressPaste(manager, inject);
+        HandlerThread thread = new HandlerThread("a11y");
+        thread.start();
+        UiAutomation automation = connect(thread.getLooper());
+        try {
+            if (automation == null) return clip && pressPaste(manager, inject);
+            if (late(deadline)) return false;
+            AccessibilityNodeInfo box = focusedBox(automation, deadline);
+            if (box == null) return clip && !late(deadline) && pressPaste(manager, inject);
+            String before = boxText(box);
+            if (clip && !late(deadline) && pressPaste(manager, inject) && changed(box, before, deadline)) return true;
+            if (Build.VERSION.SDK_INT < 26 || box.isPassword() || late(deadline)) return false;
+            int start = box.getTextSelectionStart();
+            int end = box.getTextSelectionEnd();
+            if (start < 0 || end < start || end > before.length()) start = end = before.length();
+            Bundle args = new Bundle();
+            args.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE,
+                before.substring(0, start) + text + before.substring(end));
+            return box.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, args) && changed(box, before, deadline);
+        } finally {
+            if (automation != null) {
+                try {
+                    UiAutomation.class.getDeclaredMethod("disconnect").invoke(automation);
+                } catch (Throwable t) {
+                    // Gone with the helper at the latest.
+                }
+            }
+            thread.quitSafely();
+        }
+    }
+
+    /** Paste is its own key from Android 7; older text boxes take Ctrl+V. */
+    private static boolean pressPaste(Object manager, Method inject) throws Exception {
         long now = SystemClock.uptimeMillis();
         if (Build.VERSION.SDK_INT >= 24) {
             return send(manager, inject, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_PASTE, 0)
@@ -204,6 +263,64 @@ public final class Keys {
         int ctrl = KeyEvent.META_CTRL_ON | KeyEvent.META_CTRL_LEFT_ON;
         return send(manager, inject, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_V, ctrl)
             && send(manager, inject, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_V, ctrl);
+    }
+
+    /**
+     * A UiAutomation the way the {@code uiautomator} command makes one, as the shell, leaving the
+     * TV's own accessibility services running. Null where this build has no such constructor (or
+     * another UiAutomation is already connected).
+     */
+    private static UiAutomation connect(Looper looper) {
+        try {
+            Class<?> type = Class.forName("android.app.IUiAutomationConnection");
+            Constructor<?> connection = Class.forName("android.app.UiAutomationConnection").getDeclaredConstructor();
+            connection.setAccessible(true);
+            Constructor<UiAutomation> make = UiAutomation.class.getDeclaredConstructor(Looper.class, type);
+            make.setAccessible(true);
+            UiAutomation automation = make.newInstance(looper, connection.newInstance());
+            Method connect = UiAutomation.class.getDeclaredMethod("connect", int.class);
+            connect.setAccessible(true);
+            connect.invoke(automation, UiAutomation.FLAG_DONT_SUPPRESS_ACCESSIBILITY_SERVICES);
+            return automation;
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /**
+     * The text box with input focus, or null. An app whose accessibility was off only answers once
+     * it hears it is on, which is just after the connect, so this asks for up to a second.
+     */
+    private static AccessibilityNodeInfo focusedBox(UiAutomation automation, long deadline) throws InterruptedException {
+        for (int i = 1; ; i++) {
+            AccessibilityNodeInfo node = automation.findFocus(AccessibilityNodeInfo.FOCUS_INPUT);
+            if (node != null) return node.isEditable() ? node : null;
+            if (i == 20 || late(deadline)) return null;
+            Thread.sleep(50);
+        }
+    }
+
+    /** The box's text; an empty box reports its hint as its text, which isn't there to keep. */
+    private static String boxText(AccessibilityNodeInfo box) {
+        if (Build.VERSION.SDK_INT >= 26 && box.isShowingHintText()) return "";
+        CharSequence t = box.getText();
+        return t == null ? "" : t.toString();
+    }
+
+    /**
+     * Whether the box's text moved off {@code before} within a second, checked at least once. A plain text box has changed
+     * by the time the key's answer is back; a Compose one only reports it on its next frame.
+     */
+    private static boolean changed(AccessibilityNodeInfo box, String before, long deadline) throws InterruptedException {
+        for (int i = 1; ; i++) {
+            if (box.refresh() && !before.equals(boxText(box))) return true;
+            if (i == 20 || late(deadline)) return false;
+            Thread.sleep(50);
+        }
+    }
+
+    private static boolean late(long deadline) {
+        return SystemClock.uptimeMillis() >= deadline;
     }
 
     /**

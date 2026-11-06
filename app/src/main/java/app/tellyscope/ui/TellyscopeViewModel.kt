@@ -2220,8 +2220,8 @@ class TellyscopeViewModel(
                         typed[id] = (typed[id] ?: 0) + text.codePointCount(0, text.length)
                         null
                     } else if (!Remote.typeable(text)) {
-                        // Past Latin needs the key helper, which this TV wouldn't run.
-                        Copy.cantType(text)
+                        // Past Latin is pasted by the key helper: the box didn't take it, or this TV wouldn't run the helper.
+                        Copy.cantPaste(text)
                     } else {
                         Copy.TYPE_REFUSED
                     }

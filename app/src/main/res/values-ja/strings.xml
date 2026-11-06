@@ -314,6 +314,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">テレビには一度に 1 行しか入力できません。</string>
     <string name="copy_cant_type_odd">テレビで入力できるのは半角の英字、数字、記号のみです。「%1$s」は入力できません。</string>
+    <string name="copy_cant_paste">テレビが「%1$s」を受け付けませんでした。この文字は貼り付けで入力しますが、このテキストボックスまたはテレビは貼り付けを受け付けません。半角の英字、数字、記号は入力できます。</string>
     <string name="copy_cant_type_percent_s" formatted="false">テレビは「%s」をスペースとして読み取るため、入力できません。</string>
     <string name="copy_remote_restart">テレビを再起動</string>
     <string name="copy_reboot_title">テレビを再起動しますか？</string>

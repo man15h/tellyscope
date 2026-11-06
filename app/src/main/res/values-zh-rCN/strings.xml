@@ -314,6 +314,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">电视每次只能接收一行文字。</string>
     <string name="copy_cant_type_odd">电视只能输入普通字母、数字和符号，无法输入“%1$s”。</string>
+    <string name="copy_cant_paste">电视没有接受“%1$s”。这类文字需要粘贴输入，而此文本框或电视不接受粘贴。普通字母、数字和符号仍可输入。</string>
     <string name="copy_cant_type_percent_s">电视会把“%s”识别为空格，因此无法输入它。</string>
     <string name="copy_remote_restart">重启电视</string>
     <string name="copy_reboot_title">要重启电视吗？</string>

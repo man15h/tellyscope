@@ -324,6 +324,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">TV एक बार में सिर्फ़ एक लाइन ले सकता है।</string>
     <string name="copy_cant_type_odd">TV सिर्फ़ सामान्य अक्षर, अंक और चिह्न टाइप कर सकता है, “%1$s” नहीं।</string>
+    <string name="copy_cant_paste">TV ने “%1$s” स्वीकार नहीं किया। ऐसे अक्षर पेस्ट करके जाते हैं, और यह टेक्स्ट बॉक्स या TV पेस्ट नहीं लेता। सामान्य अक्षर, अंक और चिह्न अब भी टाइप होते हैं।</string>
     <string name="copy_cant_type_percent_s" formatted="false">TV “%s” को स्पेस समझता है, इसलिए उसे टाइप नहीं कर सकता।</string>
     <string name="copy_remote_restart">TV रीस्टार्ट करें</string>
     <string name="copy_reboot_title">TV रीस्टार्ट करें?</string>
