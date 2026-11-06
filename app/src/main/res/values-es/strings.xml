@@ -80,6 +80,7 @@
     <string name="copy_install">Instalar</string>
     <string name="copy_open">Abrir</string>
     <string name="copy_home_screen_of">Pantalla de inicio de %1$s</string>
+    <string name="copy_picture_failed">No se pudo cargar la imagen</string>
     <string name="copy_uses_service">Usa un servicio de accesibilidad</string>
     <string name="copy_no_service">Código abierto · sin servicio de accesibilidad</string>
     <string name="copy_other_launcher">¿Prefieres otro launcher? Instálalo desde Play Store en tu TV y vuelve aquí. Aparecerá en %1$s.</string>

@@ -109,6 +109,7 @@
     <string name="copy_install">Install</string>
     <string name="copy_open">Open</string>
     <string name="copy_home_screen_of">%1$s home screen</string>
+    <string name="copy_picture_failed">Couldn\'t load the picture</string>
     <string name="copy_uses_service">Uses an accessibility service</string>
     <string name="copy_no_service">Open source · no accessibility service</string>
     <!-- %1$s is copy_on_this_tv -->
