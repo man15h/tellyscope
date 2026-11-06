@@ -26,6 +26,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -212,7 +213,9 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     val pickApp = rememberLauncherForActivityResult(InDownloads.Multiple()) { vm.pickedApp(it) }
     val pickLauncherApk = rememberLauncherForActivityResult(InDownloads.One()) { uri -> uri?.let(vm::pickedLauncherApk) }
     val pickFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let(vm::push) }
+    // Octet-stream, not the APK type: a provider would add .apk to a split app's .apks name.
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream"), vm::saveTo)
+    val scope = rememberCoroutineScope()
     val saveScreenshot = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("image/png"), vm::screenshotTo)
 
     state.update?.let { u ->
@@ -421,6 +424,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 folder = vm::folder,
                 pickFile = { folder -> vm.folder(folder); pickFile.launch(arrayOf("*/*")) },
                 saveFile = { f -> vm.saving(f); saveFile.launch(f.name) },
+                saveApk = { app -> scope.launch { vm.apkName(app)?.let(saveFile::launch) } },
                 cancelTransfer = vm::cancelTransfer,
                 remote = { remote = true },
                 // A run that finished while Debloat was closed is done with.

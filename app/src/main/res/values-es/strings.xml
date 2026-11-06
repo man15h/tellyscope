@@ -304,6 +304,7 @@
     <string name="copy_send_failed">No se pudo enviar %1$s. Comprueba que la TV siga conectada y tenga espacio.</string>
     <string name="copy_send_failed_off_wifi">No se pudo enviar %1$s. Este teléfono no está en Wi-Fi.</string>
     <string name="copy_save_failed">No se pudo guardar %1$s. Comprueba que la TV siga conectada y que el teléfono tenga espacio.</string>
+    <string name="copy_apk_not_found">No se encontró %1$s en la TV.</string>
     <string name="copy_cancelled_send">Cancelado. No quedó nada en la TV.</string>
     <string name="copy_cancelled_save">Cancelado. No se guardó nada.</string>
     <string name="copy_cant_read">No se pudo leer ese archivo en tu teléfono.</string>
@@ -644,6 +645,7 @@
     <string name="copy_manual_step_1">Abre Opciones para desarrolladores en la TV</string>
     <string name="copy_manual_step_1_text">Tellyscope las abre por ti. Si no pasa nada en la TV, ve a Ajustes → Preferencias del dispositivo → Opciones para desarrolladores.</string>
     <string name="copy_open_on_tv">Abrir en la TV</string>
+    <string name="copy_save_apk">Guardar APK en el teléfono</string>
     <string name="copy_manual_step_2">Elige “Revocar autorizaciones de depuración USB”</string>
     <string name="copy_manual_step_2_text">Luego vuelve aquí y Tellyscope pedirá a la TV que vuelva a permitir este teléfono.</string>
     <string name="copy_manual_done">Ya lo revoqué</string>

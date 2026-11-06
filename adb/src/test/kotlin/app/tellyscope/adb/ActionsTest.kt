@@ -555,4 +555,16 @@ class ActionsTest {
         assertEquals(HandOffFailed("the old home screen didn't close", "Error: denied"), Actions(sh).handOff("com.spocky.projengmenu", "me.efesser.flauncher/.MainActivity"))
         assertTrue(openFlauncher in sh.ran)
     }
+
+    @Test fun apksAreThePmPathEntriesAndInstalledIsWhetherThereAreAny() = runTest {
+        val split = FakeShell(mapOf("pm path" to ok("package:/data/app/~~x/com.foo-1/base.apk\npackage:/data/app/~~x/com.foo-1/split_config.en.apk\n")))
+        assertEquals(
+            listOf("/data/app/~~x/com.foo-1/base.apk", "/data/app/~~x/com.foo-1/split_config.en.apk"),
+            Actions(split).apks("com.foo"),
+        )
+        assertTrue(Actions(split).installed("com.foo"))
+        val none = FakeShell()
+        assertEquals(emptyList(), Actions(none).apks("com.absent"))
+        assertEquals(false, Actions(none).installed("com.absent"))
+    }
 }

@@ -113,6 +113,8 @@ data class DeviceActions(
     val pickFile: (TvFolder) -> Unit = {},
     /** Asks where to save [TvFile] on the phone, then copies it. */
     val saveFile: (TvFile) -> Unit = {},
+    /** Asks where to save the app's APK on the phone, then copies it from the TV. */
+    val saveApk: (AppInfo) -> Unit = {},
     val cancelTransfer: () -> Unit = {},
     val remote: () -> Unit = {},
     /** Opens the Debloat flow: pick the TV's list, then review the apps it turns off. */
@@ -479,6 +481,7 @@ internal fun AppRow(
                         Spacer(Modifier.width(8.dp))
                         Text(Copy.OPEN_ON_TV.resolve())
                     }
+                    TextButton(onClick = { actions.saveApk(app) }, enabled = !locked) { Text(Copy.SAVE_APK.resolve()) }
                     if (launcher) TextButton(onClick = toHomeScreen) {
                         Text(Copy.HOME_SETTINGS.resolve())
                         Spacer(Modifier.width(8.dp))

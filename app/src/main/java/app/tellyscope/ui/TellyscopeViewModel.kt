@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import app.tellyscope.R
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.ConnectionRequest
+import app.tellyscope.adb.Files
 import app.tellyscope.adb.InstallKind
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.InstallResult
@@ -85,6 +86,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import okio.Sink
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -1542,39 +1544,69 @@ class TellyscopeViewModel(
         }
     }
 
-    /** The file whose "save as" picker is open. Kept here so it survives the activity being recreated behind the picker. */
-    private var saving: TvFile? = null
+    /** The copy to run once the open "save as" picker returns a place. Kept here so it survives the activity being recreated behind the picker. */
+    private var pendingSave: ((Uri) -> Unit)? = null
 
     fun saving(file: TvFile) {
-        saving = file
-    }
-
-    /** The picker's answer: copies the file there, or does nothing if the user backed out. */
-    fun saveTo(uri: Uri?) {
-        val file = saving ?: return
-        saving = null
-        if (uri != null) pull(file, uri)
-    }
-
-    /** A cancelled or failed copy removes the partial file. */
-    private fun pull(file: TvFile, uri: Uri) {
         val id = _state.value.selectedId ?: return
-        val storage = storage ?: return
         val folder = _state.value.device.files.folder
-        setTransfer(id, TransferUi(file.name, toTv = false, folder = folder, progress = Progress(0, file.size)))
+        pendingSave = { uri -> pull(id, uri, file.name, file.size) { sink, progress -> source.pull(id, folder, file, sink, progress) } }
+    }
+
+    /** The picker's answer, for a file or an APK: runs the pending copy, or clears it if the user backed out. */
+    fun saveTo(uri: Uri?) {
+        val save = pendingSave ?: return
+        pendingSave = null
+        if (uri != null) save(uri)
+    }
+
+    /**
+     * Finds [app]'s APKs on the TV and returns the name to offer in the picker; null, with a notice,
+     * when there are none. Marks the TV busy while the lookup runs, which greys the row and stops a
+     * second tap from opening another picker.
+     */
+    suspend fun apkName(app: AppInfo): String? {
+        val id = _state.value.selectedId ?: return null
+        // busy != null locks every app button (DeviceTabs), so a tap during a running lookup is ignored.
+        if (_state.value.device.busy != null) return null
+        updateDevice(id) { it.copy(busy = app.packageName) }
+        val paths = try {
+            source.apks(id, app.packageName)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emptyList()
+        } finally {
+            updateDevice(id) { it.copy(busy = null) }
+        }
+        if (paths.isEmpty()) {
+            _notice.value = Copy.apkNotFound(app.label)
+            return null
+        }
+        // A blank label would make Files.safeName(" .apk") a hidden ".apk"; fall back to the package id.
+        val stem = app.label.ifBlank { app.packageName }
+        val name = Files.safeName(stem + if (paths.size == 1) ".apk" else ".apks")
+        pendingSave = { uri -> pull(id, uri, name, null) { sink, progress -> source.pullApks(id, paths, sink, progress) } }
+        return name
+    }
+
+    /** Copies from TV [id] into [uri] with [copy]. A cancelled or failed copy removes the partial file. */
+    private fun pull(id: String, uri: Uri, name: String, size: Long?, copy: suspend (Sink, (Progress) -> Unit) -> Unit) {
+        val storage = storage ?: return
+        setTransfer(id, TransferUi(name, toTv = false, folder = _state.value.device.files.folder, progress = size?.let { Progress(0, it) }))
         transferJobs[id] = viewModelScope.launch {
             try {
                 storage.create(uri).use { sink ->
-                    source.pull(id, folder, file, sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
+                    copy(sink) { p -> updateTransfer(id) { it.copy(progress = p) } }
                 }
-                _notice.value = Copy.saved(file.name)
+                _notice.value = Copy.saved(name)
             } catch (e: CancellationException) {
                 storage.delete(uri)
                 _notice.value = Copy.CANCELLED_SAVE
                 throw e
             } catch (_: Exception) {
                 storage.delete(uri)
-                _notice.value = Copy.saveFailed(file.name)
+                _notice.value = Copy.saveFailed(name)
             } finally {
                 setTransfer(id, null)
             }

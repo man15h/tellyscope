@@ -374,6 +374,7 @@
     <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
     <string name="copy_send_failed_off_wifi">Couldn\'t send %1$s. This phone isn\'t on Wi-Fi.</string>
     <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
+    <string name="copy_apk_not_found">Couldn\'t find %1$s on the TV.</string>
     <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
     <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
     <string name="copy_cant_read">Couldn\'t read that file on your phone.</string>
@@ -729,6 +730,7 @@
     <!-- Menu path in Android TV's settings -->
     <string name="copy_manual_step_1_text">Tellyscope opens it for you. If nothing happens on the TV, go to Settings → Device Preferences → Developer options.</string>
     <string name="copy_open_on_tv">Open on TV</string>
+    <string name="copy_save_apk">Save APK to phone</string>
     <string name="copy_manual_step_2">Choose “Revoke USB debugging authorisations”</string>
     <string name="copy_manual_step_2_text">Then come back here, and Tellyscope asks the TV to allow this phone again.</string>
     <string name="copy_manual_done">I\'ve revoked it</string>

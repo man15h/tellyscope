@@ -2,8 +2,14 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.CancellationException
+import okio.Sink
+import okio.buffer
+import okio.sink
 import okio.source
 import java.io.File
+import java.util.zip.Deflater
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /** What the phone read from the APK before sending it. */
 data class ApkInfo(val packageName: String, val versionCode: Long, val versionName: String?)
@@ -54,6 +60,7 @@ sealed interface InstallResult {
 /**
  * Installs APKs from the phone. Every install replaces in place (`-r`); a downgrade happens only
  * when the caller passes `allowDowngrade`, which the UI sets only after the user asked for it.
+ * Also copies an installed app's APKs back to the phone.
  */
 class Sideload(private val session: AdbSession) {
 
@@ -99,6 +106,35 @@ class Sideload(private val session: AdbSession) {
             // Kadb throws IllegalStateException or IOException with "Failure [INSTALL_...]" in it.
             val out = e.message.orEmpty()
             InstallResult.Refused(refusal(out), out.substringAfter("Install failed: ").trim())
+        }
+    }
+
+    /**
+     * Copies [paths] ([Actions.apks]) into [sink]: the APK itself, or a split app's parts zipped flat
+     * as an .apks bundle, which [ApkBundle.unpack] reads back for Install. On cancel the caller deletes
+     * what it was writing to.
+     */
+    suspend fun pullApks(paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit = {}) {
+        require(paths.isNotEmpty()) { "nothing to copy" }
+        val sizes = session.shell("stat -c %s " + paths.joinToString(" ") { shellQuote(it) }).output
+            .lines().mapNotNull { it.trim().toLongOrNull() }
+        val total = sizes.takeIf { it.size == paths.size }?.sum()
+        runTransfer { stopped ->
+            if (paths.size == 1) return@runTransfer session.pull(sink.counting(total, stopped, onProgress), paths.single())
+            // use{} closes the zip, freeing its Deflater, on success, failure or cancel. That also
+            // closes the caller's sink, which the caller's own use{} then closes again, harmlessly.
+            ZipOutputStream(sink.buffer().outputStream()).use { zip ->
+                // APKs are zips already: storing them as they are is as small, and far quicker on the phone.
+                zip.setLevel(Deflater.NO_COMPRESSION)
+                // One counter across every part. The part sink is only flushed, never closed: closing would end the zip.
+                val part = zip.sink().counting(total, stopped, onProgress)
+                paths.forEach { p ->
+                    zip.putNextEntry(ZipEntry(p.substringAfterLast('/')))
+                    session.pull(part, p)
+                    part.flush()
+                    zip.closeEntry()
+                }
+            }
         }
     }
 
