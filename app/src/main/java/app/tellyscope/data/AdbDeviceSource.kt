@@ -622,8 +622,9 @@ class AdbDeviceSource(
         }
         if (action == Action.HomeBack) return homeBack(deviceId, packageName, undoing)
         if (action == Action.Reset) return undoReset(deviceId, undoing ?: throw UiTextException(UiText(R.string.data_no_reset_to_undo)))
-        undoing?.let { id -> book.entries(key).firstOrNull { it.id == id } }?.firstHomeService
-            ?.let { return firstHomeServiceOff(deviceId, packageName, it, undoing) }
+        undoing?.let { id -> book.entries(key).firstOrNull { it.id == id } }?.let { e ->
+            e.firstHomeService?.let { return firstHomeServiceOff(deviceId, packageName, it, e.previous?.get("fromService"), undoing) }
+        }
         if (action == Action.Uninstall && Actions(shell).homeOptions()?.current == packageName) return uninstallHome(deviceId, packageName)
         val r = Actions(shell).run(AdbAction.valueOf(action.name.uppercase()), packageName)
         return when (r) {
@@ -654,8 +655,9 @@ class AdbDeviceSource(
         val actions = Actions(session(deviceId))
         val offered = setOfNotNull(packageName.takeIf { actions.mayTurnOn(it) })
         if (packageName in offered && fireOs(deviceId, actions.installed(FIRE_TV_LAUNCHER))) {
-            return fireServiceHome(actions, packageName, withService, ::labelOf) { previous ->
-                book.record(key, System.currentTimeMillis(), Action.Home, packageName, labelOf(packageName), Action.Enable.takeIf { previous.isNotEmpty() }, undoing, previous)
+            return fireServiceHome(actions, packageName, withService, listedServiceLaunchers, ::labelOf) { previous ->
+                // Undo is for the service it turned on; one it only turned off another's for is left to Restore.
+                book.record(key, System.currentTimeMillis(), Action.Home, packageName, labelOf(packageName), Action.Enable.takeIf { "service" in previous }, undoing, previous)
             }
         }
         return switchHome(actions, packageName, withService, offered, listedServiceLaunchers, ::labelOf, ::reasonText) { pkg, undo, previous ->
@@ -668,10 +670,15 @@ class AdbDeviceSource(
     /** A Fire TV by its model, or any TV with Amazon's launcher: [amazonLauncher] says whether it has one. */
     private fun fireOs(deviceId: String, amazonLauncher: Boolean) = amazonLauncher || deviceKind(device(deviceId)) == DeviceKind.FireTv
 
-    /** Undo of a first home: [launcher] stays Home, as there's none to go back to; its [service] goes off. */
-    private suspend fun firstHomeServiceOff(deviceId: String, launcher: String, service: String, undoing: Long): HistoryEntry {
+    /**
+     * Undo of a first home: [launcher] stays Home, as there's none to go back to; its [service] goes off, and
+     * [fromService], another launcher's that the home turned off on Fire OS, goes back on.
+     */
+    private suspend fun firstHomeServiceOff(deviceId: String, launcher: String, service: String, fromService: String?, undoing: Long): HistoryEntry {
         val label = labelOf(launcher)
-        if (!Actions(session(deviceId)).setService(service, false)) throw UiTextException(serviceStillOn(label))
+        val actions = Actions(session(deviceId))
+        if (!actions.setService(service, false)) throw UiTextException(serviceStillOn(label))
+        fromService?.let { actions.grant(it) }
         return book.record(
             deviceId = key(deviceId),
             at = System.currentTimeMillis(),
@@ -1456,24 +1463,34 @@ internal suspend fun switchHome(
  * Fire OS's Home: it refuses to turn Amazon's launcher off and won't keep another default, but [pkg]'s
  * accessibility service takes the Home key, and opens of Amazon's launcher, on its own. So only the
  * service goes on and Amazon's launcher stays as it is, then [pkg] opens, so the TV shows it without
- * a Home press. Recorded as a home with nothing to replace: "service" when this turned it on, so
- * Undo turns it off and does nothing else.
+ * a Home press. Another of [listed] whose service is on would take the Home key too, so its service
+ * goes off. Recorded as a home with nothing to replace: "service" when this turned it on, so Undo
+ * turns it off, and "fromService" when it turned the other's off, so Undo turns that back on.
  */
 internal suspend fun fireServiceHome(
     actions: Actions,
     pkg: String,
     withService: Boolean,
+    listed: Collection<String>,
     label: (String) -> String,
     record: (previous: Map<String, String?>) -> HistoryEntry,
 ): HistoryEntry {
     if (!withService) throw UiTextException(fireNeedsService(label(pkg)))
     val service = actions.homeService(pkg) ?: throw UiTextException(UiText(R.string.data_no_service, label(pkg)))
-    val previous: Map<String, String?> = if (actions.serviceOn(service)) emptyMap()
-    else if (actions.grant(service)) mapOf("service" to service)
-    else throw UiTextException(fireServiceNotOn(label(pkg)))
+    // Off first, so a TV that refuses leaves everything as it was.
+    val old = actions.fireServiceHolder(listed.filter { it != pkg })
+    if (old != null && !actions.setService(old.second, false)) throw UiTextException(fireServiceNotOff(label(old.first)))
+    val on = !actions.serviceOn(service)
+    if (on && !actions.grant(service)) {
+        old?.let { actions.grant(it.second) }
+        throw UiTextException(fireServiceNotOn(label(pkg)))
+    }
     // Amazon's launcher isn't stopped: it stays the default, and the service sends Home on from it.
     val left = actions.homeActivity(pkg)?.let { actions.handOff(null, it) }
-    return record(previous).also { left?.let { throw ActionFailed(notShown(label(pkg), it.reason), it.output) } }
+    val previous = listOfNotNull(("service" to service).takeIf { on }, old?.let { "fromService" to it.second }).toMap()
+    return record(previous).also {
+        left?.let { throw ActionFailed(notShown(label(pkg), it.reason), it.output) }
+    }
 }
 
 /**
