@@ -324,30 +324,50 @@ class DeviceLists(
 
     /**
      * Fetched once per process; later calls reuse it. Offline, the cached copy is returned and the
-     * next call tries the network again. Null when offline with no cache.
+     * next call tries the network again. Null when offline with no cache. An index that isn't
+     * [ListIndex.signed] never replaces a cached one that is: the cached lists are returned, not
+     * signed, so the fetch still fails the check, and neither is kept for the next call.
      */
     suspend fun index(): ListIndex? = lock.withLock {
         index ?: withContext(Dispatchers.IO) {
             dir.mkdirs()
             val bytes = attempt { fetch(base + "index.json") }
-            bytes?.let { b -> checked(b)?.also { save(b, it); index = it } } ?: cachedIndex()
+            val fresh = bytes?.let(::checked)
+            val cached = cachedIndex()
+            when {
+                bytes == null || fresh == null -> cached
+                !fresh.signed && cached != null && cached.signed -> cached.copy(signed = false)
+                else -> fresh.also { save(bytes, it); index = it }
+            }
         }
     }
 
-    /**
-     * Whether the index is [ListIndex.signed] and every list it names can be had and matches its sha256, so what
-     * is used is what was signed. False offline with nothing cached, and for a source without [keys].
-     */
-    suspend fun verified(): Boolean {
-        val index = index() ?: return false
-        return index.signed && index.lists.values.all { file(it.file, it.sha256) != null }
+    /** One index, read once, and the lists it names: whether they pass ([verified]) and what they hold ([shared]) can't come from two. */
+    class Snapshot internal constructor(private val index: ListIndex?, private val read: suspend (ListFile) -> ByteArray?) {
+        /**
+         * Whether the index is [ListIndex.signed] and every list it names can be had and matches its sha256, so what
+         * is used is what was signed. False offline with nothing cached, and for a source without keys.
+         */
+        suspend fun verified(): Boolean = index != null && index.signed && index.lists.values.all { read(it) != null }
+
+        /** The list the index names [name] (`launchers`, `labels`, `streaming` or `protected`); null when it can't be had. */
+        suspend fun shared(name: String): String? = index?.lists?.get(name)?.let { read(it) }?.decodeToString()
     }
 
-    /** [verified] from the cache alone, for the moment before the network answers. */
-    suspend fun cachedVerified(): Boolean = withContext(Dispatchers.IO) {
-        val index = cachedIndex() ?: return@withContext false
-        index.signed && index.lists.values.all { f -> cached(f.file)?.let { sha256(it) == f.sha256 } == true }
+    /** The [index] now, its lists from cache or the network. */
+    suspend fun snapshot(): Snapshot = Snapshot(index()) { file(it.file, it.sha256) }
+
+    /** The cached index, its signature checked again, and only lists cached; for the moment before the network answers. */
+    suspend fun cachedSnapshot(): Snapshot {
+        val index = lock.withLock { withContext(Dispatchers.IO) { cachedIndex() } }
+        return Snapshot(index) { f -> withContext(Dispatchers.IO) { cached(f.file)?.takeIf { sha256(it) == f.sha256 } } }
     }
+
+    /** [Snapshot.verified] of a fresh [snapshot]. */
+    suspend fun verified(): Boolean = snapshot().verified()
+
+    /** [verified] from the cache alone ([cachedSnapshot]). */
+    suspend fun cachedVerified(): Boolean = cachedSnapshot().verified()
 
     /** [bytes] read as an index; [ListIndex.signed] when its signature line ([verifyIndex]) passes and the version is no lower than [floor]. */
     private fun checked(bytes: ByteArray): ListIndex? {
@@ -374,18 +394,11 @@ class DeviceLists(
     suspend fun list(entry: ListEntry): DeviceList? =
         file(entry.file, entry.sha256)?.let { parseList(it.decodeToString(), entry.id) }
 
-    /**
-     * The list the index names [name] (`launchers`, `labels`, `streaming` or `protected`), from cache
-     * or the network. Null when it can't be had, so the caller keeps what it has.
-     */
-    suspend fun shared(name: String): String? =
-        index()?.lists?.get(name)?.let { file(it.file, it.sha256) }?.decodeToString()
+    /** [Snapshot.shared] of a fresh [snapshot]. Null when it can't be had, so the caller keeps what it has. */
+    suspend fun shared(name: String): String? = snapshot().shared(name)
 
-    /** [name]'s list as last cached, without the network, for the moment before [shared] answers; only while it matches the cached index. */
-    suspend fun cachedShared(name: String): String? = withContext(Dispatchers.IO) {
-        val lists = File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex)?.lists.orEmpty()
-        lists[name]?.let { f -> cached(f.file)?.takeIf { sha256(it) == f.sha256 } }?.decodeToString()
-    }
+    /** [name]'s list as last cached ([cachedSnapshot]), for the moment before [shared] answers. */
+    suspend fun cachedShared(name: String): String? = cachedSnapshot().shared(name)
 
     /**
      * A logo's PNG by the name `streaming.json` gives it; null when the index has none or it can't be

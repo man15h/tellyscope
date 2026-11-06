@@ -138,8 +138,9 @@ class DataSignatureTest {
         val dir = tmp.newFolder()
         assertTrue(lists(dir, Served(signed(version = 2026110302))).verified())
         // A new process, as after a restart: the older index is fetched and signed, but the newer one was seen.
+        // It fails the check, and the newer cached one is kept rather than replaced by it.
         val old = lists(dir, Served(signed(version = 2026110301)))
-        assertEquals(2026110301L, old.index()?.version)
+        assertEquals(2026110302L, old.index()?.version)
         assertFalse(old.verified())
         assertTrue(lists(dir, Served(signed(version = 2026110302))).verified())
     }
@@ -155,6 +156,35 @@ class DataSignatureTest {
         assertFalse(lists(dir, offline).cachedVerified())
         File(dir, "index.json").appendText(" ")
         assertFalse(lists(dir, offline).cachedVerified())
+    }
+
+    /**
+     * The check and the lists come from one index: a failed fetch that falls back to the signed cache, then an
+     * unsigned index on the next, leaves the signed cache's launchers in use and says `data/` fails its check.
+     */
+    @Test fun anUnsignedIndexNeverReplacesASignedCache() = runTest {
+        val dir = tmp.newFolder()
+        assertTrue(lists(dir, Served(signed())).verified())
+        val evil = """{"schema":1,"launchers":[{"package":"com.evil.home","name":"Evil","about":"x"}]}""".toByteArray()
+        var fetches = 0
+        val forged = DeviceLists(dir, DATA_BASE, keys) { url ->
+            when (url.removePrefix(DATA_BASE)) {
+                "index.json" -> if (fetches++ == 0) throw IOException("offline") else index(2026110302, evil)
+                "launchers.json" -> evil
+                else -> throw IOException("404 $url")
+            }
+        }
+        val none = DeviceLists(tmp.newFolder()) { throw IOException("offline $it") }
+        SharedLists.load(forged, none, fresh = true)
+        assertNull(SharedLists.unverified)
+        assertEquals(listOf("com.good.home"), SharedLists.launchers.map { it.pkg })
+
+        SharedLists.refresh()
+        assertEquals(2, fetches)
+        assertEquals(DATA_BASE, SharedLists.unverified)
+        assertEquals(listOf("com.good.home"), SharedLists.launchers.map { it.pkg })
+        assertTrue(lists(dir, Served(emptyMap())).cachedVerified())
+        assertEquals(launchers.decodeToString(), forged.cachedShared("launchers"))
     }
 
     /** The list is still used when it fails, so the card can show it, but [SharedLists.unverified] says it failed. */

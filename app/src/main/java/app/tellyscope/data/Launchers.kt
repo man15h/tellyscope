@@ -210,7 +210,7 @@ object SharedLists {
         this.data = data
         source = lists
         if (fresh) reset(_state.value.copy(protected = emptyMap()))
-        apply(data.cachedVerified(), data::cachedShared, lists::cachedShared)
+        apply(data.cachedSnapshot(), lists.cachedSnapshot())
         refresh()
     }
 
@@ -218,7 +218,7 @@ object SharedLists {
     suspend fun refresh() {
         val data = data ?: return
         val source = source ?: return
-        apply(data.verified(), data::shared, source::shared)
+        apply(data.snapshot(), source.snapshot())
     }
 
     /** A logo's PNG, at four times its size in dp; null until it can be had. */
@@ -237,15 +237,16 @@ object SharedLists {
     suspend fun screenshot(file: ListFile): ByteArray? = data?.image(file)
 
     /**
-     * Launchers, labels and streaming from [data]; only the protected list from [source]. [verified] is worked out
-     * first and set in the same update, so new launchers never sit behind an old [unverified].
+     * Launchers, labels and streaming from [data]; only the protected list from [source]. Whether [data] passes comes from
+     * the same index as its lists, is worked out first and set in the same update, so new launchers never sit behind an old [unverified].
      */
-    private suspend fun apply(verified: Boolean, data: suspend (String) -> String?, source: suspend (String) -> String?) {
+    private suspend fun apply(data: DeviceLists.Snapshot, source: DeviceLists.Snapshot) {
         val base = this.data?.base
-        val launchers = data("launchers")?.let(::parseLaunchers)
-        val labels = data("labels")?.let(::parseLabels)
-        val streaming = data("streaming")?.let(::parseStreaming)
-        val protected = source("protected")?.let(::parseProtected)
+        val verified = data.verified()
+        val launchers = data.shared("launchers")?.let(::parseLaunchers)
+        val labels = data.shared("labels")?.let(::parseLabels)
+        val streaming = data.shared("streaming")?.let(::parseStreaming)
+        val protected = source.shared("protected")?.let(::parseProtected)
         _state.update { now ->
             now.copy(
                 launchers = launchers?.ifEmpty { null } ?: now.launchers,
