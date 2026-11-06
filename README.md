@@ -17,7 +17,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 
 **Google Play (testing)**
 
-Tellyscope is in a closed test on Google Play, so you join the testers group first, then accept the test, and then Play lets you install it. This is the Play build: Play handles updates instead of the in-app check, and it doesn't download launchers from GitHub.
+Tellyscope is in closed testing on Google Play. Join the testers group, accept the test, then install it from Play. Play keeps this build updated, so it has no in-app update check, and it doesn't download launchers from GitHub.
 
 <a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 
@@ -30,9 +30,9 @@ Tellyscope is in a closed test on Google Play, so you join the testers group fir
 <table>
   <tr>
     <td width="25%"><img src="docs/screenshots/tv-page.png" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons"></td>
-    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, typing on the TV with a backspace key, and three streaming buttons along the bottom: YouTube, Netflix and Jellyfin"></td>
+    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, a keyboard key for typing on the TV, and along the bottom three streaming buttons, YouTube, Netflix and Jellyfin, then a key to open any app"></td>
     <td width="25%"><img src="docs/screenshots/debloat.png" alt="Debloat: the TV's model on top, then the apps it will turn off, each with its package name"></td>
-    <td width="25%"><img src="docs/screenshots/install.png" alt="Installing Kodi on the TV from an APK on the phone: the dialog says it is not on this TV yet"></td>
+    <td width="25%"><img src="docs/screenshots/install.png" alt="Updating Netflix on the TV from split APKs on the phone: the dialog says it updates the TV's copy from 11.2.0 to 11.3.0 and its settings stay"></td>
   </tr>
   <tr>
     <td align="center"><sub>Your TV at a glance</sub></td>
@@ -42,7 +42,7 @@ Tellyscope is in a closed test on Google Play, so you join the testers group fir
   </tr>
   <tr>
     <td><img src="docs/screenshots/send.png" alt="Sending a video from the phone to the TV's Movies folder"></td>
-    <td><img src="docs/screenshots/tweaks.png" alt="Tweaks: the Home screen card with Google TV Home as Current and Get another launcher, then ad-blocking Private DNS on, faster animations and clear caches"></td>
+    <td><img src="docs/screenshots/tweaks.png" alt="Tweaks: the Home screen card with Google TV Home as Current and Change home screen, then ad-blocking Private DNS on, faster animations and clear caches"></td>
     <td><img src="docs/screenshots/home.png" alt="Make Projectivy Launcher the home screen: the confirm says Google TV Home, the TV's built-in launcher, is the only one ever turned off"></td>
     <td><img src="docs/screenshots/this-tv.png" alt="Advanced monitor, This TV: CPU, memory and storage rings, the network's last minute, and the TV's facts"></td>
   </tr>
