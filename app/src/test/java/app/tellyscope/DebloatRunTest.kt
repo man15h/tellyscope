@@ -4,6 +4,7 @@ package app.tellyscope
 
 import androidx.lifecycle.viewModelScope
 import app.tellyscope.data.Action
+import app.tellyscope.data.ConnectionRequest
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
@@ -39,13 +41,25 @@ private val KIDS = ResetApp("com.google.android.youtube.tvkids", "YouTube Kids")
 private val SPORTS = ResetApp("com.google.android.tvrecommendations.sports", "Sports")
 private val FEEDBACK = ResetApp("com.google.android.feedback", "Google Feedback")
 
-/** A TV that turns apps off when asked, except the ones in [refuse], and can hold the next one at [gate]. */
+/**
+ * TVs ([tvs]) that turn apps off when asked, except the ones in [refuse], and can hold the next one at [gate].
+ * Each shows [request] until it is answered.
+ */
 private class RefusingTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val refuse = mutableMapOf<String, String>()
     val asked = mutableListOf<String>()
     var gate: CompletableDeferred<Unit>? = null
+    var tvs = listOf("tv")
+    var request: ConnectionRequest? = null
 
-    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
+    override suspend fun known() = tvs.map { Device(it, ScanHit(it, 5555, ScanKind.Classic, it, null), DeviceState.Online, null, null, null, 0L) }
+
+    override suspend fun connectionRequest(deviceId: String) = request
+
+    override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean): Boolean {
+        this.request = null
+        return true
+    }
 
     override fun live(deviceId: String): Flow<Snapshot> = emptyFlow()
 
@@ -136,5 +150,78 @@ class DebloatRunTest {
         runCurrent()
         vm.closeDebloat()
         assertNull(run)
+    }
+
+    /** Debloat's progress and its hold on the TV outlast a look at another TV, and picking the same one again. */
+    @Test fun aRunSurvivesSwitchingTvsAndRefusesASecond() = with(test) {
+        source.tvs = listOf("tv", "tv2")
+        open()
+        val first = CompletableDeferred<Unit>()
+        source.gate = first
+        vm.disableSuggested(listOf(KIDS, SPORTS))
+        runCurrent()
+
+        vm.select("tv")
+        runCurrent()
+        assertEquals(DISABLING, vm.state.value.device.busy)
+        assertEquals(0, run!!.at)
+
+        vm.select("tv2")
+        runCurrent()
+        assertNull(vm.state.value.device.busy)
+        assertNull(run)
+        // KIDS answers while the other TV is on screen.
+        val second = CompletableDeferred<Unit>()
+        source.gate = second
+        first.complete(Unit)
+        runCurrent()
+
+        vm.select("tv")
+        runCurrent()
+        assertEquals(DISABLING, vm.state.value.device.busy)
+        assertEquals(1, run!!.at)
+        assertEquals(listOf(KIDS, SPORTS), run!!.apps)
+        // A second Debloat or a Reset is refused while it runs.
+        vm.disableSuggested(listOf(FEEDBACK))
+        vm.openReset()
+        advanceTimeBy(1_000)
+        runCurrent()
+        vm.runReset()
+        runCurrent()
+        assertEquals(listOf(KIDS, SPORTS), run!!.apps)
+        assertNull(vm.state.value.device.reset?.running)
+
+        source.gate = null
+        second.complete(Unit)
+        runCurrent()
+        assertEquals(2, run!!.at)
+        assertTrue(run!!.ran)
+        assertNull(vm.state.value.device.busy)
+        assertEquals(listOf(KIDS.packageName, SPORTS.packageName), source.asked)
+    }
+
+    /** Answering an Allow prompt mid-run leaves the run in charge of the TV. */
+    @Test fun answeringAPromptMidRunKeepsTheRun() = with(test) {
+        source.request = ConnectionRequest("AA:BB")
+        open()
+        assertEquals("AA:BB", vm.state.value.device.request?.fingerprint)
+        val gate = CompletableDeferred<Unit>()
+        source.gate = gate
+        vm.disableSuggested(listOf(KIDS, SPORTS))
+        runCurrent()
+
+        vm.answerRequest(allow = true, always = false)
+        runCurrent()
+        assertNull(vm.state.value.device.request)
+        assertFalse(vm.state.value.device.answering)
+        assertEquals(DISABLING, vm.state.value.device.busy)
+        vm.disableSuggested(listOf(FEEDBACK))
+        assertEquals(listOf(KIDS, SPORTS), run!!.apps)
+
+        source.gate = null
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(2, run!!.at)
+        assertNull(vm.state.value.device.busy)
     }
 }

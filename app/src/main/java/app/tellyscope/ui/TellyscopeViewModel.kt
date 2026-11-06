@@ -164,7 +164,16 @@ data class DeviceUi(
     val reset: ResetUi? = null,
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
+    /** The answer to [request] is on its way to the TV. Apart from [busy], so it never ends a run's. */
+    val answering: Boolean = false,
 ) {
+    /** Something started on this TV that [TellyscopeViewModel.select] must not drop: a run ([busy]), or [pending], [launcher], [reset] or [debloat]. */
+    val running: Boolean
+        get() = busy != null || pending != null || launcher != null || reset != null || debloat != null
+
+    /** This fresh state with [from]'s runs ([running]) put back. */
+    fun held(from: DeviceUi) = copy(busy = from.busy, pending = from.pending, launcher = from.launcher, reset = from.reset, debloat = from.debloat)
+
     /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
     val restore: RestoreSummary
         get() = restorable.summary(apps, tweaks)
@@ -401,9 +410,6 @@ const val DISABLING = "lists"
 const val CLEARING = "caches"
 const val SCREENSHOT = "screenshot"
 
-/** [DeviceUi.busy] value while the TV's connection prompt is being answered. */
-const val ANSWERING = "request"
-
 /** How long Fire OS takes to hand focus from its closed alert to the prompt under it. */
 private const val ALERT_CLOSING_MS = 1_000L
 
@@ -506,8 +512,13 @@ class TellyscopeViewModel(
     private var accessJob: Job? = null
     /** Runs the removal across the reconnect it causes, so [select] doesn't stop it. */
     private var removalJob: Job? = null
-    /** Watches the TV for a launcher's install from the Play Store. */
-    private var launcherJob: Job? = null
+    /** Each TV's Install a home screen step, by id: it goes on while another TV is on screen. */
+    private val launcherJobs = mutableMapOf<String, Job>()
+    /**
+     * What [select] would drop from a TV that leaves the screen mid-run, by id: its [DeviceUi], still
+     * updated by the run ([updateDevice]), so [DeviceUi.held] puts its progress back when the TV is picked again.
+     */
+    private val away = mutableMapOf<String, DeviceUi>()
     private var updateJob: Job? = null
     /** The clock and the device refresh, every second. */
     private var tickJob: Job? = null
@@ -756,7 +767,6 @@ class TellyscopeViewModel(
 
     fun select(id: String?) {
         stopWatching()
-        launcherJob?.cancel()
         // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
         val transfer = id?.let(transfers::get)
         _state.value.let { s ->
@@ -770,13 +780,19 @@ class TellyscopeViewModel(
         // A removal survives the reconnect it causes; the TV coming back reselects it. So does the
         // install dialog: the link drops behind the file picker, and its return reselected the TV
         // a few seconds after the dialog opened, closing it (#290).
-        _state.update {
-            val same = it.selectedId == id
-            val removal = it.device.removal.takeIf { _ -> same }
-            val sideload = it.device.sideload.takeIf { _ -> same }
-            val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
-            val lists = if (online) id?.let(lastLists::get) else null
-            it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload), query = "")
+        synchronized(away) {
+            // A run on the TV leaving the screen goes on: it is set aside, and put back when that TV (or this one, again) is picked.
+            _state.value.let { s -> s.selectedId?.takeIf { old -> s.devices.any { it.id == old } && s.device.running }?.let { away[it] = s.device } }
+            val held = id?.let(away::remove)
+            _state.update {
+                val same = it.selectedId == id
+                val removal = it.device.removal.takeIf { _ -> same }
+                val sideload = it.device.sideload.takeIf { _ -> same }
+                val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
+                val lists = if (online) id?.let(lastLists::get) else null
+                val device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload)
+                it.copy(selectedId = id, device = held?.let(device::held) ?: device, query = "")
+            }
         }
         val device = _state.value.selected ?: return
         // History lives on the phone, so it shows (and undo is offered) even while the TV is off.
@@ -890,6 +906,8 @@ class TellyscopeViewModel(
     fun forget(id: String) {
         viewModelScope.launch {
             source.forget(id)
+            launcherJobs.remove(id)?.cancel()
+            synchronized(away) { away.remove(id) }
             lastApps.remove(id)
             lastLists.remove(id)
             val known = source.known()
@@ -1030,9 +1048,9 @@ class TellyscopeViewModel(
         val launcher = apkLauncher(pkg) ?: return
         val store = _state.value.device.launcher?.let { it.fire?.store ?: true } ?: return
         val list = unverified()
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         updateDevice(id) { d -> d.copy(launcher = d.launcher?.copy(pkg = pkg, fire = FireInstall(FireInstall.Step.Checking, store = store, list = list))) }
-        launcherJob = viewModelScope.launch {
+        launcherJobs[id] = viewModelScope.launch {
             val release = try {
                 download.latest(launcher)
             } catch (e: CancellationException) {
@@ -1075,9 +1093,9 @@ class TellyscopeViewModel(
         val launcher = apkLauncher(flow.pkg) ?: return
         val release = flow.fire?.takeIf { it.step == FireInstall.Step.Confirm && !it.gated }?.release ?: return
         if (listChanged(id, flow)) return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Downloading, progress = null, picked = false, size = null, until = null) }
-        launcherJob = viewModelScope.launch {
+        launcherJobs[id] = viewModelScope.launch {
             val app = try {
                 download.fetch(launcher, release) { p -> setFire(id) { it.copy(progress = p) } }
             } catch (e: CancellationException) {
@@ -1107,9 +1125,9 @@ class TellyscopeViewModel(
         val start = downloader == null && step == null
         if (!start && step != FireInstall.Step.NoDownload && step != FireInstall.Step.WrongApk && step != FireInstall.Step.Refused) return
         if (fire.gated || listChanged(id, flow)) return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         setFire(id) { it.copy(step = FireInstall.Step.Reading, picked = true, progress = null, size = null) }
-        launcherJob = viewModelScope.launch {
+        launcherJobs[id] = viewModelScope.launch {
             val app = try {
                 download.open(uri, launcher)
             } catch (e: CancellationException) {
@@ -1148,7 +1166,7 @@ class TellyscopeViewModel(
     fun dismissLauncherApk() {
         val id = _state.value.selectedId ?: return
         if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         updateDevice(id) { d -> d.copy(launcher = d.launcher?.let { l -> l.copy(fire = if (l.fire?.store == true) null else FireInstall(list = l.fire?.list)) }) }
     }
 
@@ -1162,7 +1180,7 @@ class TellyscopeViewModel(
     /** Back to the picker, [pkg] still chosen; Choose another from a dead end. */
     fun pickLauncher(pkg: String) {
         val id = _state.value.selectedId ?: return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         updateDevice(id) { it.copy(launcher = LauncherFlow(LauncherFlow.Step.Pick, pkg)) }
     }
 
@@ -1170,7 +1188,7 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         // An install under way finishes; cutting it off could leave the TV half done.
         if (_state.value.device.launcher?.fire?.step == FireInstall.Step.Installing) return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         updateDevice(id) { it.copy(launcher = null) }
     }
 
@@ -1186,7 +1204,7 @@ class TellyscopeViewModel(
      */
     fun installLauncher(pkg: String) {
         val id = _state.value.selectedId ?: return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         val step = { s: LauncherFlow.Step -> updateDevice(id) { it.copy(launcher = it.launcher?.let { _ -> LauncherFlow(s, pkg) }) } }
         // Already on the TV, installed since the picker was drawn (Open Store again after the wait): no Store detour.
         _state.value.device.apps.firstOrNull { it.packageName == pkg && it.enabled }?.let { have ->
@@ -1199,7 +1217,7 @@ class TellyscopeViewModel(
             return
         }
         step(LauncherFlow.Step.Waiting)
-        launcherJob = viewModelScope.launch {
+        launcherJobs[id] = viewModelScope.launch {
             val opened = try {
                 source.openStore(id, pkg)
             } catch (e: CancellationException) {
@@ -1260,7 +1278,7 @@ class TellyscopeViewModel(
     /** Make Home on [pkg], from the picker or after its install: the flow closes and the switch runs. */
     fun makeHome(pkg: String, service: Boolean) {
         val id = _state.value.selectedId ?: return
-        launcherJob?.cancel()
+        launcherJobs.remove(id)?.cancel()
         updateDevice(id) { it.copy(launcher = null) }
         run(pkg, Action.Home, id = id) { source.makeHome(it, pkg, service) }
     }
@@ -1344,8 +1362,13 @@ class TellyscopeViewModel(
     }
 
     /** Changes [id]'s page only while it is still the one shown; a result for another TV is dropped. */
-    private fun updateDevice(id: String, f: (DeviceUi) -> DeviceUi) =
-        _state.update { s -> if (s.selectedId == id) s.copy(device = f(s.device)) else s }
+    /** [f] on TV [id]'s state: on screen, or set aside by [select] while a run on it goes on. Otherwise dropped. */
+    private fun updateDevice(id: String, f: (DeviceUi) -> DeviceUi) {
+        synchronized(away) {
+            if (_state.value.selectedId == id) _state.update { s -> if (s.selectedId == id) s.copy(device = f(s.device)) else s }
+            else away[id]?.let { away[id] = f(it) }
+        }
+    }
 
     private fun run(
         pkg: String,
@@ -1675,7 +1698,7 @@ class TellyscopeViewModel(
         } catch (_: Exception) {
             null
         }
-        updateDevice(id) { if (it.busy == ANSWERING) it else it.copy(request = request) }
+        updateDevice(id) { if (it.answering) it else it.copy(request = request) }
     }
 
     /**
@@ -1685,7 +1708,7 @@ class TellyscopeViewModel(
     fun closeAlert() {
         val id = _state.value.selectedId ?: return
         if (_state.value.device.request?.behindAlert != true) return
-        updateDevice(id) { it.copy(busy = ANSWERING) }
+        updateDevice(id) { it.copy(answering = true) }
         viewModelScope.launch {
             try {
                 source.closeAlert(id)
@@ -1695,7 +1718,7 @@ class TellyscopeViewModel(
                 false
             }
             delay(ALERT_CLOSING_MS)
-            updateDevice(id) { it.copy(busy = null) }
+            updateDevice(id) { it.copy(answering = false) }
             readRequest(id)
         }
     }
@@ -1710,7 +1733,7 @@ class TellyscopeViewModel(
     fun answerRequest(allow: Boolean, always: Boolean) {
         val id = _state.value.selectedId ?: return
         val request = _state.value.device.request ?: return
-        updateDevice(id) { it.copy(busy = ANSWERING) }
+        updateDevice(id) { it.copy(answering = true) }
         viewModelScope.launch {
             val ok = try {
                 source.answerRequest(id, request, allow, always)
@@ -1724,7 +1747,7 @@ class TellyscopeViewModel(
                 allow -> Copy.REQUEST_ALLOWED
                 else -> Copy.REQUEST_DENIED
             }
-            updateDevice(id) { it.copy(busy = null, request = null) }
+            updateDevice(id) { it.copy(answering = false, request = null) }
             // An allowed device joins who has access now, not at the next 10 s read.
             if (ok) readAccess(id)
         }
@@ -1972,6 +1995,7 @@ class TellyscopeViewModel(
     /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */
     fun disableSuggested(apps: List<ResetApp>) {
         val id = _state.value.selectedId ?: return
+        if (_state.value.device.busy != null) return
         _state.update { it.copy(device = it.device.copy(busy = DISABLING, debloat = DebloatRun(apps))) }
         viewModelScope.launch {
             // One change for the whole list: the TV's stats are read again once, after the last app.
