@@ -1186,6 +1186,8 @@
     <string name="device_nothing_matches">Nothing matches \"%1$s\".</string>
     <string name="device_app_disabled">Disabled</string>
     <string name="device_app_running">Running</string>
+    <string name="device_app_background">Running in the background</string>
+    <string name="device_app_on_screen">On screen</string>
     <string name="device_app_not_running">Not running</string>
     <!-- %1$s is why the app can't be changed -->
     <string name="device_app_protected">Protected: %1$s</string>

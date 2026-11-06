@@ -23,7 +23,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -77,7 +76,7 @@ data class DeviceActions(
     val settings: () -> Unit = {},
     val query: (String) -> Unit = {},
     val propose: (String, Action) -> Unit = { _, _ -> },
-    /** Open on TV in an app's row: runs at once, with no step to confirm. */
+    /** Open in an app's row: runs at once, with no step to confirm. */
     val open: (String) -> Unit = {},
     val confirm: () -> Unit = {},
     /** The confirmed switch to a launcher with an accessibility service, with the service or without it. */
@@ -426,16 +425,25 @@ internal fun AppRow(
     toHomeScreen: () -> Unit = {},
     /** The TV is away: what the row last heard is stale, so it greys out, says nothing and won't open. */
     offline: Boolean = false,
+    /** The package on the TV's screen; null when the TV didn't say. */
+    onScreen: String? = null,
 ) {
     var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
     // A launcher can be protected and still open, for the way to the Home screen card.
     val launcher = app.answersHome || app.builtInLauncher
     val changeable = (app.protectedReason == null || launcher) && !offline
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
+    val shown = app.enabled && app.packageName == onScreen
+    val running = ram > 0 || shown
+    // Open only when there's somewhere to go: not for the app already on screen.
+    val opens = app.opens && !shown
     val status = stringResource(
         when {
             !app.enabled -> R.string.device_app_disabled
-            ram > 0 -> R.string.device_app_running
+            shown -> R.string.device_app_on_screen
+            // Without the screen read, a running app may be on screen or not: plain Running.
+            running && onScreen != null -> R.string.device_app_background
+            running -> R.string.device_app_running
             else -> R.string.device_app_not_running
         },
     )
@@ -463,21 +471,22 @@ internal fun AppRow(
                 // The label is whatever the app calls itself; the package id is what an action touches.
                 Text(app.packageName, style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (proposed == null) {
+                    // At most three: Open and Stop, then one remove button. Uninstall for an app the user
+                    // installed, Disable for one the TV came with; Turn on takes Open's place while it's off.
                     if (app.protectedReason == null) {
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            if (app.enabled && ram > 0) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
-                            if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
-                            else FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
+                            if (!app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
+                            if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
+                            if (app.enabled && running) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
+                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            else if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
+                        }
+                    } else if (launcher && (opens || app.removable)) {
+                        // The launcher on Home: protected, but Open and Uninstall still go, Home moving first.
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
                             if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
-                    } else if (launcher && app.removable) {
-                        // The launcher on Home: protected, but Uninstall still goes, Home moving first.
-                        OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
-                    }
-                    if (app.opens) TextButton(onClick = { actions.open(app.packageName) }, enabled = !locked) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(Copy.OPEN_ON_TV.resolve())
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {
                         Text(Copy.HOME_SETTINGS.resolve())

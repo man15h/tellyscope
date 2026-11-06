@@ -176,6 +176,8 @@ class FakeDeviceSource(
             uptimeSeconds = 3 * 86_400L + 4 * 3_600L,
             screenOn = true,
             procs = procs,
+            // Home is on screen, so every other running app is in the background.
+            onScreen = "com.spocky.projengmenu",
             netBytesPerSec = rx + 200_000,
             softwareMonth = YearMonth.of(2023, 5),
             // Four cores around the average; apps and system add up to it, as on a real TV.

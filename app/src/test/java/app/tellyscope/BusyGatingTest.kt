@@ -41,7 +41,6 @@ class BusyGatingTest {
     @Test fun appButtonsWaitWhileTheTvIsBusy() {
         compose.setContent { AppRow(app, emptyList(), null, busy = false, actions = DeviceActions(), locked = true) }
         compose.onNodeWithText("Example").performClick()
-        compose.onNodeWithText(Copy.button(Action.Disable).text()).assertIsNotEnabled()
         compose.onNodeWithText(Copy.button(Action.Uninstall).text()).assertIsNotEnabled()
     }
 
@@ -49,7 +48,7 @@ class BusyGatingTest {
         // Away, what the row last heard is stale: no status line, and a tap opens nothing.
         compose.setContent { AppRow(app, emptyList(), null, busy = false, actions = DeviceActions(), offline = true) }
         compose.onNodeWithText("Example").performClick()
-        compose.onAllNodesWithText(Copy.button(Action.Disable).text()).assertCountEquals(0)
+        compose.onAllNodesWithText(Copy.button(Action.Uninstall).text()).assertCountEquals(0)
         compose.onAllNodesWithText("Not running").assertCountEquals(0)
     }
 
