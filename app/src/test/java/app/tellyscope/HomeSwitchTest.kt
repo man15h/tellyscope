@@ -12,6 +12,7 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DATA_KEYS
 import app.tellyscope.data.DeviceLists
+import app.tellyscope.data.FIRE_TV_LAUNCHER
 import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.HistoryBook
 import app.tellyscope.data.HistoryEntry
@@ -56,9 +57,13 @@ private const val PROJECTIVY_SERVICE = "$PROJECTIVY/.HomeService"
 private const val MONET = "com.klevico.monet"
 private const val MONET_SERVICE = "$MONET/.HomeKeyService"
 
-/** A TV with its own launcher and two the user added; Projectivy has an accessibility service, and so does Monet. */
-private class LauncherTv(var home: String?) : AdbSession {
-    val activities = mapOf(TV_HOME to "$TV_HOME/.MainActivity", PROJECTIVY to "$PROJECTIVY/.Main", FLAUNCHER to "$FLAUNCHER/.MainActivity")
+/**
+ * A TV with its own launcher and two the user added; Projectivy has an accessibility service, and so does Monet.
+ * [fire] adds Amazon's launcher, as on a Fire TV.
+ */
+private class LauncherTv(var home: String?, fire: Boolean = false) : AdbSession {
+    val activities = mapOf(TV_HOME to "$TV_HOME/.MainActivity", PROJECTIVY to "$PROJECTIVY/.Main", FLAUNCHER to "$FLAUNCHER/.MainActivity") +
+        if (fire) mapOf(FIRE_TV_LAUNCHER to "$FIRE_TV_LAUNCHER/.ui.HomeActivity") else emptyMap()
     val enabled = activities.keys.toMutableSet()
     val user = setOf(PROJECTIVY, FLAUNCHER)
     val services = mutableListOf<String>()
@@ -334,6 +339,15 @@ class HomeSwitchTest {
         // A default Android keeps, though Amazon's Home key never reaches it.
         assertEquals(tv.activities.getValue(FLAUNCHER), Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
         // The launcher whose service holds Home comes first.
+        tv.services += PROJECTIVY_SERVICE
+        assertEquals(tv.activities.getValue(PROJECTIVY), Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
+    }
+
+    @Test fun onFireOsWithAmazonsLauncherTheDefaultTheRemotesHomeStaysTheKey() = runTest {
+        // What a Fire TV resolves Home to with no service on: Amazon's own, which the key opens anyway.
+        val tv = LauncherTv(home = FIRE_TV_LAUNCHER, fire = true)
+        assertNull(Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
+        // A service on still wins over Amazon's default.
         tv.services += PROJECTIVY_SERVICE
         assertEquals(tv.activities.getValue(PROJECTIVY), Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
     }
