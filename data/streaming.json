@@ -7,7 +7,6 @@
         { "name": "Netflix", "packages": ["com.netflix.ninja"], "color": "#000000", "logo": "netflix", "dark": "#E50914" },
         { "name": "YouTube", "packages": ["com.google.android.youtube.tv", "com.amazon.firetv.youtube"], "color": "#FFFFFF", "logo": "youtube" },
         { "name": "Prime Video", "packages": ["com.amazon.amazonvideo.livingroom", "com.amazon.amazonvideo.livingroom.nvidia", "com.amazon.firebat", "com.amazon.avod"], "color": "#0F171E", "logo": "primevideo", "dark": "#00A8E1" },
-        { "name": "Spotify", "packages": ["com.spotify.tv.android"], "color": "#000000", "logo": "spotify", "dark": "#1ED760" },
         { "name": "Disney+", "packages": ["com.disney.disneyplus"], "color": "#0B1446", "logo": "disney", "dark": "#00B4FF" },
         { "name": "HBO Max", "packages": ["com.wbd.stream", "com.hbo.hbonow"], "color": "#000000", "logo": "hbomax" },
         { "name": "Apple TV", "packages": ["com.apple.atve.androidtv.appletv", "com.apple.atve.amazon.appletv"], "color": "#000000", "logo": "appletv" },
@@ -46,7 +45,23 @@
         { "name": "Jellyfin", "packages": ["org.jellyfin.androidtv"], "color": "#AA5CC3", "color2": "#00A4DC", "logo": "jellyfin" },
         { "name": "Wholphin", "packages": ["com.github.damontecres.wholphin"], "color": "#000B25", "logo": "wholphin", "dark": "#3C73AB" },
         { "name": "Kodi", "packages": ["org.xbmc.kodi"], "color": "#1C2B3A", "logo": "kodi", "dark": "#17B2E7" },
-        { "name": "Emby", "packages": ["tv.emby.embyatv"], "color": "#52B54B", "logo": "emby" }
+        { "name": "Emby", "packages": ["tv.emby.embyatv"], "color": "#52B54B", "logo": "emby" },
+        { "name": "Symfonium", "packages": ["app.symfonik.music.player"], "color": "#3F51B5", "logo": "symfonium" }
+      ]
+    },
+    {
+      "name": "Music",
+      "services": [
+        { "name": "Spotify", "packages": ["com.spotify.tv.android"], "color": "#000000", "logo": "spotify", "dark": "#1ED760" },
+        { "name": "Amazon Music", "packages": ["com.amazon.music.tv", "com.amazon.bueller.music"], "color": "#000000", "logo": "amazonmusic", "dark": "#25D1DA" },
+        { "name": "Tidal", "packages": ["com.aspiro.tidal"], "color": "#000000", "logo": "tidal" },
+        { "name": "Deezer", "packages": ["deezer.android.app"], "color": "#A238FF", "logo": "deezer" },
+        { "name": "Pandora", "packages": ["com.pandora.android.atv"], "color": "#3668FF", "logo": "pandora" },
+        { "name": "SoundCloud", "packages": ["com.soundcloud.android"], "color": "#FF5500", "logo": "soundcloud" },
+        { "name": "iHeartRadio", "packages": ["com.clearchannel.iheartradio.tv"], "color": "#C6002B", "logo": "iheartradio" },
+        { "name": "TuneIn", "packages": ["tunein.player"], "color": "#1C203C", "logo": "tunein", "dark": "#14D8CC" },
+        { "name": "Qobuz", "packages": ["com.qobuz.music"], "color": "#000000", "logo": "qobuz" },
+        { "name": "JioSaavn", "packages": ["com.jio.media.jiobeats"], "color": "#2BC5B4", "logo": "jiosaavn" }
       ]
     }
   ]

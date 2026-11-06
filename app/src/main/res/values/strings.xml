@@ -431,7 +431,7 @@
     <!-- Remote buttons -->
     <string name="copy_remote_buttons">Remote buttons</string>
     <string name="copy_open_an_app">Open an app</string>
-    <string name="copy_open_an_app_hint">Apps on %1$s. Tap one to open it.</string>
+    <string name="copy_open_an_app_hint">Streaming apps on %1$s. Tap one to open it.</string>
     <string name="copy_more">More options</string>
     <string name="copy_buttons_hint">Pick up to %1$d. Drag to set the order. To pick another, untick one first.</string>
     <string name="copy_not_on_tv">%1$s isn\'t on this TV. Install it from the Play Store on the TV.</string>

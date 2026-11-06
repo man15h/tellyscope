@@ -332,7 +332,7 @@
     <string name="copy_back_online">已恢复在线。%1$s 已重新连接。</string>
     <string name="copy_remote_buttons">遥控器按钮</string>
     <string name="copy_open_an_app">打开应用</string>
-    <string name="copy_open_an_app_hint">%1$s 上的应用。点按即可打开。</string>
+    <string name="copy_open_an_app_hint">%1$s 上的流媒体应用。点按即可打开。</string>
     <string name="copy_more">更多选项</string>
     <string name="copy_buttons_hint">最多选择 %1$d 个。拖动可调整顺序。如需选择其他项，请先取消勾选一个。</string>
     <string name="copy_not_on_tv">此电视上没有 %1$s。请在电视上的 Play 商店中安装。</string>
