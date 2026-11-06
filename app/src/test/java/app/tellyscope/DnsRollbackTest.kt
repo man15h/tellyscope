@@ -21,12 +21,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** A TV whose DNS never resolves; [writes] counts `settings put` lines, and the ones in [failing] are refused. */
-private class NoDnsTv(private val failing: Set<Int>) : AdbSession {
+/**
+ * A TV whose DNS never resolves; [writes] counts `settings put` lines, and the ones in [failing] are refused.
+ * With [cached], a lookup still answers from the TV's cache, while the network names the provider but never validates it.
+ */
+private class NoDnsTv(private val failing: Set<Int>, private val cached: Boolean = false) : AdbSession {
     var writes = 0
 
     override suspend fun shell(command: String): ShellResult = when {
-        command.startsWith("ping") -> ShellResult("ping: unknown host", 2)
+        command.startsWith("dumpsys connectivity") && cached -> ShellResult("NetworkAgentInfo{ lp{{UsePrivateDns: true PrivateDnsServerName: dns.example Domains: null }} }\n", 0)
+        command.startsWith("ping") -> if (cached) ShellResult("1 packets transmitted, 1 received", 0) else ShellResult("ping: unknown host", 2)
         command.startsWith("settings get") -> ShellResult("null\noff\n", 0)
         command.startsWith("settings") -> if (++writes in failing) throw IOException("link gone") else ShellResult("", 0)
         else -> ShellResult("", 0)
@@ -58,6 +62,15 @@ class DnsRollbackTest {
     @Test fun aProviderThatDoesntResolveIsPutBackAndNotRecorded() = runTest {
         val book = HistoryBook()
         val tv = NoDnsTv(failing = emptySet())
+        assertTrue(run(tv, book).contains("was put back"))
+        assertEquals(2, tv.writes)
+        assertTrue(book.entries("tv").isEmpty())
+    }
+
+    /** A lookup the cache answers doesn't pass a provider that never validated. */
+    @Test fun aProviderThatNeverValidatesIsPutBackEvenWithTheCacheAnswering() = runTest {
+        val book = HistoryBook()
+        val tv = NoDnsTv(failing = emptySet(), cached = true)
         assertTrue(run(tv, book).contains("was put back"))
         assertEquals(2, tv.writes)
         assertTrue(book.entries("tv").isEmpty())
