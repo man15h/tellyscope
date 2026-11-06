@@ -88,11 +88,15 @@ class DebloatStateTest {
         assertTrue(card(some))
     }
 
-    @Test fun `the home screen card waits while Tellyscope has turned nothing off`() {
+    @Test fun `an app on the list turned off before Tellyscope counts`() {
+        val before = ui(listOf(store, app("com.acme.a", true), app("com.acme.b", false)))
+        assertEquals(1, debloatState(before).off)
+        assertTrue(card(before))
+    }
+
+    @Test fun `the home screen card waits while nothing on the list is off`() {
         assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", true)))))
-        // Off, but not by Tellyscope.
-        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", false)))))
-        // Turned off, then back on after a TV update: nothing on the list is off through Tellyscope any more.
+        // Turned off, then back on after a TV update: nothing on the list is off any more.
         assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", true)), listOf(turnedOff("com.acme.a")))))
         // An app off the list doesn't count.
         assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.other", false)), listOf(turnedOff("com.other")))))

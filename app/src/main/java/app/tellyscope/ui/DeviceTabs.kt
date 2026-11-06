@@ -669,7 +669,7 @@ internal data class DebloatState(
     val count: Int,
     /** Debloat has something to show: apps to turn off, or that this TV has no list. */
     val todo: Boolean,
-    /** Apps on the list Tellyscope turned off that are still off. */
+    /** Of [total], the ones off right now, however they were turned off. */
     val off: Int = 0,
 )
 
@@ -714,14 +714,14 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val candidates = ui.apps.filter { it.packageName in listed && (!it.enabled || it.protectedReason == null) }
     val on = candidates.filter { it.enabled }.map { it.packageName }.toSet()
     val count = (on + back).size
-    val off = candidates.count { !it.enabled && it.packageName in ours }
+    val off = candidates.count { !it.enabled }
     return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off)
 }
 
 /**
- * The home screen card waits until the list has loaded and the TV has been debloated: Tellyscope has turned off at
- * least one app on the list, or nothing on it is left on. Apps someone keeps on don't hold it back. A TV with no list
- * has nothing to debloat, so it gets the card once that's known.
+ * The home screen card waits until the list has loaded and the TV has been debloated: at least one app on the list is
+ * off, even one turned off before Tellyscope, or nothing on it is left on. Apps someone keeps on don't hold it back. A
+ * TV with no list has nothing to debloat, so it gets the card once that's known.
  */
 internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolean = false) =
     when (ui.lists) {
