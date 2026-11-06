@@ -57,12 +57,16 @@ class HistoryBook(private val file: File? = null) {
         save()
     }
 
-    /** Adds [extra] to entry [id]'s saved state, for a later step of the same change, and gives it [label] if set. */
+    /**
+     * Adds [extra] to entry [id]'s saved state, for a later step of the same change, and gives it [label]
+     * and [undo] if set. Returns the entry as it is now, or null when there's none.
+     */
     @Synchronized
-    fun amend(id: Long, extra: Map<String, String?>, label: String? = null) {
-        val i = entries.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return
-        entries[i] = entries[i].copy(previous = entries[i].previous.orEmpty() + extra, label = label?.let(::clean) ?: entries[i].label)
+    fun amend(id: Long, extra: Map<String, String?>, label: String? = null, undo: Action? = null): HistoryEntry? {
+        val i = entries.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return null
+        entries[i] = entries[i].copy(previous = entries[i].previous.orEmpty() + extra, label = label?.let(::clean) ?: entries[i].label, undo = undo ?: entries[i].undo)
         save()
+        return entries[i]
     }
 
     /** Everything Tellyscope changed on this TV, as it was before its first change to each. */
