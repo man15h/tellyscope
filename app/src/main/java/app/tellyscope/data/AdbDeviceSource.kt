@@ -597,6 +597,7 @@ class AdbDeviceSource(
         val service = packageName.takeIf { actions.mayTurnOn(it) }?.let { actions.homeService(it) }
             ?: throw UiTextException(UiText(R.string.data_no_service, label))
         if (!actions.grant(service)) throw UiTextException(serviceNotOn(label))
+        fireHomes -= deviceId
         // Undo of the switch to it turns it off again, as if the switch had turned it on.
         openSwitch(deviceId, packageName)?.let { book.amend(it, mapOf("service" to service)) }
         Unit
@@ -1074,7 +1075,7 @@ class AdbDeviceSource(
     }
 
     override suspend fun press(deviceId: String, key: RemoteKey) = busy(deviceId) {
-        if (key == RemoteKey.HOME && deviceKind(device(deviceId)) == DeviceKind.FireTv) remote(deviceId).home(fireHome(deviceId))
+        if (key == RemoteKey.HOME) remote(deviceId).home(fireHome(deviceId))
         else if (key == RemoteKey.VOLUME_UP || key == RemoteKey.VOLUME_DOWN) remote(deviceId).volume(key, volumeKeys(deviceId))
         else remote(deviceId).press(key)
     }
@@ -1090,13 +1091,16 @@ class AdbDeviceSource(
     }
 
     /**
-     * The launcher Home resolves to on a Fire TV, read once per session so the key stays fast. A
-     * home switch or its undo drops it; a reconnect brings a new session, which reads it again.
+     * The launcher the Remote's Home opens on Fire OS ([fireRemoteHome]); null on any other TV, which
+     * keeps the Home key. Read once per session so the key stays fast. A home switch, its undo or a
+     * launcher's service going on drops it; a reconnect brings a new session, which reads it again.
      */
     private suspend fun fireHome(deviceId: String): String? {
         val session = session(deviceId)
         fireHomes[deviceId]?.takeIf { it.first === session }?.let { return it.second }
-        return Actions(session).currentHome().also { fireHomes[deviceId] = session to it }
+        val actions = Actions(session)
+        val home = if (fireOs(deviceId, actions.installed(FIRE_TV_LAUNCHER))) actions.fireRemoteHome(listedServiceLaunchers) else null
+        return home.also { fireHomes[deviceId] = session to it }
     }
 
     /** One helper per link: a reconnect brings a new session, and the old helper went with the old one. */
@@ -1511,6 +1515,16 @@ internal suspend fun Actions.fireServiceHolder(launchers: Collection<String>): P
         if (serviceOn(service)) return pkg to service
     }
     return null
+}
+
+/**
+ * On Fire OS, the launcher the user set, for the Remote's Home to open: Amazon's Home key reaches only
+ * its own launcher. The one whose service holds Home ([fireServiceHolder]) first, else the default
+ * Home resolves to, unless that is Amazon's. Null when neither is set, and Home stays the key.
+ */
+internal suspend fun Actions.fireRemoteHome(listed: Collection<String>): String? {
+    fireServiceHolder(listed)?.let { (pkg, _) -> homeActivity(pkg)?.let { return it } }
+    return currentHome()?.takeUnless { it.substringBefore('/') == FIRE_TV_LAUNCHER }
 }
 
 /**

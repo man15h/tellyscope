@@ -20,6 +20,7 @@ import app.tellyscope.data.SharedLists
 import app.tellyscope.data.UiText
 import app.tellyscope.data.UiTextException
 import app.tellyscope.data.fireHomeBack
+import app.tellyscope.data.fireRemoteHome
 import app.tellyscope.data.fireServiceHolder
 import app.tellyscope.data.fireServiceHome
 import app.tellyscope.data.firstHomeService
@@ -326,6 +327,20 @@ class HomeSwitchTest {
         assertNull(Actions(tv).fireServiceHolder(listOf(FLAUNCHER, PROJECTIVY)))
         tv.services += PROJECTIVY_SERVICE
         assertEquals(PROJECTIVY to PROJECTIVY_SERVICE, Actions(tv).fireServiceHolder(listOf(FLAUNCHER, PROJECTIVY)))
+    }
+
+    @Test fun onFireOsTheRemotesHomeOpensTheLauncherTheUserSet() = runTest {
+        val tv = LauncherTv(home = FLAUNCHER)
+        // A default Android keeps, though Amazon's Home key never reaches it.
+        assertEquals(tv.activities.getValue(FLAUNCHER), Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
+        // The launcher whose service holds Home comes first.
+        tv.services += PROJECTIVY_SERVICE
+        assertEquals(tv.activities.getValue(PROJECTIVY), Actions(tv).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
+    }
+
+    @Test fun onFireOsWithNoLauncherSetTheRemotesHomeStaysTheKey() = runTest {
+        // Android would ask, and no service holds Home.
+        assertNull(Actions(LauncherTv(home = null)).fireRemoteHome(listOf(FLAUNCHER, PROJECTIVY)))
     }
 
     @Test fun onFireOsGoingBackTurnsTheServiceOffAndItsUndoOn() = runTest {
