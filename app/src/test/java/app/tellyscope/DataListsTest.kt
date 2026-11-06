@@ -73,12 +73,16 @@ class DataListsTest {
             if (l.has("apk") && !l.has("releases")) errors += "$where: 'apk' names an asset of 'releases', which is missing"
             if (l.has("icon") && imageUrl(l.opt("icon") as? String) == null) errors += "$where: 'icon' must be an https address of at most 500 characters"
             if (l.has("screenshot")) {
-                val name = (l.opt("screenshot") as? String)?.takeIf(imageName::matches)
+                val shot = l.optJSONObject("screenshot")
+                val file = shot?.optString("file")
+                val name = file?.removePrefix("images/")?.removeSuffix(".png")?.takeIf { file == "images/$it.png" && imageName.matches(it) }
                 val png = name?.let { File(data, "images/$it.png") }
-                val size = png?.takeIf { it.isFile }?.readBytes()?.takeIf { it.size <= maxScreenshotBytes }?.let(Png::size)
+                val bytes = png?.takeIf { it.isFile }?.readBytes()
+                val size = bytes?.takeIf { it.size <= maxScreenshotBytes }?.let(Png::size)
                 when {
-                    name == null -> errors += "$where: 'screenshot' must name an image in data/images/, lowercase letters, digits and -"
-                    !png!!.isFile -> errors += "$where: 'screenshot' names data/images/$name.png, which isn't there"
+                    name == null -> errors += "$where: 'screenshot' must be {\"file\": \"images/<name>.png\", \"sha256\": …}, <name> in lowercase letters, digits and -"
+                    bytes == null -> errors += "$where: 'screenshot' names data/images/$name.png, which isn't there"
+                    shot?.optString("sha256") != sha256(bytes) -> errors += "$where: 'screenshot' sha256 doesn't match data/images/$name.png, ${sha256(bytes)}"
                     size != Pair(960, 540) -> errors += "$where: data/images/$name.png must be a 960 × 540 PNG of at most ${maxScreenshotBytes / 1024} KB"
                 }
             }
@@ -102,7 +106,7 @@ class DataListsTest {
      */
     @Test fun theLaunchersWithAnAccessibilityServiceAreNamed() {
         val named = parseLaunchers(text("launchers.json")).filter { it.accessibility != null }.associate { it.pkg to it.accessibility }
-        assertEquals(mapOf("com.spocky.projengmenu" to "4.72", "com.overdevs.at4k" to "1.2", "com.klevico.monet" to "1.1.1", "com.spauldhaliwal.dispatch" to "1.0.175"), named)
+        assertEquals(mapOf("com.spocky.projengmenu" to "4.21", "com.overdevs.at4k" to "1.1", "com.klevico.monet" to "1.0.50"), named)
     }
 
     @Test fun labels() {
@@ -152,7 +156,7 @@ class DataListsTest {
         assertNone(errors)
     }
 
-    /** `index.json` names every list and every image in `images/` with its sha256, as the app checks each download, and nothing else. */
+    /** `index.json` names every list with its sha256, as the app checks each download, and nothing else; screenshots are in `launchers.json`. */
     @Test fun theIndexMatchesTheFiles() {
         val errors = mutableListOf<String>()
         val index = parseIndex(text("index.json"))
@@ -160,10 +164,8 @@ class DataListsTest {
             assertNone(listOf("index.json: not a schema 1 index the app reads"))
             return
         }
-        val images = File(data, "images").listFiles { f -> f.name.endsWith(".png") }.orEmpty().map { it.name }
-        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" } +
-            images.associate { "image ${it.removeSuffix(".png")}" to "images/$it" }
-        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" } + index.images.mapKeys { "image ${it.key}" }
+        val expected = listOf("launchers", "labels", "streaming").associateWith { "$it.json" }
+        val listed = index.lists + index.logos.mapKeys { "logo ${it.key}" }
         for ((name, path) in expected) {
             val entry = listed[name]
             val sha = sha256(File(data, path).readBytes())

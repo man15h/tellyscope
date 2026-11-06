@@ -107,8 +107,8 @@ fun merge(maker: String, lists: List<DeviceList>): DeviceList = DeviceList(
 data class ListFile(val file: String, val sha256: String)
 
 /**
- * [lists] by name (`launchers`, `labels`, `streaming`, `protected`), [logos] by logo name and [images] (`data/` only) by
- * image name; empty on an index without them.
+ * [lists] by name (`launchers`, `labels`, `streaming`, `protected`) and [logos] by logo name; empty on an index
+ * without them. Launcher screenshots are named in `launchers.json` ([KnownLauncher.screenshot]), not here.
  * [version] goes up with each signed `data/` index. [signed]: a signature on its line 2 verifies against the keys
  * [DeviceLists] was given and its version is no lower than the newest signed one seen, so it is the one Tellyscope published.
  */
@@ -117,7 +117,6 @@ data class ListIndex(
     val devices: List<ListEntry>,
     val lists: Map<String, ListFile> = emptyMap(),
     val logos: Map<String, ListFile> = emptyMap(),
-    val images: Map<String, ListFile> = emptyMap(),
     val version: Long? = null,
     val signed: Boolean = false,
 )
@@ -169,8 +168,8 @@ private val FILE = Regex("devices/[A-Za-z0-9][A-Za-z0-9._-]*\\.json")
 /** Under `lists/` in tellyscope-devices, at the top of `data/`; never the index's own name. */
 private val LIST_FILE = Regex("(lists/)?(?!index\\.json)[a-z]+\\.json")
 private val LOGO_FILE = Regex("logos/[a-z0-9]+\\.png")
-private val IMAGE_FILE = Regex("images/${IMAGE_NAME.pattern}\\.png")
-private val SHA256 = Regex("[0-9a-f]{64}")
+internal val IMAGE_FILE = Regex("images/${IMAGE_NAME.pattern}\\.png")
+internal val SHA256 = Regex("[0-9a-f]{64}")
 /** A list id goes into `picks.tsv`, one tab-separated line per TV, so no tab or newline. */
 private val LIST_ID = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
 private val COMMIT = Regex("[0-9a-f]{7,40}")
@@ -188,7 +187,7 @@ fun matches(rule: Map<String, List<String>>?, props: Map<String, String?>): Bool
 
 /**
  * Null unless it is a schema 1 index. Entries with a missing field, bad file name or checksum are
- * dropped, in `devices`, `lists`, `logos` and `images` alike. `data/`'s index has no `devices` or `logos`.
+ * dropped, in `devices`, `lists` and `logos` alike. `data/`'s index has no `devices` or `logos`.
  */
 fun parseIndex(text: String): ListIndex? = try {
     val o = jsonObject(text)
@@ -208,7 +207,6 @@ fun parseIndex(text: String): ListIndex? = try {
         }.orEmpty(),
         lists = o.files("lists", LIST_FILE),
         logos = o.files("logos", LOGO_FILE),
-        images = o.files("images", IMAGE_FILE),
         version = o.optLong("version").takeIf { it > 0 },
     )
 } catch (_: org.json.JSONException) {
@@ -399,11 +397,8 @@ class DeviceLists(
         return known?.logos?.get(name)?.let { file(it.file, it.sha256, Png::ok) }
     }
 
-    /** A launcher's screenshot by the name `launchers.json` gives it ([KnownLauncher.screenshot]); like [logo], never fetching the index. */
-    suspend fun image(name: String): ByteArray? {
-        val known = index ?: withContext(Dispatchers.IO) { File(dir, "index.json").takeIf { it.exists() }?.readText()?.let(::parseIndex) }
-        return known?.images?.get(name)?.let { file(it.file, it.sha256, Picture::ok) }
-    }
+    /** A launcher's screenshot, as `launchers.json` names it with its sha256 ([KnownLauncher.screenshot]); never fetching the index. */
+    suspend fun image(f: ListFile): ByteArray? = file(f.file, f.sha256, Picture::ok)
 
     /**
      * [path] under [dir] when its bytes match [sha] and pass [valid], else fetched from [base] and

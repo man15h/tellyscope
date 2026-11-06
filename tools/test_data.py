@@ -117,22 +117,29 @@ class Signing(unittest.TestCase):
         data.index()
         self.assertIsNone(data.split(self.index().read_bytes())[1])
 
-    def test_images_are_indexed_by_name_only_once_there_are_some(self):
+    def test_images_stay_out_of_the_index(self):
         for name in data.LISTS:
             (self.root / "data" / f"{name}.json").write_text("[]\n")
-        self.assertNotIn("images", data.build_index())
         (self.root / "data" / "images").mkdir()
         (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
-        (self.root / "data" / "images" / "notes.txt").write_text("not an image\n")
-        images = data.build_index()["images"]
-        self.assertEqual(list(images), ["monet"])
-        self.assertEqual(images["monet"], {"file": "images/monet.png", "sha256": data.hashlib.sha256(b"png").hexdigest()})
+        self.assertEqual(list(data.build_index()), ["schema", "version", "lists"])
 
-    def test_an_image_name_the_app_would_drop_fails_check(self):
+    def test_a_screenshot_the_app_would_not_show_fails_check(self):
         (self.root / "data" / "images").mkdir()
-        (self.root / "data" / "images" / "Monet-Home.png").write_bytes(b"png")
         (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
-        self.assertEqual([e.split(":")[0] for e in data.bad_images()], ["data/images/Monet-Home.png"])
+        sha = data.hashlib.sha256(b"png").hexdigest()
+        shots = {
+            "a.good": {"file": "images/monet.png", "sha256": sha},
+            "a.name": {"file": "images/Monet-Home.png", "sha256": sha},
+            "a.away": {"file": "../monet.png", "sha256": sha},
+            "a.old": "monet",
+            "a.gone": {"file": "images/at4k.png", "sha256": sha},
+            "a.hash": {"file": "images/monet.png", "sha256": "0" * 64},
+        }
+        launchers = [{"package": p, "name": p, "screenshot": s} for p, s in shots.items()] + [{"package": "a.none", "name": "None"}]
+        (self.root / "data" / "launchers.json").write_text(data.json.dumps({"schema": 1, "launchers": launchers}))
+        bad = [e.split("'")[0].split(": ")[1] for e in data.bad_screenshots()]
+        self.assertEqual(bad, ["a.name", "a.away", "a.old", "a.gone", "a.hash"])
 
     def test_a_key_that_is_not_p256_is_caught(self):
         (self.root / "keys" / "backup.pub").write_text("bm90IGEga2V5\n")
