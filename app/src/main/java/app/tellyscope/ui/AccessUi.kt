@@ -347,7 +347,7 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
     if (removal?.step == Removal.Step.Confirm) ConfirmRemoval(actions)
     // The TV's prompt shows here as on the TV's page, so a computer asking in is answered where it's listed.
     else if (removal == null && device.state == DeviceState.Online) {
-        ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
+        ui.request?.let { RequestDialog(it, ui.answering, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
     }
 }
 
