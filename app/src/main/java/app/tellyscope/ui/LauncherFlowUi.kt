@@ -812,7 +812,7 @@ private fun PickRow(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     leading?.let {
                         it()
-                        Spacer(Modifier.width(12.dp))
+                        Spacer(Modifier.width(16.dp))
                     }
                     Column(Modifier.weight(1f)) {
                         // The chip drops under the name rather than squeezing it at large font sizes.
@@ -864,7 +864,7 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
             }
         },
         leading = if (icon is ListImage.Ready) {
-            { Image(icon.bitmap, null, Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop) }
+            { Image(icon.bitmap, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop) }
         } else {
             null
         },
