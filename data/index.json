@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "version": 2026110603,
+  "version": 2026110604,
   "lists": {
     "launchers": {
       "file": "launchers.json",
@@ -12,7 +12,7 @@
     },
     "streaming": {
       "file": "streaming.json",
-      "sha256": "1dfa7345e4669c23ead59bd30f12177322df8fd38dfb999885b72a57aacb0f66"
+      "sha256": "3bf79607de53abf06633ddd0f3f2b327b6070df7ccfa6278b5e4942eb227f7fd"
     }
   }
 }
