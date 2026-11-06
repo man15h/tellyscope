@@ -198,8 +198,10 @@ class FireOsTest {
 
     @Test fun theHomeStarterIsListedWithNoMakeHome() {
         val starter = AppInfo(FIRE_HOME_STARTER, "Amazon Firehomestarter", null, true, true, UiText(R.string.data_protected_system), "1.0")
-        assertEquals(listOf(FIRE_TV_LAUNCHER, FIRE_HOME_STARTER), homeLaunchers(listOf(fireHome, starter)).map { it.packageName })
-        assertNull(homeMove(starter, fireHome))
+        // On a Fire TV, Fire TV Home answers Home and is the TV's own launcher.
+        val kftv = fireHome.copy(answersHome = true, builtInLauncher = true)
+        assertEquals(listOf(FIRE_TV_LAUNCHER, FIRE_HOME_STARTER), homeLaunchers(listOf(kftv, starter)).map { it.packageName })
+        assertNull(homeMove(starter, kftv))
         // With an added launcher on Home, it still offers no way back: Fire TV Home is the TV's own.
         val projectivy = AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", home = true, removable = true)
         assertNull(homeMove(starter, projectivy))
