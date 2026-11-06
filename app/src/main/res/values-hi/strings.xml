@@ -80,6 +80,7 @@
     <string name="copy_install">इंस्टॉल करें</string>
     <string name="copy_open">खोलें</string>
     <string name="copy_home_screen_of">%1$s की होम स्क्रीन</string>
+    <string name="copy_picture_failed">तस्वीर लोड नहीं हो सकी</string>
     <string name="copy_uses_service">सुलभता सेवा का इस्तेमाल करता है</string>
     <string name="copy_no_service">ओपन सोर्स · कोई सुलभता सेवा नहीं</string>
     <string name="copy_other_launcher">कोई दूसरा लॉन्चर चाहिए? उसे अपने TV पर Play Store से इंस्टॉल करें, फिर यहां वापस आएं। वह %1$s में दिखेगा।</string>
@@ -965,6 +966,8 @@
     <string name="device_nothing_matches">\"%1$s\" से कुछ नहीं मिला।</string>
     <string name="device_app_disabled">बंद है</string>
     <string name="device_app_running">चल रहा है</string>
+    <string name="device_app_background">बैकग्राउंड में चल रहा है</string>
+    <string name="device_app_on_screen">स्क्रीन पर</string>
     <string name="device_app_not_running">नहीं चल रहा</string>
     <string name="device_app_protected">सुरक्षित: %1$s</string>
     <string name="guide_brand_other">अन्य</string>

@@ -109,6 +109,7 @@
     <string name="copy_install">Install</string>
     <string name="copy_open">Open</string>
     <string name="copy_home_screen_of">%1$s home screen</string>
+    <string name="copy_picture_failed">Couldn\'t load the picture</string>
     <string name="copy_uses_service">Uses an accessibility service</string>
     <string name="copy_no_service">Open source · no accessibility service</string>
     <!-- %1$s is copy_on_this_tv -->
@@ -1185,6 +1186,8 @@
     <string name="device_nothing_matches">Nothing matches \"%1$s\".</string>
     <string name="device_app_disabled">Disabled</string>
     <string name="device_app_running">Running</string>
+    <string name="device_app_background">Running in the background</string>
+    <string name="device_app_on_screen">On screen</string>
     <string name="device_app_not_running">Not running</string>
     <!-- %1$s is why the app can't be changed -->
     <string name="device_app_protected">Protected: %1$s</string>

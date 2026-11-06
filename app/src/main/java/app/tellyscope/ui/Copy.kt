@@ -211,6 +211,8 @@ object Copy {
     val OPEN = UiText(R.string.copy_open)
     /** A launcher's screenshot in the picker, for screen readers. */
     fun homeScreenOf(name: String) = UiText(R.string.copy_home_screen_of, name)
+    /** In a launcher's screenshot box when the picture couldn't be had; [TRY_AGAIN] under it loads it again. */
+    val PICTURE_FAILED = UiText(R.string.copy_picture_failed)
     val USES_SERVICE = UiText(R.string.copy_uses_service)
     val NO_SERVICE = UiText(R.string.copy_no_service)
     /** Under the picker's list: any other launcher works too, and comes back as On this TV. */

@@ -170,6 +170,15 @@ class ParsersTest {
         assertNull(Parsers.screenOn(""))
     }
 
+    @Test fun resumedPackageUpToAndFromAndroid14() {
+        assertEquals("com.netflix.ninja", Parsers.resumedPackage("    mResumedActivity: ActivityRecord{4a1f u0 com.netflix.ninja/.MainActivity t31}\n"))
+        assertEquals(
+            "com.google.android.youtube.tv",
+            Parsers.resumedPackage("  topResumedActivity=ActivityRecord{1d2 u0 com.google.android.youtube.tv/com.google.android.apps.youtube.tv.activity.ShellActivity t12}\n"),
+        )
+        assertNull(Parsers.resumedPackage(""))
+    }
+
     @Test fun tcpSocketsDecodeKernelByteOrder() {
         val tcp = """
               sl  local_address rem_address   st tx_queue rx_queue tr tm->when retrnsmt   uid  timeout inode

@@ -59,6 +59,25 @@ class Tweaks(private val session: AdbSession) {
     }
 
     /**
+     * Whether strict Private DNS works with provider [host]: polls `dumpsys connectivity` until a
+     * network names [host] as its provider and lists addresses it validated over TLS, [tries] times
+     * [wait] ms apart. A lookup alone can pass on the TV's DNS cache, which a new provider doesn't
+     * clear. False when [host] is named but never validated; null when it's never named, so the
+     * strict mode hasn't applied, or the TV prints it in a way this doesn't read.
+     */
+    suspend fun dnsValidated(host: String, tries: Int = 8, wait: Long = 2_000): Boolean? {
+        var named = false
+        repeat(tries) { i ->
+            // Android 9 on prints a network's provider as "PrivateDnsServerName: <host> " in its link properties.
+            val lines = session.shell("dumpsys connectivity | grep -F ${shellQuote("PrivateDnsServerName: $host ")}").output.lines().filter { it.isNotBlank() }
+            if (lines.any { "ValidatedPrivateDnsAddresses: [" in it }) return true
+            if (lines.isNotEmpty()) named = true
+            if (i < tries - 1) delay(wait)
+        }
+        return if (named) false else null
+    }
+
+    /**
      * Asks Android to free cache space from every app (`pm trim-caches` with more than any TV
      * has); app data and sign-ins stay. Returns the space freed in KB, or null when the TV
      * doesn't report its storage.

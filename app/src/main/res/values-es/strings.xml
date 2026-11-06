@@ -80,6 +80,7 @@
     <string name="copy_install">Instalar</string>
     <string name="copy_open">Abrir</string>
     <string name="copy_home_screen_of">Pantalla de inicio de %1$s</string>
+    <string name="copy_picture_failed">No se pudo cargar la imagen</string>
     <string name="copy_uses_service">Usa un servicio de accesibilidad</string>
     <string name="copy_no_service">Código abierto · sin servicio de accesibilidad</string>
     <string name="copy_other_launcher">¿Prefieres otro launcher? Instálalo desde Play Store en tu TV y vuelve aquí. Aparecerá en %1$s.</string>
@@ -1011,6 +1012,8 @@
     <string name="device_nothing_matches">Nada coincide con \"%1$s\".</string>
     <string name="device_app_disabled">Desactivada</string>
     <string name="device_app_running">En ejecución</string>
+    <string name="device_app_background">En segundo plano</string>
+    <string name="device_app_on_screen">En pantalla</string>
     <string name="device_app_not_running">No se está ejecutando</string>
     <string name="device_app_protected">Protegida: %1$s</string>
     <string name="guide_brand_other">Otra</string>

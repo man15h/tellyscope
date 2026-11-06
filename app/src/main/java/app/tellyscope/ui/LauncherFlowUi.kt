@@ -4,7 +4,13 @@
 
 package app.tellyscope.ui
 
+import android.provider.Settings
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -65,6 +71,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,16 +81,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -838,13 +850,16 @@ private fun PickRow(
 /**
  * A launcher from `launchers.json` in a picker: its icon (or its first letter), name, then its about line and whether it
  * uses an accessibility service, under the icon at full width. Chosen ([on]), it opens to its screenshot and the list's
- * credit for it below those, then scrolls itself into view; a launcher without an image, or one that can't be had, goes without.
+ * credit for it below those, then scrolls itself into view. Each image shimmers while it loads. A launcher the list names no
+ * picture for goes without; one whose picture can't be had keeps its box, saying so with Try again, and an icon that can't
+ * be had falls back as one the list doesn't name.
  */
 @Composable
 private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolean, have: AppInfo?, onClick: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    val icon = listImage(l.launcher.icon, SharedLists::image)
-    val shot = listImage(l.launcher.screenshot.takeIf { on }, SharedLists::image)
+    val icon = listImage(l.launcher.icon, load = SharedLists::image)
+    var tries by remember { mutableIntStateOf(0) }
+    val shot = listImage(l.launcher.screenshot.takeIf { on }, tries, SharedLists::image)
     val bring = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
     PickRow(
@@ -856,12 +871,12 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
         leading = {
             when {
                 icon is ListImage.Ready -> Image(icon.bitmap, null, Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
-                // The list names no icon: the one Tweaks shows when it's on the TV, else its first letter, so names line up.
-                icon == ListImage.Missing && have != null -> AppIcon(have)
-                icon == ListImage.Missing -> Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(c.secondaryContainer), contentAlignment = Alignment.Center) {
+                icon == ListImage.Loading -> Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(c.surfaceContainerHighest).shimmer())
+                // No icon, or none to be had: the one Tweaks shows when it's on the TV, else its first letter, so names line up.
+                have != null -> AppIcon(have)
+                else -> Box(Modifier.size(40.dp).clip(RoundedCornerShape(10.dp)).background(c.secondaryContainer), contentAlignment = Alignment.Center) {
                     Text(l.name.take(1).uppercase(), style = MaterialTheme.typography.titleMedium, color = c.onSecondaryContainer)
                 }
-                else -> Spacer(Modifier.size(40.dp))
             }
         },
         footer = {
@@ -871,8 +886,23 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
         below = {
             if (shot != ListImage.Missing) Column(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
                 val description = Copy.homeScreenOf(l.name).resolve()
-                Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest)) {
-                    if (shot is ListImage.Ready) Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                Box(
+                    Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest)
+                        .then(if (shot == ListImage.Loading) Modifier.shimmer() else Modifier),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    when (shot) {
+                        is ListImage.Ready -> Image(shot.bitmap, description, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                        ListImage.Failed -> Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(LauncherIcons.HideImage, null, tint = c.onSurfaceVariant)
+                            Text(Copy.PICTURE_FAILED.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp))
+                            TextButton(onClick = { tries++ }) {
+                                Text(Copy.TRY_AGAIN.resolve())
+                            }
+                        }
+                        else -> {}
+                    }
                 }
                 l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
                     Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Light,
@@ -897,23 +927,49 @@ private fun ServiceLine(accessibility: Boolean, modifier: Modifier = Modifier) {
 /** A launcher's icon or screenshot, as [listImage] has it. */
 private sealed interface ListImage {
     data object Loading : ListImage
-    /** None named, or it couldn't be had or decoded. */
+    /** None named. */
     data object Missing : ListImage
+    /** Named, but it couldn't be had or decoded. */
+    data object Failed : ListImage
     data class Ready(val bitmap: ImageBitmap) : ListImage
 }
 
 /**
  * The image [load] gives for [key], decoded off the main thread; [ListImage.Missing] for a null [key]. The state
- * outlives a change of [key], so each change starts over from Loading (or Missing) rather than the old image.
+ * outlives a change of [key] or [attempt], so each change starts over from Loading (or Missing) rather than the old
+ * image: a new [attempt] is Try again.
  */
 @Composable
-private fun <K : Any> listImage(key: K?, load: suspend (K) -> ByteArray?): ListImage = produceState<ListImage>(if (key == null) ListImage.Missing else ListImage.Loading, key) {
-    value = if (key == null) ListImage.Missing else ListImage.Loading
-    if (key == null) return@produceState
-    value = load(key)
-        ?.let { b -> withContext(Dispatchers.Default) { Picture.decode(b) } }
-        ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Missing
-}.value
+private fun <K : Any> listImage(key: K?, attempt: Int = 0, load: suspend (K) -> ByteArray?): ListImage =
+    produceState<ListImage>(if (key == null) ListImage.Missing else ListImage.Loading, key, attempt) {
+        value = if (key == null) ListImage.Missing else ListImage.Loading
+        if (key == null) return@produceState
+        value = load(key)
+            ?.let { b -> withContext(Dispatchers.Default) { Picture.decode(b) } }
+            ?.let { ListImage.Ready(it.asImageBitmap()) } ?: ListImage.Failed
+    }.value
+
+/**
+ * A lighter band sweeping across a box while its image loads, drawn over it. Still while the phone's animations are
+ * off, leaving the plain box.
+ */
+@Composable
+private fun Modifier.shimmer(): Modifier {
+    val c = MaterialTheme.colorScheme
+    val band = if (c.surface.luminance() < 0.5f) c.onSurface.copy(alpha = 0.12f) else c.surfaceBright
+    val resolver = LocalContext.current.contentResolver
+    val moving = remember { Settings.Global.getFloat(resolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f }
+    if (!moving) return this
+    val at by rememberInfiniteTransition("shimmer").animateFloat(
+        -1f, 2f, infiniteRepeatable(tween(1400, easing = LinearEasing)), "shimmer",
+    )
+    return drawWithContent {
+        drawContent()
+        val x = size.width * at
+        val sweep = listOf(Color.Transparent, band, Color.Transparent)
+        drawRect(Brush.linearGradient(sweep, Offset(x - size.width / 2, 0f), Offset(x + size.width / 2, size.height)))
+    }
+}
 
 /** Installed, outlined; Current, filled, so it still stands out on the chosen row. Tweaks shows the Current one too. */
 @Composable
@@ -970,6 +1026,10 @@ private object LauncherIcons {
     val Download = icon("Download", "M5 20H19V18H5ZM19 9H15V3H9V9H5L12 16Z")
     val ErrorOutline = icon("ErrorOutline", "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4ZM11 7H13V13H11ZM11 15H13V17H11Z")
     val InfoOutline = icon("InfoOutline", "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4ZM11 11H13V17H11ZM11 7H13V9H11Z")
+    val HideImage = icon(
+        "HideImage",
+        "M19 5L19 16.17L21 18.17L21 5C21 3.9 20.1 3 19 3L5.83 3L7.83 5L19 5ZM2.81 2.81L1.39 4.22L3 5.83L3 19C3 20.1 3.9 21 5 21L18.17 21L19.78 22.61L21.19 21.2L2.81 2.81ZM5 19L5 7.83L12.07 14.9L11.25 16L9 13L6 17L14.17 17L16.17 19L5 19Z",
+    )
     val Code = icon("Code", "M9.4 16.6L4.8 12L9.4 7.4L8 6L2 12L8 18ZM14.6 16.6L19.2 12L14.6 7.4L16 6L22 12L16 18Z")
 
     private fun icon(name: String, path: String) = ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)

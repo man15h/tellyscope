@@ -80,6 +80,7 @@
     <string name="copy_install">Установить</string>
     <string name="copy_open">Открыть</string>
     <string name="copy_home_screen_of">Главный экран %1$s</string>
+    <string name="copy_picture_failed">Не удалось загрузить изображение</string>
     <string name="copy_uses_service">Использует службу специальных возможностей</string>
     <string name="copy_no_service">Открытый код · без службы специальных возможностей</string>
     <string name="copy_other_launcher">Хотите другой лаунчер? Установите его из Play Маркета на телевизоре и вернитесь сюда. Он появится в разделе «%1$s».</string>
@@ -1067,6 +1068,8 @@
     <string name="device_nothing_matches">Ничего не найдено по запросу «%1$s».</string>
     <string name="device_app_disabled">Отключено</string>
     <string name="device_app_running">Запущено</string>
+    <string name="device_app_background">Работает в фоне</string>
+    <string name="device_app_on_screen">На экране</string>
     <string name="device_app_not_running">Не запущено</string>
     <string name="device_app_protected">Защищено: %1$s</string>
     <string name="guide_brand_other">Другой</string>
