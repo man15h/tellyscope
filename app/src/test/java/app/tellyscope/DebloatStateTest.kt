@@ -80,15 +80,30 @@ class DebloatStateTest {
         assertTrue(card(ui(apps)))
     }
 
-    @Test fun `the home screen card waits until Debloat has nothing left`() {
-        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", false)))))
-        assertTrue(card(ui(listOf(store, app("com.acme.a", false), app("com.acme.b", false)))))
-        // Turned off, then back on after a TV update: Debloat has it again, so the card waits again.
-        assertFalse(card(ui(listOf(store, app("com.acme.a", false), app("com.other", true)), listOf(turnedOff("com.other")))))
+    @Test fun `the home screen card shows once some apps on the list are off, with others kept on`() {
+        // Tellyscope turned a off; b and c stay on.
+        val some = ui(listOf(store, app("com.acme.a", false), app("com.acme.b", true), app("com.acme.c", true)), listOf(turnedOff("com.acme.a")))
+        assertEquals(1, debloatState(some).off)
+        assertTrue(debloatState(some).todo)
+        assertTrue(card(some))
     }
 
-    @Test fun `a TV with no list never gets the home screen card`() {
-        assertFalse(card(DeviceUi(apps = listOf(store), lists = Suggestions.NoList(null, emptyList()))))
+    @Test fun `the home screen card waits while Tellyscope has turned nothing off`() {
+        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", true)))))
+        // Off, but not by Tellyscope.
+        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", false)))))
+        // Turned off, then back on after a TV update: nothing on the list is off through Tellyscope any more.
+        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.acme.b", true)), listOf(turnedOff("com.acme.a")))))
+        // An app off the list doesn't count.
+        assertFalse(card(ui(listOf(store, app("com.acme.a", true), app("com.other", false)), listOf(turnedOff("com.other")))))
+    }
+
+    @Test fun `the home screen card shows when nothing on the list is left on`() {
+        assertTrue(card(ui(listOf(store, app("com.acme.a", false), app("com.acme.b", false)))))
+    }
+
+    @Test fun `a TV with no list gets the home screen card once that is known`() {
+        assertTrue(card(DeviceUi(apps = listOf(store), lists = Suggestions.NoList(null, emptyList()))))
     }
 
     @Test fun `the card's own gates still apply once the TV is cleaned up`() {
