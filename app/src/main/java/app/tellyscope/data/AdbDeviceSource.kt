@@ -1615,7 +1615,9 @@ internal suspend fun applyTweak(
     // Only the keys being written: Undo must not touch the ones this change left alone.
     val before = t.read(tweak).filterKeys { it in values }
     if (!t.write(tweak, values)) throw UiTextException(UiText(R.string.data_tweak_refused))
-    if (strictDns && !t.resolves()) {
+    // Strict mode works once the TV shows the provider validated; a lookup only when it doesn't show that.
+    val works = !strictDns || (values["private_dns_specifier"]?.let { t.dnsValidated(it) } ?: t.resolves())
+    if (!works) {
         val restored = try {
             t.write(tweak, before)
         } catch (e: CancellationException) {
