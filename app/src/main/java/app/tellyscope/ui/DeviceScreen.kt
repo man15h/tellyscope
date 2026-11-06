@@ -431,12 +431,13 @@ internal fun AppRow(
     var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
     // A launcher can be protected and still open, for the way to the Home screen card.
     val launcher = app.answersHome || app.builtInLauncher
-    val changeable = (app.protectedReason == null || launcher) && !offline
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
     val shown = app.enabled && app.packageName == onScreen
     val running = ram > 0 || shown
     // Open only when there's somewhere to go: not for the app already on screen.
     val opens = app.opens && !shown
+    // A protected app still unfolds when there's an Open to show.
+    val changeable = (app.protectedReason == null || launcher || opens) && !offline
     val status = stringResource(
         when {
             !app.enabled -> R.string.device_app_disabled
