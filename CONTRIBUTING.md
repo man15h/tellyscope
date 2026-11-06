@@ -12,6 +12,24 @@ Thanks for helping! Tellyscope is young, so the code and its structure are still
 - **New files start with an SPDX header:** `// SPDX-License-Identifier: GPL-3.0-only`.
 - **Licensing.** By contributing you agree that your work is licensed under GPL-3.0. If you adapt code or lists from another project, check that its license is compatible and add it to [NOTICE](NOTICE) in the same PR.
 
+## Dependencies
+
+Gradle checks every dependency and plugin it downloads against [`gradle/verification-metadata.xml`](gradle/verification-metadata.xml): its SHA-256, and its PGP signature when the artifact is signed. The public keys it trusts are kept in `gradle/verification-keyring.keys`, so the check needs no key server. A checksum or signature that doesn't match, or an artifact the file doesn't list, fails the build, on CI too.
+
+When you add or bump a dependency, regenerate the file in two passes, checksums first, so signed artifacts keep their SHA-256 too (with `pgp` alone, Gradle writes only the key). Run the tasks CI and the release builds run, so nothing that's only resolved while a task runs (lint, aapt2) is missed:
+
+```sh
+tasks="build :app:assembleGithubRelease :app:bundlePlayRelease"
+./gradlew --write-verification-metadata sha256 $tasks
+./gradlew --write-verification-metadata sha256,pgp --export-keys $tasks
+```
+
+aapt2 is listed for Linux, which CI runs on. On macOS or Windows your first build stops at aapt2 instead: run the same two commands and commit the entry they add.
+
+Commit `gradle/verification-metadata.xml` and `gradle/verification-keyring.keys` with the bump, and read their diff: a new key for a library that was signed before, or a library that drops its signature, needs a reason in the PR. Gradle lists keys it couldn't download from any key server as `ignored-key`; artifacts signed by those are checked by SHA-256 only.
+
+**Bumping Kadb** (`kadb`, `kadb-mdns` in `gradle/libs.versions.toml`): read the upstream diff between the two tags on [Kadb](https://github.com/flyfishxu/Kadb) before you open the PR, and say in it that you did. Kadb talks to the TV with full ADB rights, and a valid signature only proves who published it, not what it does. Its artifacts must stay signed by key `80E3E8A7BEA9A7A4D725E521999E1EC5EB8E55F0`.
+
 ## Releases
 
 - **Alpha:** to publish an alpha, put `[release]` anywhere in the title of the pull request into `dev` (any case), for example `Changelog for 0.16 alpha 1 [release]`. That pull request changes only CHANGELOG.md: it copies the `Changelog:` lines of the pull requests merged since the last release under `## Unreleased`. Merges without `[release]` only run CI. On a `[release]` merge, CI builds `app.tellyscope.alpha`, which installs next to the release, and once the build passes it tags the commit `vX.Y.Z-alpha.N` and publishes a GitHub pre-release under that tag, with the APK named `Tellyscope-vX.Y.Z-alpha.N.apk`. `X.Y.Z` is the current `versionName`, and `N` is one past the highest alpha of that version. A failed build tags nothing. You can still put out an alpha by hand: tag a commit that is on `dev` and push the tag, for example `git tag v0.1.0-alpha.1 origin/dev && git push origin v0.1.0-alpha.1`. The tag's `X.Y.Z` must equal `versionName` in `app/build.gradle.kts`, and its commit must be on `dev`; otherwise the build fails and publishes nothing.
