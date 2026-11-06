@@ -17,7 +17,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 
 **Google Play (testing)**
 
-Tellyscope is in a closed test on Google Play, so you join the testers group first, then accept the test, and then Play lets you install it. This is the Play build: Play handles updates instead of the in-app check, and it doesn't download Projectivy from GitHub.
+Tellyscope is in a closed test on Google Play, so you join the testers group first, then accept the test, and then Play lets you install it. This is the Play build: Play handles updates instead of the in-app check, and it doesn't download launchers from GitHub.
 
 <a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 
