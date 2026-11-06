@@ -327,6 +327,8 @@
     <string name="copy_restart_lost">%1$s にまだ接続できません</string>
     <string name="copy_back_online">オンラインに戻りました。%1$s に再接続しました。</string>
     <string name="copy_remote_buttons">リモコンのボタン</string>
+    <string name="copy_open_an_app">アプリを開く</string>
+    <string name="copy_open_an_app_hint">%1$s のアプリ。タップすると開きます。</string>
     <string name="copy_more">その他のオプション</string>
     <string name="copy_buttons_hint">%1$d 個まで選べます。ドラッグで並べ替えます。別のものを選ぶには、先にどれかのチェックを外してください。</string>
     <string name="copy_not_on_tv">%1$s はこのテレビにありません。テレビの Play ストアからインストールしてください。</string>

@@ -636,6 +636,8 @@ object Copy {
     fun buttonsHint(cap: Int) = UiText(R.string.copy_buttons_hint, cap)
     fun notOnTv(name: String) = UiText(R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
+    val OPEN_AN_APP = UiText(R.string.copy_open_an_app)
+    fun openAnAppHint(tv: String) = UiText(R.string.copy_open_an_app_hint, tv)
 
     fun leftDock(labels: List<String>) =
         if (labels.size == 1) UiText(R.string.copy_left_dock_one, labels[0])
