@@ -125,6 +125,15 @@ const val PLAY_STORE = "com.android.vending"
  */
 internal fun hasPlayStore(apps: List<AppInfo>) = apps.any { it.packageName == PLAY_STORE && it.enabled }
 
+/** Amazon's Appstore: Fire OS's app store, where other TVs have the Play Store. */
+const val AMAZON_APPSTORE = "com.amazon.venezia"
+
+/** The TV's app store, on or off, for the Apps tab's store row: the Appstore on Fire OS, the Play Store elsewhere. Null when it has none. */
+internal fun tvStore(device: Device, apps: List<AppInfo>): AppInfo? {
+    val pkg = if (isFireOs(device, apps)) AMAZON_APPSTORE else PLAY_STORE
+    return apps.firstOrNull { it.packageName == pkg }
+}
+
 /** A launcher someone added is on the TV, Home or not: one on `launchers.json`, or one they installed that answers Home. */
 internal fun hasAddedLauncher(apps: List<AppInfo>) = apps.any { it.listedLauncher || (it.removable && (it.home || it.answersHome)) }
 

@@ -32,6 +32,7 @@ import app.tellyscope.data.latestTag
 import app.tellyscope.data.pageApk
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseRelease
+import app.tellyscope.ui.AMAZON_APPSTORE
 import app.tellyscope.ui.FireInstall
 import app.tellyscope.ui.LauncherFlow
 import app.tellyscope.ui.PLAY_STORE
@@ -44,6 +45,7 @@ import app.tellyscope.ui.fireLaunchers
 import app.tellyscope.ui.groupedHex
 import app.tellyscope.ui.offerChoose
 import app.tellyscope.ui.offerLauncher
+import app.tellyscope.ui.tvStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -172,6 +174,16 @@ class FireOsTest {
     @Test fun plainAndroidTvKeepsThePlayStore() {
         assertFalse(isFireOs(androidTv, listOf(store, tvHome)))
         assertFalse(fireInstall(androidTv, listOf(store, tvHome)))
+    }
+
+    @Test fun theStoreRowShowsTheTvsOwnStore() {
+        val appstore = AppInfo(AMAZON_APPSTORE, "Appstore", null, true, true, null, "1.0")
+        assertEquals(AMAZON_APPSTORE, tvStore(amazon, listOf(fireHome, appstore, store))?.packageName)
+        assertEquals(PLAY_STORE, tvStore(androidTv, listOf(store, tvHome))?.packageName)
+        // Off, it still has a row, to turn it back on; with none of its own, there's no row.
+        assertFalse(tvStore(androidTv, listOf(store.copy(enabled = false), tvHome))!!.enabled)
+        assertNull(tvStore(amazon, listOf(fireHome, store)))
+        assertNull(tvStore(androidTv, listOf(tvHome)))
     }
 
     @Test fun fireOsGetsTheCardWithoutAPlayStore() {

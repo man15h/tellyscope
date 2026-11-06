@@ -314,6 +314,8 @@
     <string name="copy_remote_lost">Se perdió la conexión con la TV. Comprueba que siga encendida y conectada.</string>
     <string name="copy_no_update_screen">Esta TV no tiene una pantalla de actualizaciones que Tellyscope pueda abrir. Búscala en sus Ajustes, en Sistema o Información.</string>
     <string name="copy_updates_opened">Se abrió la pantalla de actualizaciones en la TV. Mira la TV para buscar actualizaciones.</string>
+    <string name="copy_store_opened">Se abrió %1$s en la TV.</string>
+    <string name="copy_store_cant_open">La TV no pudo abrir %1$s.</string>
     <string name="copy_fire_settings_opened">Se abrieron los Ajustes en la TV. Ve a Mi Fire TV (Dispositivo y software en las TV), luego a Acerca de y luego a Buscar actualizaciones.</string>
     <string name="copy_no_fire_update_screen">Tellyscope no puede abrir los Ajustes en esta TV. En la TV, ve a Ajustes, luego a Mi Fire TV (Dispositivo y software en las TV), luego a Acerca de y luego a Buscar actualizaciones.</string>
     <string name="copy_reboot_refused">La TV no aceptó reiniciarse. Usa su propio control remoto o su botón de encendido.</string>
@@ -792,6 +794,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">Actualizado: %1$s</string>
     <string name="tabs_check_updates">Buscar actualizaciones</string>
+    <string name="tabs_store_sub">Consigue apps y sus actualizaciones</string>
+    <string name="tabs_store_off">Desactivada en esta TV</string>
     <string name="lists_apps_on_tv">Apps de esta TV</string>
     <string name="lists_which_tv">¿Qué TV es esta?</string>
     <string name="lists_debloat">Limpiar</string>

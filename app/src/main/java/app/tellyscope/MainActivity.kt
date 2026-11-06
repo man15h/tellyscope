@@ -429,6 +429,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 history = { history = true },
                 reset = { vm.openReset(); resetting = true },
                 checkUpdates = vm::checkUpdates,
+                openStore = vm::openStore,
+                turnOnStore = vm::turnOnStore,
                 setDns = vm::setDns,
                 setFastAnimations = vm::setFastAnimations,
                 clearCaches = vm::clearCaches,

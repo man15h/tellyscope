@@ -323,6 +323,8 @@
     <string name="copy_remote_lost">Связь с телевизором потеряна. Убедитесь, что он включен и подключен.</string>
     <string name="copy_no_update_screen">На этом телевизоре нет экрана обновлений, который может открыть Tellyscope. Поищите его в настройках, в разделе «Система» или «Об устройстве».</string>
     <string name="copy_updates_opened">На телевизоре открыт экран обновлений. Проверьте наличие обновлений на телевизоре.</string>
+    <string name="copy_store_opened">На телевизоре открыто приложение %1$s.</string>
+    <string name="copy_store_cant_open">Телевизору не удалось открыть %1$s.</string>
     <string name="copy_fire_settings_opened">На телевизоре открыты настройки. Перейдите в «My Fire TV» (на телевизорах «Device &amp; Software»), затем в «About» и «Check for updates».</string>
     <string name="copy_no_fire_update_screen">Tellyscope не может открыть настройки на этом телевизоре. На телевизоре откройте «Settings», затем «My Fire TV» (на телевизорах «Device &amp; Software»), «About» и «Check for updates».</string>
     <string name="copy_reboot_refused">Телевизор отказался перезапускаться. Воспользуйтесь его пультом или кнопкой питания.</string>
@@ -834,6 +836,8 @@
     <string name="tabs_android_version">Android %1$s</string>
     <string name="tabs_updated">Обновлено: %1$s</string>
     <string name="tabs_check_updates">Проверить обновления</string>
+    <string name="tabs_store_sub">Приложения и их обновления</string>
+    <string name="tabs_store_off">Отключено на этом телевизоре</string>
     <string name="lists_apps_on_tv">Приложения на этом телевизоре</string>
     <string name="lists_which_tv">Какой у вас телевизор?</string>
     <string name="lists_debloat">Очистка</string>
