@@ -669,6 +669,8 @@ internal data class DebloatState(
     val count: Int,
     /** Debloat has something to show: apps to turn off, or that this TV has no list. */
     val todo: Boolean,
+    /** Apps on the list Tellyscope turned off that are still off. */
+    val off: Int = 0,
 )
 
 /**
@@ -712,15 +714,21 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val candidates = ui.apps.filter { it.packageName in listed && (!it.enabled || it.protectedReason == null) }
     val on = candidates.filter { it.enabled }.map { it.packageName }.toSet()
     val count = (on + back).size
-    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList)
+    val off = candidates.count { !it.enabled && it.packageName in ours }
+    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off)
 }
 
 /**
- * The home screen card waits until the list has loaded and Debloat has nothing left on it, so the TV is cleaned up
- * before a new home screen is suggested. A TV with no list never gets there.
+ * The home screen card waits until the list has loaded and the TV has been debloated: Tellyscope has turned off at
+ * least one app on the list, or nothing on it is left on. Apps someone keeps on don't hold it back. A TV with no list
+ * has nothing to debloat, so it gets the card once that's known.
  */
 internal fun offerLauncherCard(ui: DeviceUi, debloat: DebloatState, fire: Boolean = false) =
-    ui.lists is Suggestions.Ready && !debloat.todo && offerLauncher(ui.apps, ui.launcherCardHidden, fire)
+    when (ui.lists) {
+        is Suggestions.Ready -> debloat.off > 0 || !debloat.todo
+        is Suggestions.NoList -> true
+        else -> false
+    } && offerLauncher(ui.apps, ui.launcherCardHidden, fire)
 
 /** The Remote's round button, centred on the bottom bar's top edge, so it rises by half its size. */
 private val RemoteSize = 60.dp
