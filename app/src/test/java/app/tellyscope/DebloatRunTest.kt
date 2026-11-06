@@ -3,8 +3,8 @@
 package app.tellyscope
 
 import androidx.lifecycle.viewModelScope
+import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.data.Action
-import app.tellyscope.data.ConnectionRequest
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
