@@ -20,6 +20,7 @@
     { "package": "com.klevico.monet", "name": "Monet Launcher", "about": "Takes its colors from your wallpaper. Widgets and profiles.",
       "signers": ["4bec386a6baae56f0694d3be54f67e0625b973109e0dbb947df2a5d0254975e0"], "max_mb": 64,
       "releases": "https://github.com/Klevico/Monet-Launcher/releases", "apk": "monet-launcher.apk", "fire_os": true, "accessibility": "1.0.50",
+      "icon": { "file": "images/monet-icon.png", "sha256": "fd2dc6141a22e71dd66466046309d1914161d164193dbd200aee5a61419e89e9" },
       "screenshot": { "file": "images/monet.png", "sha256": "f52cdfc25846c98e7f7961ec5ac7afe417979c9663b707d4250bd74fb3cb27d9" } }
   ]
 }
