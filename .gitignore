@@ -19,3 +19,5 @@ keystore.properties
 # OS
 .DS_Store
 __pycache__/
+# Binary twin of gradle/verification-keyring.keys, written by --export-keys
+gradle/verification-keyring.gpg
