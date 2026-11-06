@@ -141,7 +141,6 @@ class AdbDeviceSource(
 
     init {
         Connector.init(File(appContext.filesDir, "adbkey.pem"))
-        SharedLists.images = LauncherImages(File(appContext.cacheDir, "launcher-images"))
         scope.launch(Dispatchers.IO) { SharedLists.load(data, lists) }
     }
 

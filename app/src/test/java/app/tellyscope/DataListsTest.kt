@@ -4,7 +4,6 @@ package app.tellyscope
 
 import app.tellyscope.data.Png
 import app.tellyscope.data.RemoteButtons
-import app.tellyscope.data.imageUrl
 import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
@@ -39,6 +38,7 @@ class DataListsTest {
     private val imageName = Regex("[a-z0-9][a-z0-9-]{0,39}")
     /** A screenshot at 960 × 540, cut to 256 colours, is 130 to 530 KB. */
     private val maxScreenshotBytes = 600 * 1024
+    private val maxIconBytes = 64 * 1024
 
     /** The Remote's sheet in dark mode; a service's `dark` fill replaces a colour that sinks into it. */
     private val darkSheet = 0xFF161D1D
@@ -71,21 +71,23 @@ class DataListsTest {
             if (l.has("releases") && !releases.matches(l.optString("releases"))) errors += "$where: 'releases' must be https://github.com/<owner>/<repo>/releases"
             if (l.has("apk") && (l.opt("apk") as? String)?.takeIf(apkName::matches) == null) errors += "$where: 'apk' must be a file name ending in .apk"
             if (l.has("apk") && !l.has("releases")) errors += "$where: 'apk' names an asset of 'releases', which is missing"
-            if (l.has("icon") && imageUrl(l.opt("icon") as? String) == null) errors += "$where: 'icon' must be an https address of at most 500 characters"
-            if (l.has("screenshot")) {
-                val shot = l.optJSONObject("screenshot")
-                val file = shot?.optString("file")
+            fun image(key: String, maxBytes: Int, shape: String, fits: (Pair<Int, Int>) -> Boolean) {
+                if (!l.has(key)) return
+                val image = l.optJSONObject(key)
+                val file = image?.optString("file")
                 val name = file?.removePrefix("images/")?.removeSuffix(".png")?.takeIf { file == "images/$it.png" && imageName.matches(it) }
                 val png = name?.let { File(data, "images/$it.png") }
                 val bytes = png?.takeIf { it.isFile }?.readBytes()
-                val size = bytes?.takeIf { it.size <= maxScreenshotBytes }?.let(Png::size)
+                val size = bytes?.takeIf { it.size <= maxBytes }?.let(Png::size)
                 when {
-                    name == null -> errors += "$where: 'screenshot' must be {\"file\": \"images/<name>.png\", \"sha256\": …}, <name> in lowercase letters, digits and -"
-                    bytes == null -> errors += "$where: 'screenshot' names data/images/$name.png, which isn't there"
-                    shot?.optString("sha256") != sha256(bytes) -> errors += "$where: 'screenshot' sha256 doesn't match data/images/$name.png, ${sha256(bytes)}"
-                    size != Pair(960, 540) -> errors += "$where: data/images/$name.png must be a 960 × 540 PNG of at most ${maxScreenshotBytes / 1024} KB"
+                    name == null -> errors += "$where: '$key' must be {\"file\": \"images/<name>.png\", \"sha256\": …}, <name> in lowercase letters, digits and -"
+                    bytes == null -> errors += "$where: '$key' names data/images/$name.png, which isn't there"
+                    image?.optString("sha256") != sha256(bytes) -> errors += "$where: '$key' sha256 doesn't match data/images/$name.png, ${sha256(bytes)}"
+                    size == null || !fits(size) -> errors += "$where: data/images/$name.png must be $shape of at most ${maxBytes / 1024} KB"
                 }
             }
+            image("icon", maxIconBytes, "a square PNG of 96 to 512 px") { it.first == it.second && it.first in 96..512 }
+            image("screenshot", maxScreenshotBytes, "a 960 × 540 PNG") { it == Pair(960, 540) }
             if (l.has("credit") && !l.nonEmpty("credit")) errors += "$where: 'credit' must be a non-empty string"
             if (l.has("accessibility") && (l.opt("accessibility") as? String)?.takeIf(checked::matches) == null) {
                 errors += "$where: 'accessibility' must be the minimum version that has the service, like \"4.72\""

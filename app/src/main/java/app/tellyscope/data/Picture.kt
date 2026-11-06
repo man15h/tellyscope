@@ -4,33 +4,6 @@ package app.tellyscope.data
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.File
-import java.security.MessageDigest
-
-/**
- * A launcher's icon ([KnownLauncher.icon]), linked from its developer's own page rather than kept in
- * this repository, so the art stays theirs. Fetched only for launchers on `launchers.json`, over [download]
- * (`https` only, size and time capped), and cached under [dir] by the address, so each is fetched once.
- */
-class LauncherImages(private val dir: File, private val fetch: suspend (String) -> ByteArray = ::download) {
-    /** The image at [url], cached or fetched; null when it can't be had or isn't a picture [Picture.ok] takes. */
-    suspend fun get(url: String): ByteArray? = withContext(Dispatchers.IO) {
-        val cache = File(dir, sha256(url))
-        cache.takeIf { it.exists() }?.readBytes()?.takeIf(Picture::ok)
-            ?: try {
-                fetch(url)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (_: Exception) {
-                null
-            }?.takeIf(Picture::ok)?.also { dir.mkdirs(); cache.writeBytes(it) }
-    }
-
-    private fun sha256(s: String) = MessageDigest.getInstance("SHA-256").digest(s.toByteArray()).joinToString("") { "%02x".format(it) }
-}
 
 /**
  * The checks a launcher's image passes before it is cached or decoded: a PNG, JPEG or WebP whose sides, read from
