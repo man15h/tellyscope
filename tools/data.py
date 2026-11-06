@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Index and sign data/, the lists the app downloads from this repo. Python 3.9+, standard library only.
 
-  tools/data.py index                          rebuild data/index.json from data/, unsigned; left alone
+  tools/data.py index                          rebuild data/index.json from data/ (the lists, and each PNG in
+                                               data/images/), unsigned; left alone
                                                while nothing changed
   tools/data.py sign --key <private key.pem>…  sign data/index.json with each key, on its line 2
   tools/data.py check [--unsigned]             fail if data/index.json is stale or its signature doesn't
@@ -16,6 +17,7 @@ import base64
 import datetime
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
@@ -27,6 +29,8 @@ DATA = REPO / "data"
 KEYS = REPO / "tools" / "data-keys"
 LISTS = ("launchers", "labels", "streaming")
 SIGS = b'  "sigs": '
+# The names the app reads (IMAGE_NAME in Launchers.kt); it drops any other without a word.
+IMAGE_NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 # Every P-256 public key in SubjectPublicKeyInfo DER starts with these bytes, then 64 bytes of point.
 P256_SPKI = bytes.fromhex("3059301306072a8648ce3d020106082a8648ce3d030107034200" "04")
 
@@ -40,6 +44,10 @@ def build_index():
         return {"file": path, "sha256": hashlib.sha256((DATA / path).read_bytes()).hexdigest()}
 
     index = {"lists": {name: file(f"{name}.json") for name in LISTS}}
+    # Only once there are images, so an index without them stays as it was signed.
+    images = sorted((DATA / "images").glob("*.png"))
+    if images:
+        index["images"] = {p.stem: file(f"images/{p.name}") for p in images}
     return {"schema": SCHEMA, "version": version(index), **index}
 
 
@@ -171,12 +179,19 @@ def index():
         path.write_text(text, encoding="utf-8")
 
 
+def bad_images():
+    """data/images/ PNGs whose names the app wouldn't read."""
+    return [f"data/images/{p.name}: name it in lowercase letters, digits and -, at most 40, the launcher's name, like projectivy.png"
+            for p in sorted((DATA / "images").glob("*.png")) if not IMAGE_NAME.fullmatch(p.stem)]
+
+
 def check(signed=True):
     path = DATA / "index.json"
     if not path.is_file() or split(path.read_bytes())[0] != dump(build_index()).encode():
         errors = ["data/index.json is stale: run tools/data.py index"]
     else:
         errors = check_signature() if signed else []
+    errors = bad_images() + errors
     for e in errors:
         print(e, file=sys.stderr)
     return 1 if errors else 0

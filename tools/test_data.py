@@ -117,6 +117,23 @@ class Signing(unittest.TestCase):
         data.index()
         self.assertIsNone(data.split(self.index().read_bytes())[1])
 
+    def test_images_are_indexed_by_name_only_once_there_are_some(self):
+        for name in data.LISTS:
+            (self.root / "data" / f"{name}.json").write_text("[]\n")
+        self.assertNotIn("images", data.build_index())
+        (self.root / "data" / "images").mkdir()
+        (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
+        (self.root / "data" / "images" / "notes.txt").write_text("not an image\n")
+        images = data.build_index()["images"]
+        self.assertEqual(list(images), ["monet"])
+        self.assertEqual(images["monet"], {"file": "images/monet.png", "sha256": data.hashlib.sha256(b"png").hexdigest()})
+
+    def test_an_image_name_the_app_would_drop_fails_check(self):
+        (self.root / "data" / "images").mkdir()
+        (self.root / "data" / "images" / "Monet-Home.png").write_bytes(b"png")
+        (self.root / "data" / "images" / "monet.png").write_bytes(b"png")
+        self.assertEqual([e.split(":")[0] for e in data.bad_images()], ["data/images/Monet-Home.png"])
+
     def test_a_key_that_is_not_p256_is_caught(self):
         (self.root / "keys" / "backup.pub").write_text("bm90IGEga2V5\n")
         self.assertIn("not a base64 P-256 public key", "\n".join(data.public_keys()[1]))

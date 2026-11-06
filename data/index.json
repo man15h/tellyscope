@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "version": 2026110504,
+  "version": 2026110601,
   "lists": {
     "launchers": {
       "file": "launchers.json",
-      "sha256": "fe4c2d29148ca700afb227e6a3fccecb12b8ca8159799263c60703bba2ef6142"
+      "sha256": "abdaf6804a19fc925f942a1fab789e552eeb86f2348126adf0d3c7a5cbe83f93"
     },
     "labels": {
       "file": "labels.json",
@@ -13,6 +13,24 @@
     "streaming": {
       "file": "streaming.json",
       "sha256": "907e47666b18673d634bd8a3840a32acbc7d9c083b14ae14bd6359b025db2d4f"
+    }
+  },
+  "images": {
+    "at4k": {
+      "file": "images/at4k.png",
+      "sha256": "762f3b28a0dff871d1833cedcc66cd1a562231c6a64028c1fc5b8f40ee2e04d4"
+    },
+    "flauncher": {
+      "file": "images/flauncher.png",
+      "sha256": "45a7f60c18ee154d0a5502e728b303d640ff02d9a3d7ce2ba363f443e8024b5a"
+    },
+    "monet": {
+      "file": "images/monet.png",
+      "sha256": "f52cdfc25846c98e7f7961ec5ac7afe417979c9663b707d4250bd74fb3cb27d9"
+    },
+    "projectivy": {
+      "file": "images/projectivy.png",
+      "sha256": "739a4150bc1dacfa8890387cf4b57f0a6d6971dad34b60f25c4a14c27481909f"
     }
   }
 }
