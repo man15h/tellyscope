@@ -12,9 +12,14 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 </p>
 
 <a href="../../releases/latest"><img src="docs/badges/get-it-on-github.png" alt="Get the signed APK on GitHub" height="60"></a>
-<a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/man15h/tellyscope"><img src="docs/badges/get-it-on-obtainium.png" alt="Get it on Obtainium" height="60"></a>
 <a href="https://rookieenough.github.io/Orion-Data/redirect.html?id=tellyscope&icon=https%3A%2F%2Fraw.githubusercontent.com%2Fman15h%2Ftellyscope%2Fmain%2Fdocs%2Flogo%2Ficon.svg"><img src="docs/badges/get-it-on-orion.png" alt="Get it on Orion Store" height="60"></a>
+<a href="https://groups.google.com/g/tellyscope-testers"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
+
+**Google Play (closed test):**
+1. [Join the group](https://groups.google.com/g/tellyscope-testers)
+2. [Accept the test](https://play.google.com/apps/testing/app.tellyscope)
+3. [Install from Play](https://play.google.com/store/apps/details?id=app.tellyscope)
 
 [![Watch the demo](docs/site/demo-thumb.webp)](https://youtu.be/N_PeDw5GiCc)
 
@@ -115,12 +120,7 @@ Tellyscope downloads two sets of public lists from GitHub, so they can change wi
 ## Get it
 
 - **[GitHub Releases](../../releases/latest):** download `Tellyscope-<version>.apk` and open it on your phone. `-alpha` pre-releases are test builds that install next to the regular app.
-- **Google Play (testing):** the Play Store build is in a closed test. On your phone:
-  1. Join the group: https://groups.google.com/g/tellyscope-testers
-  2. Accept the test: https://play.google.com/apps/testing/app.tellyscope
-  3. Install from Play: https://play.google.com/store/apps/details?id=app.tellyscope
-
-  This is the Play build: Play handles updates instead of the in-app check, and it doesn't download Projectivy from GitHub.
+- **Google Play (closed test):** follow the three steps under the badges at the top. Play handles updates instead of the in-app check, and it doesn't download Projectivy from GitHub.
 - **[Obtainium](https://github.com/ImranR98/Obtainium)** or **[Orion Store](https://github.com/RookieEnough/Orion-Store):** tap the badge above on your phone for automatic updates.
 
 You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.
