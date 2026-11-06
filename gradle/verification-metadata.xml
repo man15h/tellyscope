@@ -4,24 +4,7 @@
       <verify-metadata>true</verify-metadata>
       <verify-signatures>true</verify-signatures>
       <ignored-keys>
-         <ignored-key id="0DA8A5EC02D11EAD" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="32EE5355A6BC6E42" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="34918B7D3969D2F5" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="3D5839A2262CBBFB" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="59A252FB1199D873" reason="Key couldn't be downloaded from any key server"/>
          <ignored-key id="5E1F79A7C298661E" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="6A0975F8B1127B83" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="6A65176A0FB1CD0B" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="74C748A90802F104" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="7A8860944FAD5F62" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="86FDC7E2A11262CB" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="902E15693BB8846B" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="991EFB94DB91127D" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="B16698A4ADF4D638" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="E57A697A70CFE5F9" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="EE92349AD86DE446" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="EE9E7DC9D92FC896" reason="Key couldn't be downloaded from any key server"/>
-         <ignored-key id="F5C81DE10A0B8ECC" reason="Key couldn't be downloaded from any key server"/>
       </ignored-keys>
       <trusted-keys>
          <trusted-key id="04543577D6A9CC626239C50C7ECBD740FF06AEB5">
@@ -63,10 +46,13 @@
             <trusting group="org.apache.commons"/>
          </trusted-key>
          <trusted-key id="2E3A1AFFE42B5F53AF19F780BCF4173966770193" group="org.jetbrains" name="annotations" version="13.0"/>
+         <trusted-key id="2FC53E6B1F681184F4CCD637F5C81DE10A0B8ECC" group="org.yaml" name="snakeyaml" version="2.6"/>
          <trusted-key id="3051D45031E13516A6E8FAFF280D66A55F5316C5" group="org.bitbucket.b_c" name="jose4j" version="0.9.5"/>
          <trusted-key id="31BAE2E51D95E0F8AD9B7BCC40A3C4432BD7308C" group="com.googlecode.juniversalchardet" name="juniversalchardet" version="1.0.3"/>
          <trusted-key id="33FD4BFD33554634053D73C0C2148900BCD3C2AF" group="org.jetbrains" name="annotations"/>
+         <trusted-key id="341C2AE47D5FF3A7EDFB5989E57A697A70CFE5F9" group="org.webjars" name="materializecss" version="1.0.0"/>
          <trusted-key id="34441E504A937F43EB0DAEF96A65176A0FB1CD0B" group="org.apache.groovy"/>
+         <trusted-key id="41207814A1D90D8724416744902E15693BB8846B" group="com.dropbox.differ"/>
          <trusted-key id="41894CF9980E46C9DB01F27D96C5A89E54047233" group="net.codecrete.usb" name="java-does-usb" version="1.3.0"/>
          <trusted-key id="41CD49B4EF5876F9E9F691DABAC30622339994C4" group="org.jspecify" name="jspecify"/>
          <trusted-key id="43C79B4BBD131821E17D2CA77B2F0491728B8E02" group="cafe.cryptography"/>
@@ -75,6 +61,8 @@
          <trusted-key id="4BF79B8259007B566D2FCE82296CD27F60EED12C" group="com.google.crypto.tink" name="tink" version="1.7.0"/>
          <trusted-key id="4DB1A49729B053CAF015CEE9A6ADFC93EF34893E" group="org.hamcrest"/>
          <trusted-key id="4F7E32D440EF90A83011A8FC6425559C47CC79C4" group="javax.annotation" name="javax.annotation-api" version="1.3.2"/>
+         <trusted-key id="4F8FEC6785F611D9A712EA2734918B7D3969D2F5" group="com.google.dagger" name="dagger" version="2.28.3"/>
+         <trusted-key id="517B94F8D0A46317A28D8AB30DA8A5EC02D11EAD" group="net.sf.jopt-simple" name="jopt-simple" version="4.9"/>
          <trusted-key id="5767F9CDE920750621875079A40E24B5B408DBD5" group="org.robolectric"/>
          <trusted-key id="5897253BEA3046AEEA95A067E93671C7272B7B3F" group="org.jdom" name="jdom2" version="2.0.6"/>
          <trusted-key id="5DD80B0DDCCBE005F0A47FD66751E1A6E2001B8D" group="com.squareup.okio"/>
@@ -84,7 +72,9 @@
          <trusted-key id="6DD3B8C64EF75253BEB2C53AD908A43FB7EC07AC" group="jakarta.activation"/>
          <trusted-key id="6F538074CCEBF35F28AF9B066A0975F8B1127B83" group="^org[.]jetbrains[.]kotlin($|([.].*))" regex="true"/>
          <trusted-key id="7440F1F7D27BAC115F953D55EB095DA7D2F6AC0E" group="org.tensorflow" name="tensorflow-lite-metadata" version="0.2.0"/>
+         <trusted-key id="7616EB882DAF57A11477AAF559A252FB1199D873" group="com.google.code.findbugs" name="jsr305" version="3.0.2"/>
          <trusted-key id="7B121B76A7ED6CE6E60AD51784E913A8E3A748C0" group="org.bouncycastle"/>
+         <trusted-key id="7F36E793AE3252E5D9E9B98FEE9E7DC9D92FC896" group="com.google.errorprone"/>
          <trusted-key id="80E3E8A7BEA9A7A4D725E521999E1EC5EB8E55F0" group="com.flyfishxu"/>
          <trusted-key id="8461EFA0E74ABAE010DE66994EB27DB2A3B88B8B">
             <trusting group="androidx.emoji2"/>
@@ -1796,6 +1786,7 @@
       </component>
       <component group="com.google.j2objc" name="j2objc-annotations" version="2.8">
          <artifact name="j2objc-annotations-2.8.pom">
+            <pgp value="EB1B3DE71713C9EC2E87CC26EE92349AD86DE446"/>
             <sha256 value="37f87798b18385113c918bfa9e1276fe50735ef8fa849b5800c519d54dbf11f8" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2202,6 +2193,7 @@
       </component>
       <component group="org.apache.commons" name="commons-parent" version="34">
          <artifact name="commons-parent-34.pom">
+            <pgp value="D6F1BC78607808EC8E9F69437A8860944FAD5F62"/>
             <sha256 value="3a2e69d06d641d1f3b293126dc9e2e4ea6563bf8c36c87e0ab6fa4292d04b79c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -2361,6 +2353,7 @@
       </component>
       <component group="org.checkerframework" name="checker-qual" version="2.5.8">
          <artifact name="checker-qual-2.5.8.pom">
+            <pgp value="19BEAB2D799C020F17C69126B16698A4ADF4D638"/>
             <sha256 value="33ac6a0f1341ae96647c7d4465f4aa3d24fe97d2697bcee2ceae6fc8b5ef2c3c" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
@@ -3155,6 +3148,7 @@
       </component>
       <component group="org.ow2" name="ow2" version="1.5.1">
          <artifact name="ow2-1.5.1.pom">
+            <pgp value="10F3C7A02ECA55E502BADCF3991EFB94DB91127D"/>
             <sha256 value="321ddbb7ee6fe4f53dea6b4cd6db74154d6bfa42391c1f763b361b9f485acf05" origin="Generated by Gradle" reason="A key couldn't be downloaded"/>
          </artifact>
       </component>
