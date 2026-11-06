@@ -313,6 +313,7 @@
     <string name="copy_send_failed">Не удалось отправить %1$s. Убедитесь, что телевизор подключен и на нем есть место.</string>
     <string name="copy_send_failed_off_wifi">Не удалось отправить %1$s. Этот телефон не подключён к Wi-Fi.</string>
     <string name="copy_save_failed">Не удалось сохранить %1$s. Убедитесь, что телевизор подключен и на телефоне есть место.</string>
+    <string name="copy_apk_not_found">Не удалось найти %1$s на телевизоре.</string>
     <string name="copy_cancelled_send">Отменено. На телевизоре ничего не осталось.</string>
     <string name="copy_cancelled_save">Отменено. Ничего не сохранено.</string>
     <string name="copy_cant_read">Не удалось прочитать этот файл на телефоне.</string>

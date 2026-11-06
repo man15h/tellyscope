@@ -286,6 +286,7 @@
     <string name="copy_send_failed">无法发送 %1$s。请检查电视是否仍连接并有足够空间。</string>
     <string name="copy_send_failed_off_wifi">无法发送 %1$s。这部手机没有连接 Wi-Fi。</string>
     <string name="copy_save_failed">无法保存 %1$s。请检查电视是否仍连接，以及手机是否有足够空间。</string>
+    <string name="copy_apk_not_found">在电视上找不到 %1$s。</string>
     <string name="copy_cancelled_send">已取消。电视上没有留下任何内容。</string>
     <string name="copy_cancelled_save">已取消。没有保存任何内容。</string>
     <string name="copy_cant_read">无法读取手机上的该文件。</string>

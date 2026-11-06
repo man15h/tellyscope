@@ -218,11 +218,17 @@ class Actions(private val shell: AdbShell) {
         return r.exitCode == 0 && "Error" !in r.output
     }
 
-    /** `pm path` names an installed package's APK and prints nothing for one that isn't. */
-    suspend fun installed(pkg: String): Boolean {
+    /** `pm path`'s APK paths for [pkg]: one, or several for a split app. Empty when it isn't installed. */
+    suspend fun apks(pkg: String): List<String> {
         require(PACKAGE.matches(pkg)) { "not a package name: $pkg" }
-        return shell.shell("pm path $pkg 2>/dev/null").output.lineSequence().any { it.startsWith("package:") }
+        return shell.shell("pm path $pkg 2>/dev/null").output.lineSequence()
+            .filter { it.startsWith("package:") }
+            .map { it.removePrefix("package:").trim() }
+            .toList()
     }
+
+    /** `pm path` names an installed package's APK and prints nothing for one that isn't. */
+    suspend fun installed(pkg: String): Boolean = apks(pkg).isNotEmpty()
 
     /** Whether the Play Store is the app on screen. */
     suspend fun storeOnScreen(): Boolean =

@@ -159,7 +159,7 @@ class TransfersAndUndoTest {
         vm.connect(ScanHit("tv-b", 5555, ScanKind.Classic, "tv-b", null))
         runCurrent()
         assertEquals("tv-b", vm.state.value.selectedId)
-        vm.apkTo(Uri.parse("content://x/X.apk"))
+        vm.saveTo(Uri.parse("content://x/X.apk"))
         runCurrent()
         assertEquals(listOf("tv-a"), source.pulledFrom)
     }
@@ -172,7 +172,7 @@ class TransfersAndUndoTest {
         launch { name = vm.apkName(app.tellyscope.data.AppInfo("com.x", "X", null, false, true, null, "1.0")) }
         runCurrent()
         assertNull(name)
-        assertEquals(Copy.saveFailed("X"), vm.notice.value)
+        assertEquals(Copy.apkNotFound("X"), vm.notice.value)
     }
 
     @Test fun anEntryAlreadyUndoneInHistoryIsNotUndoneAgain() = with(test) {

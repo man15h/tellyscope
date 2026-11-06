@@ -136,59 +136,48 @@ class SideloadTest {
 
     @Test fun oneApkIsSavedAsItIs() = runTest {
         val bytes = ByteArray(30_000) { (it % 251).toByte() }
-        val sh = FakeShell(mapOf("pm path" to ok("package:$base\n"), "stat" to ok("30000\n")))
+        val sh = FakeShell(mapOf("stat" to ok("30000\n")))
         sh.transfer.files[base] = bytes
-        val s = Sideload(sh)
-        val paths = s.apks("com.example.player")
-        assertEquals(listOf(base), paths)
         val out = Buffer()
         val seen = mutableListOf<Progress>()
-        s.pullApks(paths, out) { seen += it }
+        Sideload(sh).pullApks(listOf(base), out) { seen += it }
         assertTrue(bytes.contentEquals(out.readByteArray()))
         assertEquals(Progress(30_000, 30_000), seen.last())
     }
 
     @Test fun aSplitAppIsSavedAsABundleInstallReadsBack() = runTest {
-        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ok("20000\n500\n")))
+        val sh = FakeShell(mapOf("stat" to ok("20000\n500\n")))
         sh.transfer.files[base] = ByteArray(20_000) { 1 }
         sh.transfer.files[split] = ByteArray(500) { 2 }
-        val s = Sideload(sh)
         val seen = mutableListOf<Progress>()
         val file = File(dir, "player.apks")
-        file.sink().use { s.pullApks(s.apks("com.example.player"), it) { p -> seen += p } }
+        file.sink().use { Sideload(sh).pullApks(listOf(base, split), it) { p -> seen += p } }
         val parts = ApkBundle.unpack(file, File(dir, "parts"))
         assertEquals(listOf("base.apk", "split_config.arm64_v8a.apk"), parts.map { it.name })
         assertEquals(listOf(20_000L, 500L), parts.map { it.length() })
         assertEquals(Progress(20_500, 20_500), seen.last())
     }
 
-    @Test fun anAppThatIsntThereHasNoApks() = runTest {
-        assertEquals(emptyList(), Sideload(FakeShell()).apks("com.example.absent"))
-    }
-
     @Test fun aStatFailureStillCopiesWithIndeterminateProgress() = runTest {
-        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ShellResult("stat: not found\n", 127)))
+        val sh = FakeShell(mapOf("stat" to ShellResult("stat: not found\n", 127)))
         sh.transfer.files[base] = ByteArray(10_000) { 1 }
         sh.transfer.files[split] = ByteArray(500) { 2 }
-        val s = Sideload(sh)
         val seen = mutableListOf<Progress>()
         val file = File(dir, "nostat.apks")
-        file.sink().use { s.pullApks(s.apks("com.example.player"), it) { p -> seen += p } }
+        file.sink().use { Sideload(sh).pullApks(listOf(base, split), it) { p -> seen += p } }
         assertEquals(listOf("base.apk", "split_config.arm64_v8a.apk"), ApkBundle.unpack(file, File(dir, "nostat")).map { it.name })
         assertTrue(seen.isNotEmpty() && seen.all { it.total == null }, "a failed stat gives an indeterminate bar")
     }
 
     @Test fun aCancelMidBundleStopsAndThrows() = runBlocking {
-        val sh = FakeShell(mapOf("pm path" to ok("package:$base\npackage:$split\n"), "stat" to ok("200000\n200000\n")))
+        val sh = FakeShell(mapOf("stat" to ok("200000\n200000\n")))
         sh.transfer.files[base] = ByteArray(200_000) { 1 }
         sh.transfer.files[split] = ByteArray(200_000) { 2 }
         val started = CountDownLatch(1)
         val release = CountDownLatch(1)
         var chunks = 0
         sh.transfer.onChunk = { if (++chunks == 3) { started.countDown(); release.await() } }
-        val s = Sideload(sh)
-        val paths = s.apks("com.example.player")
-        val job = async(Dispatchers.Default) { s.pullApks(paths, Buffer()) }
+        val job = async(Dispatchers.Default) { Sideload(sh).pullApks(listOf(base, split), Buffer()) }
         withContext(Dispatchers.IO) { started.await() }
         job.cancel()
         release.countDown()

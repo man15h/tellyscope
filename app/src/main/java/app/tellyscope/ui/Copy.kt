@@ -573,6 +573,7 @@ object Copy {
     fun sendFailed(name: String) = UiText(R.string.copy_send_failed, name)
     fun sendFailedOffWifi(name: String) = UiText(R.string.copy_send_failed_off_wifi, name)
     fun saveFailed(name: String) = UiText(R.string.copy_save_failed, name)
+    fun apkNotFound(name: String) = UiText(R.string.copy_apk_not_found, name)
 
     val CANCELLED_SEND = UiText(R.string.copy_cancelled_send)
     val CANCELLED_SAVE = UiText(R.string.copy_cancelled_save)

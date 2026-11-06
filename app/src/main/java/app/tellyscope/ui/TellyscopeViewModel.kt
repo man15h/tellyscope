@@ -1544,23 +1544,21 @@ class TellyscopeViewModel(
         }
     }
 
-    /** The TV and file whose "save as" picker is open. Kept here so it survives the activity being recreated behind the picker. */
-    private var saving: Pair<String, TvFile>? = null
+    /** The copy to run once the open "save as" picker returns a place. Kept here so it survives the activity being recreated behind the picker. */
+    private var pendingSave: ((Uri) -> Unit)? = null
 
     fun saving(file: TvFile) {
-        saving = (_state.value.selectedId ?: return) to file
-    }
-
-    /** The picker's answer: copies the file there, or does nothing if the user backed out. */
-    fun saveTo(uri: Uri?) {
-        val (id, file) = saving ?: return
-        saving = null
+        val id = _state.value.selectedId ?: return
         val folder = _state.value.device.files.folder
-        if (uri != null) pull(id, uri, file.name, file.size) { sink, progress -> source.pull(id, folder, file, sink, progress) }
+        pendingSave = { uri -> pull(id, uri, file.name, file.size) { sink, progress -> source.pull(id, folder, file, sink, progress) } }
     }
 
-    /** The TV, offered name and APK paths of the app whose "save as" picker is open. */
-    private var savingApk: Triple<String, String, List<String>>? = null
+    /** The picker's answer, for a file or an APK: runs the pending copy, or clears it if the user backed out. */
+    fun saveTo(uri: Uri?) {
+        val save = pendingSave ?: return
+        pendingSave = null
+        if (uri != null) save(uri)
+    }
 
     /**
      * Finds [app]'s APKs on the TV and returns the name to offer in the picker; null, with a notice,
@@ -1582,21 +1580,14 @@ class TellyscopeViewModel(
             updateDevice(id) { it.copy(busy = null) }
         }
         if (paths.isEmpty()) {
-            _notice.value = Copy.saveFailed(app.label)
+            _notice.value = Copy.apkNotFound(app.label)
             return null
         }
         // A blank label would make Files.safeName(" .apk") a hidden ".apk"; fall back to the package id.
         val stem = app.label.ifBlank { app.packageName }
         val name = Files.safeName(stem + if (paths.size == 1) ".apk" else ".apks")
-        savingApk = Triple(id, name, paths)
+        pendingSave = { uri -> pull(id, uri, name, null) { sink, progress -> source.pullApks(id, paths, sink, progress) } }
         return name
-    }
-
-    /** The APK picker's answer: copies the app there, or does nothing if the user backed out. */
-    fun apkTo(uri: Uri?) {
-        val (id, name, paths) = savingApk ?: return
-        savingApk = null
-        if (uri != null) pull(id, uri, name, null) { sink, progress -> source.pullApks(id, paths, sink, progress) }
     }
 
     /** Copies from TV [id] into [uri] with [copy]. A cancelled or failed copy removes the partial file. */

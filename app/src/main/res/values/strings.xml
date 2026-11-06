@@ -374,6 +374,7 @@
     <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
     <string name="copy_send_failed_off_wifi">Couldn\'t send %1$s. This phone isn\'t on Wi-Fi.</string>
     <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
+    <string name="copy_apk_not_found">Couldn\'t find %1$s on the TV.</string>
     <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
     <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
     <string name="copy_cant_read">Couldn\'t read that file on your phone.</string>

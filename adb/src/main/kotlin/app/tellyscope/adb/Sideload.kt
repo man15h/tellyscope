@@ -109,18 +109,9 @@ class Sideload(private val session: AdbSession) {
         }
     }
 
-    /** Where [pkg]'s APKs are on the TV: one path, or several for a split app. Empty when it isn't installed. */
-    suspend fun apks(pkg: String): List<String> {
-        require(Actions.PACKAGE.matches(pkg)) { "not a package name: $pkg" }
-        return session.shell("pm path $pkg 2>/dev/null").output.lineSequence()
-            .filter { it.startsWith("package:") }
-            .map { it.removePrefix("package:").trim() }
-            .toList()
-    }
-
     /**
-     * Copies [paths], from [apks], into [sink]: the APK itself, or a split app's parts zipped flat as
-     * an .apks bundle, which [ApkBundle.unpack] reads back for Install. On cancel the caller deletes
+     * Copies [paths] ([Actions.apks]) into [sink]: the APK itself, or a split app's parts zipped flat
+     * as an .apks bundle, which [ApkBundle.unpack] reads back for Install. On cancel the caller deletes
      * what it was writing to.
      */
     suspend fun pullApks(paths: List<String>, sink: Sink, onProgress: (Progress) -> Unit = {}) {
