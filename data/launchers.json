@@ -14,7 +14,7 @@
       "credit": "Screenshot from FLauncher's Play Store page" },
     { "package": "com.overdevs.at4k", "name": "AT4K Launcher", "about": "Light and fast, with widgets and folders.",
       "signers": ["bfc84ab1296c72653ebca20a2f4cd293bc342a67dd4c61df931edfbad5271685"], "max_mb": 64,
-      "releases": "https://github.com/avadhesh18/at4k/releases", "accessibility": "1.1",
+      "releases": "https://github.com/avadhesh18/at4k/releases", "fire_os": true, "accessibility": "1.1",
       "icon": "https://at4klauncher.com/fg.png",
       "screenshot": { "file": "images/at4k.png", "sha256": "762f3b28a0dff871d1833cedcc66cd1a562231c6a64028c1fc5b8f40ee2e04d4" } },
     { "package": "com.klevico.monet", "name": "Monet Launcher", "about": "Takes its colors from your wallpaper. Widgets and profiles.",

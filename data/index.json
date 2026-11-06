@@ -1,11 +1,10 @@
 {
-  "sigs": ["p256:MEUCIQDpYz0l82A3kwGkasQSTrc2O0URaX9bWH5mwyC3OLvl1wIgCfOodw2L1hy8QJRjONn5GZ2gJ0EUIwlfEkCtG/xbY8Q="],
   "schema": 1,
-  "version": 2026110602,
+  "version": 2026110603,
   "lists": {
     "launchers": {
       "file": "launchers.json",
-      "sha256": "6bd4b9d79b5f4e7fe8e0ff220199133b481a0cd0b5f1011ac7625cba81bcd2b8"
+      "sha256": "77a12322ee65a547957674a331e44cd600d41182f21f38fec7feb673a4bb1090"
     },
     "labels": {
       "file": "labels.json",
