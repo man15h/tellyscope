@@ -29,13 +29,12 @@ fails CI until this file has a section for its version.
 - **Improved:** Tweaks › Home screen always offers Change home screen, and the picker opens on your current launcher. [#386](../../pull/386)
 - **Improved:** Each app on Apps shows Open and Stop by state, and one remove button. [#403](../../pull/403)
 - **Fixed:** Screenshots and files saved from the TV no longer fail when you rename them in the save picker. [#369](../../pull/369)
-- **Fixed:** Apps › Open on TV now opens any app that's on and has an icon. [#373](../../pull/373)
 - **Fixed:** A dropped connection no longer logs you out of a TV. [#402](../../pull/402)
 - **Fixed:** A TV added by IP:port is found again after its port changes. [#402](../../pull/402)
 - **Fixed:** Pairing gives up after 30 seconds instead of hanging. [#402](../../pull/402)
 - **Fixed:** Tweaks › Private DNS: a provider that doesn't work is undone. [#400](../../pull/400)
 - **Fixed:** History keeps a Home switch or reset even if the TV drops mid-way. [#399](../../pull/399)
-- **Fixed:** An unsigned list never replaces Tellyscope's signed one. [b633066](../../commit/b6330668)
+- **Fixed:** An unsigned list never replaces Tellyscope's signed one. [#392](../../pull/392)
 
 ## 0.15.1 — 2026-11-06
 
