@@ -157,8 +157,12 @@ internal fun fireInstall(device: Device, apps: List<AppInfo>, recommended: List<
 /** [fire]: [fireInstall] holds, so the Play Store isn't needed. */
 internal fun offerChoose(apps: List<AppInfo>, fire: Boolean = false) = (hasPlayStore(apps) || fire) && !hasAddedLauncher(apps)
 
+/**
+ * The home screen card: not put away, and only the TV's own launchers on it. A second launcher the TV came with that
+ * answers Home is still stock, so it doesn't hide the card.
+ */
 internal fun offerLauncher(apps: List<AppInfo>, hidden: Boolean, fire: Boolean = false) =
-    !hidden && offerChoose(apps, fire) && apps.none { it.homeInstead != null || it.homeBack != null }
+    !hidden && offerChoose(apps, fire) && apps.none { (it.homeInstead != null && !it.system) || it.homeBack != null }
 
 /** Download directly is offered on [pkg] beside the Store: only launchers whose list entry names its signers and releases. */
 internal fun downloadable(pkg: String) =

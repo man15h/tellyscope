@@ -273,6 +273,12 @@ class LauncherScreenTest {
         assertFalse(offerLauncher(listOf(store, stock, other), hidden = false))
     }
 
+    @Test fun aSecondLauncherTheTvCameWithStillGetsTheCard() {
+        // Both built in and answering Home: the one that isn't Home is offered Make Home, but nothing was added.
+        val builtIn = AppInfo("com.google.android.apps.tv.launcherx", "Google TV Home", null, true, true, null, "1.0", homeInstead = TV_HOME, answersHome = true, builtInLauncher = true)
+        assertTrue(offerLauncher(listOf(store, stock, builtIn), hidden = false))
+    }
+
     @Test fun anAddedLauncherOnHomeWithTheStockOneOffGetsNoCardButKeepsTheTweaksRow() {
         // Stock launcher disabled by hand or by Debloat: Projectivy is Home with no homeBack.
         val off = stock.copy(enabled = false, home = false)
