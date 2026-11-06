@@ -1475,6 +1475,9 @@ class TellyscopeViewModel(
         setSideload(null)
     }
 
+    /** Open on TV in an app's row, kept in History like the other actions. */
+    fun openApp(pkg: String) = run(pkg, Action.Open)
+
     /** "Open on TV" after a successful install. */
     fun openInstalled() {
         val pkg = _state.value.device.sideload?.app?.info?.packageName ?: return

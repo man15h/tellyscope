@@ -337,6 +337,8 @@
     <string name="copy_restart_lost">%1$s से अब भी संपर्क नहीं हो पा रहा</string>
     <string name="copy_back_online">फिर से ऑनलाइन। %1$s दोबारा कनेक्ट हो गया।</string>
     <string name="copy_remote_buttons">रिमोट बटन</string>
+    <string name="copy_open_an_app">कोई ऐप खोलें</string>
+    <string name="copy_open_an_app_hint">%1$s पर ऐप। खोलने के लिए किसी पर टैप करें।</string>
     <string name="copy_more">ज़्यादा विकल्प</string>
     <string name="copy_buttons_hint">ज़्यादा से ज़्यादा %1$d चुनें। क्रम बदलने के लिए खींचें। कोई दूसरा चुनने के लिए पहले किसी एक से टिक हटाएं।</string>
     <string name="copy_not_on_tv">%1$s इस TV पर नहीं है। इसे TV पर Play Store से इंस्टॉल करें।</string>

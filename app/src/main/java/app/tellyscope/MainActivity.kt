@@ -393,6 +393,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 settings = { settings = true },
                 query = vm::query,
                 propose = vm::propose,
+                open = vm::openApp,
                 confirm = vm::confirm,
                 confirmHome = vm::confirmHome,
                 cancel = vm::cancel,

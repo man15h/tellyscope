@@ -39,6 +39,11 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -278,6 +283,7 @@ fun RemoteScreen(
     val short = LocalConfiguration.current.screenHeightDp < SHORT_PHONE_DP
     val cap = RemoteButtons.cap(LocalConfiguration.current.screenWidthDp)
     var editing by rememberSaveable { mutableStateOf(false) }
+    var picking by rememberSaveable { mutableStateOf(false) }
     // The text box shows only once the keyboard key opens it, and goes again with the phone's keyboard.
     var keyboard by rememberSaveable { mutableStateOf(false) }
     var keyboardShown by remember { mutableStateOf(false) }
@@ -289,6 +295,7 @@ fun RemoteScreen(
     val talkBack = talkBackOn()
     val pad = state.touchpad && !talkBack
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
+    if (picking) OpenAppSheet(name(device), state.device.apps, onOpen = { picking = false; actions.launch(Docked(it.packageName, it.label)) }, onDismiss = { picking = false })
 
     ModalBottomSheet(
         onDismissRequest = actions.back,
@@ -403,7 +410,7 @@ fun RemoteScreen(
                 if (!typing) {
                     Spacer(Modifier.height(if (tight) 8.dp else 16.dp))
                     CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) {
-                        ButtonsRow(RemoteButtons.shown(state.device.dock, SharedLists.state.collectAsState().value.streaming, cap), state.device.apps, live, actions, onEdit = { editing = true })
+                        ButtonsRow(RemoteButtons.shown(state.device.dock, SharedLists.state.collectAsState().value.streaming, cap), state.device.apps, live, actions, onEdit = { editing = true }, onApps = { picking = true })
                     }
                 }
             }
@@ -904,17 +911,105 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
 }
 
 /**
- * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some.
- * A tap opens the service on the TV; holding one opens the picker, as ⋮ › Remote buttons does.
+ * The row under the keys: up to [cap] streaming buttons, sharing it equally, or one pill to pick some,
+ * then the Apps key. A tap opens the service on the TV; holding one opens the picker, as ⋮ › Remote
+ * buttons does.
  */
 @Composable
-private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onEdit: () -> Unit) {
+private fun ButtonsRow(buttons: List<StreamingService>, apps: List<AppInfo>, enabled: Boolean, actions: RemoteActions, onEdit: () -> Unit, onApps: () -> Unit) {
     val installed = remember(apps) { apps.mapTo(HashSet()) { it.packageName } }
     Row(Modifier.fillMaxWidth().height(48.dp).alpha(if (enabled) 1f else 0.38f), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (buttons.isEmpty()) AddButtons(enabled, onEdit, Modifier.weight(1f))
         buttons.forEach { s ->
             key(s.name) {
                 ServiceButton(s, enabled, onOpen = { actions.launch(Docked(s.packageOn(installed), s.name)) }, onHold = onEdit, Modifier.weight(1f))
+            }
+        }
+        AppsKey(enabled, onApps)
+    }
+}
+
+/** The key at the end of the row: a tonal pill, 40 dp tall in a 48 dp tall target, that lists every app to open. */
+@Composable
+private fun AppsKey(enabled: Boolean, onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalKeyHaptics.current
+    Box(Modifier.fillMaxHeight(), contentAlignment = Alignment.Center) {
+        Surface(
+            onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onClick() },
+            enabled = enabled,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            modifier = Modifier.size(width = 56.dp, height = 40.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(TabIcons.Apps, contentDescription = Copy.OPEN_AN_APP.resolve(), Modifier.size(24.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Open an app: every app on the TV that opens, A to Z, with a search box. A tap opens it on the TV
+ * the way a Remote button does, and closes the sheet.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun OpenAppSheet(tv: String, apps: List<AppInfo>, onOpen: (AppInfo) -> Unit, onDismiss: () -> Unit) {
+    var query by rememberSaveable { mutableStateOf("") }
+    val all = remember(apps) { apps.filter { it.opens }.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.label }) }
+    val q = query.trim()
+    val shown = remember(all, q) { all.filter { q.isEmpty() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) } }
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
+            Text(Copy.OPEN_AN_APP.resolve(), style = MaterialTheme.typography.titleLarge)
+            Text(Copy.openAnAppHint(tv).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
+        ) {
+            Row(Modifier.padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        LazyColumn(Modifier.padding(bottom = 16.dp)) {
+            if (shown.isEmpty() && q.isNotEmpty()) item {
+                Text(
+                    stringResource(R.string.device_nothing_matches, q),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                )
+            }
+            items(shown, key = { it.packageName }) { app ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(SHEET_ROW)
+                        .clickable(onClickLabel = Copy.OPEN_ON_TV.resolve()) { onOpen(app) }
+                        .padding(horizontal = 32.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AppIcon(app)
+                    Spacer(Modifier.width(16.dp))
+                    Text(app.label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
             }
         }
     }

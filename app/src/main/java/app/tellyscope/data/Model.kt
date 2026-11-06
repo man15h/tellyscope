@@ -175,7 +175,10 @@ data class AppInfo(
     val tvHome: Boolean = true,
     /** Off, and the TV turned it off itself rather than the user: Android won't let ADB turn it back on. */
     val disabledByTv: Boolean = false,
-)
+) {
+    /** On, and has a launcher icon or is a launcher (opened through HOME): Open on TV and the Remote's app list offer it. */
+    val opens: Boolean get() = enabled && (launchable || answersHome || builtInLauncher)
+}
 
 /** Where an install from the Play Store stands, read every few seconds while the TV shows the Store. */
 enum class StoreState { Installed, InStore, Elsewhere }

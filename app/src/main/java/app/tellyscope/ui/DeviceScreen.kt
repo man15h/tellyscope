@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -76,6 +77,8 @@ data class DeviceActions(
     val settings: () -> Unit = {},
     val query: (String) -> Unit = {},
     val propose: (String, Action) -> Unit = { _, _ -> },
+    /** Open on TV in an app's row: runs at once, with no step to confirm. */
+    val open: (String) -> Unit = {},
     val confirm: () -> Unit = {},
     /** The confirmed switch to a launcher with an accessibility service, with the service or without it. */
     val confirmHome: (service: Boolean) -> Unit = {},
@@ -466,6 +469,11 @@ internal fun AppRow(
                     } else if (launcher && app.removable) {
                         // The launcher on Home: protected, but Uninstall still goes, Home moving first.
                         OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                    }
+                    if (app.opens) TextButton(onClick = { actions.open(app.packageName) }, enabled = !locked) {
+                        Icon(Icons.Default.PlayArrow, contentDescription = null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(Copy.OPEN_ON_TV.resolve())
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {
                         Text(Copy.HOME_SETTINGS.resolve())

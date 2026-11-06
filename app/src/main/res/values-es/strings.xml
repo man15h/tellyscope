@@ -347,6 +347,8 @@
     <string name="copy_restart_lost">Sigue sin poder conectarse con %1$s</string>
     <string name="copy_back_online">De nuevo en línea. %1$s se reconectó.</string>
     <string name="copy_remote_buttons">Botones del control remoto</string>
+    <string name="copy_open_an_app">Abrir una app</string>
+    <string name="copy_open_an_app_hint">Apps en %1$s. Toca una para abrirla.</string>
     <string name="copy_more">Más opciones</string>
     <string name="copy_buttons_hint">Elige hasta %1$d. Arrastra para ordenarlos. Para elegir otro, desmarca uno primero.</string>
     <string name="copy_not_on_tv">%1$s no está en esta TV. Instálala desde Play Store en la TV.</string>
