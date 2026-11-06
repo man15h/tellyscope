@@ -46,6 +46,13 @@ class KeyHelperTest {
         assertEquals(1, sh.execs.size)
     }
 
+    @Test fun nonLatinTextReachesTheHelperWhole() = runBlocking {
+        // The helper pastes what its keymap can't type; the pipe carries it as UTF-8.
+        val sh = FakeShell().apply { execOutput = "ready\n1\n" }
+        assertEquals(true, KeyHelper(sh, dex).type("Привет مرحبا"))
+        assertEquals("tПривет مرحبا\n", sh.execInput.readUtf8())
+    }
+
     @Test fun tvRefusingAKeyIsFalse() = runBlocking {
         val sh = FakeShell().apply { execOutput = "ready\n0\n" }
         assertEquals(false, KeyHelper(sh, dex).press(4))

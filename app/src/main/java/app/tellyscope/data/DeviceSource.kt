@@ -188,7 +188,7 @@ interface DeviceSource {
      */
     suspend fun volumeFixed(deviceId: String): Boolean = false
 
-    /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.typeable] first. */
+    /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.sendable] first. */
     suspend fun type(deviceId: String, text: String): Boolean
 
     /**

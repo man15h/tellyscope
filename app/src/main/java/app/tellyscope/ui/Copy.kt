@@ -597,12 +597,14 @@ object Copy {
     val SCREEN_ON_REFUSED = UiText(R.string.copy_screen_on_refused)
 
     fun cantType(text: String): UiText {
+        val control = text.firstOrNull { it.isISOControl() }
         val odd = text.firstOrNull { it !in ' '..'~' }
         return when {
             text.isEmpty() -> UiText(R.string.copy_cant_type_empty)
             text.length > app.tellyscope.adb.Remote.MAX_TEXT ->
                 UiText.plural(R.plurals.copy_cant_type_too_long, app.tellyscope.adb.Remote.MAX_TEXT)
-            odd == '\n' || odd == '\t' -> UiText(R.string.copy_cant_type_one_line)
+            control == '\n' || control == '\t' -> UiText(R.string.copy_cant_type_one_line)
+            control != null -> UiText(R.string.copy_cant_type_odd, control.toString())
             odd != null -> UiText(R.string.copy_cant_type_odd, odd.toString())
             else -> UiText(R.string.copy_cant_type_percent_s)
         }

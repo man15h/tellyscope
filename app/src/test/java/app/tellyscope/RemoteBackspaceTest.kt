@@ -90,6 +90,14 @@ class RemoteBackspaceTest {
         assertEquals(listOf("type cat", "DEL", "DEL", "DEL"), tv.sent)
     }
 
+    @Test fun deletesPastedTextOneCharacterAPress() {
+        // Cyrillic is one char a letter; the emoji is two chars but one Backspace.
+        vm.type("да 🙂")
+        test.runCurrent()
+        repeat(4) { assertTrue(press(RemoteKey.DEL)) }
+        assertFalse(press(RemoteKey.DEL))
+    }
+
     @Test fun anotherKeyForgetsTheTypedText() {
         vm.type("cat")
         test.runCurrent()
