@@ -72,8 +72,11 @@ private class LauncherTv(var home: String?, fire: Boolean = false) : AdbSession 
     /** False: `am start` can't open a home screen, as on a TV that refuses it. */
     var opens = true
     val ran = mutableListOf<String>()
+    /** A command starting with this throws, as a link that drops there would. */
+    var dropOn: String? = null
 
     override suspend fun shell(command: String): ShellResult {
+        dropOn?.let { if (command.startsWith(it)) throw IOException("link gone") }
         ran += command
         val pkg = command.substringAfter("--user 0 ").substringBefore(' ')
         val quoted = command.substringAfter("'").substringBefore("'")
@@ -128,14 +131,14 @@ class HomeSwitchTest {
         on: Set<String> = setOf(PROJECTIVY),
         off: Set<String> = setOf(PROJECTIVY),
     ): HistoryEntry =
-        switchHome(Actions(tv), pkg, withService, on, off, { it }, { UiText.Raw(it.name) }) { from, undo, previous ->
+        switchHome(Actions(tv), pkg, withService, on, off, { it }, { UiText.Raw(it.name) }, { id, extra, undo -> book.amend(id, extra, undo = undo) }) { from, undo, previous ->
             book.record("tv", 0, Action.Home, from, pkg, undo, previous = previous)
         }
 
     /** What Undo in History runs for a switch: its old launcher on again, then the rest. */
     private suspend fun undo(tv: LauncherTv, entry: HistoryEntry) {
         Actions(tv).run(AdbAction.ENABLE, entry.packageName)
-        assertTrue(undoHomeSwitch(Actions(tv), entry))
+        assertNull(undoHomeSwitch(Actions(tv), entry) { it })
     }
 
     @Test fun theTvsOwnLauncherIsTurnedOffAndUndoTurnsItBackOn() = runTest {
@@ -209,15 +212,35 @@ class HomeSwitchTest {
         assertTrue(Actions(tv).mayTurnOn(PROJECTIVY))
     }
 
-    /** Undo goes through [grant] too: a copy downgraded below the list's version doesn't get the service back. */
-    @Test fun undoBelowTheListsVersionLeavesTheServiceOff() = runTest {
+    /**
+     * Undo goes through [grant] too: a copy downgraded below the list's version doesn't get the service
+     * back, and Undo says so instead of counting the switch undone.
+     */
+    @Test fun undoBelowTheListsVersionLeavesTheServiceOffAndSaysSo() = runTest {
         val tv = LauncherTv(home = PROJECTIVY).apply { services += PROJECTIVY_SERVICE }
         val entry = switch(tv, FLAUNCHER)
         assertTrue(tv.services.isEmpty())
         tv.versions[PROJECTIVY] = "4.70"
-        undo(tv, entry)
+        Actions(tv).run(AdbAction.ENABLE, entry.packageName)
+        val left = undoHomeSwitch(Actions(tv), entry) { it }
+        assertEquals(
+            "$PROJECTIVY is Home now, but its accessibility service didn't turn on, so the TV's Home button may still open its own launcher",
+            left?.text(),
+        )
         assertEquals(PROJECTIVY, tv.home)
         assertTrue(tv.services.isEmpty())
+    }
+
+    /** A link that drops after Home moved still leaves the switch in History, with the service it turned on. */
+    @Test fun aLinkThatDropsAfterHomeMovedStillLeavesTheSwitch() = runTest {
+        val tv = LauncherTv(home = TV_HOME).apply { dropOn = "am " }
+        assertTrue(runCatching { switch(tv, PROJECTIVY) }.exceptionOrNull() is IOException)
+        assertEquals(PROJECTIVY, tv.home)
+        assertFalse(TV_HOME in tv.enabled)
+        val entry = book.entries("tv").single()
+        assertEquals(TV_HOME, entry.packageName)
+        assertEquals(Action.Enable, entry.undo)
+        assertEquals(PROJECTIVY_SERVICE, entry.previous?.get("service"))
     }
 
     @Test fun withNoDefaultTheTvsOwnLauncherBecomesTheDefaultWithNothingTurnedOff() = runTest {
