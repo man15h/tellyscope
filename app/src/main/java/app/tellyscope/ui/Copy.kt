@@ -97,13 +97,9 @@ object Copy {
     fun builtIn(off: Boolean) = UiText(if (off) R.string.copy_built_in_off else R.string.copy_built_in)
 
     val CURRENT = UiText(R.string.copy_current)
-    val KEEPS_HOME = UiText(R.string.copy_keeps_home)
     val MAKE_HOME = UiText(R.string.copy_make_home)
-    val GET_LAUNCHER = UiText(R.string.copy_get_launcher)
-    val GET_LAUNCHER_TEXT = UiText(R.string.copy_get_launcher_text)
-    fun getFireLauncherText(name: String) = UiText(R.string.copy_get_fire_launcher_text, name)
-    /** Fire OS with more than one launcher to choose from. */
-    val GET_FIRE_LAUNCHERS_TEXT = UiText(R.string.copy_get_fire_launchers_text)
+    val CHANGE_HOME = UiText(R.string.copy_change_home)
+    val CHANGE_HOME_TEXT = UiText(R.string.copy_change_home_text)
 
     /** The Apps tab's launcher rows: switching lives in the card, this opens it. */
     val HOME_SETTINGS = UiText(R.string.copy_home_settings)
@@ -209,7 +205,8 @@ object Copy {
     /** The picker's section for launchers on the TV that Editor's choice doesn't list. */
     val ON_THIS_TV = UiText(R.string.copy_on_this_tv)
     val INSTALLED = UiText(R.string.copy_installed)
-    val HOME_NOW = UiText(R.string.copy_home_now)
+    /** Fire OS's picker: installs the chosen launcher, named on its row. */
+    val INSTALL = UiText(R.string.copy_install)
     /** Shows a launcher on the TV, from the picker. */
     val OPEN = UiText(R.string.copy_open)
     /** A launcher's screenshot in the picker, for screen readers. */

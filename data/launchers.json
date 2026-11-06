@@ -6,7 +6,7 @@
       "releases": "https://github.com/spocky/miproja1/releases", "fire_os": true, "accessibility": "4.21",
       "icon": "https://projectivylauncher.com/favicons/apple-touch-icon.png",
       "screenshot": { "file": "images/projectivy.png", "sha256": "739a4150bc1dacfa8890387cf4b57f0a6d6971dad34b60f25c4a14c27481909f" } },
-    { "package": "me.efesser.flauncher", "name": "FLauncher (updated fork)", "about": "Simple: your apps in rows, nothing else. A community fork that keeps FLauncher updated.",
+    { "package": "me.efesser.flauncher", "name": "FLauncher", "about": "Simple: your apps in rows, nothing else. A community fork that keeps FLauncher updated.",
       "signers": ["3ef9f30df1f52f48b4b0c524a6e1861faedd2cccfa96d03e90076a1e30dec101"], "max_mb": 64,
       "releases": "https://github.com/osrosal/flauncher/releases", "apk": "flauncher-universal-release.apk",
       "icon": "https://gitlab.com/flauncher/flauncher/-/raw/master/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",

@@ -35,12 +35,9 @@
     <string name="copy_built_in">电视内置</string>
     <string name="copy_built_in_off">电视内置 · 已停用</string>
     <string name="copy_current">当前</string>
-    <string name="copy_keeps_home">通过无障碍服务保持为主屏幕</string>
     <string name="copy_make_home">设为主屏幕</string>
-    <string name="copy_get_launcher">获取其他启动器</string>
-    <string name="copy_get_launcher_text">从 Play 商店安装一个。随时可以切换回来。</string>
-    <string name="copy_get_fire_launcher_text">安装 %1$s。随时可以切换回来。</string>
-    <string name="copy_get_fire_launchers_text">Tellyscope 会安装你选择的那个。随时可以切换回来。</string>
+    <string name="copy_change_home">更换主屏幕</string>
+    <string name="copy_change_home_text">从编辑精选中安装其他启动器，或切换到电视上已有的启动器。</string>
     <string name="copy_home_settings">主屏幕设置</string>
     <string name="copy_make_home_title">要将 %1$s 设为主屏幕吗？</string>
     <string name="copy_explain_replace_opens">按主页键将打开 %1$s。为防止电视自行切换回去，Tellyscope 会停用电视内置的启动器 %2$s。</string>
@@ -80,7 +77,7 @@
     <string name="copy_recommended">编辑精选</string>
     <string name="copy_on_this_tv">在此电视上</string>
     <string name="copy_installed">已安装</string>
-    <string name="copy_home_now">当前主屏幕</string>
+    <string name="copy_install">安装</string>
     <string name="copy_open">打开</string>
     <string name="copy_home_screen_of">%1$s 的主屏幕</string>
     <string name="copy_uses_service">使用无障碍服务</string>

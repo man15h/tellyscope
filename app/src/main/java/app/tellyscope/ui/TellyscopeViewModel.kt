@@ -983,16 +983,21 @@ class TellyscopeViewModel(
     /** Opens Install a home screen on its picker; not before the launcher list has been downloaded once. */
     fun openLauncherFlow() {
         val id = _state.value.selectedId ?: return
-        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, _state.value.device.apps) } == true }
+        val apps = _state.value.device.apps
+        // The picker opens on the launcher Home opens now, when it has a row there.
+        val home = apps.firstOrNull { it.home }?.packageName
+        val fire = fireLauncher()?.takeIf { _state.value.selected?.let { d -> fireInstall(d, apps) } == true }
         if (fire != null) {
-            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = fire.pkg, fire = FireInstall(list = unverified()))) }
+            val pkg = fireLaunchers().firstOrNull { it.pkg == home }?.pkg ?: fire.pkg
+            updateDevice(id) { it.copy(launcher = LauncherFlow(pkg = pkg, fire = FireInstall(list = unverified()))) }
             return
         }
         if (RECOMMENDED.isEmpty()) {
             _notice.value = Copy.NO_LAUNCHER_LIST
             return
         }
-        updateDevice(id) { it.copy(launcher = LauncherFlow()) }
+        val listed = home?.takeIf { h -> RECOMMENDED.any { it.pkg == h } || otherLaunchers(apps).any { it.packageName == h } }
+        updateDevice(id) { it.copy(launcher = listed?.let { pkg -> LauncherFlow(pkg = pkg) } ?: LauncherFlow()) }
     }
 
     /** Fire OS's picker, before anything started: [pkg], one of [fireLaunchers], is the one Install acts on. */
