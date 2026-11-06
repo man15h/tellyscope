@@ -226,6 +226,26 @@ class RemoteTest {
         assertEquals(listOf("input keyevent 25"), refused.ran)
     }
 
+    @Test fun volumeTapIsOneJumpThroughTheHelper() = runBlocking { // see KeyHelperTest
+        val sh = FakeShell().apply { execOutput = "ready\n1\n" }
+        assertTrue(Remote(sh, KeyHelper(sh, byteArrayOf(1))).volume(RemoteKey.VOLUME_UP, 7))
+        assertEquals("v7\n", sh.execInput.readUtf8())
+        assertTrue(sh.ran.none { it.startsWith("input") })
+    }
+
+    @Test fun volumeThatDidNotMoveSendsTheKeys() = runBlocking {
+        // A fixed or HDMI-CEC output: the set changes nothing, and the keys reach the speaker.
+        val sh = FakeShell().apply { execOutput = "ready\n0\n1\n1\n1\n" }
+        assertTrue(Remote(sh, KeyHelper(sh, byteArrayOf(1))).volume(RemoteKey.VOLUME_DOWN, 3))
+        assertEquals("v-3\n25\n25\n25\n", sh.execInput.readUtf8())
+    }
+
+    @Test fun volumeWithoutTheHelperSendsTheKeys() = runTest {
+        val sh = FakeShell()
+        assertTrue(Remote(sh).volume(RemoteKey.VOLUME_UP, 2))
+        assertEquals(List(2) { "input keyevent 24" }, sh.ran)
+    }
+
     @Test fun updatesOpenAndroidsUpdateScreen() = runTest {
         val sh = FakeShell()
         assertEquals(UpdateScreen.UPDATES, Remote(sh).openUpdates(fireOs = false))
