@@ -6,7 +6,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
   <img src="https://img.shields.io/badge/size-3%20MB-00696B" alt="3 MB">
   <img src="https://img.shields.io/badge/tracking-none-00696B" alt="No tracking">
   <img src="https://img.shields.io/badge/root-not%20needed-00696B" alt="No root">
-  <img src="https://img.shields.io/badge/languages-6-00696B" alt="6 languages">
+  <img src="https://img.shields.io/badge/languages-7-00696B" alt="7 languages">
   <img src="https://img.shields.io/badge/license-GPL--3.0-00696B" alt="GPL-3.0">
   <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/man15h/tellyscope?color=00696B&label=release" alt="Latest release"></a>
 </p>
@@ -89,7 +89,7 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 
 ## Languages
 
-English, Español, 简体中文, 日本語, Русский and हिन्दी.
+English, Español, Français, 简体中文, 日本語, Русский and हिन्दी.
 
 - Tellyscope follows your phone's language. On Android 13 or newer you can also pick one just for Tellyscope in **Settings → Apps → Tellyscope → Language**.
 - The translations are machine-made. Corrections are welcome as a PR to `app/src/main/res/values-<lang>/strings.xml`.
