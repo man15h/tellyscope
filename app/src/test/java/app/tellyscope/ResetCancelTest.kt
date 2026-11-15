@@ -58,7 +58,7 @@ private class OnTv : AdbSession {
 class ResetCancelTest {
     @Test fun aCancelledResetKeepsWhatItTurnedOn() = runBlocking {
         val tv = OnTv()
-        val source = AdbDeviceSource(RuntimeEnvironment.getApplication(), connector = { _, _ -> AdbConnectResult.Online(tv) })
+        val source = AdbDeviceSource(RuntimeEnvironment.getApplication(), connector = { _, _ -> AdbConnectResult.Online(tv) }, fetch = { throw IOException("offline $it") })
         assertTrue(source.connect(ScanHit("tv", 5555, ScanKind.Classic, "tv", null)) is ConnectResult.Online)
         val apps = listOf("com.acme.one", "com.acme.two", "com.acme.three").map { ResetApp(it, it) }
 
