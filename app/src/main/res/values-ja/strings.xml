@@ -942,7 +942,11 @@
     <string name="guide_unlock_done">開発者向けオプションが有効になりました</string>
     <string name="guide_find_title">テレビを探す</string>
     <string name="guide_done_next">完了、次へ</string>
-    <string name="guide_back">戻る</string>
+    <string name="guide_show_step">この手順を表示</string>
+    <string name="guide_hide_step">この手順を非表示</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="other">テレビが %1$d 台見つかりました。先へ進む</item>
+    </plurals>
     <string name="guide_done">完了</string>
     <string name="guide_tip_same_wifi">スマートフォンとテレビを同じ Wi-Fi に接続してください。ゲスト ネットワークでは、デバイス同士が接続できないことがよくあります。</string>
     <string name="guide_tip_debugging_off">デバッグが勝手にオフになりましたか？テレビによっては、再起動後にリセットされます。再びオンにすると、この画面でテレビが再度見つかります。</string>

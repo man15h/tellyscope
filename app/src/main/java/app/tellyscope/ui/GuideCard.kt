@@ -6,6 +6,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -21,17 +23,29 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -127,16 +141,20 @@ fun BrandChips(brand: TvBrand, onPick: (TvBrand) -> Unit) {
 }
 
 /**
- * One step open at a time: "Done, next" ticks it off and opens the next, "Back" reopens the one
- * before. The last step holds [findTvs], which is the live scan and whatever it found.
+ * One step open at a time: "Done, next" ticks it off and opens the next. A ticked step opens
+ * again on a tap, to read only, and leaves the open step where it is. The last step holds
+ * [findTvs], which is the live scan and whatever it found; until the user gets there, [found]
+ * TVs show as a way to skip ahead rather than pulling them off the step they're reading.
  */
 @Composable
-fun GuideSteps(brand: TvBrand, step: Int, onStep: (Int) -> Unit, findTvs: @Composable () -> Unit) {
+fun GuideSteps(brand: TvBrand, step: Int, found: Int, onStep: (Int) -> Unit, findTvs: @Composable () -> Unit) {
     val steps = listOf(
         Triple(stringResource(R.string.guide_unlock_title), stringResource(brand.unlock), stringResource(R.string.guide_unlock_done)),
         Triple(stringResource(brand.debugTitle), stringResource(brand.debug), stringResource(brand.debugDone)),
         Triple(stringResource(R.string.guide_find_title), "", ""),
     )
+    // Ticked steps the user has opened again. Picking another brand starts its steps over.
+    var shown by rememberSaveable(brand.name) { mutableStateOf(listOf<Int>()) }
     Column(Modifier.animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec())) {
         steps.forEachIndexed { i, (title, body, done) ->
             val last = i == steps.lastIndex
@@ -149,19 +167,45 @@ fun GuideSteps(brand: TvBrand, step: Int, onStep: (Int) -> Unit, findTvs: @Compo
                     Modifier.padding(start = 16.dp, top = 4.dp, bottom = if (last) 8.dp else 24.dp).weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (i > step) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
-                    )
-                    when {
-                        i < step -> Text(done, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        i == step && last -> findTvs()
-                        i == step -> {
-                            Text(marked(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Row(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(onClick = { onStep(i + 1) }) { Text(stringResource(R.string.guide_done_next)) }
-                                if (i > 0) TextButton(onClick = { onStep(i - 1) }) { Text(stringResource(R.string.guide_back)) }
+                    if (i < step) {
+                        val open = i in shown
+                        Row(
+                            Modifier.clip(MaterialTheme.shapes.small).clickable { shown = if (open) shown - i else shown + i },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                            Icon(
+                                Icons.Default.KeyboardArrowDown,
+                                contentDescription = stringResource(if (open) R.string.guide_hide_step else R.string.guide_show_step),
+                                Modifier.rotate(if (open) 180f else 0f),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Text(
+                            if (open) marked(body) else AnnotatedString(done),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    } else {
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (i > step) MaterialTheme.colorScheme.outline else MaterialTheme.colorScheme.onSurface,
+                        )
+                        when {
+                            i == step && last -> findTvs()
+                            i == step -> {
+                                Text(marked(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Button(onClick = { onStep(i + 1) }, Modifier.padding(top = 12.dp)) { Text(stringResource(R.string.guide_done_next)) }
+                            }
+                            last && found > 0 -> TextButton(
+                                onClick = { onStep(i) },
+                                Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                                contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+                            ) {
+                                Icon(Icons.Default.KeyboardArrowDown, null, Modifier.size(18.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text(pluralStringResource(R.plurals.guide_skip_ahead, found, found))
                             }
                         }
                     }

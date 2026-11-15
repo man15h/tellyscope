@@ -993,7 +993,12 @@
     <string name="guide_unlock_done">डेवलपर के लिए सेटिंग अनलॉक हो गईं</string>
     <string name="guide_find_title">अपना TV ढूंढें</string>
     <string name="guide_done_next">हो गया, आगे बढ़ें</string>
-    <string name="guide_back">वापस जाएं</string>
+    <string name="guide_show_step">यह चरण दिखाएं</string>
+    <string name="guide_hide_step">यह चरण छिपाएं</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV मिला, आगे बढ़ें</item>
+        <item quantity="other">%1$d TV मिले, आगे बढ़ें</item>
+    </plurals>
     <string name="guide_done">हो गया</string>
     <string name="guide_tip_same_wifi">फ़ोन और TV को एक ही Wi-Fi पर रखें। गेस्ट नेटवर्क अक्सर डिवाइसों को एक-दूसरे से अलग रखते हैं।</string>
     <string name="guide_tip_debugging_off">डीबगिंग अपने-आप बंद हो गई? कुछ TV रीस्टार्ट के बाद इसे रीसेट कर देते हैं। इसे फिर से चालू करें, यह स्क्रीन TV को फिर से ढूंढ लेगी।</string>

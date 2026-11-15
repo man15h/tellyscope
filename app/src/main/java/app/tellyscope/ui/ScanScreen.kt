@@ -45,7 +45,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +65,8 @@ import app.tellyscope.data.resolve
 
 /**
  * "Add your TV": pick the brand, follow its steps one at a time, then pick the TV the scan found.
- * The scan runs from the start, so a TV that turns up early skips the steps it has proved done.
+ * The scan runs from the start, so a TV that turns up early offers to skip the steps it has
+ * proved done, and a TV already found opens on the last step.
  * Connect opens that TV's own [ConnectScreen]; [phoneKey] is shown there for the Allow box.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,7 +91,6 @@ fun ScanScreen(
     var step by rememberSaveable { mutableIntStateOf(if (scan.hits.isEmpty()) 0 else 2) }
     // The TV whose connect screen is open. A successful connect leaves this screen altogether.
     var open by rememberSaveable { mutableStateOf<String?>(null) }
-    LaunchedEffect(scan.hits.isNotEmpty()) { if (scan.hits.isNotEmpty()) step = 2 }
 
     val openHit = scan.hits.firstOrNull { it.ip == open }
     if (openHit != null) {
@@ -145,8 +144,9 @@ fun ScanScreen(
                     )
                 }
             }
-            BrandChips(brand, onPick = { brandName = it.name })
-            GuideSteps(brand, step, onStep = { step = it }) {
+            // Another brand's menus differ, so its steps start over from the first.
+            BrandChips(brand, onPick = { if (it.name != brandName) { brandName = it.name; step = 0 } })
+            GuideSteps(brand, step, found = scan.hits.size, onStep = { step = it }) {
                 FoundTvs(scan, now, onRescan, onPick = { hit ->
                     val row = scan.rows[hit.ip] ?: RowState.Found
                     if (row == RowState.Found || row == RowState.NotAllowed || row is RowState.Unreachable) onConnect(hit)
