@@ -129,7 +129,9 @@ class ConnectorTest {
         // The app in the background reads nothing. The Allow wait was Kadb's socket timeout, for the
         // whole session, so every TV dropped once it had been idle that long.
         ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
-            thread(isDaemon = true) { while (true) runCatching { server.accept().use(::answerShells) } }
+            // The TCP probe hangs up without a word, so each connection's end is caught on its own;
+            // the outer catch ends the loop once the server closes.
+            thread(isDaemon = true) { runCatching { while (true) server.accept().use { runCatching { answerShells(it) } } } }
             val r = withTimeout(10_000) { Connector.connect("127.0.0.1", server.localPort, allowWaitMs = 1_000) }
             val session = assertIs<ConnectResult.Online>(r).session
             try {
