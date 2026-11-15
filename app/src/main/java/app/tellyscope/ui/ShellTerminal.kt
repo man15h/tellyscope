@@ -3,6 +3,7 @@
 package app.tellyscope.ui
 
 import app.tellyscope.R
+import app.tellyscope.adb.ShellChunk
 import app.tellyscope.adb.ShellEnd
 import app.tellyscope.adb.ShellInput
 import app.tellyscope.adb.ShellLine
@@ -10,6 +11,7 @@ import app.tellyscope.adb.TvShell
 import app.tellyscope.data.UiText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -130,30 +132,32 @@ class ShellTerminal(private val shell: TvShell, private val scope: CoroutineScop
     private fun start(command: String) {
         _state.update { it.copy(running = true) }
         job = scope.launch {
-            // Output comes in chunks that can end mid-line: print whole lines, the rest once more arrives.
-            val held = mapOf(false to StringBuilder(), true to StringBuilder())
-            fun flush(error: Boolean, all: Boolean) {
-                val b = held.getValue(error)
-                val cut = if (all) b.length else b.lastIndexOf("\n") + 1
-                if (cut == 0 || b.isEmpty()) return
-                val text = b.substring(0, cut).removeSuffix("\n")
-                b.delete(0, cut)
-                print(if (error) TermLine.Err(text) else TermLine.Out(text))
+            val out = Pending()
+            // Fast output (`logcat`) comes in far more chunks than the screen can draw: print what gathered a few times a second.
+            val tick = launch {
+                while (true) {
+                    delay(PRINT_EVERY_MS)
+                    show(out, all = false)
+                }
             }
-            val end = shell.run(command) { chunk ->
-                held.getValue(chunk.error).append(chunk.text)
-                flush(chunk.error, all = false)
-            }
-            flush(false, all = true)
-            flush(true, all = true)
+            val end = shell.run(command, out::add)
+            tick.cancel()
+            show(out, all = true)
             _state.update { it.copy(running = false, cwd = shell.cwd, exited = end == ShellEnd.Exited) }
             when (end) {
                 is ShellEnd.Done -> if (end.code != 0) print(TermLine.Note(UiText(R.string.shell_exit_code, end.code)))
                 ShellEnd.Stopped -> print(TermLine.Note(UiText(R.string.shell_stopped)))
                 ShellEnd.Lost -> print(TermLine.Warn(UiText(R.string.shell_lost)))
+                is ShellEnd.Failed -> print(TermLine.Warn(UiText(R.string.shell_failed, end.reason)))
                 ShellEnd.Exited -> {}
             }
         }
+    }
+
+    private fun show(out: Pending, all: Boolean) {
+        val (lines, dropped) = out.take(all)
+        if (lines.isNotEmpty()) print(*lines.toTypedArray())
+        if (dropped) _state.update { it.copy(trimmed = true) }
     }
 
     private fun remember(command: String) =
@@ -177,5 +181,58 @@ class ShellTerminal(private val shell: TvShell, private val scope: CoroutineScop
         /** Long output (`logcat`) keeps its last 2,000 lines. */
         const val MAX_LINES = 2_000
         const val MAX_RECENT = 8
+        /** A line with no end (`cat` of a one-line file) breaks into rows this long, so no single row is too big to draw. */
+        const val MAX_WIDTH = 1_000
+        const val PRINT_EVERY_MS = 100L
+    }
+}
+
+/**
+ * What a running command printed that isn't on screen yet, in the order it came. Chunks can end
+ * mid-line: whole lines are kept, the rest waits for more. Filled from the shell's thread, taken
+ * from the screen's.
+ */
+private class Pending {
+    private val held = mapOf(false to StringBuilder(), true to StringBuilder())
+    private val lines = ArrayDeque<TermLine>()
+    /** Lines dropped before they were shown, past [ShellTerminal.MAX_LINES]. */
+    private var dropped = false
+
+    @Synchronized fun add(chunk: ShellChunk) {
+        val b = held.getValue(chunk.error).append(chunk.text)
+        var start = 0
+        while (true) {
+            val nl = b.indexOf("\n", start)
+            var cut = when {
+                nl >= 0 && nl - start <= ShellTerminal.MAX_WIDTH -> nl
+                b.length - start > ShellTerminal.MAX_WIDTH -> start + ShellTerminal.MAX_WIDTH
+                else -> break
+            }
+            // Not between the two halves of an emoji.
+            if (cut != nl && Character.isHighSurrogate(b[cut - 1])) cut--
+            line(b.substring(start, cut), chunk.error)
+            start = if (cut == nl) nl + 1 else cut
+        }
+        b.delete(0, start)
+    }
+
+    /** The lines so far, and whether any were dropped; [all] once the command is over, with its unfinished last lines. */
+    @Synchronized fun take(all: Boolean): Pair<List<TermLine>, Boolean> {
+        if (all) {
+            for ((error, b) in held) if (b.isNotEmpty()) line(b.toString(), error)
+            held.values.forEach { it.setLength(0) }
+        }
+        return (lines.toList() to dropped).also {
+            lines.clear()
+            dropped = false
+        }
+    }
+
+    private fun line(text: String, error: Boolean) {
+        lines.addLast(if (error) TermLine.Err(text) else TermLine.Out(text))
+        if (lines.size > ShellTerminal.MAX_LINES) {
+            lines.removeFirst()
+            dropped = true
+        }
     }
 }

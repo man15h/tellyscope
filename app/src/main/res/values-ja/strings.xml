@@ -844,6 +844,7 @@
     <string name="shell_full_screen">%1$s には全画面のターミナルが必要です。ここでは使えません。</string>
     <string name="shell_dropped_prefix">（「adb shell」を省きました）</string>
     <string name="shell_lost">コマンドが終わる前にテレビとの接続が切れました。一部だけ実行された可能性があります。</string>
+    <string name="shell_failed">シェルのエラー: %1$s。コマンドは一部だけ実行された可能性があります。次のコマンドは新しいシェルで動きます。</string>
     <string name="report_title_new_tv">このテレビの追加に協力する</string>
     <string name="report_title_problem">問題を報告</string>
     <string name="report_subtitle_new_tv">GitHub で cleanyourtv の「My TV」フォームを開きます</string>

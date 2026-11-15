@@ -991,6 +991,7 @@
     <string name="shell_full_screen">%1$s нужен полноэкранный терминал. Здесь он не поддерживается.</string>
     <string name="shell_dropped_prefix">(убрано «adb shell»)</string>
     <string name="shell_lost">Связь с телевизором пропала до конца команды. Возможно, она выполнилась только частично.</string>
+    <string name="shell_failed">Ошибка оболочки: %1$s. Возможно, команда выполнилась только частично. Следующая откроет новую оболочку.</string>
     <string name="report_title_new_tv">Помогите добавить этот телевизор</string>
     <string name="report_title_problem">Сообщить о проблеме</string>
     <string name="report_subtitle_new_tv">Открывает форму «My TV» от cleanyourtv на GitHub</string>

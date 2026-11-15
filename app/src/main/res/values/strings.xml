@@ -1099,6 +1099,7 @@
     <string name="shell_full_screen">%1$s needs a full-screen terminal. It isn\'t supported here.</string>
     <string name="shell_dropped_prefix">(dropped \"adb shell\")</string>
     <string name="shell_lost">Lost the TV before the command finished. It may have run only partly.</string>
+    <string name="shell_failed">Shell error: %1$s. The command may have run only partly. The next one starts a new shell.</string>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Help add this TV</string>
