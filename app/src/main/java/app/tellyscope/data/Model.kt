@@ -228,6 +228,8 @@ data class HistoryEntry(
     val undoneAt: Long?,
     /** For [Action.Change]: the settings as they were before, null for a key that wasn't set. */
     val previous: Map<String, String?>? = null,
+    /** [undo] was taken away by a later change that made it impossible. */
+    val undoDropped: Boolean = false,
 )
 
 /** The TV-wide settings shown on its page; null for one the TV doesn't report. */

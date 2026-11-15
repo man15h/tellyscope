@@ -51,6 +51,7 @@ import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
 import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
@@ -69,12 +70,14 @@ import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
+import app.tellyscope.data.isFireOs
 import app.tellyscope.data.summary
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,6 +87,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -164,6 +168,8 @@ data class DeviceUi(
     val reset: ResetUi? = null,
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
+    /** Restore everything's result while some of it didn't go back, until its dialog is closed; null otherwise. */
+    val restored: RestoreResult? = null,
 ) {
     /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
     val restore: RestoreSummary
@@ -309,6 +315,12 @@ data class FilesUi(
 
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
 
+/** Settings' own-lists address: [Checking] while the source is read, then [Refused] with why. */
+sealed interface SourceCheck {
+    data object Checking : SourceCheck
+    data class Refused(val why: UiText) : SourceCheck
+}
+
 data class UiState(
     val scan: ScanUi = ScanUi(),
     val devices: List<Device> = emptyList(),
@@ -323,6 +335,8 @@ data class UiState(
     val restarting: Map<String, Restart> = emptyMap(),
     /** The user's own debloat-list source; null for tellyscope-devices. */
     val listSource: String? = null,
+    /** A new list source being checked, or why it was refused; null otherwise. */
+    val sourceCheck: SourceCheck? = null,
     /** The every-30-minutes look at GitHub for a newer release; null when this build has none (screenshots, tests). */
     val checkUpdates: Boolean? = null,
     /** An alpha build, which checks every 5 minutes rather than every 30 minutes. */
@@ -502,6 +516,7 @@ class TellyscopeViewModel(
     private var liveJob: Job? = null
     private var mediumJob: Job? = null
     private var listsJob: Job? = null
+    private var sourceJob: Job? = null
     private var requestJob: Job? = null
     private var accessJob: Job? = null
     private var networkJob: Job? = null
@@ -1213,11 +1228,8 @@ class TellyscopeViewModel(
      * Opens the Play Store on the TV at [pkg]'s page, then checks every few seconds whether it's
      * installed, or the Store has closed without it, which goes back to the picker. Where the Store
      * didn't open, it keeps checking while the user searches by hand. After [STORE_WAIT_MS] without it,
-     * it stops at [LauncherFlow.Step.Left].
-     *
-     * Known: a Google sign-in or consent screen inside the Store runs as another app
-     * (com.google.android.gms), so it can read as leaving the Store and end the wait early.
-     * Open Store again recovers.
+     * it stops at [LauncherFlow.Step.Left]. A Google sign-in or consent screen the Store opens counts
+     * as the Store.
      */
     fun installLauncher(pkg: String) {
         val id = _state.value.selectedId ?: return
@@ -1654,18 +1666,20 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         _state.update { it.copy(device = it.device.copy(busy = RESTORING)) }
         viewModelScope.launch {
-            _notice.value = try {
-                val r = source.restoreAll(id)
-                val first = r.failed.firstOrNull()
-                when {
-                    first != null -> UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, first.what, first.why)
-                    r.done == 0 -> UiText(R.string.vm_nothing_to_put_back)
-                    else -> UiText.plural(R.plurals.vm_put_back, r.done)
-                }
+            // What didn't go back gets a dialog that names each one; the rest is a snackbar.
+            val r = try {
+                source.restoreAll(id)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                null
+            }
+            when {
+                r == null -> Unit
+                r.failed.isNotEmpty() -> updateDevice(id) { it.copy(restored = r) }
+                r.done == 0 -> _notice.value = UiText(R.string.vm_nothing_to_put_back)
+                else -> _notice.value = UiText.plural(R.plurals.vm_put_back, r.done)
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
             val tweaks = runCatching { source.tweaks(id) }.getOrNull()
@@ -1674,8 +1688,9 @@ class TellyscopeViewModel(
         }
     }
 
-    private suspend fun loadLists(id: String, apps: suspend () -> List<AppInfo>) {
-        val lists = source.suggestions(id, apps)
+    private suspend fun loadLists(id: String, apps: suspend () -> List<AppInfo>) = showLists(id, source.suggestions(id, apps))
+
+    private fun showLists(id: String, lists: Suggestions) {
         // Once the list is known its keep entries show as protected, without reading the TV again.
         val keep = (lists as? Suggestions.Ready)?.list?.keep.orEmpty()
         _state.update { s ->
@@ -1920,15 +1935,46 @@ class TellyscopeViewModel(
         }
     }
 
-    /** "Pick your TV": remember the choice for this TV and show its list. */
+    /**
+     * "Pick your TV": remember the choice for this TV and show its list. A list that doesn't load
+     * isn't kept: the TV goes back to the one it had, and the snackbar names both, or only the
+     * new one when it had none.
+     */
     fun pickList(listId: String) {
         val id = _state.value.selectedId ?: return
+        val before = _state.value.device.lists
         _state.update { it.copy(device = it.device.copy(lists = null)) }
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            source.pickList(id, listId)
+            val was = source.pickList(id, listId)
+            val got = source.suggestions(id) { shownApps(id) }
+            if (got !is Suggestions.Unavailable) return@launch showLists(id, got)
+            source.pickList(id, was)
+            val all = when (before) {
+                is Suggestions.Ready -> before.devices
+                is Suggestions.NoList -> before.devices
+                is Suggestions.Unavailable -> before.devices
+                null -> emptyList()
+            } + got.devices
+            val name = all.firstOrNull { it.id == listId }?.name ?: listId
+            _notice.value =
+                if (before is Suggestions.Ready) UiText(R.string.vm_list_not_loaded, name, before.list.name)
+                else UiText(R.string.vm_pick_not_loaded, name)
             loadLists(id) { shownApps(id) }
         }
+    }
+
+    /** OK on Restore everything's result. */
+    fun restoredShown() {
+        _state.update { it.copy(device = it.device.copy(restored = null)) }
+    }
+
+    /** "Try again" on a list that didn't load. */
+    fun retryLists() {
+        val id = _state.value.selectedId ?: return
+        _state.update { it.copy(device = it.device.copy(lists = null)) }
+        listsJob?.cancel()
+        listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
     }
 
     /**
@@ -1936,24 +1982,41 @@ class TellyscopeViewModel(
      * reloads this TV's list. A refused source changes nothing and says why.
      */
     fun setListSource(url: String?) {
-        val id = _state.value.selectedId
-        listsJob?.cancel()
-        listsJob = viewModelScope.launch {
+        sourceJob?.cancel()
+        _state.update { it.copy(sourceCheck = SourceCheck.Checking) }
+        sourceJob = viewModelScope.launch {
             try {
                 source.setListSource(url)
             } catch (e: CancellationException) {
+                // A Cancel that landed while the source was being saved is too late: it's saved, so the screen catches up.
+                withContext(NonCancellable) { if (source.listSource() != _state.value.listSource) sourceTaken(close = false) }
                 throw e
             } catch (e: Exception) {
-                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                // The dialog stays open with the address, and says why under it.
+                _state.update { it.copy(sourceCheck = SourceCheck.Refused(UiText.Capitalized(e.why(R.string.vm_didnt_work)))) }
                 return@launch
             }
-            val now = source.listSource()
-            // Every TV's list came from the old source.
-            lastLists.clear()
-            _state.update { it.copy(listSource = now, device = it.device.copy(lists = null)) }
-            _notice.value = Copy.listSource(now)
-            if (id != null) loadLists(id) { shownApps(id) }
+            // Taken: a Cancel now is too late to undo it, so the screen catches up regardless.
+            withContext(NonCancellable) { sourceTaken(close = true) }
         }
+    }
+
+    /** Shows the source the lists now come from and reloads this TV's list; [close] ends the check too. */
+    private suspend fun sourceTaken(close: Boolean) {
+        val now = source.listSource()
+        // Every TV's list came from the old source.
+        lastLists.clear()
+        val id = _state.value.selectedId
+        _state.update { it.copy(sourceCheck = if (close) null else it.sourceCheck, listSource = now, device = it.device.copy(lists = null)) }
+        _notice.value = Copy.listSource(now)
+        listsJob?.cancel()
+        if (id != null) listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
+    }
+
+    /** Cancel in the own-lists dialog: stops a check that's still running. */
+    fun cancelListSource() {
+        sourceJob?.cancel()
+        _state.update { it.copy(sourceCheck = null) }
     }
 
     /**
@@ -2350,7 +2413,7 @@ class TellyscopeViewModel(
         // An empty list hasn't been read yet, so the TV gets to try.
         val apps = _state.value.device.apps
         if (apps.isNotEmpty() && apps.none { it.packageName == app.packageName }) {
-            _notice.value = Copy.notOnTv(app.label)
+            _notice.value = Copy.notOnTv(app.label, fire = _state.value.selected?.let { isFireOs(it, apps) } == true)
             return
         }
         open(app.packageName, Copy.cantOpen(app.label))

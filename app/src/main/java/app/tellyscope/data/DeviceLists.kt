@@ -6,6 +6,7 @@ import app.tellyscope.BuildConfig
 import app.tellyscope.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -141,8 +142,11 @@ data class SuggestedGroup(val title: String, val packages: List<Suggested>)
 
 /** What the Overview's list card shows. */
 sealed interface Suggestions {
-    /** No index (offline and nothing cached), or the chosen list failed its checksum. */
-    data object Unavailable : Suggestions
+    /**
+     * No index (offline and nothing cached), or the chosen list failed its checksum. [devices] is
+     * every list when the index did load, for "Not this TV?".
+     */
+    data class Unavailable(val devices: List<ListEntry> = emptyList()) : Suggestions
 
     /** No list for this TV's model or maker, and none was picked: clean up by hand in Apps. */
     data class NoList(val commit: String?, val devices: List<ListEntry>) : Suggestions
@@ -298,16 +302,17 @@ class DeviceLists(
      * Points the lists at [url], or back at [default] with null. The new source must answer
      * with a schema 1 index first; otherwise nothing changes. The cached lists are dropped, so
      * nothing from the old source lingers; picks stay, and a pick the new source lacks falls
-     * back to matching.
+     * back to matching. Once the new source has answered, a cancel no longer stops the switch:
+     * the files, the stored address and [index] change together, and [switched] runs with them.
      */
-    suspend fun setSource(url: String?): SourceResult = lock.withLock {
+    suspend fun setSource(url: String?, switched: () -> Unit = {}): SourceResult = lock.withLock {
         val next = if (url == null) default else normalize(url) ?: return@withLock SourceResult.NotHttps
         val text = attempt { fetch(next + "index.json") }?.decodeToString()
         // Going back to the default always works, offline too: its lists load once online.
         if (text == null && url != null) return@withLock SourceResult.Unreachable
         val parsed = text?.let(::parseIndex)
         if (text != null && parsed == null) return@withLock SourceResult.NotAList
-        withContext(Dispatchers.IO) {
+        withContext(NonCancellable + Dispatchers.IO) {
             File(dir, "index.json").delete()
             File(dir, "devices").deleteRecursively()
             File(dir, "lists").deleteRecursively()
@@ -317,8 +322,9 @@ class DeviceLists(
             synchronized(this@DeviceLists) {
                 if (next == default) sourceFile.delete() else sourceFile.writeText(next)
             }
+            index = parsed
+            switched()
         }
-        index = parsed
         SourceResult.Ok
     }
 
@@ -453,10 +459,11 @@ class DeviceLists(
     @Synchronized
     fun picked(key: String): String? = readPicks()[key]
 
+    /** Picks list [id] for [key], or with null goes back to the list that matches. */
     @Synchronized
-    fun pick(key: String, id: String) {
+    fun pick(key: String, id: String?) {
         dir.mkdirs()
-        val all = readPicks() + (key to id)
+        val all = if (id == null) readPicks() - key else readPicks() + (key to id)
         val tmp = File(dir, "picks.tsv.tmp")
         tmp.writeText(all.entries.joinToString("") { (k, v) -> "$k\t$v\n" })
         tmp.renameTo(picks)

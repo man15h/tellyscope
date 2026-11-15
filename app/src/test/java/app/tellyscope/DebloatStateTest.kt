@@ -76,7 +76,7 @@ class DebloatStateTest {
     @Test fun `the home screen card waits for the list to load`() {
         val apps = listOf(store, app("com.acme.a", false))
         assertFalse(card(DeviceUi(apps = apps)))
-        assertFalse(card(DeviceUi(apps = apps, lists = Suggestions.Unavailable)))
+        assertFalse(card(DeviceUi(apps = apps, lists = Suggestions.Unavailable())))
         assertTrue(card(ui(apps)))
     }
 

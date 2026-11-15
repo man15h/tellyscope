@@ -14,6 +14,7 @@ import app.tellyscope.data.RestoreRun
 import app.tellyscope.data.UiText
 import app.tellyscope.data.Was
 import app.tellyscope.data.summary
+import app.tellyscope.ui.Copy
 import app.tellyscope.ui.DeviceUi
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -176,15 +177,21 @@ class RestoreTest {
         run.step(UiText.Raw("YouTube")) { throw java.io.IOException("connection reset") }
         run.step(UiText.Raw("XGIMI Updates")) { ran++ }
         val r = run.result()
-        // Nothing went back: no "0 of 1 changes".
-        val none = RestoreRun().apply { step(UiText.Raw("Netflix")) { throw IllegalStateException("the TV refused") } }.result()
-        assertEquals("Put back 0 of 1. Netflix didn't go back: the TV refused",
-            UiText.plural(R.plurals.vm_put_back_partly, 1, 0, 1, 1, none.failed[0].what, none.failed[0].why).text())
         assertEquals(2, ran)
         assertEquals(2, r.done)
         assertEquals(listOf("Jellyfin", "YouTube"), r.failed.map { it.what.text() })
-        assertEquals("Put back 2 of 4. 2 didn't go back, Jellyfin among them: the TV refused",
-            UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, r.failed[0].what, r.failed[0].why).text())
+        // The result names every change that didn't go back, with its own reason.
+        assertEquals("Restored 2 of 4 changes", Copy.restoredTitle(r).text())
+        assertEquals("These 2 are still as Tellyscope left them:", Copy.restoredLeft(r).text())
+        assertEquals(listOf("• Jellyfin: The TV refused.", "• YouTube: Connection reset."), Copy.restoredFailures(r).map { it.text() })
+    }
+
+    @Test fun aLongRestoreResultNamesThreeThenCounts() = runTest {
+        val run = RestoreRun()
+        for (app in listOf("Netflix", "YouTube", "Prime Video", "Jellyfin", "Kodi")) run.step(UiText.Raw(app)) { throw IllegalStateException("the TV refused") }
+        val lines = Copy.restoredFailures(run.result()).map { it.text() }
+        assertEquals(listOf("• Netflix: The TV refused.", "• YouTube: The TV refused.", "• Prime Video: The TV refused.", "and 2 more"), lines)
+        assertEquals("Restored 0 of 5 changes", Copy.restoredTitle(run.result()).text())
     }
 
     @Test fun aFailedStepStaysRestorable() = runTest {

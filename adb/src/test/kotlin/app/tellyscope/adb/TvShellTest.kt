@@ -111,6 +111,28 @@ class TvShellTest {
         assertEquals(ShellEnd.Lost, sh.run("ls") {})
     }
 
+    @Test fun anAdbErrorEndsTheCommandInsteadOfThrowing() = runBlocking {
+        val bad = object : ShellChannel {
+            var closed = false
+            override fun read(): ShellPacket = throw IllegalStateException("bad packet")
+            override fun write(bytes: ByteArray) {}
+            override fun close() { closed = true }
+        }
+        val good = FakeChannel { listOf(out("hi\n"), marker(0, "/")) }
+        val channels = ArrayDeque(listOf(bad, good))
+        val sh = TvShell(FakeShell()) { channels.removeFirst() }
+        assertEquals(ShellEnd.Failed("bad packet"), sh.run("ls") {})
+        // The broken shell is dropped: the next command opens a new one.
+        assertEquals(ShellEnd.Done(0), sh.run("echo hi") {})
+        repeat(100) { if (!bad.closed) Thread.sleep(10) }
+        assertTrue(bad.closed)
+    }
+
+    @Test fun anAdbErrorOpeningTheShellSaysWhat() = runBlocking {
+        val sh = TvShell(FakeShell()) { throw IllegalStateException() }
+        assertEquals(ShellEnd.Failed("IllegalStateException"), sh.run("ls") {})
+    }
+
     @Test fun pastedAdbShellIsDropped() {
         assertEquals(ShellLine.Run("pm list packages -d", dropped = true), ShellInput.parse("adb shell pm list packages -d"))
         assertEquals(ShellLine.Run("getprop", dropped = true), ShellInput.parse("  adb -s 192.0.2.1:5555 shell getprop"))

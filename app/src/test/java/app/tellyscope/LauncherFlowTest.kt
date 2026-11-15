@@ -76,7 +76,7 @@ private class StoreTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenar
 
     override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
     override fun live(deviceId: String): Flow<Snapshot> = emptyFlow()
-    override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>) = Suggestions.Unavailable
+    override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>) = Suggestions.Unavailable()
     override suspend fun history(deviceId: String) = emptyList<HistoryEntry>()
 
     override suspend fun apps(deviceId: String) = listOf(store, if (homeOn != null) stock.copy(home = false) else stock) +
