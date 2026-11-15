@@ -84,10 +84,12 @@ import app.tellyscope.adb.ScanHit as AdbHit
 /**
  * [DeviceSource] on real TVs through `:adb`. Device id is the TV's IP. Wi-Fi name, signal, MAC and
  * link speed are empty for now. App names and icons come from the label helper through [AppNames].
+ * [fetch] downloads the lists and `data/`; tests pass one that is offline, so live `data/` never lands in [SharedLists].
  */
 class AdbDeviceSource(
     context: Context,
     private val connector: suspend (String, Int) -> AdbConnectResult = { h, p -> Connector.connect(h, p) },
+    fetch: suspend (String) -> ByteArray = ::download,
 ) : DeviceSource {
     private val appContext = context.applicationContext
     /** Our text in the app's language now, for what's saved: History labels, names stored with data. */
@@ -133,9 +135,9 @@ class AdbDeviceSource(
     private val keyHelpers = ConcurrentHashMap<String, KeyHelper>()
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
     private val appNames = AppNames(File(appContext.filesDir, "app-names"))
-    private val lists = DeviceLists(File(appContext.filesDir, "lists"))
+    private val lists = DeviceLists(File(appContext.filesDir, "lists"), fetch)
     /** `data/`'s launcher, app name and streaming lists; never the user's source. */
-    private val data = DeviceLists(File(appContext.filesDir, "data"), DATA_BASE, DATA_KEYS)
+    private val data = DeviceLists(File(appContext.filesDir, "data"), DATA_BASE, DATA_KEYS, fetch)
     /** [historyKey] → the keep entries of that TV's list, once it has been looked up. */
     private val keep = ConcurrentHashMap<String, Set<String>>()
 
