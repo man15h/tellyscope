@@ -516,7 +516,7 @@
         <item quantity="other">%1$d ऐप नहीं बदले</item>
     </plurals>
     <plurals name="copy_disable_the_rest">
-        <item quantity="one">बाकी ऐप बंद करें</item>
+        <item quantity="one">बाकी %1$d ऐप बंद करें</item>
         <item quantity="other">बाकी %1$d बंद करें</item>
     </plurals>
     <string name="copy_reset_stopped">रीसेट रोका गया</string>
