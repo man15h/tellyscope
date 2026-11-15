@@ -3,10 +3,12 @@
 package app.tellyscope
 
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToKey
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceList
 import app.tellyscope.data.ListGroup
@@ -74,7 +76,10 @@ class DebloatGroupTest {
     @Test fun aHiddenAppComesBackWithSuggestAgain() {
         val again = mutableListOf<String>()
         compose.setContent { DebloatScreen(lists.copy(hidden = listOf(app("a.three", ticked = false))), {}, { _, _ -> }, {}, onSuggestAgain = { again += it }) }
+        // The row sits at the foot of the list, below the fold.
+        compose.onNode(hasScrollAction()).performScrollToKey("hidden")
         compose.onNodeWithText("Not suggested (1)").performClick()
+        compose.onNode(hasScrollAction()).performScrollToKey("h:a.three")
         compose.onNodeWithText("Suggest again").performClick()
         assertEquals(listOf("a.three"), again)
     }
