@@ -95,7 +95,7 @@ class DeviceLink(
 
     /**
      * The phone left the network, so an online TV is out of reach now, though a read on the old
-     * connection can take its socket timeout to fail. Offline at once; the loop retries as usual.
+     * connection waits for the stats ping to fail. Offline at once; the loop retries as usual.
      */
     fun lanLost() {
         if (_state.value != DeviceState.ONLINE) return

@@ -116,15 +116,21 @@ object Connector {
     /**
      * Connects to [host]:[port]. The call blocks while the Allow prompt is on the TV, up to
      * [allowWaitMs]; the UI shows WAITING for that whole time. Cancelling it closes the attempt.
+     *
+     * The wait is ours, not Kadb's: its socket timeout lasts the whole session, so a link with nothing
+     * to read for that long (the app in the background) would drop. A blocking read doesn't stop for
+     * a cancel, so closing the attempt is what ends it.
      */
     suspend fun connect(host: String, port: Int, allowWaitMs: Int = ALLOW_WAIT_MS): ConnectResult {
         // InetSocketAddress throws IllegalArgumentException outside this range.
         if (port !in 1..65535) return ConnectResult.Unreachable("port $port is not between 1 and 65535")
         // Probe TCP first: a refused or silent port is "unreachable", not "not allowed".
         probe(host, port)?.let { return ConnectResult.Unreachable(it) }
-        val kadb = Kadb.create(host, port, connectTimeout = TCP_TIMEOUT_MS, socketTimeout = allowWaitMs)
+        val kadb = Kadb.create(host, port, connectTimeout = TCP_TIMEOUT_MS)
+        val answer = handshakes.async { kadb.shell("echo ok").output }
         return try {
-            val out = runInterruptible(Dispatchers.IO) { kadb.shell("echo ok").output }
+            val out = withTimeoutOrNull(allowWaitMs.toLong()) { answer.await() }
+                ?: throw InterruptedIOException("no answer in $allowWaitMs ms")
             if (out.trim() != "ok") throw IOException("unexpected probe output")
             ConnectResult.Online(KadbSession(kadb))
         } catch (e: CancellationException) {
@@ -182,8 +188,8 @@ object Connector {
             .putInt(command).putInt(arg0).putInt(arg1).putInt(data.size)
             .putInt(data.sumOf { it.toInt() and 0xff }).putInt(command.inv()).put(data).array()
 
-    /** Where pairing runs, apart from its caller: see [pair]. */
-    private val pairing = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    /** Where connecting and pairing run, apart from their caller: see [connect] and [pair]. */
+    private val handshakes = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     /**
      * Android 11+ wireless debugging: pair once with the 6-digit code, then [connect] to the connect
@@ -194,7 +200,7 @@ object Connector {
     suspend fun pair(host: String, pairingPort: Int, code: String, timeout: Duration = PAIR_TIMEOUT): PairResult {
         if (code.length != 6 || !code.all(Char::isDigit)) return PairResult.WrongCode("pairing code must be 6 digits")
         if (pairingPort !in 1..65535) return PairResult.Unreachable("port $pairingPort is not between 1 and 65535")
-        val paired = pairing.async { Kadb.pair(host, pairingPort, code) }
+        val paired = handshakes.async { Kadb.pair(host, pairingPort, code) }
         return try {
             withTimeoutOrNull(timeout) { paired.await() } ?: return PairResult.Unreachable("the TV stopped answering")
             PairResult.Paired
