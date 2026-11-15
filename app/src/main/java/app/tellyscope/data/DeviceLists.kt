@@ -369,10 +369,13 @@ class DeviceLists(
     /** [verified] from the cache alone ([cachedSnapshot]). */
     suspend fun cachedVerified(): Boolean = cachedSnapshot().verified()
 
-    /** [bytes] read as an index; [ListIndex.signed] when its signature line ([verifyIndex]) passes and the version is no lower than [floor]. */
+    /**
+     * [bytes] read as an index; with [keys], only the bytes its signatures cover ([signedBytes]). [ListIndex.signed]
+     * when its signature line ([verifyIndex]) passes and the version is no lower than [floor].
+     */
     private fun checked(bytes: ByteArray): ListIndex? {
-        val parsed = parseIndex(bytes.decodeToString()) ?: return null
-        val keys = keys ?: return parsed
+        val keys = keys ?: return parseIndex(bytes.decodeToString())
+        val parsed = parseIndex(signedBytes(bytes).decodeToString()) ?: return null
         val version = parsed.version ?: return parsed
         return parsed.copy(signed = version >= floor() && verifyIndex(bytes, keys))
     }
