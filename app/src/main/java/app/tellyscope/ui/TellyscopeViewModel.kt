@@ -504,6 +504,7 @@ class TellyscopeViewModel(
     private var listsJob: Job? = null
     private var requestJob: Job? = null
     private var accessJob: Job? = null
+    private var networkJob: Job? = null
     /** Runs the removal across the reconnect it causes, so [select] doesn't stop it. */
     private var removalJob: Job? = null
     /** Watches the TV for a launcher's install from the Play Store. */
@@ -738,8 +739,23 @@ class TellyscopeViewModel(
         if (transferJobs[_state.value.selectedId]?.isActive != true) autoSelect(device.id)
     }
 
-    /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
-    fun showStats(profile: StatsProfile) = source.showStats(_state.value.selectedId, profile)
+    /** Advanced is open: only it shows [DeviceUi.network], so only then is that read. */
+    private var advancedOpen = false
+
+    /**
+     * The TV on screen refreshes at the open screen's rates; the others at the slowest.
+     * Opening Advanced reads its network fresh; [watchAccess] keeps it up to date until it closes.
+     */
+    fun showStats(profile: StatsProfile) {
+        source.showStats(_state.value.selectedId, profile)
+        val open = profile == StatsProfile.ADVANCED
+        if (open == advancedOpen) return
+        advancedOpen = open
+        networkJob?.cancel()
+        val id = _state.value.selectedId ?: return
+        // Not while the TV isn't being read: offline, or the app in the background.
+        if (open && accessJob?.isActive == true) networkJob = viewModelScope.launch { readNetwork(id) }
+    }
 
     private val terminals = mutableMapOf<String, ShellTerminal>()
 
@@ -822,6 +838,7 @@ class TellyscopeViewModel(
         listsJob?.cancel()
         requestJob?.cancel()
         accessJob?.cancel()
+        networkJob?.cancel()
     }
 
     /** Reads the TV on screen while it's online: stats, apps, tweaks, files, lists, prompts, access. Not in the background. */
@@ -859,11 +876,6 @@ class TellyscopeViewModel(
                 val tweaks = source.tweaks(id)
                 updateDevice(id) { it.copy(tweaks = tweaks) }
                 loadFiles()
-                while (true) {
-                    val net = source.network(id)
-                    _state.update { it.copy(device = it.device.copy(network = net)) }
-                    delay(10_000)
-                }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -1756,11 +1768,13 @@ class TellyscopeViewModel(
     /**
      * Who has access every 10 s while the TV's page is open. What's plugged in only when it opens
      * and every 2 minutes after: that read is five `dumpsys` calls, too heavy for every tick.
-     * A failed read keeps the last answer; a removal in progress does its own reads.
+     * A failed read keeps the last answer; a removal in progress does its own reads. While Advanced
+     * is open its network goes first in the same tick, so access reuses the TCP tables it read.
      */
     private suspend fun watchAccess(id: String) {
         var tick = 0
         while (true) {
+            if (advancedOpen) readNetwork(id)
             if (_state.value.device.removal == null) readAccess(id)
             if (tick++ % 12 == 0) {
                 val found = try { source.peripherals(id) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
@@ -1768,6 +1782,12 @@ class TellyscopeViewModel(
             }
             delay(10_000)
         }
+    }
+
+    /** A failed read keeps the last answer. */
+    private suspend fun readNetwork(id: String) {
+        val net = try { source.network(id) } catch (e: CancellationException) { throw e } catch (_: Exception) { return }
+        updateDevice(id) { it.copy(network = net) }
     }
 
     private suspend fun readAccess(id: String): TvAccess? {
