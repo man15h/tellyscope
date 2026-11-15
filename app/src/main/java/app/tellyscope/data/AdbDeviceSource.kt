@@ -567,14 +567,18 @@ class AdbDeviceSource(
         val cached = addresses[deviceId]?.takeIf { statsFor != (deviceId to StatsProfile.ADVANCED) }
         val (address, wifi) = cached ?: NetworkStats(shell).address().also { addresses[deviceId] = it }
         val packages = links[deviceId]?.stats?.value?.packages.orEmpty()
+        val tables = NetworkStats(shell).tables().also { socketTables[deviceId] = System.currentTimeMillis() to it }
         return NetworkInfo(
             iface = address?.iface.orEmpty(),
             ip = address?.ip ?: deviceId,
             mac = address?.mac, ssid = wifi?.ssid, rssi = wifi?.rssi, linkMbps = wifi?.linkMbps,
-            sockets = NetworkStats(shell).connections().map { Socket(uidLabel(it.uid, packages), it.remote, tcpState(it.state)) },
+            sockets = NetworkStats(shell).connections(tables).map { Socket(uidLabel(it.uid, packages), it.remote, tcpState(it.state)) },
             traffic = traffic(deviceId, packages),
         )
     }
+
+    /** The TCP tables [network] just read, taken once by the [access] read in the same tick. */
+    private val socketTables = ConcurrentHashMap<String, Pair<Long, String>>()
 
     /** `dumpsys netstats` is long, so data used is read at most once a minute per TV. */
     private val trafficCache = ConcurrentHashMap<String, Pair<Long, List<AppTraffic>>>()
@@ -1195,30 +1199,39 @@ class AdbDeviceSource(
 
     override suspend fun screenshot(deviceId: String, sink: Sink) = Tweaks(liveSession(deviceId)).screenshot(sink)
 
+    /** The fingerprint each TV's last prompt check found, null for none: [access] reuses it instead of checking again. */
+    private val prompts = ConcurrentHashMap<String, Pair<Long, String?>>()
+
     override suspend fun connectionRequest(deviceId: String) = ConnectionPrompt(session(deviceId)).pending()
+        .also { prompts[deviceId] = System.currentTimeMillis() to it?.fingerprint }
 
     /**
      * Allow pressed from the app makes that key known, so it isn't flagged new. Only on a TV with a
      * known list: before the first read every key counts as known anyway.
      */
     override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean): Boolean {
+        prompts -= deviceId
         val answered = ConnectionPrompt(session(deviceId)).answer(request, allow, always)
         val tv = key(deviceId)
         if (answered && allow && request.fingerprint.isNotEmpty() && knownKeys.has(tv)) knownKeys.add(tv, request.fingerprint)
         return answered
     }
 
-    override suspend fun closeAlert(deviceId: String) = ConnectionPrompt(session(deviceId)).closeAlert()
+    override suspend fun closeAlert(deviceId: String) = ConnectionPrompt(session(deviceId)).closeAlert().also { prompts -= deviceId }
 
     override suspend fun facts(deviceId: String) = TvFacts.read(session(deviceId))
 
     override suspend fun access(deviceId: String): TvAccess {
         val a = Access(session(deviceId))
         val port = links[deviceId]?.port ?: Access.CLASSIC_PORT
-        val pending = runCatching { connectionRequest(deviceId)?.fingerprint }.getOrNull()
+        val now = System.currentTimeMillis()
+        // The page checks the prompt every 5 s; a check that recent stands in for another one.
+        val seen = prompts[deviceId]?.takeIf { now - it.first < 10_000 }
+        val pending = if (seen != null) seen.second else runCatching { connectionRequest(deviceId)?.fingerprint }.getOrNull()
+        val tables = socketTables.remove(deviceId)?.takeIf { now - it.first < 5_000 }?.second
         val tv = key(deviceId)
         val access = TvAccess.of(
-            a.clients(port), a.keys(), phoneAddresses(), deviceId, mine[tv], phoneFingerprint(),
+            a.clients(port, tables), a.keys(), phoneAddresses(), deviceId, mine[tv], phoneFingerprint(),
             pending = pending, known = knownKeys[tv].takeIf { knownKeys.has(tv) },
         )
         access.allowed?.let { keys ->

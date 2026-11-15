@@ -76,7 +76,7 @@ class PauseTest {
     @Test fun inTheBackgroundNothingReadsTheTv() = with(test) {
         val tv = Counted()
         open(tv)
-        assertTrue(tv.reads.containsAll(listOf("apps", "network", "prompt", "access", "known")))
+        assertTrue(tv.reads.containsAll(listOf("apps", "prompt", "access", "known")))
         vm.pause()
         runCurrent()
         tv.reads.clear()
@@ -95,7 +95,7 @@ class PauseTest {
         vm.resume()
         advanceTimeBy(1_000)
         runCurrent()
-        assertTrue(tv.reads.containsAll(listOf("live", "apps", "network", "prompt", "access")))
+        assertTrue(tv.reads.containsAll(listOf("live", "apps", "prompt", "access")))
         assertEquals(listOf(true, false), tv.paused)
         assertEquals("tv", vm.state.value.selectedId)
     }

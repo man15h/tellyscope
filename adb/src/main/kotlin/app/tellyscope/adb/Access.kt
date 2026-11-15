@@ -30,12 +30,13 @@ class Access(private val shell: AdbShell) {
 
     /**
      * Open connections to adbd: on 5555, [port] (the one Tellyscope uses) and the
-     * wireless-debugging port when one is set. Null when the TV won't list them.
+     * wireless-debugging port when one is set. Null when the TV won't list them. [tables], the
+     * TCP tables just read for something else, saves reading them again.
      */
-    suspend fun clients(port: Int): List<AdbClient>? {
+    suspend fun clients(port: Int, tables: String? = null): List<AdbClient>? {
         val tls = shell.shell("getprop service.adb.tls.port").output.trim().toIntOrNull()
         val ports = setOfNotNull(CLASSIC_PORT, port, tls?.takeIf { it > 0 })
-        return clients(shell.shell("cat /proc/net/tcp6 /proc/net/tcp 2>/dev/null").output, ports)
+        return clients(tables ?: shell.shell("cat /proc/net/tcp6 /proc/net/tcp 2>/dev/null").output, ports)
     }
 
     /**
