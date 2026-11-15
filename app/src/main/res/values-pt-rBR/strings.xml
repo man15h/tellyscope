@@ -19,7 +19,7 @@
 
     <!-- %1$s is the app's label, %2$s its package id -->
     <string name="copy_explain_stop">Para %1$s (%2$s) até você abrir de novo.</string>
-    <string name="copy_explain_disable">Oculta %1$s (%2$s) e impede que rode. Nada é apagado; você pode ativar de novo aqui.</string>
+    <string name="copy_explain_disable">Desativa %1$s (%2$s) e impede que rode. Nada é apagado; você pode ativar de novo aqui.</string>
     <string name="copy_explain_enable">Ativa %1$s (%2$s) de novo.</string>
     <string name="copy_explain_open">Abre %1$s (%2$s) na TV.</string>
     <string name="copy_explain_uninstall">Remove %1$s (%2$s) e tudo o que está salvo. Não dá para desfazer; para recuperar, instale de novo.</string>
@@ -47,11 +47,9 @@
     <string name="copy_built_in">Já vem na TV</string>
     <string name="copy_built_in_off">Já vem na TV · desativado</string>
     <string name="copy_current">Atual</string>
-    <string name="copy_keeps_home">Mantém Início com seu serviço de acessibilidade</string>
     <string name="copy_make_home">Definir como Início</string>
-    <string name="copy_get_launcher">Instalar outro launcher</string>
-    <string name="copy_get_launcher_text">Instale um pela Play Store, como Projectivy ou FLauncher. Volte quando quiser.</string>
-    <string name="copy_get_projectivy_text">Instale o Projectivy. Volte quando quiser.</string>
+    <string name="copy_change_home">Trocar a tela inicial</string>
+    <string name="copy_change_home_text">Instale outra da Escolha do editor ou troque para uma que já está na TV.</string>
     <string name="copy_home_settings">Ajustes da tela inicial</string>
     <string name="copy_make_home_title">Definir %1$s como tela inicial?</string>
 
@@ -103,11 +101,13 @@
     <string name="copy_choose_home_text">Cada um substitui a tela inicial da TV. O Tellyscope abre a página na Play Store da TV; você instala com o controle.</string>
     <string name="copy_can_download">Alguns também podem ser baixados direto.</string>
     <string name="copy_no_launcher_list">Não foi possível carregar a lista de telas iniciais. Verifique a internet do celular e tente de novo.</string>
-    <string name="copy_recommended">Recomendado</string>
+    <string name="copy_recommended">Escolha do editor</string>
     <string name="copy_on_this_tv">Nesta TV</string>
     <string name="copy_installed">Instalado</string>
-    <string name="copy_home_now">É o Início agora</string>
+    <string name="copy_install">Instalar</string>
     <string name="copy_open">Abrir</string>
+    <string name="copy_home_screen_of">Tela inicial %1$s</string>
+    <string name="copy_picture_failed">Não foi possível carregar a imagem</string>
     <string name="copy_uses_service">Usa serviço de acessibilidade</string>
     <string name="copy_no_service">Código aberto · sem serviço de acessibilidade</string>
     <!-- %1$s is copy_on_this_tv -->
@@ -136,16 +136,17 @@
     <string name="copy_not_installed">%1$s não está instalado</string>
     <string name="copy_wasnt_installed">%1$s não foi instalado</string>
     <string name="copy_not_installed_text">A Play Store fechou na TV antes de instalar. Se a loja disse que não está disponível para esta TV, escolha outro launcher.</string>
+    <!-- Installing a launcher's APK (Fire OS, or Download directly): from its developer's GitHub, installed over adb. %1$s the launcher's name -->
+    <string name="copy_install_launcher">Instalar %1$s</string>
 
-    <!-- Installing Projectivy on Fire OS: downloaded from its developer's GitHub, installed over adb -->
-    <string name="copy_install_projectivy">Instalar o Projectivy</string>
     <string name="copy_fire_install_text">Uma tela inicial sem anúncios. O Tellyscope instala na TV para você; não há nada a fazer na TV.</string>
+    <string name="copy_fire_pick_text">Uma tela inicial sem anúncios. Baixe no navegador e depois escolha o arquivo aqui. O Tellyscope instala na TV.</string>
     <!-- %1$s the app's name -->
     <string name="copy_downloads_from">O Tellyscope baixa %1$s da página de release do próprio desenvolvedor:</string>
     <!-- %1$s the version, %2$s its size (copy_size_*) -->
     <string name="copy_release">Versão %1$s · %2$s</string>
     <string name="copy_where_from">De onde vem</string>
-    <string name="copy_signed_check">O Tellyscope confere se foi assinado pelo desenvolvedor do Projectivy antes de instalar na TV. O Tellyscope não tem vínculo com o Projectivy.</string>
+    <string name="copy_signed_check">O Tellyscope confere se foi assinado pelo desenvolvedor do %1$s antes de instalar na TV. O Tellyscope não tem vínculo com o %1$s.</string>
     <string name="copy_download_and_install">Baixar e instalar</string>
     <!-- Download directly, on a TV with the Play Store; %1$s the app's name -->
     <string name="copy_download_directly_title">Baixar %1$s direto?</string>
@@ -159,11 +160,11 @@
     <!-- %1$d percent done, %2$s and %3$s sizes (copy_size_*) -->
     <string name="copy_downloading">Baixando · %1$d%% · %2$s de %3$s</string>
     <string name="copy_step_picked">Arquivo escolhido</string>
-    <string name="copy_step_check">Conferir se é o Projectivy</string>
-    <string name="copy_step_checking">Conferindo se é o Projectivy…</string>
-    <string name="copy_step_checked">É o Projectivy</string>
+    <string name="copy_step_check">Conferir se é o %1$s</string>
+    <string name="copy_step_checking">Conferindo se é o %1$s…</string>
+    <string name="copy_step_checked">É o %1$s</string>
     <string name="copy_step_checked_text">Assinado pelo desenvolvedor</string>
-    <string name="copy_step_failed">Não é o Projectivy</string>
+    <string name="copy_step_failed">Não é o %1$s</string>
     <string name="copy_step_failed_text">Nome do pacote ou assinatura não confere</string>
     <string name="copy_install_on">Instalar em %1$s</string>
     <string name="copy_stop_title">Parar o download?</string>
@@ -172,13 +173,13 @@
     <string name="copy_keep_downloading">Continuar baixando</string>
     <!-- %1$s the TV's name -->
     <string name="copy_installing_on">Instalando em %1$s…</string>
-    <string name="copy_not_projectivy">Esse download não é o Projectivy</string>
-    <string name="copy_not_projectivy_text">O arquivo do GitHub não confere com o nome de pacote do Projectivy nem com a assinatura do desenvolvedor, então o Tellyscope não instalou nada na TV.</string>
-    <string name="copy_not_projectivy_file">Esse arquivo não é o Projectivy</string>
-    <string name="copy_not_projectivy_file_text">Ele não confere com o nome de pacote do Projectivy nem com a assinatura do desenvolvedor, então o Tellyscope não instalou nada na TV.</string>
+    <string name="copy_wrong_apk">Esse download não é o %1$s</string>
+    <string name="copy_wrong_apk_text">O arquivo do GitHub não confere com o nome de pacote do %1$s nem com a assinatura do desenvolvedor, então o Tellyscope não instalou nada na TV.</string>
+    <string name="copy_wrong_apk_file">Esse arquivo não é o %1$s</string>
+    <string name="copy_wrong_apk_file_text">Ele não confere com o nome de pacote do %1$s nem com a assinatura do desenvolvedor, então o Tellyscope não instalou nada na TV.</string>
     <string name="copy_cant_read_file">O Tellyscope não conseguiu ler esse arquivo. Escolha de novo ou baixe outra vez.</string>
     <string name="copy_cant_install">Não foi possível instalar %1$s</string>
-    <string name="copy_no_download">Não foi possível baixar o Projectivy</string>
+    <string name="copy_no_download">Não foi possível baixar o %1$s</string>
     <string name="copy_no_download_offline">O celular não alcança o GitHub. Verifique a internet e tente de novo.</string>
     <!-- %1$s a clock time, like 18:44 -->
     <string name="copy_no_download_limited_until">O GitHub está limitando downloads da sua rede até %1$s. Tente depois ou baixe você mesmo.</string>
@@ -186,12 +187,18 @@
     <string name="copy_or_yourself">Ou baixe você mesmo</string>
     <string name="copy_yourself_page">Baixe o arquivo do app (.apk) na página de release, pelo navegador.</string>
     <!-- %1$s the release's file name, like Projectivy.apk -->
-    <string name="copy_yourself_pick_file">Volte e escolha %1$s. O Tellyscope confere se é o Projectivy antes de instalar.</string>
-    <string name="copy_yourself_pick">Volte e escolha o arquivo. O Tellyscope confere se é o Projectivy antes de instalar.</string>
+    <string name="copy_yourself_pick_file">Volte e escolha %1$s. O Tellyscope confere se é o %2$s antes de instalar.</string>
+    <string name="copy_yourself_pick">Volte e escolha o arquivo. O Tellyscope confere se é o %1$s antes de instalar.</string>
     <string name="copy_latest_release">Última versão</string>
     <string name="copy_pick_downloaded">Escolher o arquivo baixado</string>
     <string name="copy_pick_another">Escolher outro arquivo</string>
     <string name="copy_try_download_again">Tentar baixar de novo</string>
+    <!-- The launcher list from data/ failed its signature or checksum check: shown, and ticked, before anything installs -->
+    <string name="copy_unverified_title">Não foi possível verificar a lista de launchers</string>
+    <string name="copy_unverified_text">O Tellyscope não conseguiu confirmar que esta é a lista que ele publicou. Se a lista mudou nos últimos minutos, tente de novo mais tarde. Instale agora só se você confia na lista e em quem a assinou.</string>
+    <string name="copy_unverified_list">Lista</string>
+    <string name="copy_unverified_signer">Assinante (SHA-256)</string>
+    <string name="copy_unverified_trust">Confio nesta lista e em quem a assinou</string>
     <string name="copy_service_off_text">O serviço de acessibilidade de %1$s está desligado, então a TV pode retomar o Início.</string>
 
     <string name="copy_open_again">Abrir de novo</string>
@@ -216,10 +223,6 @@
         <item quantity="other">há %1$d d</item>
     </plurals>
 
-    <!-- Compact uptime: days, hours, minutes -->
-    <string name="copy_uptime_days_hours">%1$dd %2$dh</string>
-    <string name="copy_uptime_hours_minutes">%1$dh %2$dm</string>
-    <string name="copy_uptime_minutes">%1$dm</string>
 
     <plurals name="copy_days">
         <item quantity="one">%1$d dia</item>
@@ -270,7 +273,9 @@
     <string name="copy_reading_apps">Lendo os apps da TV…</string>
     <string name="copy_reading_apps_line">Isso leva alguns segundos.</string>
     <string name="copy_tv_offline">TV offline</string>
+    <string name="copy_off_wifi_line">Entre no mesmo Wi-Fi da TV. O Tellyscope reconecta assim que você entrar.</string>
     <string name="copy_running_offline">Os apps em execução aparecem aqui quando a TV conectar.</string>
+    <string name="copy_apps_offline">Os apps aparecem aqui quando a TV estiver conectada.</string>
 
     <!-- Connection state, next to the status dot -->
     <string name="copy_state_online">Conectado</string>
@@ -362,6 +367,7 @@
     <string name="copy_sent_renamed">Enviei para %1$s como %2$s, pois %3$s já estava lá</string>
     <string name="copy_saved">%1$s salvo no seu celular</string>
     <string name="copy_send_failed">Não deu para enviar %1$s. Verifique se a TV continua conectada e tem espaço.</string>
+    <string name="copy_send_failed_off_wifi">Não deu para enviar %1$s. Este celular não está no Wi-Fi.</string>
     <string name="copy_save_failed">Não deu para salvar %1$s. Verifique se a TV continua conectada e o celular tem espaço.</string>
     <string name="copy_cancelled_send">Cancelado. Nada ficou na TV.</string>
     <string name="copy_cancelled_save">Cancelado. Nada foi salvo.</string>
@@ -375,6 +381,10 @@
     <string name="copy_remote_lost">Perdi a TV. Verifique se ela continua ligada e conectada.</string>
     <string name="copy_no_update_screen">Esta TV não tem tela de atualização que o Tellyscope abra. Procure nos Ajustes dela, em Sistema ou Sobre.</string>
     <string name="copy_updates_opened">Abri a tela de atualização na TV. Olhe a TV para procurar atualizações.</string>
+    <string name="copy_store_opened">%1$s aberta na TV.</string>
+    <string name="copy_store_cant_open">Não foi possível abrir %1$s na TV.</string>
+    <string name="copy_fire_settings_opened">Configurações abertas na TV. Vá em Minha Fire TV (Dispositivo e software nas TVs), depois Sobre e depois Verificar atualizações.</string>
+    <string name="copy_no_fire_update_screen">O Tellyscope não consegue abrir as Configurações nesta TV. Na TV, vá em Configurações, depois Minha Fire TV (Dispositivo e software nas TVs), depois Sobre e depois Verificar atualizações.</string>
     <string name="copy_reboot_refused">A TV recusou reiniciar. Use o controle ou o botão de energia dela.</string>
     <string name="copy_reboot_ignored">A TV não reiniciou. Use o controle ou o botão de energia dela.</string>
     <!-- Lower case: shown after the TV's state -->
@@ -415,9 +425,12 @@
 
     <!-- Remote buttons -->
     <string name="copy_remote_buttons">Teclas do controle</string>
+    <string name="copy_open_an_app">Abrir um app</string>
+    <string name="copy_open_an_app_hint">Apps de streaming em %1$s. Toque em um para abrir.</string>
     <string name="copy_more">Mais opções</string>
     <string name="copy_buttons_hint">Escolha até %1$d. Arraste para ordenar. Para escolher outra, desmarque uma antes.</string>
     <string name="copy_not_on_tv">%1$s não está nesta TV. Instale pela Play Store da TV.</string>
+    <string name="copy_not_on_tv_fire">%1$s não está nesta TV. Instale pela Appstore na TV.</string>
     <string name="copy_cant_open">A TV não conseguiu abrir %1$s. Se estiver desativado, ative em Apps.</string>
     <string name="copy_left_dock_one">%1$s foi desinstalado, então o botão saiu do Controle.</string>
     <plurals name="copy_left_dock">
@@ -444,6 +457,7 @@
     <string name="copy_animations_state_off">Desativado. Ative para os menus parecerem mais ágeis.</string>
     <string name="copy_caches_title">Limpar o cache de todos os apps</string>
     <string name="copy_caches_text">Libera espaço limpando os arquivos temporários de todos os apps. Os dados e as contas ficam.</string>
+    <string name="copy_caches_too_old">Precisa do Android 8 ou mais novo. Esta TV é mais antiga.</string>
     <string name="copy_caches_button">Limpar caches</string>
     <string name="copy_caches_cleared">Caches limpos</string>
     <!-- %1$s is a size, like 120 MB -->
@@ -503,6 +517,14 @@
     <!-- %1$s is the launcher Home moves away from -->
     <string name="copy_reset_home_text">Em vez de %1$s. %1$s continua instalado.</string>
     <string name="copy_reset_home_text_service">Em vez de %1$s, com o serviço de acessibilidade desligado. %1$s continua instalado.</string>
+    <string name="copy_reset_dns">DNS privado de volta para Automático</string>
+    <string name="copy_reset_animations">Animações de volta à velocidade normal</string>
+    <!-- Under a setting Reset TV puts back: %1$s is the Private DNS provider ("dns.adguard-dns.com", or "off"), or an animation scale ("0.5×"). -->
+    <string name="copy_reset_was">Era %1$s</string>
+    <!-- Private DNS turned off, as "Was off" and "Private DNS is still off" name it. -->
+    <string name="copy_dns_off">desligado</string>
+    <!-- An animation scale; %1$s is a number such as 0.5. -->
+    <string name="copy_animation_scale">%1$s×</string>
     <!-- %2$s is the TV's brand, or copy_the_maker -->
     <plurals name="copy_reset_leaves_off">
         <item quantity="one">%1$d app que %2$s enviou desativado continua desativado.</item>
@@ -519,6 +541,8 @@
     <string name="copy_resetting_turn_on">Ativando apps: %1$d de %2$d.</string>
     <string name="copy_resetting_bring_back">Trazendo apps de volta: %1$d de %2$d.</string>
     <string name="copy_resetting_home">Definindo %1$s como tela inicial.</string>
+    <string name="copy_resetting_dns">Voltando o DNS privado para Automático.</string>
+    <string name="copy_resetting_animations">Voltando as animações à velocidade normal.</string>
     <string name="copy_keep_tv_on">Mantenha a TV ligada e conectada.</string>
     <string name="copy_resetting">Restaurando…</string>
     <string name="copy_reset_apps_stale">Restauração feita, mas a lista de apps não atualizou. Abra a TV de novo para ver.</string>
@@ -527,16 +551,18 @@
     <string name="copy_reset_partly">Restauração parcial</string>
     <!-- After a reset; %2$s is the launcher now on Home -->
     <plurals name="copy_reset_done_apps_home">
-        <item quantity="one">%1$d app pré-instalado voltou, e %2$s é a tela inicial. Dados e contas dos apps ficaram.</item>
-        <item quantity="other">%1$d apps pré-instalados voltaram, e %2$s é a tela inicial. Dados e contas dos apps ficaram.</item>
+        <item quantity="one">%1$d app pré-instalado voltou, e %2$s é a tela inicial.</item>
+        <item quantity="other">%1$d apps pré-instalados voltaram, e %2$s é a tela inicial.</item>
     </plurals>
     <plurals name="copy_reset_done_apps">
-        <item quantity="one">%1$d app pré-instalado voltou. Dados e contas dos apps ficaram.</item>
-        <item quantity="other">%1$d apps pré-instalados voltaram. Dados e contas dos apps ficaram.</item>
+        <item quantity="one">%1$d app pré-instalado voltou.</item>
+        <item quantity="other">%1$d apps pré-instalados voltaram.</item>
     </plurals>
-    <string name="copy_reset_done_home">%1$s é a tela inicial. Dados e contas dos apps ficaram.</string>
-    <!-- Only reached when a reset changed nothing; the leading ". " is as the app always showed it -->
-    <string name="copy_reset_done_nothing">. Dados e contas dos apps ficaram.</string>
+    <string name="copy_reset_done_home">%1$s é a tela inicial.</string>
+    <string name="copy_reset_done_settings">O DNS privado e as animações voltaram ao padrão.</string>
+    <string name="copy_reset_done_dns">O DNS privado voltou para Automático.</string>
+    <string name="copy_reset_done_animations">As animações voltaram à velocidade normal.</string>
+    <string name="copy_reset_kept_data">Dados e contas dos apps ficaram.</string>
     <plurals name="copy_reset_partly_text">
         <item quantity="one">Um passo não funcionou. O resto voltou como veio. Nada foi perdido.</item>
         <item quantity="other">%1$d passos não funcionaram. O resto voltou como veio. Nada foi perdido.</item>
@@ -560,6 +586,12 @@
     </plurals>
     <string name="copy_is_home">%1$s é a tela inicial</string>
     <string name="copy_still_home">%1$s continua sendo a tela inicial</string>
+    <string name="copy_dns_automatic">O DNS privado está em Automático</string>
+    <!-- %1$s is the Private DNS provider, or "off". -->
+    <string name="copy_dns_still">O DNS privado continua %1$s</string>
+    <string name="copy_animations_normal">As animações estão na velocidade normal</string>
+    <!-- %1$s is an animation scale, such as "0.5×". -->
+    <string name="copy_animations_still">As animações continuam em %1$s</string>
     <string name="copy_try_app_again">Tentar %1$s de novo</string>
     <string name="copy_try_again">Tentar de novo</string>
 
@@ -579,16 +611,53 @@
         <item quantity="other">Desativei %1$d de %2$d apps</item>
     </plurals>
     <string name="copy_still_on">%1$s continua ativo</string>
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d mudança para restaurar</item>
+        <item quantity="other">%1$d mudanças para restaurar</item>
+    </plurals>
+    <!-- Restore everything dialog. The count is every change it tried. -->
+    <plurals name="copy_restored_title">
+        <item quantity="one">%1$d de %2$d mudança restaurada</item>
+        <item quantity="other">%1$d de %2$d mudanças restauradas</item>
+    </plurals>
+    <!-- The count is how many didn't go back; one line for each follows. -->
+    <plurals name="copy_restored_left">
+        <item quantity="one">Esta continua como o Tellyscope deixou:</item>
+        <item quantity="other">Estas %1$d continuam como o Tellyscope deixou:</item>
+    </plurals>
+    <string name="copy_restored_hint">Desfaça cada uma pela linha dela no Histórico ou restaure de novo mais tarde.</string>
+    <!-- After the first few lines of a list; the count is the lines not shown. -->
+    <plurals name="copy_and_more">
+        <item quantity="one">e mais %1$d</item>
+        <item quantity="other">e mais %1$d</item>
+    </plurals>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">%1$d mudança feita pelo Tellyscope continua valendo</item>
+        <item quantity="other">%1$d mudanças feitas pelo Tellyscope continuam valendo</item>
+    </plurals>
+    <string name="copy_put_back_text">Restaurar tudo deixa esta TV como estava antes da primeira mudança do Tellyscope:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">Ativa %1$d app de novo</item>
+        <item quantity="other">Ativa %1$d apps de novo</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">Desativa %1$d app de novo</item>
+        <item quantity="other">Desativa %1$d apps de novo</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">Remove %1$d app que a Restauração da TV trouxe de volta</item>
+        <item quantity="other">Remove %1$d apps que a Restauração da TV trouxe de volta</item>
+    </plurals>
+    <string name="copy_restore_home">Devolve o Início</string>
+    <string name="copy_restore_dns">Devolve o DNS privado</string>
+    <string name="copy_restore_animations">Devolve a velocidade das animações</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d app foi desinstalado e não pode voltar</item>
+        <item quantity="other">%1$d apps foram desinstalados e não podem voltar</item>
+    </plurals>
+    <!-- One line of what Restore everything does, under the card and in its confirm. -->
+    <string name="copy_restore_line">• %1$s</string>
 
-    <plurals name="copy_still_off">
-        <item quantity="one">%1$d app ainda desativado</item>
-        <item quantity="other">%1$d apps ainda desativados</item>
-    </plurals>
-    <plurals name="copy_still_off_title">
-        <item quantity="one">%1$d app que o Tellyscope desativou continua desativado</item>
-        <item quantity="other">%1$d apps que o Tellyscope desativou continuam desativados</item>
-    </plurals>
-    <string name="copy_still_off_text">Restaurar tudo reativa eles. Apps que já estavam desativados antes da primeira mudança do Tellyscope continuam desativados.</string>
     <plurals name="copy_others_connected">
         <item quantity="one">%1$d outro conectado agora</item>
         <item quantity="other">%1$d outros conectados agora</item>
@@ -699,10 +768,14 @@
 
     <!-- Snackbar when an action failed and the TV gave no reason -->
     <string name="vm_didnt_work">Isso não funcionou.</string>
-    <string name="vm_nothing_to_turn_on">Nada para reativar.</string>
-    <plurals name="vm_turned_back_on">
-        <item quantity="one">Reativei %1$d app.</item>
-        <item quantity="other">Reativei %1$d apps.</item>
+    <string name="vm_nothing_to_put_back">Nada para restaurar.</string>
+    <!-- %1$s is the list that failed; %2$s the one still shown. -->
+    <string name="vm_list_not_loaded">Não foi possível carregar a lista %1$s. Continua em %2$s.</string>
+    <!-- %1$s is the list that failed, when the TV had no list before. -->
+    <string name="vm_pick_not_loaded">Não foi possível carregar a lista %1$s.</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">%1$d mudança restaurada.</item>
+        <item quantity="other">%1$d mudanças restauradas.</item>
     </plurals>
 
     <!-- A reason shown mid-sentence after an app's name, so lower case -->
@@ -760,14 +833,10 @@
     <string name="data_uninstall_after_service">%1$s. Nada foi desinstalado</string>
     <!-- %1$s is a lowercase reason. -->
     <string name="data_uninstall_home_not_back">o Início não voltou: %1$s. Nada foi desinstalado</string>
+    <string name="data_restore_home">Início</string>
+    <string name="data_restore_dns">DNS privado</string>
+    <string name="data_restore_animations">Velocidade das animações</string>
 
-    <!-- %1$s is a lowercase reason. -->
-    <string name="data_restore_none">não deu para reativar os apps: %1$s</string>
-    <!-- %2$s is a lowercase reason. -->
-    <plurals name="data_restore_some">
-        <item quantity="one">reativei %1$d app e parei: %2$s</item>
-        <item quantity="other">reativei %1$d apps e parei: %2$s</item>
-    </plurals>
 
     <string name="data_no_reset_to_undo">não há restauração para desfazer</string>
     <string name="data_reset_already_undone">essa restauração já foi desfeita</string>
@@ -797,6 +866,7 @@
 
     <!-- History lines, saved with the entry in the language of the moment. -->
     <string name="data_history_service_off">Desliguei o serviço de acessibilidade de %1$s</string>
+    <string name="data_history_service_on">Ativei o serviço de acessibilidade de %1$s</string>
     <string name="data_history_reset_undone">Desfiz o que a Restauração da TV mudou</string>
     <plurals name="data_history_reset">
         <item quantity="one">Restaurar a TV · %1$d mudança</item>
@@ -860,7 +930,8 @@
         <item quantity="one">%1$d app voltou a ficar ativo</item>
         <item quantity="other">%1$d apps voltaram a ficar ativos</item>
     </plurals>
-    <string name="tabs_note_unavailable">Verifique a internet do celular e abra esta TV de novo.</string>
+    <string name="tabs_note_unavailable">Verifique a internet do celular.</string>
+    <string name="tabs_try_again">Tentar de novo</string>
     <string name="tabs_note_no_list">Toque em Limpar para escolher à mão os apps a desativar.</string>
     <!-- %1$s is a TV maker, like XGIMI -->
     <string name="tabs_note_by_maker">Não há lista para este modelo exato, então estas vêm de outras TVs %1$s.</string>
@@ -871,6 +942,8 @@
     <!-- %1$s is a month and year, like March 2026 -->
     <string name="tabs_updated">Atualizado em %1$s</string>
     <string name="tabs_check_updates">Procurar atualizações</string>
+    <string name="tabs_store_sub">Baixe apps e atualizações de apps</string>
+    <string name="tabs_store_off">Desativada nesta TV</string>
 
     <!-- ListsCard.kt: the Debloat screen and About -->
     <!-- Title of the group of the TV's own apps when no debloat list fits the TV -->
@@ -887,7 +960,9 @@
     <string name="lists_clear_search">Limpar busca</string>
     <!-- %1$s is what the user searched for -->
     <string name="lists_no_match">Nenhuma lista para “%1$s”. Escolha o modelo mais próximo.</string>
-    <string name="lists_unavailable">Não foi possível carregar essa lista. Verifique a internet do celular e tente de novo.</string>
+    <string name="lists_failed">Não foi possível carregar a lista</string>
+    <string name="lists_failed_hint">Verifique a internet do celular e tente de novo.</string>
+    <string name="lists_try_again">Tentar de novo</string>
     <string name="lists_loading">Carregando a lista…</string>
     <string name="lists_this_tv">Esta TV</string>
     <string name="lists_match_none">Ainda não há lista para esta TV ou seu fabricante</string>
@@ -917,7 +992,7 @@
         <item quantity="one">Desativar %1$d app?</item>
         <item quantity="other">Desativar %1$d apps?</item>
     </plurals>
-    <string name="lists_disable_text">Cada um fica oculto e para de rodar. Nada é apagado; todos aparecem no Histórico, onde você pode reativar.</string>
+    <string name="lists_disable_text">Cada um é desativado e para de rodar. Nada é apagado; todos aparecem no Histórico, onde você pode reativar.</string>
     <string name="lists_disable_yes">Sim, desativar</string>
     <string name="lists_cancel">Cancelar</string>
     <string name="lists_about_title">Sobre o Tellyscope</string>
@@ -934,18 +1009,76 @@
     <!-- AdvancedScreen.kt: Advanced monitor -->
     <string name="advanced_back">Voltar para a página da TV</string>
     <string name="advanced_this_tv">Esta TV</string>
-    <string name="advanced_ip_address">Endereço IP</string>
-    <string name="advanced_port">Porta</string>
-    <string name="advanced_maker">Fabricante</string>
-    <string name="advanced_network_name">Nome da rede</string>
+    <string name="advanced_offline_as_of">Offline · em %1$s</string>
+    <string name="advanced_busiest">Mais ocupados</string>
+    <string name="advanced_copy_mac">Copiar endereço MAC</string>
+    <string name="advanced_signal_strong_word">Forte</string>
+    <string name="advanced_signal_good_word">Bom</string>
+    <string name="advanced_signal_weak_word">Fraco</string>
+    <string name="advanced_signal_very_weak_word">Muito fraco</string>
+    <string name="advanced_not_running">Não está rodando</string>
+    <string name="advanced_split_apps">Apps</string>
+    <string name="advanced_split_system">Sistema</string>
+    <string name="advanced_split_waiting">Esperando o armazenamento</string>
+    <string name="advanced_core">Núcleo %1$d</string>
+    <string name="advanced_ghz">%1$.1f GHz</string>
+    <string name="advanced_in_use">Em uso</string>
+    <string name="advanced_cached">Em cache</string>
+    <string name="advanced_free">Livre</string>
+    <string name="advanced_swap">Swap %1$s de %2$s</string>
+    <string name="advanced_wifi_on">Wi-Fi · %1$s</string>
+    <string name="advanced_since_boot">Desde a inicialização ↓ %1$s ↑ %2$s</string>
+    <string name="advanced_minute_ago">60 s atrás</string>
+    <string name="advanced_now">agora</string>
+    <string name="advanced_cpu_share">%1$.0f%% de CPU</string>
+    <string name="advanced_since_boot_short">%1$s desde a inicialização</string>
+    <string name="advanced_processes_n">Processos · %1$d</string>
+    <string name="advanced_connections_n">Conexões abertas · %1$d</string>
+    <string name="advanced_established">Estabelecida</string>
+    <string name="advanced_connecting">Conectando</string>
+    <string name="advanced_closing">Fechando</string>
+    <plurals name="advanced_cores">
+        <item quantity="one">%1$d núcleo</item>
+        <item quantity="other">%1$d núcleos</item>
+    </plurals>
+    <plurals name="advanced_processes">
+        <item quantity="one">%1$d processo</item>
+        <item quantity="other">%1$d processos</item>
+    </plurals>
+    <plurals name="advanced_connections">
+        <item quantity="one">%1$d conexão</item>
+        <item quantity="other">%1$d conexões</item>
+    </plurals>
+    <plurals name="advanced_open_connections">
+        <item quantity="one">%1$d conexão aberta</item>
+        <item quantity="other">%1$d conexões abertas</item>
+    </plurals>
+    <plurals name="advanced_apps_running">
+        <item quantity="one">%1$d app rodando</item>
+        <item quantity="other">%1$d apps rodando</item>
+    </plurals>
+    <string name="shell_open">Shell</string>
+    <string name="shell_close">Fechar o Shell</string>
+    <string name="shell_title">%1$s · %2$s</string>
+    <string name="shell_banner">Conectado a %1$s (%2$s).\nDigite exit ou toque em ✕ para fechar.</string>
+    <string name="shell_trimmed">Linhas anteriores removidas: mostrando as últimas %1$d.</string>
+    <string name="shell_offline_hint">Os comandos voltam a rodar quando a TV voltar.</string>
+    <string name="shell_key_paste">Colar</string>
+    <string name="shell_key_up">Comando anterior</string>
+    <string name="shell_key_down">Próximo comando</string>
+    <string name="shell_confirm">Isto muda a TV. Executar? [y/N]</string>
+    <string name="shell_confirm_answered">Isto muda a TV. Executar? [y/N] %1$s</string>
+    <string name="shell_no_history">O que roda no Shell não entra no Histórico, então não dá para desfazer com um toque.</string>
+    <string name="shell_not_run">Não executado.</string>
+    <string name="shell_not_shell">Só comandos adb shell rodam aqui.</string>
+    <string name="shell_full_screen">%1$s precisa de um terminal em tela cheia. Isso não é suportado aqui.</string>
+    <string name="shell_dropped_prefix">(\"adb shell\" removido)</string>
+    <string name="shell_lost">A TV caiu antes de o comando terminar. Ele pode ter rodado só em parte.</string>
+    <string name="shell_failed">Erro no Shell: %1$s. O comando pode ter rodado só em parte. O próximo abre um novo shell.</string>
     <string name="advanced_loading">Carregando estatísticas…</string>
-    <string name="advanced_cpu_by_app">CPU por app</string>
-    <string name="advanced_ram_by_app">RAM por app</string>
-    <string name="advanced_processes">Processos</string>
     <string name="advanced_network">Rede</string>
     <string name="advanced_cpu">CPU</string>
-    <string name="advanced_ram">RAM</string>
-    <string name="advanced_app">App</string>
+    <string name="advanced_ram">Memória</string>
     <!-- How long the TV has been on, like "2d 4h" -->
     <string name="advanced_on_for">Ligada há</string>
     <string name="advanced_screen">Tela</string>
@@ -953,14 +1086,8 @@
     <string name="advanced_screen_off">Desligada</string>
     <string name="advanced_percent">%1$d%%</string>
     <string name="advanced_percent_whole">%1$.0f%%</string>
-    <string name="advanced_percent_tenths">%1$.1f%%</string>
-    <!-- %1$s is how long ago, like "5 minutes ago" -->
-    <string name="advanced_as_of">Em %1$s</string>
     <string name="advanced_memory">Memória</string>
     <string name="advanced_storage">Armazenamento</string>
-    <string name="advanced_percent_used">%1$d%% usado</string>
-    <!-- The bar that sums every app outside the top 6 -->
-    <string name="advanced_other">Outros</string>
     <string name="advanced_connection">Conexão</string>
     <string name="advanced_wifi">Wi-Fi</string>
     <string name="advanced_ethernet">Ethernet</string>
@@ -970,10 +1097,10 @@
     <string name="advanced_signal_weak">Fraco (%1$d dBm)</string>
     <string name="advanced_signal_very_weak">Muito fraco (%1$d dBm)</string>
     <string name="advanced_mac">MAC</string>
-    <string name="advanced_link_speed">Velocidade do link</string>
     <string name="advanced_mbps">%1$d Mbps</string>
-    <string name="advanced_data_used">Dados usados</string>
-    <string name="advanced_open_connections">Conexões abertas</string>
+    <string name="advanced_copy_address">Copiar endereço</string>
+    <string name="advanced_android">Android</string>
+    <string name="advanced_updated">Atualizado</string>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Ajude a adicionar esta TV</string>
@@ -1019,6 +1146,12 @@
     <string name="report_choose_one">Escolha um</string>
     <string name="report_removed_first">Removidos antes: números de série, endereços IP, chaves ADB e impressões digitais.</string>
     <string name="report_cancel">Cancelar</string>
+    <string name="report_discard_title">Descartar este relatório?</string>
+    <string name="report_discard_text">O que você escolheu e digitou será perdido.</string>
+    <string name="report_discard">Descartar</string>
+    <string name="report_keep_editing">Continuar editando</string>
+    <string name="report_no_browser">Nenhum navegador abriu, então nada foi publicado. Copie o link para publicar de outro aparelho.</string>
+    <string name="report_copy_link">Copiar link</string>
 
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
@@ -1027,18 +1160,15 @@
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s usados</string>
     <string name="device_cpu">CPU</string>
-    <string name="device_ram">RAM</string>
+    <string name="device_ram">Memória</string>
     <string name="device_network">Rede</string>
     <string name="device_percent">%1$d%%</string>
     <!-- %1$s is an app name -->
     <string name="device_disable_title">Desativar %1$s?</string>
     <string name="device_cancel">Cancelar</string>
-    <plurals name="device_restore_title">
-        <item quantity="one">Reativar %1$d app?</item>
-        <item quantity="other">Reativar %1$d apps?</item>
-    </plurals>
-    <string name="device_restore_text">Reativa todos os apps que o Tellyscope desativou nesta TV. Apps que já estavam desativados antes da primeira mudança do Tellyscope continuam desativados.</string>
-    <string name="device_restore_button">Reativar</string>
+    <string name="device_restore_title">Restaurar tudo?</string>
+    <string name="device_restore_text">Esta TV volta a ficar como estava antes da primeira mudança do Tellyscope:</string>
+    <string name="device_restore_button">Restaurar</string>
     <string name="device_rename_title">Renomear esta TV</string>
     <string name="device_rename_text">Só este celular vê o nome. Nada muda na TV.</string>
     <string name="device_save">Salvar</string>
@@ -1061,6 +1191,8 @@
     <string name="device_nothing_matches">Nada corresponde a \"%1$s\".</string>
     <string name="device_app_disabled">Desativado</string>
     <string name="device_app_running">Em execução</string>
+    <string name="device_app_background">Rodando em segundo plano</string>
+    <string name="device_app_on_screen">Na tela</string>
     <string name="device_app_not_running">Parado</string>
     <!-- %1$s is why the app can't be changed -->
     <string name="device_app_protected">Protegido: %1$s</string>
@@ -1090,7 +1222,14 @@
     <string name="guide_unlock_done">Opções do desenvolvedor liberadas</string>
     <string name="guide_find_title">Encontre sua TV</string>
     <string name="guide_done_next">Pronto, próximo</string>
-    <string name="guide_back">Voltar</string>
+    <!-- Screen-reader names for the arrow on a finished step: opens its instructions again -->
+    <string name="guide_show_step">Mostrar esta etapa</string>
+    <string name="guide_hide_step">Ocultar esta etapa</string>
+    <!-- On the last step while the user is still on an earlier one: the scan found a TV -->
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV encontrada, pular adiante</item>
+        <item quantity="other">%1$d TVs encontradas, pular adiante</item>
+    </plurals>
     <string name="guide_done">Pronto</string>
     <string name="guide_tip_same_wifi">Mantenha o celular e a TV no mesmo Wi-Fi. Redes de visitantes costumam separar os dispositivos.</string>
     <string name="guide_tip_debugging_off">A depuração desligou sozinha? Algumas TVs a desligam depois de reiniciar. Ative de novo e esta tela acha a TV.</string>
@@ -1129,6 +1268,11 @@
     <string name="remote_mute">Silenciar ou ativar som</string>
     <string name="remote_volume_up">Aumentar volume</string>
     <string name="remote_volume_down">Diminuir volume</string>
+    <string name="remote_volume_fixed">O volume é fixo pelo HDMI. Use o controle da TV.</string>
+    <string name="remote_dpad">Direcional</string>
+    <string name="remote_touchpad">Touchpad</string>
+    <string name="remote_touchpad_swipe">Deslize para mover</string>
+    <string name="remote_touchpad_tap">Toque para OK</string>
     <string name="remote_back">Voltar</string>
     <string name="remote_home">Início</string>
     <string name="remote_menu">Menu</string>
@@ -1140,12 +1284,12 @@
     <string name="remote_type_label">Digite na TV</string>
     <string name="remote_send">Enviar para a TV</string>
     <!-- Confirms restarting the TV -->
-    <string name="remote_restart">Reiniciar</string>
+    <string name="remote_restart">Reiniciar a TV</string>
     <string name="remote_cancel">Cancelar</string>
     <string name="remote_restarting">Reiniciando</string>
     <string name="remote_hide">Ocultar</string>
     <string name="remote_retry">Tentar de novo</string>
-    <string name="remote_close">Fechar</string>
+    <string name="remote_stop_waiting">Parar de esperar</string>
     <!-- TalkBack click label on the header line while a TV restarts -->
     <string name="remote_show_restart">Mostrar a reinicialização</string>
     <!-- TalkBack actions that reorder a remote button -->
@@ -1183,7 +1327,7 @@
     <string name="whats_new_update">Atualizar</string>
     <string name="whats_new_not_installed">Não instalada</string>
     <string name="whats_new_newer_failed">Falha ao carregar versões novas.</string>
-    <string name="settings_advanced">Avançado</string>
+    <string name="settings_advanced">Listas de limpeza</string>
     <!-- Heading: how to change where the debloat lists come from -->
     <string name="settings_change">Mudar</string>
     <string name="settings_change_text">Cole a pasta HTTPS bruta que contém o index.json, ex.: raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
@@ -1194,6 +1338,7 @@
     <string name="settings_open_cleanyourtv">Abrir o cleanyourtv no GitHub</string>
     <string name="settings_source_title">De onde vêm as listas</string>
     <string name="settings_source_text">Para usar suas listas, faça um fork do tellyscope-devices, edite e cole o endereço da pasta que contém o index.json, como https://raw.githubusercontent.com/you/tellyscope-devices/main/. Apps protegidos continuam protegidos, diga o que disser a lista.</string>
+    <string name="settings_checking">Verificando…</string>
     <string name="settings_use_lists">Usar estas listas</string>
     <string name="settings_reset">Voltar ao padrão</string>
     <string name="settings_cancel">Cancelar</string>
@@ -1287,6 +1432,7 @@
     <string name="scan_back">Voltar</string>
     <string name="scan_title">Adicione sua TV</string>
     <string name="scan_no_lan">Você não está no Wi-Fi, então só aparecem TVs que se anunciam. Entre no Wi-Fi da sua TV.</string>
+    <string name="scan_vpn">Uma VPN está ligada, então o Tellyscope não consegue procurar no seu Wi-Fi. TVs que se anunciam ainda aparecem. Adicione sua TV pelo endereço IP ou permita o acesso à rede local no app da VPN.</string>
     <string name="scan_same_wifi">Mantenha o celular e a TV no mesmo Wi-Fi.</string>
     <string name="scan_add_by_ip">Adicionar por IP</string>
     <string name="scan_cant_find">Não acha sua TV?</string>
@@ -1344,7 +1490,13 @@
     <!-- History -->
     <string name="history_empty_title">Nada mudou ainda</string>
     <string name="history_empty_text">Tudo o que você parar, desativar ou ativar aparece aqui, com um jeito de desfazer.</string>
-    <string name="history_restoring">Reativando apps…</string>
+    <string name="history_restoring">Restaurando…</string>
+    <string name="history_ok">OK</string>
+    <string name="history_no_undo_caches">Nada para desfazer: os apps enchem o cache de novo</string>
+    <string name="history_no_undo_uninstall">Não dá para desfazer: instale de novo pela Play Store</string>
+    <string name="history_no_undo_uninstall_fire">Não dá para desfazer: instale de novo pela Appstore</string>
+    <string name="history_no_undo_later">Não dá para desfazer: o Início mudou depois disso</string>
+    <string name="history_no_undo">Não dá para desfazer este</string>
     <!-- Button; the number is how many apps are still off. -->
     <string name="history_restore_all">Restaurar tudo (%1$d)</string>
     <string name="history_undone">Desfeito</string>
