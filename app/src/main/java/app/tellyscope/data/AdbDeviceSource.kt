@@ -553,6 +553,7 @@ class AdbDeviceSource(
                 homeServiceOff = serviceOff && p.name == homeOptions?.current,
                 homeServiceNote = note && p.name == homeOptions?.current,
                 listKeep = p.name in keep,
+                warn = SharedLists.warn[p.name],
                 launchable = p.name in launchable,
                 tvHome = p.name in tvHome,
             )
@@ -1036,10 +1037,15 @@ class AdbDeviceSource(
             r.index == null -> Suggestions.Unavailable()
             r.match == ListMatch.None -> Suggestions.NoList(r.index.commit, r.index.devices)
             r.list == null -> Suggestions.Unavailable(r.index.devices)
-            else -> Suggestions.Ready(
-                r.index.commit, r.list, r.sdk, suggest(r.list, apps(), r.sdk), r.index.devices,
-                byMaker = r.match is ListMatch.Maker,
-            )
+            else -> {
+                val tvApps = apps()
+                val hidden = lists.hidden(key(deviceId))
+                Suggestions.Ready(
+                    r.index.commit, r.list, r.sdk, suggest(r.list, tvApps, r.sdk, hidden), r.index.devices,
+                    byMaker = r.match is ListMatch.Maker,
+                    hidden = notSuggested(r.list, tvApps, hidden),
+                )
+            }
         }
     } catch (e: CancellationException) {
         throw e
@@ -1054,6 +1060,9 @@ class AdbDeviceSource(
         keep.remove(key)
         return was
     }
+
+    override suspend fun hideSuggested(deviceId: String, packages: Collection<String>, hide: Boolean) =
+        lists.hide(key(deviceId), packages, hide)
 
     override suspend fun listSource(): String? = lists.custom()
 

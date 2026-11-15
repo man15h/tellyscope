@@ -923,6 +923,10 @@
         <item quantity="other">%1$d of %2$d suggested apps are disabled</item>
     </plurals>
     <string name="tabs_suggested_no_list">No list for this TV yet</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d not suggested</item>
+        <item quantity="other">%1$d not suggested</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">Couldn\'t load the device lists</string>
     <string name="tabs_suggested_offline">Connect to the TV to see its suggestions</string>
     <string name="tabs_suggested_loading">Looking up this TV\'s list…</string>
@@ -1001,6 +1005,17 @@
     <string name="lists_disable_text">Each one is disabled and stops running. Nothing is deleted; every one shows in History, where you can enable it again.</string>
     <string name="lists_disable_yes">Yes, disable them</string>
     <string name="lists_cancel">Cancel</string>
+    <string name="lists_dont_suggest_one">Don\'t suggest %1$s again</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">Don\'t suggest the %1$d unticked app again</item>
+        <item quantity="other">Don\'t suggest the %1$d unticked apps again</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d of these may break something on the TV.</item>
+        <item quantity="other">%1$d of these may break something on the TV.</item>
+    </plurals>
+    <string name="lists_not_suggested">Not suggested (%1$d)</string>
+    <string name="lists_suggest_again">Suggest again</string>
     <string name="lists_about_title">About Tellyscope</string>
     <string name="lists_about_version">Version %1$s</string>
     <string name="lists_about_website">Website</string>
@@ -1119,6 +1134,11 @@
     <string name="shell_dropped_prefix">(dropped \"adb shell\")</string>
     <string name="shell_lost">Lost the TV before the command finished. It may have run only partly.</string>
     <string name="shell_failed">Shell error: %1$s. The command may have run only partly. The next one starts a new shell.</string>
+    <string name="shell_copy_all">Copy all</string>
+    <plurals name="shell_copied">
+        <item quantity="one">Copied %1$d line</item>
+        <item quantity="other">Copied %1$d lines</item>
+    </plurals>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Help add this TV</string>

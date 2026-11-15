@@ -702,6 +702,9 @@
         <item quantity="other">%1$d 个推荐应用已停用（共 %2$d 个）</item>
     </plurals>
     <string name="tabs_suggested_no_list">暂无此电视的列表</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="other">%1$d 个不再建议</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">无法加载设备列表</string>
     <string name="tabs_suggested_offline">连接到电视即可查看建议</string>
     <string name="tabs_suggested_loading">正在查找此电视的列表…</string>
@@ -761,6 +764,15 @@
     <string name="lists_disable_text">每个应用都会被停用并停止运行。不会删除任何内容；每一项都会显示在“历史记录”中，你可以在那里重新启用。</string>
     <string name="lists_disable_yes">是，停用</string>
     <string name="lists_cancel">取消</string>
+    <string name="lists_dont_suggest_one">不再建议停用 %1$s</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="other">不再建议停用这 %1$d 个未勾选的应用</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="other">其中 %1$d 个可能会让电视的某些功能失效。</item>
+    </plurals>
+    <string name="lists_not_suggested">不再建议（%1$d）</string>
+    <string name="lists_suggest_again">重新建议</string>
     <string name="lists_about_title">关于 Tellyscope</string>
     <string name="lists_about_version">版本 %1$s</string>
     <string name="lists_about_website">网站</string>
@@ -858,6 +870,10 @@
     <string name="shell_dropped_prefix">（已去掉“adb shell”）</string>
     <string name="shell_lost">命令完成前与电视断开连接。它可能只运行了一部分。</string>
     <string name="shell_failed">Shell 出错：%1$s。命令可能只运行了一部分。下一条命令会打开新的 shell。</string>
+    <string name="shell_copy_all">全部复制</string>
+    <plurals name="shell_copied">
+        <item quantity="other">已复制 %1$d 行</item>
+    </plurals>
     <string name="report_title_new_tv">帮忙添加这台电视</string>
     <string name="report_title_problem">报告问题</string>
     <string name="report_subtitle_new_tv">在 GitHub 上打开 cleanyourtv 的“My TV”表单</string>

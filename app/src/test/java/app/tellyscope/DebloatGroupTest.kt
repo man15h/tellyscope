@@ -41,7 +41,7 @@ class DebloatGroupTest {
     )
 
     @Test fun aHeadingTicksItsWholeGroupThenUnticksIt() {
-        compose.setContent { DebloatScreen(lists, {}, {}, {}) }
+        compose.setContent { DebloatScreen(lists, {}, { _, _ -> }, {}) }
         compose.onNodeWithText("1 of 2").assertExists()
         // Part-ticked: ticks every app, the optional one too.
         compose.onNodeWithText("Extras").performClick()
@@ -52,13 +52,40 @@ class DebloatGroupTest {
         compose.onNodeWithText("0 of 2").assertExists()
     }
 
+    @Test fun theUntickedAppsAreHiddenOnlyWhenTheBoxIsTicked() {
+        var got: Pair<List<String>, List<String>>? = null
+        compose.setContent { DebloatScreen(lists, {}, { apps, hide -> got = apps.map { it.packageName } to hide }, {}) }
+        compose.onNodeWithText("Disable 1 app").performClick()
+        compose.onNodeWithText("Don't suggest a.two again").performClick()
+        compose.onNodeWithText("Yes, disable them").performClick()
+        assertEquals(listOf("a.one") to listOf("a.two"), got)
+    }
+
+    @Test fun theBoxStartsOffAndShowsOnlyWithSomethingUnticked() {
+        var got: List<String>? = null
+        compose.setContent { DebloatScreen(lists, {}, { _, hide -> got = hide }, {}) }
+        compose.onNodeWithText("Extras").performClick()
+        compose.onNodeWithText("Disable 2 apps").performClick()
+        compose.onAllNodesWithText("Don't suggest", substring = true).assertCountEquals(0)
+        compose.onNodeWithText("Yes, disable them").performClick()
+        assertEquals(emptyList<String>(), got)
+    }
+
+    @Test fun aHiddenAppComesBackWithSuggestAgain() {
+        val again = mutableListOf<String>()
+        compose.setContent { DebloatScreen(lists.copy(hidden = listOf(app("a.three", ticked = false))), {}, { _, _ -> }, {}, onSuggestAgain = { again += it }) }
+        compose.onNodeWithText("Not suggested (1)").performClick()
+        compose.onNodeWithText("Suggest again").performClick()
+        assertEquals(listOf("a.three"), again)
+    }
+
     @Test fun theTvsOwnLauncherIsNeverListed() {
         val stock = AppInfo("l.home", "Stock home", null, true, true, null, "1.0", builtInLauncher = true)
         val other = AppInfo("a.one", "One", null, true, true, null, "1.0")
         val list = DeviceList("test-tv", "Test TV", null, 30, emptySet(), listOf(ListGroup("Home", listOf(ListPackage("l.home", null, false), ListPackage("a.one", null, false)))))
         assertEquals(listOf("a.one"), suggest(list, listOf(stock, other), 30).flatMap { it.packages }.map { it.pkg })
         // With no list, the TV's own apps to pick from leave it out too.
-        compose.setContent { DebloatScreen(Suggestions.NoList(null, emptyList()), {}, {}, {}, tvApps = listOf(stock, other)) }
+        compose.setContent { DebloatScreen(Suggestions.NoList(null, emptyList()), {}, { _, _ -> }, {}, tvApps = listOf(stock, other)) }
         compose.onAllNodesWithText("Stock home").assertCountEquals(0)
         compose.onNodeWithText("One").assertExists()
     }

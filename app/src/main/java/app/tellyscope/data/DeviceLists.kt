@@ -136,7 +136,15 @@ data class DeviceList(
     val groups: List<ListGroup>,
 )
 
-data class Suggested(val pkg: String, val label: String, val note: String?, val optional: Boolean, val ticked: Boolean)
+data class Suggested(
+    val pkg: String,
+    val label: String,
+    val note: String?,
+    val optional: Boolean,
+    val ticked: Boolean,
+    /** What turning it off breaks ([AppInfo.warn]). */
+    val warn: String? = null,
+)
 
 data class SuggestedGroup(val title: String, val packages: List<Suggested>)
 
@@ -161,6 +169,8 @@ sealed interface Suggestions {
         val devices: List<ListEntry>,
         /** [list] is [merge] of the maker's lists, as no list fits this model. */
         val byMaker: Boolean = false,
+        /** Apps on [list] the user asked not to see again on this TV, left out of [groups]; each can come back. */
+        val hidden: List<Suggested> = emptyList(),
     ) : Suggestions {
         val sdkMatches get() = sdk != null && sdk == list.sdk
     }
@@ -252,21 +262,33 @@ fun parseList(text: String, id: String): DeviceList? = try {
 
 /**
  * The list cut down to this TV: only apps it actually has, still on, and not protected (built in
- * or by the list's keep), and never one of the TV's own launchers. Pre-ticked only for
- * non-optional entries on a TV with the SDK the list was tested on. Groups with the same title become one, and an app shows once, in its first group,
+ * or by the list's keep), and never one of the TV's own launchers or one in [hidden]. Pre-ticked only for
+ * non-optional entries with no warning, on a TV with the SDK the list was tested on. Groups with the same title become one, and an app shows once, in its first group,
  * since the screen keys rows by title and package.
  */
-fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGroup> {
+fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?, hidden: Set<String> = emptySet()): List<SuggestedGroup> {
     val installed = apps.associateBy { it.packageName }
     val tick = sdk != null && sdk == list.sdk
     val seen = mutableSetOf<String>()
     return list.groups.groupBy { it.title }.map { (title, gs) ->
         SuggestedGroup(title, gs.flatMap { it.packages }.mapNotNull { p ->
-            val app = installed[p.pkg]?.takeIf { it.enabled && it.protectedReason == null && !it.builtInLauncher && p.pkg !in list.keep }
-            app?.takeIf { seen.add(p.pkg) }?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional) }
+            offered(list, installed, p.pkg)?.takeIf { p.pkg !in hidden && seen.add(p.pkg) }
+                ?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional && it.warn == null, it.warn) }
         })
     }.filter { it.packages.isNotEmpty() }
 }
+
+/** The apps [suggest] leaves out for [hidden] alone, in the list's order: Debloat's "Not suggested". */
+fun notSuggested(list: DeviceList, apps: List<AppInfo>, hidden: Set<String>): List<Suggested> {
+    val installed = apps.associateBy { it.packageName }
+    return list.groups.flatMap { it.packages }.distinctBy { it.pkg }.filter { it.pkg in hidden }.mapNotNull { p ->
+        offered(list, installed, p.pkg)?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = false, it.warn) }
+    }
+}
+
+/** [pkg] when this TV has it, on, and Tellyscope may offer to turn it off. */
+private fun offered(list: DeviceList, installed: Map<String, AppInfo>, pkg: String): AppInfo? =
+    installed[pkg]?.takeIf { it.enabled && it.protectedReason == null && !it.builtInLauncher && pkg !in list.keep }
 
 /**
  * Fetches and caches the index, device files, lists and logos under [dir], from [default] or the
@@ -287,6 +309,7 @@ class DeviceLists(
     private val lock = Mutex()
     private var index: ListIndex? = null
     private val picks = File(dir, "picks.tsv")
+    private val hiddenFile = File(dir, "hidden.tsv")
     private val sourceFile = File(dir, "source.txt")
     /** The newest signed [ListIndex.version] seen: an older index, even one signed, is never [ListIndex.signed] again. */
     private val floorFile = File(dir, "version.txt")
@@ -471,6 +494,27 @@ class DeviceLists(
 
     private fun readPicks(): Map<String, String> = if (!picks.exists()) emptyMap() else
         picks.readLines().mapNotNull { l -> l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+
+    /** The apps the user asked Debloat not to suggest again on the TV [key], whichever list it uses. Kept on this phone only. */
+    @Synchronized
+    fun hidden(key: String): Set<String> = readHidden()[key].orEmpty()
+
+    /** Stops suggesting [pkgs] on [key] with [hide], or suggests them again without. */
+    @Synchronized
+    fun hide(key: String, pkgs: Collection<String>, hide: Boolean) {
+        dir.mkdirs()
+        val all = readHidden()
+        val now = all[key].orEmpty().let { if (hide) it + pkgs.filter(PACKAGE::matches) else it - pkgs.toSet() }
+        val next = if (now.isEmpty()) all - key else all + (key to now)
+        val tmp = File(dir, "hidden.tsv.tmp")
+        tmp.writeText(next.entries.joinToString("") { (k, v) -> "$k\t${v.sorted().joinToString(",")}\n" })
+        tmp.renameTo(hiddenFile)
+    }
+
+    private fun readHidden(): Map<String, Set<String>> = if (!hiddenFile.exists()) emptyMap() else
+        hiddenFile.readLines().mapNotNull { l ->
+            l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1].split(',').filter(PACKAGE::matches).toSet() }
+        }.toMap()
 
     private suspend fun <T> attempt(block: suspend () -> T): T? = try {
         block()

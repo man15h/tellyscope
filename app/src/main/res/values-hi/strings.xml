@@ -745,6 +745,10 @@
         <item quantity="other">सुझाए गए %2$d ऐप में से %1$d बंद हैं</item>
     </plurals>
     <string name="tabs_suggested_no_list">इस TV के लिए अभी कोई सूची नहीं है</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d सुझाव में नहीं</item>
+        <item quantity="other">%1$d सुझाव में नहीं</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">डिवाइस सूचियां लोड नहीं हो सकीं</string>
     <string name="tabs_suggested_offline">TV के सुझाव देखने के लिए उससे कनेक्ट करें</string>
     <string name="tabs_suggested_loading">इस TV की सूची ढूंढी जा रही है…</string>
@@ -807,6 +811,17 @@
     <string name="lists_disable_text">हर ऐप बंद हो जाएगा और उसका चलना रुक जाएगा। कुछ भी मिटाया नहीं जाता; हर ऐप इतिहास में दिखेगा, जहां से आप उसे फिर से चालू कर सकते हैं।</string>
     <string name="lists_disable_yes">हां, बंद करें</string>
     <string name="lists_cancel">रद्द करें</string>
+    <string name="lists_dont_suggest_one">%1$s को फिर से सुझाव में न दिखाएं</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">बिना टिक वाले %1$d ऐप को फिर से सुझाव में न दिखाएं</item>
+        <item quantity="other">बिना टिक वाले %1$d ऐप को फिर से सुझाव में न दिखाएं</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">इनमें से %1$d से टीवी में कुछ काम करना बंद हो सकता है।</item>
+        <item quantity="other">इनमें से %1$d से टीवी में कुछ काम करना बंद हो सकता है।</item>
+    </plurals>
+    <string name="lists_not_suggested">सुझाव में नहीं (%1$d)</string>
+    <string name="lists_suggest_again">फिर से सुझाएं</string>
     <string name="lists_about_title">Tellyscope के बारे में</string>
     <string name="lists_about_version">वर्शन %1$s</string>
     <string name="lists_about_website">वेबसाइट</string>
@@ -909,6 +924,11 @@
     <string name="shell_dropped_prefix">(\"adb shell\" हटाया)</string>
     <string name="shell_lost">कमांड पूरी होने से पहले TV से कनेक्शन टूट गया। हो सकता है वह सिर्फ़ आधी चली हो।</string>
     <string name="shell_failed">शेल में गड़बड़ी: %1$s। हो सकता है कमांड सिर्फ़ आधी चली हो। अगली कमांड नया शेल खोलेगी।</string>
+    <string name="shell_copy_all">सब कॉपी करें</string>
+    <plurals name="shell_copied">
+        <item quantity="one">%1$d लाइन कॉपी की गई</item>
+        <item quantity="other">%1$d लाइनें कॉपी की गईं</item>
+    </plurals>
     <string name="report_title_new_tv">इस TV को जोड़ने में मदद करें</string>
     <string name="report_title_problem">समस्या की शिकायत करें</string>
     <string name="report_subtitle_new_tv">GitHub पर cleanyourtv का “My TV” फ़ॉर्म खोलता है</string>

@@ -152,12 +152,37 @@ fun parseProtected(text: String): Map<String, ProtectedReason> = try {
     emptyMap()
 }
 
+/** A `warn` line is one line, shown as it is: at most this long. */
+internal const val WARN_MAX = 120
+
+/**
+ * Package to what turning it off takes with it, from `protected.json`'s optional `warn`; its groups
+ * are only there for people reading the file. A package the file's own groups or the built-in
+ * rules ([Protected]) protect gets no line: it can't be turned off. Empty unless it is schema 1.
+ */
+fun parseWarn(text: String): Map<String, String> = try {
+    val o = jsonObject(text)
+    val protected = parseProtected(text)
+    if (o.optInt("schema") != 1) emptyMap() else buildMap {
+        o.optJSONArray("warn")?.objectsOrSkip { it.getJSONObject("packages") }?.forEach { packages ->
+            for (pkg in packages.keys()) {
+                if (!PACKAGE.matches(pkg) || pkg in protected || Protected.reason(pkg) != null) continue
+                packages.optStringOrNull(pkg)?.let { plainText(it, WARN_MAX) }?.ifEmpty { null }?.let { putIfAbsent(pkg, it) }
+            }
+        }
+    }
+} catch (_: org.json.JSONException) {
+    emptyMap()
+}
+
 /** The launcher, app name, streaming and protected lists, as [SharedLists] holds them. */
 data class Shared(
     val launchers: List<KnownLauncher> = emptyList(),
     val labels: Map<String, String> = emptyMap(),
     val streaming: List<StreamingService> = emptyList(),
     val protected: Map<String, ProtectedReason> = emptyMap(),
+    /** What turning a package off breaks, from the same `protected.json` ([parseWarn]). */
+    val warn: Map<String, String> = emptyMap(),
     /**
      * `data/`'s address ([DeviceLists.base]) while it fails its check ([DeviceLists.verified]): a bad or missing
      * signature, an older version, or a file that doesn't match the index. Null once it passes.
@@ -181,6 +206,8 @@ object SharedLists {
     val launchers get() = _state.value.launchers
     val labels get() = _state.value.labels
     val streaming get() = _state.value.streaming
+    /** [Shared.warn]: the line an app shows wherever it can be turned off. */
+    val warn get() = _state.value.warn
     /** `data/`'s address while it fails its check, or null: installing a launcher from it asks first. */
     val unverified get() = _state.value.unverified
     /** Launchers whose accessibility service may go on ([KnownLauncher.accessibility]): none while `data/` fails its check. */
@@ -200,7 +227,7 @@ object SharedLists {
     suspend fun load(data: DeviceLists, lists: DeviceLists, fresh: Boolean = false) {
         this.data = data
         source = lists
-        if (fresh) reset(_state.value.copy(protected = emptyMap()))
+        if (fresh) reset(_state.value.copy(protected = emptyMap(), warn = emptyMap()))
         apply(data.cachedSnapshot(), lists.cachedSnapshot())
         refresh()
     }
@@ -228,13 +255,17 @@ object SharedLists {
         val launchers = data.shared("launchers")?.let(::parseLaunchers)
         val labels = data.shared("labels")?.let(::parseLabels)
         val streaming = data.shared("streaming")?.let(::parseStreaming)
-        val protected = source.shared("protected")?.let(::parseProtected)
+        val protectedText = source.shared("protected")
+        val protected = protectedText?.let(::parseProtected)
+        val warn = protectedText?.let(::parseWarn)
         _state.update { now ->
             now.copy(
                 launchers = launchers?.ifEmpty { null } ?: now.launchers,
                 labels = labels?.ifEmpty { null } ?: now.labels,
                 streaming = streaming?.ifEmpty { null } ?: now.streaming,
                 protected = protected?.ifEmpty { null } ?: now.protected,
+                // Only from a file that read as a protected list; that one may have no warnings at all.
+                warn = warn?.takeIf { !protected.isNullOrEmpty() } ?: now.warn,
                 unverified = if (verified) null else base,
             )
         }

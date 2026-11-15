@@ -384,6 +384,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             busy = state.device.busy != null,
             onHelpAdd = { vm.openReport(ReportKind.NewTv) },
             onRetry = vm::retryLists,
+            onSuggestAgain = vm::suggestAgain,
         )
     } else {
         DeviceTabsScreen(

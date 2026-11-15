@@ -169,6 +169,9 @@ interface DeviceSource {
      */
     suspend fun pickList(deviceId: String, listId: String?): String?
 
+    /** Debloat stops suggesting [packages] on this TV with [hide], or suggests them again without; kept on this phone. */
+    suspend fun hideSuggested(deviceId: String, packages: Collection<String>, hide: Boolean)
+
     /** Where the debloat lists come from, as the user set it; null for tellyscope-devices. */
     suspend fun listSource(): String?
 
