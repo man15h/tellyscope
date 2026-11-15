@@ -745,6 +745,10 @@
         <item quantity="other">Önerilen %2$d uygulamadan %1$d tanesi kapalı</item>
     </plurals>
     <string name="tabs_suggested_no_list">Bu TV için henüz liste yok</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d önerilmeyen</item>
+        <item quantity="other">%1$d önerilmeyen</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">Cihaz listeleri yüklenemedi</string>
     <string name="tabs_suggested_offline">Önerilerini görmek için TV\'ye bağlanın</string>
     <string name="tabs_suggested_loading">Bu TV\'nin listesi aranıyor…</string>
@@ -807,6 +811,17 @@
     <string name="lists_disable_text">Her biri gizlenir ve çalışmayı durdurur. Hiçbir şey silinmez; her biri Geçmiş\'te görünür ve oradan tekrar açabilirsiniz.</string>
     <string name="lists_disable_yes">Evet, devre dışı bırak</string>
     <string name="lists_cancel">İptal</string>
+    <string name="lists_dont_suggest_one">%1$s bir daha önerilmesin</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">İşaretlenmemiş %1$d uygulama bir daha önerilmesin</item>
+        <item quantity="other">İşaretlenmemiş %1$d uygulama bir daha önerilmesin</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">Bunlardan %1$d tanesi TV\'de bir şeyi bozabilir.</item>
+        <item quantity="other">Bunlardan %1$d tanesi TV\'de bir şeyi bozabilir.</item>
+    </plurals>
+    <string name="lists_not_suggested">Önerilmeyenler (%1$d)</string>
+    <string name="lists_suggest_again">Yeniden öner</string>
     <string name="lists_about_title">Tellyscope hakkında</string>
     <string name="lists_about_version">Sürüm %1$s</string>
     <string name="lists_about_website">Web sitesi</string>
@@ -909,6 +924,11 @@
     <string name="shell_dropped_prefix">(“adb shell” kısmı çıkarıldı)</string>
     <string name="shell_lost">Komut bitmeden TV bağlantısı kayboldu. Yalnızca kısmen çalışmış olabilir.</string>
     <string name="shell_failed">Kabuk hatası: %1$s. Komut yalnızca kısmen çalışmış olabilir. Sonraki komut yeni bir kabuk başlatır.</string>
+    <string name="shell_copy_all">Tümünü kopyala</string>
+    <plurals name="shell_copied">
+        <item quantity="one">%1$d satır kopyalandı</item>
+        <item quantity="other">%1$d satır kopyalandı</item>
+    </plurals>
     <string name="report_title_new_tv">TV\'yi listeye ekle</string>
     <string name="report_title_problem">Sorun bildir</string>
     <string name="report_subtitle_new_tv">GitHub\'da cleanyourtv\'nin “My TV” formunu açar</string>
