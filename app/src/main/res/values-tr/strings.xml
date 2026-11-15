@@ -344,6 +344,7 @@
     <string name="copy_more">Diğer seçenekler</string>
     <string name="copy_buttons_hint">En fazla %1$d tane seçin. Sırayı ayarlamak için sürükleyin. Başka birini seçmek için önce birinin işaretini kaldırın.</string>
     <string name="copy_not_on_tv">%1$s bu TV\'de yok. TV\'deki Play Store\'dan yükleyin.</string>
+    <string name="copy_not_on_tv_fire">%1$s bu TV\'de yok. TV\'deki Appstore\'dan yükleyin.</string>
     <string name="copy_cant_open">TV %1$s uygulamasını açamadı. Kapalıysa Uygulamalar\'dan açın.</string>
     <string name="copy_left_dock_one">%1$s kaldırıldı, bu yüzden düğmesi Kumanda\'dan çıkarıldı.</string>
     <plurals name="copy_left_dock">
@@ -507,6 +508,19 @@
         <item quantity="one">Geri yüklenecek %1$d değişiklik</item>
         <item quantity="other">Geri yüklenecek %1$d değişiklik</item>
     </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="one">%2$d değişiklikten %1$d tanesi geri yüklendi</item>
+        <item quantity="other">%2$d değişiklikten %1$d tanesi geri yüklendi</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="one">Bu değişiklik hâlâ Tellyscope\'un bıraktığı gibi:</item>
+        <item quantity="other">Bu %1$d değişiklik hâlâ Tellyscope\'un bıraktığı gibi:</item>
+    </plurals>
+    <string name="copy_restored_hint">Her birini Geçmiş\'teki satırından geri alın ya da daha sonra tekrar geri yükleyin.</string>
+    <plurals name="copy_and_more">
+        <item quantity="one">ve %1$d tane daha</item>
+        <item quantity="other">ve %1$d tane daha</item>
+    </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="one">Tellyscope\'un yaptığı %1$d değişiklik hâlâ geçerli</item>
         <item quantity="other">Tellyscope\'un yaptığı %1$d değişiklik hâlâ geçerli</item>
@@ -625,13 +639,11 @@
     <string name="vm_bad_port">İki noktadan sonraki port 1 ile 65535 arasında bir sayı olmalı; örneğin 5555.</string>
     <string name="vm_didnt_work">Bu işe yaramadı.</string>
     <string name="vm_nothing_to_put_back">Geri yüklenecek bir şey yok.</string>
+    <string name="vm_list_not_loaded">%1$s listesi yüklenemedi. Hâlâ %2$s listesi gösteriliyor.</string>
+    <string name="vm_pick_not_loaded">%1$s listesi yüklenemedi.</string>
     <plurals name="vm_put_back">
         <item quantity="one">%1$d değişiklik geri yüklendi.</item>
         <item quantity="other">%1$d değişiklik geri yüklendi.</item>
-    </plurals>
-    <plurals name="vm_put_back_partly">
-        <item quantity="one">%2$d değişiklikten %1$d tanesi geri yüklendi. %4$s geri dönmedi: %5$s</item>
-        <item quantity="other">%2$d değişiklikten %1$d tanesi geri yüklendi. %3$d tanesi geri dönmedi, aralarında %4$s var: %5$s</item>
     </plurals>
     <string name="vm_tv_refused">TV reddetti</string>
     <string name="vm_tv_didnt_answer">TV yanıt vermedi.</string>
@@ -743,6 +755,7 @@
         <item quantity="other">%1$d uygulama tekrar açıldı</item>
     </plurals>
     <string name="tabs_note_unavailable">Telefonun internet bağlantısını kontrol edip bu TV\'yi tekrar açın.</string>
+    <string name="tabs_try_again">Tekrar dene</string>
     <string name="tabs_note_no_list">Kapatılacak uygulamaları elle seçmek için Temizlik\'e dokunun.</string>
     <string name="tabs_note_by_maker">Tam olarak bu model için liste yok, bu yüzden bunlar %1$s markasının diğer TV\'lerinden geliyor.</string>
     <string name="tabs_note_gate">Temizlik artık tek seferlik değişiklikler için Uygulamalar\'ı açıyor.</string>
@@ -764,7 +777,9 @@
     <string name="lists_brand_or_model">Marka veya model</string>
     <string name="lists_clear_search">Aramayı temizle</string>
     <string name="lists_no_match">“%1$s” için liste yok. En yakın modeli seçin.</string>
-    <string name="lists_unavailable">O liste yüklenemedi. Telefonun internet bağlantısını kontrol edip tekrar deneyin.</string>
+    <string name="lists_failed">Liste yüklenemedi</string>
+    <string name="lists_failed_hint">Telefonun internet bağlantısını kontrol edip tekrar deneyin.</string>
+    <string name="lists_try_again">Tekrar dene</string>
     <string name="lists_loading">Liste yükleniyor…</string>
     <string name="lists_this_tv">Bu TV</string>
     <string name="lists_match_none">Bu TV ya da üreticisi için henüz liste yok</string>
@@ -893,6 +908,7 @@
     <string name="shell_full_screen">%1$s tam ekran bir terminal gerektiriyor. Burada desteklenmiyor.</string>
     <string name="shell_dropped_prefix">(“adb shell” kısmı çıkarıldı)</string>
     <string name="shell_lost">Komut bitmeden TV bağlantısı kayboldu. Yalnızca kısmen çalışmış olabilir.</string>
+    <string name="shell_failed">Kabuk hatası: %1$s. Komut yalnızca kısmen çalışmış olabilir. Sonraki komut yeni bir kabuk başlatır.</string>
     <string name="report_title_new_tv">TV\'yi listeye ekle</string>
     <string name="report_title_problem">Sorun bildir</string>
     <string name="report_subtitle_new_tv">GitHub\'da cleanyourtv\'nin “My TV” formunu açar</string>
@@ -933,6 +949,12 @@
     <string name="report_choose_one">Birini seçin</string>
     <string name="report_removed_first">Önce kaldırılanlar: seri numaraları, IP adresleri, ADB anahtarları ve parmak izleri.</string>
     <string name="report_cancel">İptal</string>
+    <string name="report_discard_title">Bu rapor silinsin mi?</string>
+    <string name="report_discard_text">Seçtikleriniz ve yazdıklarınız kaybolur.</string>
+    <string name="report_discard">Sil</string>
+    <string name="report_keep_editing">Düzenlemeye devam et</string>
+    <string name="report_no_browser">Tarayıcı açılmadı, bu yüzden hiçbir şey gönderilmedi. Başka bir cihazdan göndermek için bağlantıyı kopyalayın.</string>
+    <string name="report_copy_link">Bağlantıyı kopyala</string>
     <string name="device_as_of">Son durum: %1$s</string>
     <string name="device_internal_storage">Dahili depolama</string>
     <string name="device_gb_used">%1$s kullanılıyor</string>
@@ -942,10 +964,7 @@
     <string name="device_percent">%%%1$d</string>
     <string name="device_disable_title">%1$s kapatılsın mı?</string>
     <string name="device_cancel">İptal</string>
-    <plurals name="device_restore_title">
-        <item quantity="one">%1$d değişiklik geri yüklensin mi?</item>
-        <item quantity="other">%1$d değişiklik geri yüklensin mi?</item>
-    </plurals>
+    <string name="device_restore_title">Her şey geri yüklensin mi?</string>
     <string name="device_restore_text">Bu TV, Tellyscope\'un ilk değişikliğinden önceki hâline döner:</string>
     <string name="device_restore_button">Geri yükle</string>
     <string name="device_rename_title">TV\'yi yeniden adlandır</string>
@@ -1044,7 +1063,7 @@
     <string name="remote_restarting">Yeniden başlıyor</string>
     <string name="remote_hide">Gizle</string>
     <string name="remote_retry">Tekrar dene</string>
-    <string name="remote_close">Kapat</string>
+    <string name="remote_stop_waiting">Beklemeyi bırak</string>
     <string name="remote_show_restart">Süreci göster</string>
     <string name="remote_move_up">Yukarı taşı</string>
     <string name="remote_move_down">Aşağı taşı</string>
@@ -1084,6 +1103,7 @@
     <string name="settings_open_cleanyourtv">cleanyourtv\'yi GitHub\'da aç</string>
     <string name="settings_source_title">Listeler nereden geliyor</string>
     <string name="settings_source_text">Kendi listelerinizi kullanmak için tellyscope-devices\'ı fork\'layın, düzenleyin ve index.json dosyasını içeren klasörün adresini yapıştırın; örn. https://raw.githubusercontent.com/siz/tellyscope-devices/main/. Bir liste ne derse desin korumalı uygulamalar korumalı kalır.</string>
+    <string name="settings_checking">Kontrol ediliyor…</string>
     <string name="settings_use_lists">Bu listeleri kullan</string>
     <string name="settings_reset">Varsayılana sıfırla</string>
     <string name="settings_cancel">İptal</string>
@@ -1198,6 +1218,12 @@
     <string name="history_empty_title">Henüz hiçbir şey değişmedi</string>
     <string name="history_empty_text">Durdurduğunuz, devre dışı bıraktığınız ya da açtığınız her şey, geri alma seçeneğiyle birlikte burada görünür.</string>
     <string name="history_restoring">Geri yükleniyor…</string>
+    <string name="history_ok">Tamam</string>
+    <string name="history_no_undo_caches">Geri alınacak bir şey yok: uygulamalar önbelleklerini yeniden doldurur</string>
+    <string name="history_no_undo_uninstall">Geri alınamaz: Play Store\'dan tekrar yükleyin</string>
+    <string name="history_no_undo_uninstall_fire">Geri alınamaz: Appstore\'dan tekrar yükleyin</string>
+    <string name="history_no_undo_later">Geri alınamaz: bundan sonra ana ekran değişti</string>
+    <string name="history_no_undo">Bu geri alınamaz</string>
     <string name="history_restore_all">Her şeyi geri yükle (%1$d)</string>
     <string name="history_undone">Geri alındı</string>
     <string name="debloat_title">Temizlik</string>
