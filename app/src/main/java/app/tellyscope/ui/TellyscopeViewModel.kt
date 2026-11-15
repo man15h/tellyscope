@@ -735,7 +735,7 @@ class TellyscopeViewModel(
             )
         }
         // A TV that comes online mid-copy joins the list; switching pages would hide the copy's dialog and its Cancel.
-        if (transferJobs[_state.value.selectedId]?.isActive != true) select(device.id)
+        if (transferJobs[_state.value.selectedId]?.isActive != true) autoSelect(device.id)
     }
 
     /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
@@ -754,7 +754,29 @@ class TellyscopeViewModel(
         super.onCleared()
     }
 
+    /** The user picks [id]. The TV already on screen stays as it is: picking it again would drop what runs on it. */
     fun select(id: String?) {
+        if (id != null && id == _state.value.selectedId) return
+        show(id)
+    }
+
+    /** A launcher install, Debloat or Reset under way on the TV on screen, which [show] would drop. */
+    private val running: Boolean
+        get() = launcherJob?.isActive == true || _state.value.device.busy.let { it == DISABLING || it == RESETTING }
+
+    /**
+     * TV [id] came online. It's shown afresh, unless that would drop a run on the TV on screen: then
+     * the page stays, and if [id] is the TV on screen its reads start again under the run.
+     */
+    private fun autoSelect(id: String) {
+        if (!running) return show(id)
+        val now = _state.value.selected?.takeIf { it.id == id } ?: return
+        stopWatching()
+        watch(now)
+    }
+
+    /** Opens [id]'s page afresh, its reads started again; on the TV already on screen too, after a reconnect. */
+    private fun show(id: String?) {
         stopWatching()
         launcherJob?.cancel()
         // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
@@ -859,7 +881,7 @@ class TellyscopeViewModel(
         _state.update { s -> s.copy(devices = known, restarting = restarts(s.restarting, known)) }
         val now = _state.value.selected ?: return false
         if (now.state != DeviceState.Online || before == DeviceState.Online) return false
-        select(now.id)
+        autoSelect(now.id)
         return true
     }
 
@@ -868,7 +890,7 @@ class TellyscopeViewModel(
         viewModelScope.launch {
             source.reconnect(id)
             // A TV that came back is selected already; again would read it all twice.
-            if (!refreshDevices() || _state.value.selectedId != id) select(id)
+            if (!refreshDevices() || _state.value.selectedId != id) show(id)
         }
     }
 
@@ -1972,6 +1994,8 @@ class TellyscopeViewModel(
     /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */
     fun disableSuggested(apps: List<ResetApp>) {
         val id = _state.value.selectedId ?: return
+        // One run at a time on a TV, as with Reset: a second tap or a Debloat over a Reset does nothing.
+        if (_state.value.device.busy != null) return
         _state.update { it.copy(device = it.device.copy(busy = DISABLING, debloat = DebloatRun(apps))) }
         viewModelScope.launch {
             // One change for the whole list: the TV's stats are read again once, after the last app.

@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
@@ -39,13 +40,14 @@ private val KIDS = ResetApp("com.google.android.youtube.tvkids", "YouTube Kids")
 private val SPORTS = ResetApp("com.google.android.tvrecommendations.sports", "Sports")
 private val FEEDBACK = ResetApp("com.google.android.feedback", "Google Feedback")
 
-/** A TV that turns apps off when asked, except the ones in [refuse], and can hold the next one at [gate]. */
+/** A TV that turns apps off when asked, except the ones in [refuse], and can hold the next one at [gate]. It is [state] (online, or dropped). */
 private class RefusingTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val refuse = mutableMapOf<String, String>()
     val asked = mutableListOf<String>()
     var gate: CompletableDeferred<Unit>? = null
+    var state = DeviceState.Online
 
-    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
+    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), state, null, null, null, 0L))
 
     override fun live(deviceId: String): Flow<Snapshot> = emptyFlow()
 
@@ -136,5 +138,58 @@ class DebloatRunTest {
         runCurrent()
         vm.closeDebloat()
         assertNull(run)
+    }
+
+    /** Tapping the TV already on screen does nothing: the run and its progress stay. */
+    @Test fun pickingTheSameTvAgainKeepsTheRun() = with(test) {
+        open()
+        val gate = CompletableDeferred<Unit>()
+        source.gate = gate
+        vm.disableSuggested(listOf(KIDS, SPORTS))
+        runCurrent()
+        vm.select("tv")
+        runCurrent()
+        assertEquals(DISABLING, vm.state.value.device.busy)
+        assertEquals(listOf(KIDS, SPORTS), run!!.apps)
+        source.gate = null
+        gate.complete(Unit)
+        runCurrent()
+        assertTrue(run!!.ran)
+    }
+
+    /** The TV dropping and coming back mid-run doesn't reselect it over the run. */
+    @Test fun theTvComingBackMidRunKeepsTheRun() = with(test) {
+        open()
+        val gate = CompletableDeferred<Unit>()
+        source.gate = gate
+        vm.disableSuggested(listOf(KIDS, SPORTS))
+        runCurrent()
+        source.state = DeviceState.Offline
+        advanceTimeBy(3_100)
+        source.state = DeviceState.Online
+        advanceTimeBy(3_100)
+        assertEquals(DeviceState.Online, vm.state.value.selected?.state)
+        assertEquals(DISABLING, vm.state.value.device.busy)
+        assertEquals(listOf(KIDS, SPORTS), run!!.apps)
+        source.gate = null
+        gate.complete(Unit)
+        runCurrent()
+        assertTrue(run!!.ran)
+    }
+
+    /** A second Debloat started over a running one is refused: the first goes on with its own list. */
+    @Test fun aSecondDebloatIsRefusedWhileOneRuns() = with(test) {
+        open()
+        val gate = CompletableDeferred<Unit>()
+        source.gate = gate
+        vm.disableSuggested(listOf(KIDS))
+        runCurrent()
+        vm.disableSuggested(listOf(FEEDBACK))
+        runCurrent()
+        assertEquals(listOf(KIDS), run!!.apps)
+        source.gate = null
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(listOf(KIDS.packageName), source.asked)
     }
 }
