@@ -529,6 +529,45 @@
         <item quantity="other">Se desactivaron %1$d de %2$d apps</item>
     </plurals>
     <string name="copy_still_on">%1$s sigue activada</string>
+    <string name="copy_debloat_still_running">La limpieza sigue en curso. Podrás salir cuando termine.</string>
+    <string name="copy_reset_still_running">El restablecimiento sigue en curso. Podrás salir cuando termine.</string>
+    <string name="copy_stopping_after">Deteniendo después de %1$s…</string>
+    <string name="copy_stopping_after_app">Deteniendo después de esta app…</string>
+    <string name="copy_stopping_after_step">Deteniendo después de este paso…</string>
+    <string name="copy_debloat_stopped">Limpieza detenida</string>
+    <string name="copy_debloat_stopped_text">La detuviste después de %1$s.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d app sin cambiar</item>
+        <item quantity="many">%1$d apps sin cambiar</item>
+        <item quantity="other">%1$d apps sin cambiar</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Desactivar la otra app</item>
+        <item quantity="many">Desactivar las otras %1$d</item>
+        <item quantity="other">Desactivar las otras %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Restablecimiento detenido</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">Lo detuviste después de %1$d app.</item>
+        <item quantity="many">Lo detuviste después de %1$d apps.</item>
+        <item quantity="other">Lo detuviste después de %1$d apps.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">Lo detuviste a mitad de camino.</string>
+    <string name="copy_not_done">Sin hacer</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d app por activar</item>
+        <item quantity="many">%1$d apps por activar</item>
+        <item quantity="other">%1$d apps por activar</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d por recuperar</item>
+        <item quantity="many">%1$d por recuperar</item>
+        <item quantity="other">%1$d por recuperar</item>
+    </plurals>
+    <string name="copy_left_home">la pantalla de inicio</string>
+    <string name="copy_left_dns">DNS privado</string>
+    <string name="copy_left_animations">velocidad de animación</string>
+    <string name="copy_finish_reset">Terminar el restablecimiento</string>
     <plurals name="copy_to_put_back">
         <item quantity="one">%1$d cambio por restaurar</item>
         <item quantity="many">%1$d cambios por restaurar</item>

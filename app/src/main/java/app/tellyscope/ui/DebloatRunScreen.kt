@@ -2,7 +2,6 @@
 
 package app.tellyscope.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,11 +27,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -44,27 +46,41 @@ import app.tellyscope.data.resolve
 /**
  * Debloat after "Yes, disable them": the ticked apps, each marked done, running, waiting or
  * refused with the TV's reason, under a bar pinned to the top. Then Reset TV's result layout.
+ * While it runs there's no way back, only Stop: leaving would cut the run off partway.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DebloatRunScreen(run: DebloatRun, back: () -> Unit, retry: () -> Unit) {
-    BackHandler(onBack = back)
+fun DebloatRunScreen(
+    run: DebloatRun,
+    back: () -> Unit,
+    retry: () -> Unit,
+    stop: () -> Unit = {},
+    snackbar: SnackbarHostState = remember { SnackbarHostState() },
+) {
+    RunBackHandler(!run.ran, snackbar, Copy.DEBLOAT_STILL_RUNNING, back)
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.debloat_title)) },
-                navigationIcon = { IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back)) } },
+                navigationIcon = {
+                    if (run.ran) IconButton(onClick = back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back)) }
+                },
             )
         },
         bottomBar = {
             Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 when {
-                    !run.ran -> Button(onClick = {}, enabled = false) { Text(Copy.DISABLING.resolve()) }
-                    run.failed.isEmpty() -> Button(onClick = back) { Text(stringResource(R.string.screen_done)) }
+                    !run.ran -> {
+                        if (!run.stopping) TextButton(onClick = stop) { Text(stringResource(R.string.copy_stop)) }
+                        Button(onClick = {}, enabled = false) { Text(Copy.DISABLING.resolve()) }
+                    }
+                    run.failed.isEmpty() && !run.stopped -> Button(onClick = back) { Text(stringResource(R.string.screen_done)) }
                     else -> {
                         TextButton(onClick = back) { Text(stringResource(R.string.screen_done)) }
                         val one = run.failed.keys.singleOrNull()?.let { pkg -> run.apps.first { it.packageName == pkg }.label }
-                        Button(onClick = retry) { Text(Copy.tryAgain(one).resolve()) }
+                        val again = if (run.stopped) Copy.disableTheRest(run.failed.size + run.left.size) else Copy.tryAgain(one)
+                        Button(onClick = retry) { Text(again.resolve()) }
                     }
                 }
             }
@@ -87,8 +103,10 @@ private fun Progress(run: DebloatRun) {
         progress = { run.at.toFloat() / run.apps.size.coerceAtLeast(1) },
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
     )
+    // After Stop, the line names the app it ends on, in place of the count.
+    val running = run.apps.getOrNull(run.at)
     Text(
-        Copy.disablingApps(run.at, run.apps.size).resolve(),
+        (if (run.stopping && running != null) Copy.stoppingAfter(running.label) else Copy.disablingApps(run.at, run.apps.size)).resolve(),
         style = MaterialTheme.typography.bodyMedium,
         color = c.onSurfaceVariant,
         modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp),
@@ -131,18 +149,29 @@ private fun Progress(run: DebloatRun) {
     }
 }
 
-/** After the run: what turned off, then one row per app still on, with the TV's reason. */
+/** After the run: what turned off, then one row per app still on, with the TV's reason, then the apps Stop left. */
 @Composable
 private fun Result(run: DebloatRun) {
-    val ok = run.failed.isEmpty()
+    val ok = run.failed.isEmpty() && !run.stopped
     val still = run.apps.filter { it.packageName in run.failed }
-    val off = run.apps.size - still.size
+    val left = run.left
+    val off = run.apps.size - still.size - left.size
     // No "Turned off 0 of n" row with a tick when the TV refused every one.
     val top = if (off > 0) 1 else 0
+    val rows = top + still.size + if (left.isEmpty()) 0 else 1
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        item { ResultHead(ok, if (ok) Copy.DEBLOAT_DONE.resolve() else Copy.DEBLOAT_PARTLY.resolve(), Copy.DEBLOAT_RESULT_TEXT.resolve()) }
-        if (off > 0) item { ResultRow(Copy.turnedOff(off, run.apps.size).resolve(), null, groupShape(0, top + still.size)) }
-        itemsIndexed(still) { i, a -> ResultRow(Copy.stillOn(a.label).resolve(), reason(run.failed.getValue(a.packageName)), groupShape(i + top, top + still.size)) }
+        item {
+            when {
+                run.stopped -> ResultHead(false, Copy.DEBLOAT_STOPPED.resolve(), Copy.debloatStoppedText(run.apps.getOrNull(run.at - 1)?.label).resolve(), stopped = true)
+                else -> ResultHead(ok, if (ok) Copy.DEBLOAT_DONE.resolve() else Copy.DEBLOAT_PARTLY.resolve(), Copy.DEBLOAT_RESULT_TEXT.resolve())
+            }
+        }
+        if (off > 0) item { ResultRow(Copy.turnedOff(off, run.apps.size).resolve(), null, groupShape(0, rows)) }
+        itemsIndexed(still) { i, a -> ResultRow(Copy.stillOn(a.label).resolve(), reason(run.failed.getValue(a.packageName)), groupShape(i + top, rows)) }
+        if (left.isNotEmpty()) item {
+            val names = Copy.firstFew(left.map { UiText.Raw(it.label) }).map { it.resolve() }.joinToString(", ")
+            ResultRow(Copy.notChanged(left.size).resolve(), names, groupShape(rows - 1, rows), left = true)
+        }
     }
 }
 

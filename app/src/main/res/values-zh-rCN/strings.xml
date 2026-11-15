@@ -479,6 +479,35 @@
         <item quantity="other">已停用 %1$d 个应用（共 %2$d 个）</item>
     </plurals>
     <string name="copy_still_on">%1$s 仍处于启用状态</string>
+    <string name="copy_debloat_still_running">精简仍在进行。完成后才能离开。</string>
+    <string name="copy_reset_still_running">重置仍在进行。完成后才能离开。</string>
+    <string name="copy_stopping_after">将在 %1$s 之后停止…</string>
+    <string name="copy_stopping_after_app">将在这个应用之后停止…</string>
+    <string name="copy_stopping_after_step">将在这一步之后停止…</string>
+    <string name="copy_debloat_stopped">精简已停止</string>
+    <string name="copy_debloat_stopped_text">你在 %1$s 之后停止了它。</string>
+    <plurals name="copy_not_changed">
+        <item quantity="other">%1$d 个应用未更改</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="other">停用其余 %1$d 个</item>
+    </plurals>
+    <string name="copy_reset_stopped">重置已停止</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="other">你在 %1$d 个应用之后停止了它。</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">你在中途停止了它。</string>
+    <string name="copy_not_done">未完成</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="other">%1$d 个应用待启用</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="other">%1$d 个待恢复</item>
+    </plurals>
+    <string name="copy_left_home">主屏幕</string>
+    <string name="copy_left_dns">私人 DNS</string>
+    <string name="copy_left_animations">动画速度</string>
+    <string name="copy_finish_reset">完成重置</string>
     <plurals name="copy_to_put_back">
         <item quantity="other">%1$d 处更改待恢复</item>
     </plurals>

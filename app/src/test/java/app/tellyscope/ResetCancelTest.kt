@@ -52,7 +52,7 @@ private class OnTv : AdbSession {
     override fun close() = Unit
 }
 
-/** A reset cancelled part-way, as when the user leaves the app, still leaves History what it turned on. */
+/** A reset cancelled part-way, as when the user leaves the app, still leaves History what it turned on; Stop ends it between steps. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class ResetCancelTest {
@@ -70,6 +70,22 @@ class ResetCancelTest {
 
         val reset = source.history("tv").single { it.action == Action.Reset }
         assertEquals(Action.Reset, reset.undo)
+        assertEquals(listOf("com.acme.one", "com.acme.two"), ResetRecord.list(reset.previous, ResetRecord.ON))
+        source.forget("tv")
+    }
+
+    /** Stop tapped during the second app: that app finishes, and no other step starts. */
+    @Test fun aStoppedResetFinishesTheStepUnderWay() = runBlocking {
+        val tv = OnTv()
+        val source = AdbDeviceSource(RuntimeEnvironment.getApplication(), connector = { _, _ -> AdbConnectResult.Online(tv) }, fetch = { throw IOException("offline $it") })
+        assertTrue(source.connect(ScanHit("tv", 5555, ScanKind.Classic, "tv", null)) is ConnectResult.Online)
+        val apps = listOf("com.acme.one", "com.acme.two", "com.acme.three").map { ResetApp(it, it) }
+        var stop = false
+
+        val (_, failed) = source.reset("tv", ResetPlan(turnOn = apps), null, { stop }) { if (it.done == 1) stop = true }
+        assertTrue(failed.isEmpty())
+        assertEquals(listOf("com.acme.one", "com.acme.two"), tv.on)
+        val reset = source.history("tv").single { it.action == Action.Reset }
         assertEquals(listOf("com.acme.one", "com.acme.two"), ResetRecord.list(reset.previous, ResetRecord.ON))
         source.forget("tv")
     }

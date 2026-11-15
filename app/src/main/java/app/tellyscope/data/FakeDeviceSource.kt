@@ -279,25 +279,30 @@ class FakeDeviceSource(
         return ResetPlan(turnOn = off, ownHome = "Google TV Home", dns = offDefault(Tweak.PRIVATE_DNS), animations = offDefault(Tweak.ANIMATIONS))
     }
 
-    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> {
+    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, stop: () -> Boolean, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> {
         val list = appsFor(deviceId)
-        plan.turnOn.forEachIndexed { i, app ->
+        val done = mutableListOf<ResetApp>()
+        for ((i, app) in plan.turnOn.withIndex()) {
+            if (stop()) break
             onProgress(ResetProgress(ResetPart.TurnOn, i, plan.turnOn.size))
             delay(300)
             list.replaceAll { if (it.packageName == app.packageName) it.copy(enabled = true) else it }
+            done += app
         }
         val s = settingsFor(deviceId)
-        val settings = listOfNotNull(
+        val settings = mutableListOf<Pair<String, String?>>()
+        for ((part, tweak, was) in listOfNotNull(
             plan.dns?.let { Triple(ResetPart.Dns, Tweak.PRIVATE_DNS, it) },
             plan.animations?.let { Triple(ResetPart.Animations, Tweak.ANIMATIONS, it) },
-        ).flatMap { (part, tweak, was) ->
+        )) {
+            if (stop()) break
             onProgress(ResetProgress(part, 0, 1))
             delay(300)
             tweak.keys.forEach { s.remove(it) }
-            was.entries.map { it.toPair() } + (ResetRecord.mark(tweak) to "1")
+            settings += was.entries.map { it.toPair() } + (ResetRecord.mark(tweak) to "1")
         }
-        if (plan.turnOn.isEmpty() && settings.isEmpty()) return into to emptyList()
-        val on = plan.turnOn.joinToString(",") { it.packageName }
+        if (done.isEmpty() && settings.isEmpty()) return into to emptyList()
+        val on = done.joinToString(",") { it.packageName }
         val entry = book.record(deviceId, clock(), Action.Reset, "reset", ResetRecord.label(plan.changes).text(), Action.Reset, previous = mapOf(ResetRecord.ON to on) + settings)
         return entry.id to emptyList()
     }

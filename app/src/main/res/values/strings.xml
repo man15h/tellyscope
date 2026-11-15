@@ -615,6 +615,46 @@
     </plurals>
     <string name="copy_still_on">%1$s is still on</string>
 
+    <!-- Debloat and Reset TV while they run: Back is held, and Stop lets the running step finish. -->
+    <string name="copy_debloat_still_running">Debloat is still running. You can leave when it\'s done.</string>
+    <string name="copy_reset_still_running">Reset is still running. You can leave when it\'s done.</string>
+    <!-- %1$s is the name of the app being disabled. -->
+    <string name="copy_stopping_after">Stopping after %1$s…</string>
+    <string name="copy_stopping_after_app">Stopping after this app…</string>
+    <string name="copy_stopping_after_step">Stopping after this step…</string>
+    <string name="copy_debloat_stopped">Debloat stopped</string>
+    <!-- %1$s is the last app it got to. Followed by copy_debloat_result_text. -->
+    <string name="copy_debloat_stopped_text">You stopped it after %1$s.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d app not changed</item>
+        <item quantity="other">%1$d apps not changed</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Disable the other app</item>
+        <item quantity="other">Disable the other %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Reset stopped</string>
+    <!-- Followed by copy_reset_kept_data. -->
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">You stopped it after %1$d app.</item>
+        <item quantity="other">You stopped it after %1$d apps.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">You stopped it partway.</string>
+    <string name="copy_not_done">Not done</string>
+    <!-- The copy_left_* parts list what copy_not_done is, joined with commas. -->
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d app to enable</item>
+        <item quantity="other">%1$d apps to enable</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d to bring back</item>
+        <item quantity="other">%1$d to bring back</item>
+    </plurals>
+    <string name="copy_left_home">the home screen</string>
+    <string name="copy_left_dns">Private DNS</string>
+    <string name="copy_left_animations">animation speed</string>
+    <string name="copy_finish_reset">Finish the reset</string>
+
     <plurals name="copy_to_put_back">
         <item quantity="one">%1$d change to restore</item>
         <item quantity="other">%1$d changes to restore</item>
