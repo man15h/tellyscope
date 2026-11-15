@@ -13,6 +13,7 @@ import app.tellyscope.data.AppNames
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.TvSettings
@@ -638,7 +639,8 @@ object Copy {
     val MORE = UiText(R.string.copy_more)
 
     fun buttonsHint(cap: Int) = UiText(R.string.copy_buttons_hint, cap)
-    fun notOnTv(name: String) = UiText(R.string.copy_not_on_tv, name)
+    /** A Fire TV's store is the Appstore. */
+    fun notOnTv(name: String, fire: Boolean = false) = UiText(if (fire) R.string.copy_not_on_tv_fire else R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
     fun storeOpened(name: String) = UiText(R.string.copy_store_opened, name)
     fun storeCantOpen(name: String) = UiText(R.string.copy_store_cant_open, name)
@@ -844,6 +846,18 @@ object Copy {
         }
     } + listOfNotNull(UiText.plural(R.plurals.copy_restore_gone, r.gone).takeIf { r.gone > 0 })
         .map { UiText(R.string.copy_restore_line, it) }
+
+    /** Restore everything's result when some of it didn't go back: the title, then what's still as Tellyscope left it. */
+    fun restoredTitle(r: RestoreResult) = UiText.plural(R.plurals.copy_restored_title, r.done + r.failed.size, r.done, r.done + r.failed.size)
+    fun restoredLeft(r: RestoreResult) = UiText.plural(R.plurals.copy_restored_left, r.failed.size)
+    fun restoredFailures(r: RestoreResult): List<UiText> =
+        firstFew(r.failed.map { UiText(R.string.copy_restore_line, UiText(R.string.result_reason_app, it.what, UiText.Capitalized(it.why))) })
+    val RESTORED_HINT = UiText(R.string.copy_restored_hint)
+
+    /** The first [FEW] of a list of failures, then how many more: a long run names some, not all. */
+    fun firstFew(lines: List<UiText>): List<UiText> =
+        lines.take(FEW) + listOfNotNull(UiText.plural(R.plurals.copy_and_more, lines.size - FEW).takeIf { lines.size > FEW })
+    private const val FEW = 3
     fun othersConnected(n: Int) = UiText.plural(R.plurals.copy_others_connected, n)
     fun connections(n: Int) = UiText.plural(R.plurals.copy_connections, n)
     fun connectedFrom(address: String, n: Int) = UiText.plural(R.plurals.copy_connected_from, n, address, n)

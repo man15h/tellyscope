@@ -33,7 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Device
@@ -95,7 +96,7 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
                 title = {
                     Column {
                         Text(Copy.RESET_TV.resolve())
-                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 navigationIcon = {
@@ -162,7 +163,7 @@ private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?
             } else {
                 val total = running.changes.coerceAtLeast(1)
                 val done = progress?.let { p -> ResetPart.entries.filter { it < p.part }.sumOf { count(running, it) } + p.done } ?: 0
-                LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                LinearWavyProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
                 Text(
                     progress?.let { Copy.resetting(it, plan.home?.toLabel).resolve() } ?: Copy.RESETTING.resolve(),
                     style = MaterialTheme.typography.bodyMedium,
@@ -270,7 +271,7 @@ private fun AppList(apps: List<ResetApp>) {
 
 private const val SHOWN = 7
 
-/** After a run: a cookie badge, what changed, and per part what worked, with the first failure's reason. */
+/** After a run: a cookie badge, what changed, and per part what worked, with each app that didn't and why. */
 @Composable
 private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
     val ok = failed.isEmpty()
@@ -295,11 +296,14 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
                 ResetPart.Dns -> (if (miss.isEmpty()) Copy.DNS_AUTOMATIC else Copy.dnsStill(Copy.dnsWas(plan.dns!!))).resolve()
                 ResetPart.Animations -> (if (miss.isEmpty()) Copy.ANIMATIONS_NORMAL else Copy.animationsStill(Copy.animationsWas(plan.animations!!))).resolve()
             }
-            val why = miss.firstOrNull()?.let { f ->
+            // An app's part names each app that failed, three at most; Home and the settings have one reason.
+            val reasons = miss.map { f ->
                 val reason = UiText.Capitalized(f.reason).resolve().trimEnd('.')
-                f.app?.takeIf { f.part != ResetPart.Home }?.let { stringResource(R.string.result_reason_app, it.label, reason) }
-                    ?: stringResource(R.string.result_reason, reason)
+                f.app?.takeIf { f.part != ResetPart.Home }?.let { UiText(R.string.result_reason_app, it.label, reason) }
+                    ?: UiText(R.string.result_reason, reason)
             }
+            val apps = part == ResetPart.TurnOn || part == ResetPart.BringBack
+            val why = if (reasons.isEmpty()) null else Copy.firstFew(if (apps) reasons else reasons.take(1)).map { it.resolve() }.joinToString("\n")
             ResultRow(line, why, groupShape(i, rows.size))
         }
     }

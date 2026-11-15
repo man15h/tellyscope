@@ -794,7 +794,7 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
             title = { Text(Copy.RESTART_LATE_TITLE.resolve()) },
             text = { Text(Copy.RESTART_LATE_TEXT.resolve()) },
             confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
-            dismissButton = { TextButton(onClick = onHide) { Text(stringResource(R.string.remote_close)) } },
+            dismissButton = { TextButton(onClick = onHide) { Text(stringResource(R.string.remote_hide)) } },
         )
         Restart.Phase.Lost -> AlertDialog(
             onDismissRequest = onStop,
@@ -802,7 +802,7 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
             title = { Text(Copy.restartLost(tvName).resolve()) },
             text = { Text(Copy.RESTART_LOST_TEXT.resolve()) },
             confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
-            dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.remote_close)) } },
+            dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.remote_stop_waiting)) } },
         )
     }
 }
@@ -1036,7 +1036,7 @@ private fun ServiceButton(s: StreamingService, enabled: Boolean, onOpen: () -> U
                 role = Role.Button,
                 onClickLabel = Copy.OPEN_ON_TV.resolve(),
                 onLongClickLabel = Copy.REMOTE_BUTTONS.resolve(),
-                onLongClick = { haptic.performHapticFeedback(HapticFeedbackType.LongPress); onHold() },
+                onLongClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress); onHold() },
                 onClick = { if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey); onOpen() },
             )
             .semantics { contentDescription = s.name },

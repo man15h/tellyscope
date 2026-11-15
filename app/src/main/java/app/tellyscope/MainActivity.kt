@@ -309,7 +309,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             vm.historyOpened()
             onDispose { vm.historyOpened() }
         }
-        HistoryScreen(state, onUndo = vm::undo, onRestoreAll = vm::restoreAll, back = { history = false }, snackbar = snackbar)
+        HistoryScreen(state, onUndo = vm::undo, onRestoreAll = vm::restoreAll, back = { history = false }, snackbar = snackbar, onRestoredSeen = vm::restoredShown)
     } else if (resetting && state.device.reset != null) {
         val close = { vm.closeReset(); resetting = false }
         // Leaving mid-run only closes the screen; the run goes on, and History has it when done.
@@ -340,6 +340,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             onWhatsNew = { whatsNew = true },
             back = { settings = false },
             snackbar = snackbar,
+            sourceCheck = state.sourceCheck,
+            onCancelSource = vm::cancelListSource,
         )
     } else if (state.device.launcher != null) {
         BackHandler { vm.closeLauncherFlow() }
@@ -381,6 +383,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             tvApps = state.device.apps,
             busy = state.device.busy != null,
             onHelpAdd = { vm.openReport(ReportKind.NewTv) },
+            onRetry = vm::retryLists,
         )
     } else {
         DeviceTabsScreen(
@@ -425,6 +428,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 remote = { remote = true },
                 // A run that finished while Debloat was closed is done with.
                 debloat = { vm.closeDebloat(); debloat = true },
+                retryLists = vm::retryLists,
                 advanced = { advanced = true },
                 history = { history = true },
                 reset = { vm.openReset(); resetting = true },

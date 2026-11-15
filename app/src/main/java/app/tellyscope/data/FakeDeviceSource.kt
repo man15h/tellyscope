@@ -366,7 +366,7 @@ class FakeDeviceSource(
         return Suggestions.Ready(null, fakeList, 30, suggest(fakeList, apps(), 30), all)
     }
 
-    override suspend fun pickList(deviceId: String, listId: String) = Unit
+    override suspend fun pickList(deviceId: String, listId: String?): String? = null
 
     private var listSource: String? = null
 

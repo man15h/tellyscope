@@ -45,7 +45,7 @@ class SnackbarsTest {
         show()
         notice.value = UiText.plural(R.plurals.vm_put_back, 2)
         compose.mainClock.advanceTimeBy(1_000)
-        compose.onNodeWithText("Put back 2 changes.").assertExists()
+        compose.onNodeWithText("Restored 2 changes.").assertExists()
         // Shown once: it was taken off the queue as it went up.
         assertEquals(null, notice.value)
     }

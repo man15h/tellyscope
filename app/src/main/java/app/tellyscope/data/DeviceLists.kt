@@ -141,8 +141,11 @@ data class SuggestedGroup(val title: String, val packages: List<Suggested>)
 
 /** What the Overview's list card shows. */
 sealed interface Suggestions {
-    /** No index (offline and nothing cached), or the chosen list failed its checksum. */
-    data object Unavailable : Suggestions
+    /**
+     * No index (offline and nothing cached), or the chosen list failed its checksum. [devices] is
+     * every list when the index did load, for "Not this TV?".
+     */
+    data class Unavailable(val devices: List<ListEntry> = emptyList()) : Suggestions
 
     /** No list for this TV's model or maker, and none was picked: clean up by hand in Apps. */
     data class NoList(val commit: String?, val devices: List<ListEntry>) : Suggestions
@@ -453,10 +456,11 @@ class DeviceLists(
     @Synchronized
     fun picked(key: String): String? = readPicks()[key]
 
+    /** Picks list [id] for [key], or with null goes back to the list that matches. */
     @Synchronized
-    fun pick(key: String, id: String) {
+    fun pick(key: String, id: String?) {
         dir.mkdirs()
-        val all = readPicks() + (key to id)
+        val all = if (id == null) readPicks() - key else readPicks() + (key to id)
         val tmp = File(dir, "picks.tsv.tmp")
         tmp.writeText(all.entries.joinToString("") { (k, v) -> "$k\t$v\n" })
         tmp.renameTo(picks)

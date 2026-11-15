@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
@@ -21,6 +23,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,11 +55,15 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.HistoryEntry
+import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
+import app.tellyscope.data.UiText
+import app.tellyscope.data.isFireOs
 import app.tellyscope.data.resolve
 
 /**
@@ -70,9 +78,12 @@ fun HistoryScreen(
     onRestoreAll: () -> Unit,
     back: () -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    /** OK on Restore everything's result. */
+    onRestoredSeen: () -> Unit = {},
 ) {
     val device = state.selected ?: return
     val ui = state.device
+    ui.restored?.let { RestoredDialog(it, onRestoredSeen) }
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -80,7 +91,7 @@ fun HistoryScreen(
                 title = {
                     Column {
                         Text(Copy.HISTORY.resolve())
-                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 navigationIcon = {
@@ -95,7 +106,7 @@ fun HistoryScreen(
         ) {
             item {
                 if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, stringResource(R.string.history_empty_title), stringResource(R.string.history_empty_text))
-                else HistoryList(ui.history, state.clock(), onUndo, restore = ui.restore, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null)
+                else HistoryList(ui.history, state.clock(), onUndo, restore = ui.restore, restoring = ui.busy == RESTORING, onRestoreAll = onRestoreAll, busy = ui.busy != null, fire = isFireOs(device, ui.apps))
             }
         }
     }
@@ -114,6 +125,8 @@ internal fun HistoryList(
     restoring: Boolean = false,
     onRestoreAll: () -> Unit = {},
     busy: Boolean = restoring,
+    /** A Fire TV: apps come back from the Appstore, not the Play Store. */
+    fire: Boolean = false,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     val off = restore.count
@@ -154,6 +167,7 @@ internal fun HistoryList(
                     Column(Modifier.weight(1f)) {
                         Text(Copy.done(h.action, h.label).resolve(), style = MaterialTheme.typography.bodyLarge)
                         Text(Copy.ago(h.at, now).resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        noUndoReason(h, fire)?.let { Text(it.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     when {
                         // Same button as Undo, switched off: the row keeps its shape and reads as done.
@@ -172,6 +186,39 @@ internal fun HistoryList(
             }
         }
     }
+}
+
+/**
+ * Why a row has no Undo, from why it has none: a change with nothing to undo, an app that's gone,
+ * an Undo a later change took away, else a plain "can't". Null for a row with an Undo, one already
+ * undone, and Open, which changes nothing.
+ */
+internal fun noUndoReason(h: HistoryEntry, fire: Boolean): UiText? = when {
+    h.undo != null || h.undoneAt != null || h.action == Action.Open -> null
+    h.action == Action.ClearCaches -> UiText(R.string.history_no_undo_caches)
+    h.action == Action.Uninstall -> UiText(if (fire) R.string.history_no_undo_uninstall_fire else R.string.history_no_undo_uninstall)
+    h.undoDropped -> UiText(R.string.history_no_undo_later)
+    else -> UiText(R.string.history_no_undo)
+}
+
+/** Restore everything left some changes in place: each one, so none is a surprise later. */
+@Composable
+private fun RestoredDialog(r: RestoreResult, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Warning, contentDescription = null) },
+        title = { Text(Copy.restoredTitle(r).resolve()) },
+        text = {
+            // Scrolls when a large text size makes it taller than the screen.
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(Copy.restoredLeft(r).resolve())
+                for (line in Copy.restoredFailures(r)) Text(line.resolve())
+                Spacer(Modifier.size(8.dp))
+                Text(Copy.RESTORED_HINT.resolve())
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.history_ok)) } },
+    )
 }
 
 /** A row of a grouped list: the group's ends are rounded, the rows between nearly square. */

@@ -163,8 +163,11 @@ interface DeviceSource {
      */
     suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions
 
-    /** "Pick your TV": use list [listId] for this TV from now on. */
-    suspend fun pickList(deviceId: String, listId: String)
+    /**
+     * "Pick your TV": use list [listId] for this TV from now on, or with null the list that
+     * matches it again. Returns the pick it replaced.
+     */
+    suspend fun pickList(deviceId: String, listId: String?): String?
 
     /** Where the debloat lists come from, as the user set it; null for tellyscope-devices. */
     suspend fun listSource(): String?

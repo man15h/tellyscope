@@ -22,9 +22,10 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,11 +78,12 @@ fun DebloatRunScreen(run: DebloatRun, back: () -> Unit, retry: () -> Unit) {
 
 private enum class Mark { Done, Running, Waiting, Failed }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Progress(run: DebloatRun) {
     val c = MaterialTheme.colorScheme
     // Pinned: the bar and the count stay in view while the list scrolls.
-    LinearProgressIndicator(
+    LinearWavyProgressIndicator(
         progress = { run.at.toFloat() / run.apps.size.coerceAtLeast(1) },
         modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 8.dp),
     )

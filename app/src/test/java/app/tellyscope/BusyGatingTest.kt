@@ -68,7 +68,7 @@ class BusyGatingTest {
     @Test fun restoreKeepsItsOwnLabel() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
         compose.setContent { HistoryList(history, 0L, onUndo = {}, restore = RestoreSummary(turnOn = 1), restoring = true) }
-        compose.onNodeWithText("Putting back…").assertIsNotEnabled()
+        compose.onNodeWithText("Restoring…").assertIsNotEnabled()
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
     }
 

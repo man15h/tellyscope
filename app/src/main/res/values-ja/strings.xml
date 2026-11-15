@@ -13,7 +13,7 @@
     <string name="copy_confirm_home">ホーム画面を切り替える</string>
     <string name="copy_confirm_home_back">元に戻す</string>
     <string name="copy_explain_stop">%1$s（%2$s）を、次に開くまで停止します。</string>
-    <string name="copy_explain_disable">%1$s（%2$s）を非表示にして、動作を停止します。何も削除されず、ここからいつでも有効に戻せます。</string>
+    <string name="copy_explain_disable">%1$s（%2$s）を無効にして、動作を停止します。何も削除されず、ここからいつでも有効に戻せます。</string>
     <string name="copy_explain_enable">%1$s（%2$s）を再び有効にします。</string>
     <string name="copy_explain_open">テレビで %1$s（%2$s）を開きます。</string>
     <string name="copy_explain_uninstall">%1$s（%2$s）と、その中に保存されたすべてのデータを削除します。元に戻すことはできません。再び使うには、もう一度インストールしてください。</string>
@@ -334,6 +334,7 @@
     <string name="copy_more">その他のオプション</string>
     <string name="copy_buttons_hint">%1$d 個まで選べます。ドラッグで並べ替えます。別のものを選ぶには、先にどれかのチェックを外してください。</string>
     <string name="copy_not_on_tv">%1$s はこのテレビにありません。テレビの Play ストアからインストールしてください。</string>
+    <string name="copy_not_on_tv_fire">%1$s はこのテレビにありません。テレビの Appstore からインストールしてください。</string>
     <string name="copy_cant_open">テレビで %1$s を開けませんでした。無効になっている場合は、アプリ画面で有効にしてください。</string>
     <string name="copy_left_dock_one">%1$s がアンインストールされたため、そのボタンをリモコンから削除しました。</string>
     <plurals name="copy_left_dock">
@@ -479,7 +480,17 @@
     </plurals>
     <string name="copy_still_on">%1$s はまだ有効です</string>
     <plurals name="copy_to_put_back">
-        <item quantity="other">元に戻す変更が %1$d 件</item>
+        <item quantity="other">復元する変更が %1$d 件</item>
+    </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="other">%2$d 件中 %1$d 件の変更を復元しました</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="other">次の %1$d 件は Tellyscope が変更したままです：</item>
+    </plurals>
+    <string name="copy_restored_hint">履歴の各行から1つずつ元に戻すか、あとでもう一度復元してください。</string>
+    <plurals name="copy_and_more">
+        <item quantity="other">ほか %1$d 件</item>
     </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="other">Tellyscope による %1$d 件の変更がまだ残っています</item>
@@ -589,12 +600,10 @@
     <string name="vm_not_an_ip">IP アドレスの形式ではありません。テレビのネットワーク設定に表示されているような、ドットで区切られた 4 つの数字を入力してください。</string>
     <string name="vm_bad_port">コロンの後のポートは、5555 のような 1～65535 の数字にしてください。</string>
     <string name="vm_didnt_work">うまくいきませんでした。</string>
-    <string name="vm_nothing_to_put_back">元に戻すものはありません。</string>
+    <string name="vm_nothing_to_put_back">復元するものはありません。</string>
+    <string name="vm_list_not_loaded">%1$s のリストを読み込めませんでした。%2$s のままです。</string>
     <plurals name="vm_put_back">
-        <item quantity="other">%1$d 件の変更を元に戻しました。</item>
-    </plurals>
-    <plurals name="vm_put_back_partly">
-        <item quantity="other">%2$d 件中 %1$d 件の変更を元に戻しました。%3$d 件は戻せませんでした。%4$s: %5$s</item>
+        <item quantity="other">%1$d 件の変更を復元しました。</item>
     </plurals>
     <string name="vm_tv_refused">テレビが拒否しました</string>
     <string name="vm_tv_didnt_answer">テレビから応答がありません。</string>
@@ -639,9 +648,9 @@
     <string name="data_reset_already_undone">そのリセットはすでに元に戻されています</string>
     <string name="data_reset_tv_kept_home">テレビは %1$s をホーム画面のままにしました</string>
     <string name="data_app_reason">%1$s: %2$s</string>
-    <string name="data_reset_undo_service_left">すべての変更を元に戻しましたが、%1$s</string>
+    <string name="data_reset_undo_service_left">すべての変更を復元しましたが、%1$s</string>
     <plurals name="data_reset_undo_partial">
-        <item quantity="other">%2$d 件中 %1$d 件の変更を元に戻しました。%3$s。もう一度「元に戻す」を押すと、残りを試します</item>
+        <item quantity="other">%2$d 件中 %1$d 件の変更を復元しました。%3$s。もう一度「元に戻す」を押すと、残りを試します</item>
     </plurals>
     <string name="data_tweak_refused">テレビが変更を受け付けませんでした</string>
     <string name="data_dns_too_old">プライベート DNS には Android 9 以降が必要ですが、このテレビはそれより古いバージョンです</string>
@@ -653,7 +662,7 @@
     <string name="data_app_names_system">Android システム</string>
     <string name="data_history_service_off">%1$s のユーザー補助サービスを無効にしました</string>
     <string name="data_history_service_on">%1$s のユーザー補助サービスを有効にしました</string>
-    <string name="data_history_reset_undone">テレビのリセットによる変更を元に戻しました</string>
+    <string name="data_history_reset_undone">テレビのリセットによる変更を復元しました</string>
     <plurals name="data_history_reset">
         <item quantity="other">テレビをリセット・%1$d 件の変更</item>
     </plurals>
@@ -700,7 +709,8 @@
     <plurals name="tabs_came_back_on">
         <item quantity="other">%1$d 個のアプリが再び有効になりました</item>
     </plurals>
-    <string name="tabs_note_unavailable">スマートフォンのインターネット接続を確認して、このテレビをもう一度開いてください。</string>
+    <string name="tabs_note_unavailable">スマートフォンのインターネット接続を確認してください。</string>
+    <string name="tabs_try_again">再試行</string>
     <string name="tabs_note_no_list">「整理」をタップして、無効にするアプリを手動で選んでください。</string>
     <string name="tabs_note_by_maker">この機種専用のリストがないため、%1$s の他のテレビのリストを使用しています。</string>
     <string name="tabs_note_gate">「整理」では、個別に変更できるアプリ画面が開くようになりました。</string>
@@ -721,7 +731,9 @@
     <string name="lists_brand_or_model">ブランドまたは機種</string>
     <string name="lists_clear_search">検索をクリア</string>
     <string name="lists_no_match">「%1$s」のリストはありません。最も近い機種を選んでください。</string>
-    <string name="lists_unavailable">そのリストを読み込めませんでした。スマートフォンのインターネット接続を確認して、もう一度お試しください。</string>
+    <string name="lists_failed">リストを読み込めませんでした</string>
+    <string name="lists_failed_hint">スマートフォンのインターネット接続を確認して、もう一度お試しください。</string>
+    <string name="lists_try_again">再試行</string>
     <string name="lists_loading">リストを読み込んでいます…</string>
     <string name="lists_this_tv">このテレビ</string>
     <string name="lists_match_none">このテレビやメーカーのリストはまだありません</string>
@@ -745,7 +757,7 @@
     <plurals name="lists_disable_apps_confirm">
         <item quantity="other">%1$d 個のアプリを無効にしますか？</item>
     </plurals>
-    <string name="lists_disable_text">それぞれ非表示になり、動作を停止します。何も削除されません。すべて履歴に表示され、そこから有効に戻せます。</string>
+    <string name="lists_disable_text">それぞれ無効になり、動作を停止します。何も削除されません。すべて履歴に表示され、そこから有効に戻せます。</string>
     <string name="lists_disable_yes">無効にする</string>
     <string name="lists_cancel">キャンセル</string>
     <string name="lists_about_title">Tellyscope について</string>
@@ -761,7 +773,7 @@
     <string name="advanced_loading">統計情報を読み込んでいます…</string>
     <string name="advanced_network">ネットワーク</string>
     <string name="advanced_cpu">CPU</string>
-    <string name="advanced_ram">RAM</string>
+    <string name="advanced_ram">メモリ</string>
     <string name="advanced_on_for">稼働時間</string>
     <string name="advanced_screen">画面</string>
     <string name="advanced_screen_on">オン</string>
@@ -883,20 +895,24 @@
     <string name="report_choose_one">選択してください</string>
     <string name="report_removed_first">シリアル番号、IP アドレス、ADB キー、フィンガープリントは事前に削除されます。</string>
     <string name="report_cancel">キャンセル</string>
+    <string name="report_discard_title">このレポートを破棄しますか？</string>
+    <string name="report_discard_text">選んだ内容と入力した内容は失われます。</string>
+    <string name="report_discard">破棄</string>
+    <string name="report_keep_editing">編集を続ける</string>
+    <string name="report_no_browser">ブラウザが開かなかったため、何も投稿されていません。リンクをコピーして、別のデバイスから投稿してください。</string>
+    <string name="report_copy_link">リンクをコピー</string>
     <string name="device_as_of">%1$s 時点</string>
     <string name="device_internal_storage">内部ストレージ</string>
     <string name="device_gb_used">%1$s 使用中</string>
     <string name="device_cpu">CPU</string>
-    <string name="device_ram">RAM</string>
+    <string name="device_ram">メモリ</string>
     <string name="device_network">ネットワーク</string>
     <string name="device_percent">%1$d%%</string>
     <string name="device_disable_title">%1$s を無効にしますか？</string>
     <string name="device_cancel">キャンセル</string>
-    <plurals name="device_restore_title">
-        <item quantity="other">%1$d 件の変更を元に戻しますか？</item>
-    </plurals>
+    <string name="device_restore_title">すべて復元しますか？</string>
     <string name="device_restore_text">このテレビを Tellyscope が最初に変更する前の状態に戻します:</string>
-    <string name="device_restore_button">元に戻す</string>
+    <string name="device_restore_button">復元</string>
     <string name="device_rename_title">このテレビの名前を変更</string>
     <string name="device_rename_text">この名前はこのスマートフォンでのみ表示されます。テレビ側は何も変わりません。</string>
     <string name="device_save">保存</string>
@@ -987,12 +1003,12 @@
     <string name="remote_ok">OK</string>
     <string name="remote_type_label">テレビに入力</string>
     <string name="remote_send">テレビに送信</string>
-    <string name="remote_restart">再起動</string>
+    <string name="remote_restart">テレビを再起動</string>
     <string name="remote_cancel">キャンセル</string>
     <string name="remote_restarting">再起動中</string>
     <string name="remote_hide">非表示</string>
     <string name="remote_retry">再試行</string>
-    <string name="remote_close">閉じる</string>
+    <string name="remote_stop_waiting">待つのをやめる</string>
     <string name="remote_show_restart">再起動の状況を表示</string>
     <string name="remote_move_up">上に移動</string>
     <string name="remote_move_down">下に移動</string>
@@ -1023,7 +1039,7 @@
     <string name="whats_new_update">アップデート</string>
     <string name="whats_new_not_installed">未インストール</string>
     <string name="whats_new_newer_failed">新しいバージョンを読み込めませんでした。</string>
-    <string name="settings_advanced">詳細設定</string>
+    <string name="settings_advanced">整理リスト</string>
     <string name="settings_change">変更</string>
     <string name="settings_change_text">index.json を含む HTTPS の raw フォルダを貼り付けてください。例: raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
     <string name="settings_own_lists_guide">独自のリストを使う方法</string>
@@ -1032,6 +1048,7 @@
     <string name="settings_open_cleanyourtv">GitHub で cleanyourtv を開く</string>
     <string name="settings_source_title">リストの取得元</string>
     <string name="settings_source_text">独自のリストを使うには、tellyscope-devices をフォークして編集し、index.json を含むフォルダのアドレス（https://raw.githubusercontent.com/you/tellyscope-devices/main/ など）を貼り付けてください。保護されたアプリは、リストの内容にかかわらず保護されたままです。</string>
+    <string name="settings_checking">確認しています…</string>
     <string name="settings_use_lists">このリストを使用</string>
     <string name="settings_reset">デフォルトに戻す</string>
     <string name="settings_cancel">キャンセル</string>
@@ -1143,7 +1160,13 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">まだ変更はありません</string>
     <string name="history_empty_text">停止、無効化、有効化したものはすべてここに表示され、元に戻すことができます。</string>
-    <string name="history_restoring">元に戻しています…</string>
+    <string name="history_restoring">復元しています…</string>
+    <string name="history_ok">OK</string>
+    <string name="history_no_undo_caches">元に戻すものはありません：アプリがキャッシュを再び作成します</string>
+    <string name="history_no_undo_uninstall">元に戻せません：Play ストアから再インストールしてください</string>
+    <string name="history_no_undo_uninstall_fire">元に戻せません：Appstore から再インストールしてください</string>
+    <string name="history_no_undo_later">元に戻せません：この後にホームが変わりました</string>
+    <string name="history_no_undo">これは元に戻せません</string>
     <string name="history_restore_all">すべて復元（%1$d）</string>
     <string name="history_undone">元に戻しました</string>
     <string name="debloat_title">整理</string>
