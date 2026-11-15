@@ -4,6 +4,7 @@ package app.tellyscope
 
 import androidx.lifecycle.viewModelScope
 import app.tellyscope.data.Action
+import app.tellyscope.data.ConnectResult
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
@@ -40,14 +41,21 @@ private val KIDS = ResetApp("com.google.android.youtube.tvkids", "YouTube Kids")
 private val SPORTS = ResetApp("com.google.android.tvrecommendations.sports", "Sports")
 private val FEEDBACK = ResetApp("com.google.android.feedback", "Google Feedback")
 
-/** A TV that turns apps off when asked, except the ones in [refuse], and can hold the next one at [gate]. It is [state] (online, or dropped). */
+/** A TV that turns apps off when asked, except the ones in [refuse], and can hold the next one at [gate]. It is [state] (online, or dropped). [connect] brings in a second TV, "tv2". */
 private class RefusingTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val refuse = mutableMapOf<String, String>()
     val asked = mutableListOf<String>()
     var gate: CompletableDeferred<Unit>? = null
     var state = DeviceState.Online
+    private var second: Device? = null
 
-    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), state, null, null, null, 0L))
+    override suspend fun known() = listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), state, null, null, null, 0L)) + listOfNotNull(second)
+
+    override suspend fun connect(hit: ScanHit): ConnectResult {
+        val tv = Device("tv2", hit, DeviceState.Online, null, null, null, 0L)
+        second = tv
+        return ConnectResult.Online(tv)
+    }
 
     override fun live(deviceId: String): Flow<Snapshot> = emptyFlow()
 
@@ -191,5 +199,16 @@ class DebloatRunTest {
         gate.complete(Unit)
         runCurrent()
         assertEquals(listOf(KIDS.packageName), source.asked)
+    }
+
+    /** Connecting another TV mid-run is the user's pick: the page switches to it, as tapping it would. */
+    @Test fun connectingAnotherTvMidRunShowsIt() = with(test) {
+        open()
+        source.gate = CompletableDeferred()
+        vm.disableSuggested(listOf(KIDS))
+        runCurrent()
+        vm.connect(ScanHit("tv2", 5555, ScanKind.Classic, "tv2", null))
+        runCurrent()
+        assertEquals("tv2", vm.state.value.selectedId)
     }
 }
