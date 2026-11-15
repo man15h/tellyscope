@@ -765,12 +765,13 @@ class TellyscopeViewModel(
         get() = launcherJob?.isActive == true || _state.value.device.busy.let { it == DISABLING || it == RESETTING }
 
     /**
-     * TV [id] came online. It's shown afresh, unless that would drop a run on the TV on screen: then
-     * the page stays, and if [id] is the TV on screen its reads start again under the run.
+     * TV [id] came online. It's shown afresh, unless it's the TV on screen and that would drop a run on it:
+     * then the page stays and its reads start again under the run. Another TV is the one the user just
+     * connected, so it's shown as [select] would, run or not.
      */
     private fun autoSelect(id: String) {
-        if (!running) return show(id)
-        val now = _state.value.selected?.takeIf { it.id == id } ?: return
+        val now = _state.value.selected?.takeIf { it.id == id }
+        if (now == null || !running) return show(id)
         stopWatching()
         watch(now)
     }
