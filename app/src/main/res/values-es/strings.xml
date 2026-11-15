@@ -1039,7 +1039,13 @@
     <string name="guide_unlock_done">Opciones para desarrolladores desbloqueadas</string>
     <string name="guide_find_title">Busca tu TV</string>
     <string name="guide_done_next">Listo, siguiente</string>
-    <string name="guide_back">Atrás</string>
+    <string name="guide_show_step">Mostrar este paso</string>
+    <string name="guide_hide_step">Ocultar este paso</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV encontrada, saltar adelante</item>
+        <item quantity="many">%1$d TV encontradas, saltar adelante</item>
+        <item quantity="other">%1$d TV encontradas, saltar adelante</item>
+    </plurals>
     <string name="guide_done">Listo</string>
     <string name="guide_tip_same_wifi">Mantén el teléfono y la TV en la misma red Wi-Fi. Las redes de invitados suelen aislar los dispositivos.</string>
     <string name="guide_tip_debugging_off">¿La depuración se desactivó sola? Algunas TV la restablecen al reiniciarse. Vuelve a activarla y esta pantalla encontrará la TV de nuevo.</string>

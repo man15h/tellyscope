@@ -1222,7 +1222,14 @@
     <string name="guide_unlock_done">Developer options unlocked</string>
     <string name="guide_find_title">Find your TV</string>
     <string name="guide_done_next">Done, next</string>
-    <string name="guide_back">Back</string>
+    <!-- Screen-reader names for the arrow on a finished step: opens its instructions again -->
+    <string name="guide_show_step">Show this step</string>
+    <string name="guide_hide_step">Hide this step</string>
+    <!-- On the last step while the user is still on an earlier one: the scan found a TV -->
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV found, skip ahead</item>
+        <item quantity="other">%1$d TVs found, skip ahead</item>
+    </plurals>
     <string name="guide_done">Done</string>
     <string name="guide_tip_same_wifi">Keep the phone and the TV on the same Wi-Fi. Guest networks often keep devices apart.</string>
     <string name="guide_tip_debugging_off">Debugging switched itself off? Some TVs reset it after a restart. Turn it back on and this screen finds the TV again.</string>

@@ -1095,7 +1095,14 @@
     <string name="guide_unlock_done">Режим разработчика включен</string>
     <string name="guide_find_title">Найдите телевизор</string>
     <string name="guide_done_next">Готово, далее</string>
-    <string name="guide_back">Назад</string>
+    <string name="guide_show_step">Показать этот шаг</string>
+    <string name="guide_hide_step">Скрыть этот шаг</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">Найден %1$d телевизор, перейти дальше</item>
+        <item quantity="few">Найдено %1$d телевизора, перейти дальше</item>
+        <item quantity="many">Найдено %1$d телевизоров, перейти дальше</item>
+        <item quantity="other">Найдено %1$d телевизора, перейти дальше</item>
+    </plurals>
     <string name="guide_done">Готово</string>
     <string name="guide_tip_same_wifi">Телефон и телевизор должны быть в одной сети Wi-Fi. Гостевые сети часто изолируют устройства друг от друга.</string>
     <string name="guide_tip_debugging_off">Отладка отключилась сама? Некоторые телевизоры сбрасывают ее после перезапуска. Включите ее снова, и этот экран снова найдет телевизор.</string>

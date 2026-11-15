@@ -942,7 +942,11 @@
     <string name="guide_unlock_done">开发者选项已解锁</string>
     <string name="guide_find_title">查找你的电视</string>
     <string name="guide_done_next">完成，下一步</string>
-    <string name="guide_back">返回</string>
+    <string name="guide_show_step">显示此步骤</string>
+    <string name="guide_hide_step">隐藏此步骤</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="other">找到 %1$d 台电视，跳到下一步</item>
+    </plurals>
     <string name="guide_done">完成</string>
     <string name="guide_tip_same_wifi">请让手机和电视连接同一 Wi-Fi。访客网络通常会隔离设备。</string>
     <string name="guide_tip_debugging_off">调试自己关闭了？部分电视重启后会将其重置。重新开启后，此界面会再次找到电视。</string>
