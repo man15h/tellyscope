@@ -568,7 +568,7 @@
         <item quantity="other">%1$d приложения не изменено</item>
     </plurals>
     <plurals name="copy_disable_the_rest">
-        <item quantity="one">Отключить оставшееся</item>
+        <item quantity="one">Отключить остальные: %1$d</item>
         <item quantity="few">Отключить остальные %1$d</item>
         <item quantity="many">Отключить остальные %1$d</item>
         <item quantity="other">Отключить остальные %1$d</item>

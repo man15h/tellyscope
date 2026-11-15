@@ -504,6 +504,46 @@
         <item quantity="other">%2$d uygulamadan %1$d tanesi kapatıldı</item>
     </plurals>
     <string name="copy_still_on">%1$s hâlâ açık</string>
+
+    <!-- Debloat and Reset TV while they run: Back is held, and Stop lets the running step finish. -->
+    <string name="copy_debloat_still_running">Temizlik hâlâ sürüyor. Bittiğinde çıkabilirsiniz.</string>
+    <string name="copy_reset_still_running">Sıfırlama hâlâ sürüyor. Bittiğinde çıkabilirsiniz.</string>
+    <!-- %1$s is the name of the app being disabled. -->
+    <string name="copy_stopping_after">%1$s bitince duruyor…</string>
+    <string name="copy_stopping_after_app">Bu uygulama bitince duruyor…</string>
+    <string name="copy_stopping_after_step">Bu adım bitince duruyor…</string>
+    <string name="copy_debloat_stopped">Temizlik durduruldu</string>
+    <!-- %1$s is the last app it got to. Followed by copy_debloat_result_text. -->
+    <string name="copy_debloat_stopped_text">%1$s uygulamasından sonra durdurdunuz.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d uygulama değiştirilmedi</item>
+        <item quantity="other">%1$d uygulama değiştirilmedi</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Kalan %1$d uygulamayı kapat</item>
+        <item quantity="other">Kalan %1$d uygulamayı kapat</item>
+    </plurals>
+    <string name="copy_reset_stopped">Sıfırlama durduruldu</string>
+    <!-- Followed by copy_reset_kept_data. -->
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">%1$d uygulamadan sonra durdurdunuz.</item>
+        <item quantity="other">%1$d uygulamadan sonra durdurdunuz.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">Yarıda durdurdunuz.</string>
+    <string name="copy_not_done">Yapılmadı</string>
+    <!-- The copy_left_* parts list what copy_not_done is, joined with commas. -->
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">açılacak %1$d uygulama</item>
+        <item quantity="other">açılacak %1$d uygulama</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">geri getirilecek %1$d</item>
+        <item quantity="other">geri getirilecek %1$d</item>
+    </plurals>
+    <string name="copy_left_home">ana ekran</string>
+    <string name="copy_left_dns">Özel DNS</string>
+    <string name="copy_left_animations">animasyon hızı</string>
+    <string name="copy_finish_reset">Sıfırlamayı bitir</string>
     <plurals name="copy_to_put_back">
         <item quantity="one">Geri yüklenecek %1$d değişiklik</item>
         <item quantity="other">Geri yüklenecek %1$d değişiklik</item>
