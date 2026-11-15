@@ -4,6 +4,7 @@ package app.tellyscope.data
 
 import org.json.JSONArray
 import org.json.JSONException
+import org.json.JSONTokener
 import java.security.GeneralSecurityException
 import java.security.KeyFactory
 import java.security.PublicKey
@@ -32,11 +33,13 @@ val DATA_KEYS = listOf(
  * against any key passes. A key or signature that can't be read never passes.
  */
 fun verifyIndex(index: ByteArray, keys: List<String>): Boolean {
-    val first = index.indexOf('\n'.code.toByte()).takeIf { it >= 0 } ?: return false
-    val second = (first + 1 until index.size).firstOrNull { index[it] == '\n'.code.toByte() } ?: return false
-    val line = SIGS.matchEntire(index.copyOfRange(first + 1, second).decodeToString()) ?: return false
+    val split = split(index) ?: return false
     val ders = try {
-        JSONArray(line.groupValues[1]).let { a -> (0 until a.length()).map { a.getString(it) } }
+        // The whole of it one array, as `tools/data.py` reads it: org.json stops at the `]` and ignores what follows.
+        val tokens = JSONTokener(split.sigs)
+        val a = tokens.nextValue() as? JSONArray ?: return false
+        if (tokens.more()) return false
+        (0 until a.length()).map { a.getString(it) }
     } catch (_: JSONException) {
         return false
     }.mapNotNull { entry ->
@@ -48,14 +51,13 @@ fun verifyIndex(index: ByteArray, keys: List<String>): Boolean {
             }
         }
     }
-    val signed = index.copyOfRange(0, first + 1) + index.copyOfRange(second + 1, index.size)
     val publicKeys = keys.mapNotNull(::publicKey)
     return ders.any { der ->
         publicKeys.any { key ->
             try {
                 Signature.getInstance("SHA256withECDSA").run {
                     initVerify(key)
-                    update(signed)
+                    update(split.signed)
                     verify(der)
                 }
             } catch (_: GeneralSecurityException) {
@@ -63,6 +65,22 @@ fun verifyIndex(index: ByteArray, keys: List<String>): Boolean {
             }
         }
     }
+}
+
+/**
+ * The bytes of [index] its signatures cover: the file with line 2 cut out, or all of it when line 2 isn't a `"sigs"`
+ * line, as then it's unsigned. Only these are read as the index, so nothing on line 2 can add to what was signed.
+ */
+fun signedBytes(index: ByteArray): ByteArray = split(index)?.signed ?: index
+
+/** A signed `index.json` taken apart: [signed], the file without line 2, and [sigs], the list on that line. */
+private class Split(val signed: ByteArray, val sigs: String)
+
+private fun split(index: ByteArray): Split? {
+    val first = index.indexOf('\n'.code.toByte()).takeIf { it >= 0 } ?: return null
+    val second = (first + 1 until index.size).firstOrNull { index[it] == '\n'.code.toByte() } ?: return null
+    val line = SIGS.matchEntire(index.copyOfRange(first + 1, second).decodeToString()) ?: return null
+    return Split(index.copyOfRange(0, first + 1) + index.copyOfRange(second + 1, index.size), line.groupValues[1])
 }
 
 /** Line 2 of a signed `index.json`: `  "sigs": [...],`, the list in group 1. */
