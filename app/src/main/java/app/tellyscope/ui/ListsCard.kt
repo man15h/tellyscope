@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -37,11 +40,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -53,6 +58,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -72,6 +78,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -124,15 +131,20 @@ fun DebloatScreen(
     busy: Boolean = false,
     /** Help add this TV to cleanyourtv, offered when a search finds no list. */
     onHelpAdd: () -> Unit = {},
+    /** Loads this TV's list again after it didn't load. */
+    onRetry: () -> Unit = {},
 ) {
     val ready = lists as? Suggestions.Ready
     val devices = when (lists) {
         is Suggestions.NoList -> lists.devices
         is Suggestions.Ready -> lists.devices
-        else -> emptyList()
+        is Suggestions.Unavailable -> lists.devices
+        null -> emptyList()
     }
     // A list picked in the search; until then, the one Tellyscope found.
     var chosen by rememberSaveable { mutableStateOf<String?>(null) }
+    // A pick that didn't load puts the last list back, so the pick is forgotten once anything arrives.
+    LaunchedEffect(lists) { if (lists != null) chosen = null }
     var searching by rememberSaveable { mutableStateOf(false) }
     var marked by rememberSaveable { mutableStateOf<String?>(null) }
     val makers = remember(devices) { listMakers(devices) }
@@ -180,8 +192,8 @@ fun DebloatScreen(
             )
         },
         bottomBar = {
-            // Above the keyboard while the search is typed into.
-            Surface(tonalElevation = 3.dp, modifier = Modifier.imePadding()) {
+            // Above the keyboard while the search is typed into. Nothing to disable until a list loads.
+            if (searching || groups != null) Surface(tonalElevation = 3.dp, modifier = Modifier.imePadding()) {
                 Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
                     if (searching) {
                         Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lists_use_this)) }
@@ -246,10 +258,11 @@ fun DebloatScreen(
             ) {
                 if (groups == null) {
                     item {
-                        Muted(
-                            if (lists == Suggestions.Unavailable) stringResource(R.string.lists_unavailable)
-                            else stringResource(R.string.lists_loading),
-                        )
+                        if (lists is Suggestions.Unavailable) {
+                            ListFailed(onRetry, onNotThis = if (devices.isEmpty()) null else ({ marked = null; searching = true }))
+                        } else {
+                            ListLoading()
+                        }
                     }
                     return@LazyColumn
                 }
@@ -323,6 +336,50 @@ fun DebloatScreen(
         }
     }
 }
+
+/** The list on its way, in the middle of the page. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun LazyItemScope.ListLoading() {
+    Column(Modifier.fillParentMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        LoadingIndicator(Modifier.size(48.dp))
+        Spacer(Modifier.height(12.dp))
+        Muted(stringResource(R.string.lists_loading))
+    }
+}
+
+/** A list that didn't load: try again, or pick another TV's when the index is there to search. */
+@Composable
+private fun LazyItemScope.ListFailed(onRetry: () -> Unit, onNotThis: (() -> Unit)?) {
+    Column(
+        Modifier.fillParentMaxSize().padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(CloudOff, contentDescription = null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.lists_failed), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.lists_failed_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+        FilledTonalButton(onClick = onRetry) {
+            Icon(Icons.Filled.Refresh, contentDescription = null, Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.lists_try_again))
+        }
+        if (onNotThis != null) TextButton(onClick = onNotThis) { Text(stringResource(R.string.lists_not_this_tv)) }
+    }
+}
+
+private val CloudOff = symbol(
+    "CloudOff",
+    "M792-56 686-160H260q-92 0-156-64T40-380q0-77 47.5-137T210-594q3-8 6-15.5t6-16.5L56-792l56-56 736 736-56 56ZM260-240h346L284-562q-2 11-3 21t-1 21h-20q-58 0-99 41t-41 99q0 58 41 99t99 41Zm185-161Zm419 191-58-56q17-14 25.5-32.5T840-340q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-27 0-52 6.5T380-693l-58-58q35-24 74.5-36.5T480-800q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 39-15 72.5T864-210ZM593-479Z",
+)
 
 /** How far a group's apps sit in from its heading: a checkbox and its gap, so theirs line up under its title. */
 private val Indent = 32.dp

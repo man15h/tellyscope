@@ -39,6 +39,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -57,9 +58,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
@@ -366,12 +369,14 @@ fun DeviceTabsScreen(
                                     todo = debloat.todo,
                                     disabling = ui.busy == DISABLING,
                                     // With nothing left on the list, Debloat leads to the apps for one-off changes,
-                                    // through a gate that says so until the user turns it off.
+                                    // through a gate that says so until the user turns it off. A list that didn't
+                                    // load opens Debloat, which offers Try again.
                                     onDebloat = when {
-                                        debloat.todo -> actions.debloat
+                                        debloat.todo || ui.lists is Suggestions.Unavailable -> actions.debloat
                                         state.debloatGate && ui.lists is Suggestions.Ready -> ({ gate = true })
                                         else -> ({ tab = TvTab.Apps })
                                     },
+                                    loading = ui.lists == null,
                                 )
                             }
                             // A better home screen is a suggestion, so it sits with the actions rather than among the apps.
@@ -380,7 +385,7 @@ fun DeviceTabsScreen(
                             }
                         }
                         // The list, what's plugged in, and Android.
-                        item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history) }
+                        item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history, onRetry = actions.retryLists) }
                         ui.peripherals?.takeIf { !offline }?.let { p -> item(key = "connectedDevices") { ConnectedDevicesCard(p) } }
                         item { AndroidCard(state, snap, offline, onUpdates = actions.checkUpdates) }
                     }
@@ -783,15 +788,22 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
 }
 
 /**
- * The list in one line of plain text, with See changes beside it. When apps Tellyscope turned off
- * are on again, one red line says so; the Debloat tile above carries the count and the fix.
+ * The list in one line of plain text, with See changes beside it once the list has loaded: a
+ * loader while it loads, Try again when it didn't. When apps Tellyscope turned off are on again,
+ * one red line says so; the Debloat tile above carries the count and the fix.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
+private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit, onRetry: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // As tall as a row with a button, so the card keeps its height when the button comes.
+            Row(Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (lists == null && !offline) {
+                    LoadingIndicator(Modifier.size(24.dp))
+                    Spacer(Modifier.width(12.dp))
+                }
                 Text(
                     when (lists) {
                         is Suggestions.Ready -> when {
@@ -800,13 +812,21 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
                             else -> pluralStringResource(R.plurals.tabs_suggested_some_off, d.total, d.total - d.on, d.total)
                         }
                         is Suggestions.NoList -> stringResource(R.string.tabs_suggested_no_list)
-                        Suggestions.Unavailable -> stringResource(R.string.tabs_suggested_unavailable)
+                        is Suggestions.Unavailable -> stringResource(R.string.tabs_suggested_unavailable)
                         null -> stringResource(if (offline) R.string.tabs_suggested_offline else R.string.tabs_suggested_loading)
                     },
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
+                when (lists) {
+                    null -> Unit
+                    is Suggestions.Unavailable -> OutlinedButton(onClick = onRetry, enabled = !offline) {
+                        Icon(Icons.Default.Refresh, contentDescription = null, Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.tabs_try_again))
+                    }
+                    else -> TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
+                }
             }
             if (d.back > 0) {
                 val required = stringResource(R.string.tabs_action_required)

@@ -5,6 +5,7 @@ package app.tellyscope.ui
 
 import android.content.Context
 import android.content.Intent
+import android.icu.text.CompactDecimalFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +57,7 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
@@ -102,13 +105,17 @@ fun SettingsScreen(
     onReport: () -> Unit = {},
     onWhatsNew: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    /** The own-lists address being checked, or why it was refused; null otherwise. */
+    sourceCheck: SourceCheck? = null,
+    /** Cancel in the own-lists dialog, to stop a check still running. */
+    onCancelSource: () -> Unit = {},
 ) {
     var editing by rememberSaveable { mutableStateOf(false) }
     var advanced by rememberSaveable { mutableStateOf(false) }
     val browser = LocalUriHandler.current
     val context = LocalContext.current
     val open = { url: String -> runCatching { browser.openUri(url) }; Unit }
-    if (editing) SourceDialog(listSource, onSave = { editing = false; onListSource(it) }, onDismiss = { editing = false })
+    if (editing) SourceDialog(listSource, sourceCheck, onSave = onListSource, onDone = { editing = false }, onDismiss = { editing = false; onCancelSource() })
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -246,15 +253,21 @@ private fun ListsFrom(source: String?, onOpen: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (source == null) "cleanyourtv" else sourceName(source), style = MaterialTheme.typography.titleMedium)
                 if (source == null) {
+                    // The count in the phone's own short form: 40K, 4万, 40 тыс.
+                    val locale = LocalConfiguration.current.locales[0]
+                    val stars = remember(locale) { CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT).format(CLEANYOURTV_STARS) }
                     Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Default.Star, contentDescription = null, Modifier.size(16.dp), tint = Color(0xFFE0A100))
-                    Text(" 40k+", style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+                    Icon(Icons.Default.Star, contentDescription = null, Modifier.size(16.dp), tint = c.onSurfaceVariant)
+                    Text(" $stars+", style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
                 }
             }
         }
         if (source == null) Icon(OpenInNew, contentDescription = stringResource(R.string.settings_open_cleanyourtv), tint = c.onSurfaceVariant)
     }
 }
+
+/** About how many stars cleanyourtv has on GitHub, shown as "40K+". */
+private const val CLEANYOURTV_STARS = 40_000
 
 internal val OpenInNew = ImageVector.Builder("OpenInNew", 24.dp, 24.dp, 24f, 24f)
     .addPath(
@@ -263,10 +276,24 @@ internal val OpenInNew = ImageVector.Builder("OpenInNew", 24.dp, 24.dp, 24f, 24f
     )
     .build()
 
-/** Edits the list source: an HTTPS folder holding `index.json`, or back to the default. */
+/**
+ * Edits the list source: an HTTPS folder holding `index.json`, or back to the default. It stays
+ * open while the address is checked and closes once it's taken; a refusal shows under the address,
+ * kept as typed, until it's edited. Cancel stops the check.
+ */
 @Composable
-private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: () -> Unit) {
+private fun SourceDialog(source: String?, check: SourceCheck?, onSave: (String?) -> Unit, onDone: () -> Unit, onDismiss: () -> Unit) {
     var url by rememberSaveable { mutableStateOf(source.orEmpty()) }
+    // The address last sent for checking, and whether an answer is still to come.
+    var sent by rememberSaveable { mutableStateOf<String?>(null) }
+    var waiting by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(check) {
+        if (waiting && check == null) onDone()
+        if (check is SourceCheck.Refused) waiting = false
+    }
+    val checking = check == SourceCheck.Checking
+    val refused = (check as? SourceCheck.Refused)?.why?.takeIf { sent == url }
+    val save = { to: String? -> sent = to.orEmpty(); waiting = true; onSave(to) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_source_title)) },
@@ -276,15 +303,26 @@ private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: 
                     stringResource(R.string.settings_source_text),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                OutlinedTextField(url, { url = it }, placeholder = { Text("https://…") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    url, { url = it },
+                    placeholder = { Text("https://…") },
+                    singleLine = true,
+                    isError = refused != null,
+                    supportingText = if (refused != null) ({ Text(refused.resolve()) }) else null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         // Three actions stack full width; two sit side by side.
         confirmButton = {
-            val use = @Composable { m: Modifier -> Button(onClick = { onSave(url) }, enabled = url.isNotBlank(), modifier = m) { Text(stringResource(R.string.settings_use_lists)) } }
+            val use = @Composable { m: Modifier ->
+                Button(onClick = { save(url) }, enabled = url.isNotBlank() && !checking, modifier = m) {
+                    Text(stringResource(if (checking) R.string.settings_checking else R.string.settings_use_lists))
+                }
+            }
             if (source == null) use(Modifier) else Column(Modifier.fillMaxWidth()) {
                 use(Modifier.fillMaxWidth())
-                TextButton(onClick = { onSave(null) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_reset)) }
+                TextButton(onClick = { save(null) }, Modifier.fillMaxWidth(), enabled = !checking) { Text(stringResource(R.string.settings_reset)) }
                 TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_cancel)) }
             }
         },

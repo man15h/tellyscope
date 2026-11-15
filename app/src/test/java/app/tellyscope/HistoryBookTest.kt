@@ -83,6 +83,8 @@ class HistoryBookTest {
 
         val switch = book.record(tv, 3_000, Action.Home, "com.android.launcher3", "Fossify Launcher", Action.Enable)
         assertNull(HistoryBook(file).entries(tv).first { it.id == back.id }.undo)
+        // History says why its Undo is gone, after a restart too.
+        assertTrue(HistoryBook(file).entries(tv).first { it.id == back.id }.undoDropped)
         assertEquals(Action.Home, book.entries("tv-2").first { it.id == elsewhere.id }.undo)
 
         // Undoing a switch makes the old launcher Home again, so it counts too.
@@ -90,6 +92,19 @@ class HistoryBookTest {
         assertEquals(Action.Home, book.entries(tv).first { it.id == back2.id }.undo)
         book.record(tv, 5_000, Action.Enable, "com.android.launcher3", "Quickstep", undo = null, undoing = switch.id)
         assertNull(book.entries(tv).first { it.id == back2.id }.undo)
+    }
+
+    @Test fun anUndoTakenAwayIsToldApartFromNone() {
+        val file = tmp.root.resolve("history.tsv")
+        val book = HistoryBook(file)
+        val back = book.record(tv, 1_000, Action.HomeBack, "fr.neamar.kiss", "Quickstep", Action.Home)
+        val caches = book.record(tv, 2_000, Action.ClearCaches, "", "Cleared caches", undo = null)
+        book.dropUndo(back.id)
+
+        val after = HistoryBook(file).entries(tv)
+        assertNull(after.first { it.id == back.id }.undo)
+        assertTrue(after.first { it.id == back.id }.undoDropped)
+        assertFalse(after.first { it.id == caches.id }.undoDropped)
     }
 
     @Test fun anOlderFilesBaselineLinesAreSkipped() {

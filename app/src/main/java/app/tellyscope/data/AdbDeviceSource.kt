@@ -1033,9 +1033,9 @@ class AdbDeviceSource(
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions = try {
         val r = resolve(deviceId)
         when {
-            r.index == null -> Suggestions.Unavailable
+            r.index == null -> Suggestions.Unavailable()
             r.match == ListMatch.None -> Suggestions.NoList(r.index.commit, r.index.devices)
-            r.list == null -> Suggestions.Unavailable
+            r.list == null -> Suggestions.Unavailable(r.index.devices)
             else -> Suggestions.Ready(
                 r.index.commit, r.list, r.sdk, suggest(r.list, apps(), r.sdk), r.index.devices,
                 byMaker = r.match is ListMatch.Maker,
@@ -1044,13 +1044,15 @@ class AdbDeviceSource(
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
-        Suggestions.Unavailable // the TV dropped mid-read
+        Suggestions.Unavailable() // the TV dropped mid-read
     }
 
-    override suspend fun pickList(deviceId: String, listId: String) {
+    override suspend fun pickList(deviceId: String, listId: String?): String? {
         val key = key(deviceId)
+        val was = lists.picked(key)
         lists.pick(key, listId)
         keep.remove(key)
+        return was
     }
 
     override suspend fun listSource(): String? = lists.custom()

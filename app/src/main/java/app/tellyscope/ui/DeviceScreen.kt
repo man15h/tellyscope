@@ -10,6 +10,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,7 +52,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -116,6 +117,8 @@ data class DeviceActions(
     val remote: () -> Unit = {},
     /** Opens the Debloat flow: pick the TV's list, then review the apps it turns off. */
     val debloat: () -> Unit = {},
+    /** Loads the TV's list again after it didn't load. */
+    val retryLists: () -> Unit = {},
     /** Opens the Advanced monitor: every number, per-app CPU and RAM, processes and network. */
     val advanced: () -> Unit = {},
     /** Opens History: every change on this TV with its Undo, and Restore everything. */
@@ -221,7 +224,7 @@ fun UndoDisableDialog(entry: HistoryEntry, onDisable: () -> Unit, onDismiss: () 
 fun RestoreDialog(restore: RestoreSummary, onRestore: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(pluralStringResource(R.plurals.device_restore_title, restore.count, restore.count)) },
+        title = { Text(stringResource(R.string.device_restore_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(stringResource(R.string.device_restore_text))
@@ -411,7 +414,7 @@ fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit
     )
 }
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun AppRow(
     app: AppInfo,
@@ -474,8 +477,9 @@ internal fun AppRow(
                 if (proposed == null) {
                     // At most three: Open and Stop, then one remove button. Uninstall for an app the user
                     // installed, Disable for one the TV came with; Turn on takes Open's place while it's off.
+                    // Buttons that don't fit on one line, in a long translation or at large text, wrap to the next.
                     if (app.protectedReason == null) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (!app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
                             if (app.enabled && running) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
@@ -484,7 +488,7 @@ internal fun AppRow(
                         }
                     } else if (opens || (launcher && app.removable)) {
                         // Protected, but anything with an icon still opens; the launcher on Home also uninstalls, Home moving first.
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
                             if (launcher && app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }

@@ -224,9 +224,12 @@ class Actions(private val shell: AdbShell) {
         return shell.shell("pm path $pkg 2>/dev/null").output.lineSequence().any { it.startsWith("package:") }
     }
 
-    /** Whether the Play Store is the app on screen. */
+    /**
+     * Whether the Play Store is the app on screen. A Google sign-in or consent screen the Store
+     * opens runs as another app, and counts as the Store: the user is still in the middle of it.
+     */
     suspend fun storeOnScreen(): Boolean =
-        shell.shell(Commands.RESUMED).output.lineSequence().any { "ResumedActivity" in it && " ${Commands.PLAY_STORE}/" in it }
+        shell.shell(Commands.RESUMED).output.lineSequence().any { line -> "ResumedActivity" in line && STORE_SCREENS.any { " $it/" in line } }
 
     /** The activity Home opens, or null when Android would ask (its chooser lives in `android`). */
     suspend fun currentHome(): String? =
@@ -332,5 +335,8 @@ class Actions(private val shell: AdbShell) {
          * shell may only move a package between default, enabled and disabled-user.
          */
         const val SHELL_REFUSED = "Shell cannot change component state"
+
+        /** The Store, then the apps its sign-in and consent screens run in, newer Android and older. */
+        private val STORE_SCREENS = listOf(Commands.PLAY_STORE, "com.google.android.gms", "com.google.android.gsf.login")
     }
 }

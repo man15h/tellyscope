@@ -704,10 +704,10 @@ class ScreenshotTest {
         // Check for updates leads; Advanced starts folded.
         compose.onNodeWithText("Check for updates").assertExists()
         compose.onNodeWithText("Use your own debloat lists").assertDoesNotExist()
-        compose.onNodeWithText("Advanced").performClick()
+        compose.onNodeWithText("Debloat lists").performClick()
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("cleanyourtv").assertExists()
-        compose.onNodeWithText(" 40k+").assertExists()
+        compose.onNodeWithText(" 40K+").assertExists()
         compose.onNodeWithText("cleanyourtv").performClick()
         compose.onNodeWithText("How to use your own lists").performClick()
         assertEquals(listOf("https://github.com/Gathin23/cleanyourtv", RELEASES.removeSuffix("/releases") + "/blob/main/CONTRIBUTING.md#using-your-own-lists"), opened)
@@ -723,8 +723,8 @@ class ScreenshotTest {
     }
 
     @Test fun settings_dark() = shot("81_settings", dark = true) { settings()() }
-    @Test fun settings_advanced() = shot("82_settings_advanced", before = { compose.onNodeWithText("Advanced").performClick(); Unit }) { settings()() }
-    @Test fun settings_advanced_dark() = shot("82_settings_advanced", dark = true, before = { compose.onNodeWithText("Advanced").performClick(); Unit }) { settings()() }
+    @Test fun settings_advanced() = shot("82_settings_advanced", before = { compose.onNodeWithText("Debloat lists").performClick(); Unit }) { settings()() }
+    @Test fun settings_advanced_dark() = shot("82_settings_advanced", dark = true, before = { compose.onNodeWithText("Debloat lists").performClick(); Unit }) { settings()() }
 
     @Test fun settings_whatsNewOpens() {
         var opened = 0
@@ -1416,7 +1416,7 @@ class ScreenshotTest {
         shot("18_debloat_model", dark) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
         compose.onNodeWithText(lists.list.name).assertExists()
         compose.onNodeWithText("This model's list", substring = true).assertExists()
-        compose.onNodeWithText("These apps will be turned off", substring = true).assertExists()
+        compose.onNodeWithText("These apps will be disabled", substring = true).assertExists()
         compose.onNodeWithText("optional: tick it if you don't use it", substring = true).assertExists()
         compose.onNodeWithText("Not this TV?").assertExists()
         compose.onNodeWithText("TCL C-series").assertDoesNotExist()
@@ -1751,7 +1751,7 @@ class ScreenshotTest {
     private fun advancedTab(label: String) = { compose.onAllNodes(hasText(label) and hasClickAction()).onFirst().performClick(); Unit }
     @Test fun readme_thisTv() = shot("31_readme_this_tv") { AdvancedScreen(readmeAdvanced(), back = {}) }
     @Test fun readme_cpu() = shot("32_readme_cpu", before = advancedTab("CPU")) { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_ram() = shot("33_readme_ram", before = advancedTab("RAM")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+    @Test fun readme_ram() = shot("33_readme_ram", before = advancedTab("Memory")) { AdvancedScreen(readmeAdvanced(), back = {}) }
     @Test fun readme_network() = shot("34_readme_network", before = advancedTab("Network")) { AdvancedScreen(readmeAdvanced(), back = {}) }
 
     /** A shell on the TV that answers each command from [replies] and ends it with TvShell's marker line. */

@@ -41,7 +41,7 @@ class HistoryBook(private val file: File? = null) {
         undone?.let { entries[it] = entries[it].copy(undoneAt = at) }
         if (takesHome) {
             // An older "Switched home back" would switch to a launcher that has since lost Home: its Undo goes.
-            entries.replaceAll { if (it.deviceId == deviceId && it.action == Action.HomeBack && it.undoneAt == null) it.copy(undo = null) else it }
+            entries.replaceAll { if (it.deviceId == deviceId && it.action == Action.HomeBack && it.undoneAt == null && it.undo != null) it.copy(undo = null, undoDropped = true) else it }
         }
         val entry = HistoryEntry((entries.maxOfOrNull { it.id } ?: 0) + 1, deviceId, at, action, packageName, label, undo, null, previous)
         entries += entry
@@ -53,7 +53,7 @@ class HistoryBook(private val file: File? = null) {
     @Synchronized
     fun dropUndo(id: Long) {
         val i = entries.indexOfFirst { it.id == id }.takeIf { it >= 0 } ?: return
-        entries[i] = entries[i].copy(undo = null)
+        entries[i] = entries[i].copy(undo = null, undoDropped = true)
         save()
     }
 
@@ -100,7 +100,7 @@ class HistoryBook(private val file: File? = null) {
         val lines = entries.map { e ->
             listOf(
                 VERSION, "e", e.deviceId, e.id.toString(), e.at.toString(), e.action.name, e.packageName,
-                clean(e.label), e.undo?.name.orEmpty(), e.undoneAt?.toString().orEmpty(),
+                clean(e.label), e.undo?.name ?: DROPPED.takeIf { e.undoDropped }.orEmpty(), e.undoneAt?.toString().orEmpty(),
             ) + listOfNotNull(e.previous?.let(::encode))
         }
         val tmp = File(f.path + ".tmp")
@@ -130,6 +130,7 @@ class HistoryBook(private val file: File? = null) {
                     undo = action(f[8]),
                     undoneAt = f[9].toLongOrNull(),
                     previous = f.getOrNull(10)?.let(::decode),
+                    undoDropped = f[8] == DROPPED,
                 )
             }
         }
@@ -149,6 +150,9 @@ class HistoryBook(private val file: File? = null) {
 }
 
 private const val VERSION = "v1"
+
+/** In the undo field: an Undo a later change took away. Older versions read it as no undo. */
+private const val DROPPED = "-"
 
 /** Where going back from a launcher the user added goes: a launcher, its home activity if known, and the switch it reverses. */
 data class HomeBackTarget(val pkg: String, val activity: String?, val reverses: Long?)

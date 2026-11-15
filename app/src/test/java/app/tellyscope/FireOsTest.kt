@@ -117,7 +117,7 @@ private class FireTv(val tv: Device = amazon, val own: List<AppInfo> = listOf(fi
 
     override suspend fun known() = listOf(tv)
     override fun live(deviceId: String): Flow<Snapshot> = emptyFlow()
-    override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>) = Suggestions.Unavailable
+    override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>) = Suggestions.Unavailable()
     override suspend fun history(deviceId: String) = emptyList<HistoryEntry>()
     override suspend fun apps(deviceId: String) = own +
         if (installs.isEmpty()) emptyList() else listOf(AppInfo(PROJECTIVY, "Projectivy Launcher", null, false, true, null, "1.0", homeInstead = FIRE_TV_LAUNCHER, homeService = true))

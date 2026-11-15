@@ -13,7 +13,7 @@
     <string name="copy_confirm_home">Да, сменить главный экран</string>
     <string name="copy_confirm_home_back">Да, вернуть</string>
     <string name="copy_explain_stop">Останавливает %1$s (%2$s), пока вы снова его не откроете.</string>
-    <string name="copy_explain_disable">Скрывает %1$s (%2$s) и останавливает его работу. Ничего не удаляется: приложение можно снова включить здесь.</string>
+    <string name="copy_explain_disable">Отключает %1$s (%2$s) и останавливает его работу. Ничего не удаляется: приложение можно снова включить здесь.</string>
     <string name="copy_explain_enable">Снова включает %1$s (%2$s).</string>
     <string name="copy_explain_open">Открывает %1$s (%2$s) на телевизоре.</string>
     <string name="copy_explain_uninstall">Удаляет %1$s (%2$s) и все его данные. Это нельзя отменить: чтобы вернуть приложение, установите его заново.</string>
@@ -364,6 +364,7 @@
     <string name="copy_more">Другие параметры</string>
     <string name="copy_buttons_hint">Выберите до %1$d. Перетащите, чтобы задать порядок. Чтобы выбрать другую, сначала снимите отметку с одной из выбранных.</string>
     <string name="copy_not_on_tv">%1$s нет на этом телевизоре. Установите его из Play Маркета на телевизоре.</string>
+    <string name="copy_not_on_tv_fire">%1$s нет на этом телевизоре. Установите его из Appstore на телевизоре.</string>
     <string name="copy_cant_open">Телевизору не удалось открыть %1$s. Если приложение отключено, включите его в разделе «Приложения».</string>
     <string name="copy_left_dock_one">%1$s удалено, поэтому его кнопка убрана с пульта.</string>
     <plurals name="copy_left_dock">
@@ -554,10 +555,29 @@
     </plurals>
     <string name="copy_still_on">%1$s по-прежнему включено</string>
     <plurals name="copy_to_put_back">
-        <item quantity="one">%1$d изменение нужно вернуть</item>
-        <item quantity="few">%1$d изменения нужно вернуть</item>
-        <item quantity="many">%1$d изменений нужно вернуть</item>
-        <item quantity="other">%1$d изменения нужно вернуть</item>
+        <item quantity="one">%1$d изменение нужно восстановить</item>
+        <item quantity="few">%1$d изменения нужно восстановить</item>
+        <item quantity="many">%1$d изменений нужно восстановить</item>
+        <item quantity="other">%1$d изменения нужно восстановить</item>
+    </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="one">Восстановлено %1$d из %2$d изменения</item>
+        <item quantity="few">Восстановлено %1$d из %2$d изменений</item>
+        <item quantity="many">Восстановлено %1$d из %2$d изменений</item>
+        <item quantity="other">Восстановлено %1$d из %2$d изменений</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="one">Остались такими, как их оставил Tellyscope (%1$d):</item>
+        <item quantity="few">Остались такими, как их оставил Tellyscope (%1$d):</item>
+        <item quantity="many">Остались такими, как их оставил Tellyscope (%1$d):</item>
+        <item quantity="other">Остались такими, как их оставил Tellyscope (%1$d):</item>
+    </plurals>
+    <string name="copy_restored_hint">Отмените каждое в его строке в разделе «История» или повторите восстановление позже.</string>
+    <plurals name="copy_and_more">
+        <item quantity="one">и ещё %1$d</item>
+        <item quantity="few">и ещё %1$d</item>
+        <item quantity="many">и ещё %1$d</item>
+        <item quantity="other">и ещё %1$d</item>
     </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="one">%1$d изменение Tellyscope всё ещё действует</item>
@@ -694,18 +714,13 @@
     <string name="vm_not_an_ip">Это не похоже на IP-адрес. Он должен выглядеть как четыре числа через точки, как в настройках сети телевизора.</string>
     <string name="vm_bad_port">Порт после двоеточия должен быть числом от 1 до 65535, например 5555.</string>
     <string name="vm_didnt_work">Не получилось.</string>
-    <string name="vm_nothing_to_put_back">Нечего возвращать.</string>
+    <string name="vm_nothing_to_put_back">Нечего восстанавливать.</string>
+    <string name="vm_list_not_loaded">Не удалось загрузить список %1$s. Остаётся %2$s.</string>
     <plurals name="vm_put_back">
-        <item quantity="one">Возвращено %1$d изменение.</item>
-        <item quantity="few">Возвращено %1$d изменения.</item>
-        <item quantity="many">Возвращено %1$d изменений.</item>
-        <item quantity="other">Возвращено %1$d изменения.</item>
-    </plurals>
-    <plurals name="vm_put_back_partly">
-        <item quantity="one">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
-        <item quantity="few">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
-        <item quantity="many">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
-        <item quantity="other">Возвращено изменений: %1$d из %2$d. Не вернулось: %3$d, среди них %4$s: %5$s</item>
+        <item quantity="one">Восстановлено %1$d изменение.</item>
+        <item quantity="few">Восстановлено %1$d изменения.</item>
+        <item quantity="many">Восстановлено %1$d изменений.</item>
+        <item quantity="other">Восстановлено %1$d изменения.</item>
     </plurals>
     <string name="vm_tv_refused">телевизор отказал</string>
     <string name="vm_tv_didnt_answer">Телевизор не ответил.</string>
@@ -750,12 +765,12 @@
     <string name="data_reset_already_undone">этот сброс уже отменен</string>
     <string name="data_reset_tv_kept_home">телевизор оставил главным экраном %1$s</string>
     <string name="data_app_reason">%1$s: %2$s</string>
-    <string name="data_reset_undo_service_left">все изменения отменены, но %1$s</string>
+    <string name="data_reset_undo_service_left">все изменения восстановлены, но %1$s</string>
     <plurals name="data_reset_undo_partial">
-        <item quantity="one">отменено %1$d из %2$d изменения. %3$s. Повторная отмена попробует остальное</item>
-        <item quantity="few">отменено %1$d из %2$d изменений. %3$s. Повторная отмена попробует остальное</item>
-        <item quantity="many">отменено %1$d из %2$d изменений. %3$s. Повторная отмена попробует остальное</item>
-        <item quantity="other">отменено %1$d из %2$d изменения. %3$s. Повторная отмена попробует остальное</item>
+        <item quantity="one">восстановлено %1$d из %2$d изменения. %3$s. Повторная отмена попробует остальное</item>
+        <item quantity="few">восстановлено %1$d из %2$d изменений. %3$s. Повторная отмена попробует остальное</item>
+        <item quantity="many">восстановлено %1$d из %2$d изменений. %3$s. Повторная отмена попробует остальное</item>
+        <item quantity="other">восстановлено %1$d из %2$d изменений. %3$s. Повторная отмена попробует остальное</item>
     </plurals>
     <string name="data_tweak_refused">телевизор не принял изменение</string>
     <string name="data_dns_too_old">для частного DNS нужен Android 9 или новее, а на этом телевизоре более старая версия</string>
@@ -767,7 +782,7 @@
     <string name="data_app_names_system">Система Android</string>
     <string name="data_history_service_off">Отключена служба специальных возможностей %1$s</string>
     <string name="data_history_service_on">Включена служба специальных возможностей %1$s</string>
-    <string name="data_history_reset_undone">Отменены изменения после сброса телевизора</string>
+    <string name="data_history_reset_undone">Восстановлено то, что изменил сброс телевизора</string>
     <plurals name="data_history_reset">
         <item quantity="one">Сброс телевизора · %1$d изменение</item>
         <item quantity="few">Сброс телевизора · %1$d изменения</item>
@@ -826,7 +841,8 @@
         <item quantity="many">%1$d приложений снова включились</item>
         <item quantity="other">%1$d приложения снова включились</item>
     </plurals>
-    <string name="tabs_note_unavailable">Проверьте подключение телефона к интернету и снова откройте этот телевизор.</string>
+    <string name="tabs_note_unavailable">Проверьте подключение телефона к интернету.</string>
+    <string name="tabs_try_again">Повторить</string>
     <string name="tabs_note_no_list">Нажмите «Очистка», чтобы вручную выбрать приложения для отключения.</string>
     <string name="tabs_note_by_maker">Для этой модели списка нет, поэтому они взяты для других телевизоров %1$s.</string>
     <string name="tabs_note_gate">Теперь «Очистка» открывает раздел «Приложения» для отдельных изменений.</string>
@@ -850,7 +866,9 @@
     <string name="lists_brand_or_model">Марка или модель</string>
     <string name="lists_clear_search">Очистить поиск</string>
     <string name="lists_no_match">Нет списка для «%1$s». Выберите самую похожую модель.</string>
-    <string name="lists_unavailable">Не удалось загрузить этот список. Проверьте подключение телефона к интернету и повторите попытку.</string>
+    <string name="lists_failed">Не удалось загрузить список</string>
+    <string name="lists_failed_hint">Проверьте подключение телефона к интернету и повторите попытку.</string>
+    <string name="lists_try_again">Повторить</string>
     <string name="lists_loading">Загрузка списка…</string>
     <string name="lists_this_tv">Этот телевизор</string>
     <string name="lists_match_none">Для этого телевизора и его производителя пока нет списка</string>
@@ -877,7 +895,7 @@
         <item quantity="many">Отключить %1$d приложений?</item>
         <item quantity="other">Отключить %1$d приложения?</item>
     </plurals>
-    <string name="lists_disable_text">Каждое из них будет скрыто и перестанет работать. Ничего не удаляется; все они появятся в разделе «История», где их можно снова включить.</string>
+    <string name="lists_disable_text">Каждое из них будет отключено и перестанет работать. Ничего не удаляется; все они появятся в разделе «История», где их можно снова включить.</string>
     <string name="lists_disable_yes">Да, отключить</string>
     <string name="lists_cancel">Отмена</string>
     <string name="lists_about_title">О Tellyscope</string>
@@ -1033,6 +1051,12 @@
     <string name="report_choose_one">Выберите</string>
     <string name="report_removed_first">Предварительно удалены: серийные номера, IP-адреса, ключи ADB и отпечатки.</string>
     <string name="report_cancel">Отмена</string>
+    <string name="report_discard_title">Удалить этот отчёт?</string>
+    <string name="report_discard_text">Выбранное и введённое будет потеряно.</string>
+    <string name="report_discard">Удалить</string>
+    <string name="report_keep_editing">Продолжить</string>
+    <string name="report_no_browser">Браузер не открылся, поэтому ничего не отправлено. Скопируйте ссылку, чтобы отправить отчёт с другого устройства.</string>
+    <string name="report_copy_link">Копировать ссылку</string>
     <string name="device_as_of">Данные: %1$s</string>
     <string name="device_internal_storage">Внутренняя память</string>
     <string name="device_gb_used">Занято %1$s</string>
@@ -1042,14 +1066,9 @@
     <string name="device_percent">%1$d%%</string>
     <string name="device_disable_title">Отключить %1$s?</string>
     <string name="device_cancel">Отмена</string>
-    <plurals name="device_restore_title">
-        <item quantity="one">Вернуть %1$d изменение?</item>
-        <item quantity="few">Вернуть %1$d изменения?</item>
-        <item quantity="many">Вернуть %1$d изменений?</item>
-        <item quantity="other">Вернуть %1$d изменения?</item>
-    </plurals>
+    <string name="device_restore_title">Восстановить всё?</string>
     <string name="device_restore_text">Телевизор вернется к состоянию до первого изменения Tellyscope:</string>
-    <string name="device_restore_button">Вернуть</string>
+    <string name="device_restore_button">Восстановить</string>
     <string name="device_rename_title">Переименовать телевизор</string>
     <string name="device_rename_text">Это название видно только на этом телефоне. На телевизоре ничего не изменится.</string>
     <string name="device_save">Сохранить</string>
@@ -1143,12 +1162,12 @@
     <string name="remote_ok">OK</string>
     <string name="remote_type_label">Ввод текста на телевизоре</string>
     <string name="remote_send">Отправить на телевизор</string>
-    <string name="remote_restart">Перезапустить</string>
+    <string name="remote_restart">Перезапустить телевизор</string>
     <string name="remote_cancel">Отмена</string>
     <string name="remote_restarting">Перезапуск</string>
     <string name="remote_hide">Скрыть</string>
     <string name="remote_retry">Повторить</string>
-    <string name="remote_close">Закрыть</string>
+    <string name="remote_stop_waiting">Не ждать</string>
     <string name="remote_show_restart">Показать перезапуск</string>
     <string name="remote_move_up">Переместить вверх</string>
     <string name="remote_move_down">Переместить вниз</string>
@@ -1179,7 +1198,7 @@
     <string name="whats_new_update">Обновить</string>
     <string name="whats_new_not_installed">Не установлена</string>
     <string name="whats_new_newer_failed">Не удалось загрузить новые версии.</string>
-    <string name="settings_advanced">Дополнительно</string>
+    <string name="settings_advanced">Списки очистки</string>
     <string name="settings_change">Изменить</string>
     <string name="settings_change_text">Вставьте адрес HTTPS-папки raw, в которой лежит index.json, например raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
     <string name="settings_own_lists_guide">Как использовать свои списки</string>
@@ -1188,6 +1207,7 @@
     <string name="settings_open_cleanyourtv">Открыть cleanyourtv на GitHub</string>
     <string name="settings_source_title">Откуда берутся списки</string>
     <string name="settings_source_text">Чтобы использовать свои списки, сделайте форк tellyscope-devices, отредактируйте его и вставьте адрес папки с index.json, например https://raw.githubusercontent.com/you/tellyscope-devices/main/. Защищенные приложения остаются защищенными, что бы ни говорилось в списке.</string>
+    <string name="settings_checking">Проверяем…</string>
     <string name="settings_use_lists">Использовать эти списки</string>
     <string name="settings_reset">Вернуть по умолчанию</string>
     <string name="settings_cancel">Отмена</string>
@@ -1305,7 +1325,13 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">Изменений пока нет</string>
     <string name="history_empty_text">Здесь появится все, что вы остановите, отключите или включите, и это можно будет отменить.</string>
-    <string name="history_restoring">Возвращаем…</string>
+    <string name="history_restoring">Восстанавливаем…</string>
+    <string name="history_ok">ОК</string>
+    <string name="history_no_undo_caches">Нечего отменять: приложения снова заполнят кеш</string>
+    <string name="history_no_undo_uninstall">Нельзя отменить: установите его снова из Play Маркета</string>
+    <string name="history_no_undo_uninstall_fire">Нельзя отменить: установите его снова из Appstore</string>
+    <string name="history_no_undo_later">Нельзя отменить: после этого сменился «Домой»</string>
+    <string name="history_no_undo">Это нельзя отменить</string>
     <string name="history_restore_all">Восстановить все (%1$d)</string>
     <string name="history_undone">Отменено</string>
     <string name="debloat_title">Очистка</string>

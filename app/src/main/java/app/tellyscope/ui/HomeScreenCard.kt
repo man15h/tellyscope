@@ -12,9 +12,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -71,12 +72,13 @@ internal fun homeMove(app: AppInfo, current: AppInfo?): Action? = when {
  * the one place to change it. Make Home asks first; only the TV's own launcher is ever turned off.
  * [fire]: Fire OS ([fireInstall]), where Change home screen opens the list's Fire OS launchers ([fireLaunchers]), installed without a Play Store.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false) {
     val launchers = homeLaunchers(ui.apps)
     val current = launchers.firstOrNull { it.home }
     val locked = ui.busy != null
-    if (launchers.any { it.packageName == ui.busy }) LinearProgressIndicator(Modifier.fillMaxWidth())
+    if (launchers.any { it.packageName == ui.busy }) LinearWavyProgressIndicator(Modifier.fillMaxWidth())
     if (current != null) {
         Text(Copy.opensOnHome(current.label).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {

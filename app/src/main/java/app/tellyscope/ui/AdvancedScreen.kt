@@ -40,7 +40,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -132,7 +132,8 @@ fun AdvancedScreen(
             Column(Modifier.fillMaxSize().padding(pad)) {
                 Header(state, Modifier.padding(horizontal = 16.dp), onShell = { shellFrom = it; shellOpen = true })
                 val tabs = listOf(R.string.advanced_this_tv, R.string.advanced_cpu, R.string.advanced_ram, R.string.advanced_network)
-                PrimaryTabRow(selectedTabIndex = tab, Modifier.padding(top = 12.dp)) {
+                // Scrolls sideways when the labels don't fit: long translations, large text.
+                PrimaryScrollableTabRow(selectedTabIndex = tab, Modifier.padding(top = 12.dp), edgePadding = 16.dp) {
                     tabs.forEachIndexed { i, label ->
                         Tab(selected = tab == i, onClick = { tab = i }, text = { Text(stringResource(label), maxLines = 1) })
                     }

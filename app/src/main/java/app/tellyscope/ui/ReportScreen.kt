@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,14 +41,19 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -67,6 +74,7 @@ import app.tellyscope.R
 import app.tellyscope.adb.Report
 import app.tellyscope.adb.Reports
 import app.tellyscope.data.resolve
+import kotlinx.coroutines.launch
 
 /**
  * Report a problem, or Help add this TV: what the TV said about itself, the form's dropdowns, what
@@ -97,20 +105,23 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
         }
     }
     val newTv = r.kind == ReportKind.NewTv
+    // Anything picked or typed is the user's work: leaving asks first, and a failed open keeps the form.
+    val edited = connection != r.connection || outcome != null || stage != null || details != r.details
+    var discarding by rememberSaveable { mutableStateOf(false) }
+    val leave = { if (edited && posted == null) discarding = true else close() }
+    BackHandler(onBack = leave)
+    if (discarding) DiscardDialog(onDiscard = { discarding = false; close() }, onKeep = { discarding = false })
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val clipboard = LocalClipboardManager.current
+    val noBrowser = stringResource(R.string.report_no_browser)
+    val copyLink = stringResource(R.string.report_copy_link)
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(if (newTv) R.string.report_title_new_tv else R.string.report_title_problem))
-                        Text(
-                            stringResource(if (newTv) R.string.report_subtitle_new_tv else R.string.report_subtitle_problem),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-                navigationIcon = { IconButton(onClick = close) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
+            WrappingTopBar(
+                stringResource(if (newTv) R.string.report_title_new_tv else R.string.report_title_problem),
+                navigationIcon = { IconButton(onClick = leave) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
             )
         },
         bottomBar = {
@@ -118,10 +129,23 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
                 note = stringResource(R.string.report_note_own_account) + " " + stringResource(
                     if (report?.rest != null) R.string.report_note_rest else R.string.report_note_nothing_sent,
                 ),
-                cancel = close,
+                cancel = leave,
             ) {
                 Button(
-                    onClick = { report?.let { runCatching { browser.openUri(it.link) }; onOpened(it) } },
+                    onClick = {
+                        report?.let { rep ->
+                            if (runCatching { browser.openUri(rep.link) }.isSuccess) {
+                                onOpened(rep)
+                            } else {
+                                // No browser took it: nothing was posted, so the form stays, and the link can go to another device.
+                                scope.launch {
+                                    if (snackbar.showSnackbar(noBrowser, copyLink, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
+                                        clipboard.setText(AnnotatedString(rep.link))
+                                    }
+                                }
+                            }
+                        }
+                    },
                     enabled = report != null,
                 ) { ButtonIcon(OpenInNew); Text(stringResource(R.string.report_open_github)) }
             }
@@ -131,6 +155,12 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
             Modifier.fillMaxSize().padding(pad).imePadding().verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            // Under the title in the page, not the bar, so a long translation can wrap.
+            Text(
+                stringResource(if (newTv) R.string.report_subtitle_new_tv else R.string.report_subtitle_problem),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             if (posted != null) {
                 PostedCard(posted, notNow = close, addRest = { addingRest = true })
                 return@Column
@@ -188,17 +218,8 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
     BackHandler(onBack = back)
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(stringResource(R.string.report_add_rest))
-                        Text(
-                            stringResource(R.string.report_add_rest_subtitle, posted.repo.substringAfter('/')),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
+            WrappingTopBar(
+                stringResource(R.string.report_add_rest),
                 navigationIcon = { IconButton(onClick = back) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
             )
         },
@@ -219,6 +240,11 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
             Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            Text(
+                stringResource(R.string.report_add_rest_subtitle, posted.repo.substringAfter('/')),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(
                 stringResource(R.string.report_add_rest_text),
                 style = MaterialTheme.typography.bodyMedium,
@@ -312,6 +338,37 @@ private fun Actions(note: String, cancel: () -> Unit, action: @Composable () -> 
             }
         }
     }
+}
+
+/**
+ * The report screens' bar: a title that wraps at large text sizes and in long translations, where
+ * TopAppBar's fixed height would cut it off.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WrappingTopBar(title: String, navigationIcon: @Composable () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surface) {
+        Row(
+            Modifier.fillMaxWidth().windowInsetsPadding(TopAppBarDefaults.windowInsets).heightIn(min = 64.dp).padding(start = 4.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            navigationIcon()
+            Spacer(Modifier.width(4.dp))
+            Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(vertical = 8.dp))
+        }
+    }
+}
+
+/** Back, X or Cancel with something picked or typed. */
+@Composable
+private fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onKeep,
+        title = { Text(stringResource(R.string.report_discard_title)) },
+        text = { Text(stringResource(R.string.report_discard_text)) },
+        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.report_discard)) } },
+        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.report_keep_editing)) } },
+    )
 }
 
 @Composable
