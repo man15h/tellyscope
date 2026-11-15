@@ -39,6 +39,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
 import java.security.MessageDigest
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.CoroutineContext
@@ -409,8 +410,11 @@ class DeviceListsTest {
         val here = object : CoroutineDispatcher() {
             override fun dispatch(context: CoroutineContext, block: Runnable) = tasks.put(block)
         }
-        val job = CoroutineScope(here).launch { lists.setSource(fork) }
+        // The write waits for [gate], or it can finish before setSource suspends and nothing comes back through [tasks].
+        val gate = CountDownLatch(1)
+        val job = CoroutineScope(here).launch { lists.setSource(fork) { gate.await() } }
         tasks.take().run() // up to the write, which goes off to Dispatchers.IO
+        gate.countDown()
         val back = tasks.poll(5, TimeUnit.SECONDS)!! // the write is done and setSource is about to return
         job.cancel()
         back.run()
