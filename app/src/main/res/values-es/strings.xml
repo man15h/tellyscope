@@ -678,6 +678,7 @@
     <string name="vm_didnt_work">No funcionó.</string>
     <string name="vm_nothing_to_put_back">No hay nada que restaurar.</string>
     <string name="vm_list_not_loaded">No se pudo cargar la lista de %1$s. Sigue la de %2$s.</string>
+    <string name="vm_pick_not_loaded">No se pudo cargar la lista de %1$s.</string>
     <plurals name="vm_put_back">
         <item quantity="one">Se restauró %1$d cambio.</item>
         <item quantity="many">Se restauraron %1$d cambios.</item>

@@ -716,6 +716,7 @@
     <string name="vm_didnt_work">Не получилось.</string>
     <string name="vm_nothing_to_put_back">Нечего восстанавливать.</string>
     <string name="vm_list_not_loaded">Не удалось загрузить список %1$s. Остаётся %2$s.</string>
+    <string name="vm_pick_not_loaded">Не удалось загрузить список %1$s.</string>
     <plurals name="vm_put_back">
         <item quantity="one">Восстановлено %1$d изменение.</item>
         <item quantity="few">Восстановлено %1$d изменения.</item>

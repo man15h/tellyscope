@@ -6,6 +6,7 @@ import app.tellyscope.BuildConfig
 import app.tellyscope.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -301,16 +302,17 @@ class DeviceLists(
      * Points the lists at [url], or back at [default] with null. The new source must answer
      * with a schema 1 index first; otherwise nothing changes. The cached lists are dropped, so
      * nothing from the old source lingers; picks stay, and a pick the new source lacks falls
-     * back to matching.
+     * back to matching. Once the new source has answered, a cancel no longer stops the switch:
+     * the files, the stored address and [index] change together, and [switched] runs with them.
      */
-    suspend fun setSource(url: String?): SourceResult = lock.withLock {
+    suspend fun setSource(url: String?, switched: () -> Unit = {}): SourceResult = lock.withLock {
         val next = if (url == null) default else normalize(url) ?: return@withLock SourceResult.NotHttps
         val text = attempt { fetch(next + "index.json") }?.decodeToString()
         // Going back to the default always works, offline too: its lists load once online.
         if (text == null && url != null) return@withLock SourceResult.Unreachable
         val parsed = text?.let(::parseIndex)
         if (text != null && parsed == null) return@withLock SourceResult.NotAList
-        withContext(Dispatchers.IO) {
+        withContext(NonCancellable + Dispatchers.IO) {
             File(dir, "index.json").delete()
             File(dir, "devices").deleteRecursively()
             File(dir, "lists").deleteRecursively()
@@ -320,8 +322,9 @@ class DeviceLists(
             synchronized(this@DeviceLists) {
                 if (next == default) sourceFile.delete() else sourceFile.writeText(next)
             }
+            index = parsed
+            switched()
         }
-        index = parsed
         SourceResult.Ok
     }
 

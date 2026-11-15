@@ -56,10 +56,10 @@
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
     <!-- explainReplace paragraphs; %1$s the new launcher, %2$s the TV's built-in one -->
-    <string name="copy_explain_replace_opens">Home opens %1$s. To stop the TV switching back by itself, Tellyscope turns off %2$s, the TV\'s built-in launcher.</string>
-    <string name="copy_explain_replace_only">That\'s the only launcher it ever turns off. Launchers you added stay on, so you can switch between them any time.</string>
+    <string name="copy_explain_replace_opens">Home opens %1$s. To stop the TV switching back by itself, Tellyscope disables %2$s, the TV\'s built-in launcher.</string>
+    <string name="copy_explain_replace_only">That\'s the only launcher it ever disables. Launchers you added stay enabled, so you can switch between them any time.</string>
     <string name="copy_explain_replace_undo">Undo in History enables %1$s again.</string>
-    <!-- %1$s is the Google TV launcher being turned off -->
+    <!-- %1$s is the Google TV launcher being disabled -->
     <string name="copy_google_features">Some Google TV features, like the Apps row and the Live tab, are part of %1$s and go away with it.</string>
     <string name="copy_next_service">Next, you choose whether to turn on its accessibility service.</string>
 
@@ -74,8 +74,8 @@
     <!-- %1$s (%2$s) the new launcher and its package, %3$s (%4$s) the one it replaces -->
     <string name="copy_explain_home">Makes %1$s (%2$s) open when you press Home, then disables %3$s (%4$s) so the TV can\'t switch back by itself. Undo in History enables %3$s again and makes it Home again.</string>
     <!-- Fire OS: %1$s (%2$s) the launcher and its package, %3$s Amazon's launcher; copy_next_service follows -->
-    <string name="copy_explain_fire_home">Makes Home open %1$s (%2$s) through its accessibility service. Fire OS won\'t let %3$s be turned off or replaced, so it stays on and nothing else changes. Undo in History turns the service off.</string>
-    <string name="copy_explain_first_home">Makes %1$s (%2$s) open when you press Home. The TV has no default home screen now, and nothing else is turned off.</string>
+    <string name="copy_explain_fire_home">Makes Home open %1$s (%2$s) through its accessibility service. Fire OS won\'t let %3$s be disabled or replaced, so it stays enabled and nothing else changes. Undo in History turns the service off.</string>
+    <string name="copy_explain_first_home">Makes %1$s (%2$s) open when you press Home. The TV has no default home screen now, and nothing else is disabled.</string>
 
     <string name="copy_service_title">Turn on %1$s\'s accessibility service?</string>
     <!-- %1$s the launcher, %2$s the one Home may open without its service -->
@@ -774,6 +774,8 @@
     <string name="vm_nothing_to_put_back">Nothing to restore.</string>
     <!-- %1$s is the list that failed; %2$s the one still shown. -->
     <string name="vm_list_not_loaded">Couldn\'t load the %1$s list. Still on %2$s.</string>
+    <!-- %1$s is the list that failed, when the TV had no list before. -->
+    <string name="vm_pick_not_loaded">Couldn\'t load the %1$s list.</string>
     <plurals name="vm_put_back">
         <item quantity="one">Restored %1$d change.</item>
         <item quantity="other">Restored %1$d changes.</item>

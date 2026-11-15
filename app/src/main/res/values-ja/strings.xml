@@ -602,6 +602,7 @@
     <string name="vm_didnt_work">うまくいきませんでした。</string>
     <string name="vm_nothing_to_put_back">復元するものはありません。</string>
     <string name="vm_list_not_loaded">%1$s のリストを読み込めませんでした。%2$s のままです。</string>
+    <string name="vm_pick_not_loaded">%1$s のリストを読み込めませんでした。</string>
     <plurals name="vm_put_back">
         <item quantity="other">%1$d 件の変更を復元しました。</item>
     </plurals>
