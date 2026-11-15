@@ -6,6 +6,7 @@ import app.tellyscope.adb.AdbPipe
 import app.tellyscope.adb.AdbSession
 import app.tellyscope.adb.RemoteEntry
 import app.tellyscope.adb.ShellResult
+import app.tellyscope.adb.TvFolder
 import app.tellyscope.data.Action
 import app.tellyscope.data.AdbDeviceSource
 import app.tellyscope.data.ConnectResult
@@ -14,10 +15,13 @@ import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetRecord
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
+import app.tellyscope.data.UiTextException
 import java.io.File
 import java.io.IOException
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import okio.Sink
 import okio.Source
 import org.junit.Assert.assertEquals
@@ -52,6 +56,11 @@ private class OnTv : AdbSession {
     override fun close() = Unit
 }
 
+/** The link opens its session on its own coroutine: wait for it, or the first call finds the TV offline. */
+private suspend fun online(source: AdbDeviceSource, id: String) = withTimeout(10_000) {
+    while (runCatching { source.files(id, TvFolder.DOWNLOAD) }.exceptionOrNull() is UiTextException) delay(20)
+}
+
 /** A reset cancelled part-way, as when the user leaves the app, still leaves History what it turned on. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -60,6 +69,7 @@ class ResetCancelTest {
         val tv = OnTv()
         val source = AdbDeviceSource(RuntimeEnvironment.getApplication(), connector = { _, _ -> AdbConnectResult.Online(tv) }, fetch = { throw IOException("offline $it") })
         assertTrue(source.connect(ScanHit("tv", 5555, ScanKind.Classic, "tv", null)) is ConnectResult.Online)
+        online(source, "tv")
         val apps = listOf("com.acme.one", "com.acme.two", "com.acme.three").map { ResetApp(it, it) }
 
         val cancelled = runCatching {
