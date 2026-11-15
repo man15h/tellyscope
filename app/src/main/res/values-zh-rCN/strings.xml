@@ -857,6 +857,7 @@
     <string name="shell_full_screen">%1$s 需要全屏终端，这里不支持。</string>
     <string name="shell_dropped_prefix">（已去掉“adb shell”）</string>
     <string name="shell_lost">命令完成前与电视断开连接。它可能只运行了一部分。</string>
+    <string name="shell_failed">Shell 出错：%1$s。命令可能只运行了一部分。下一条命令会打开新的 shell。</string>
     <string name="report_title_new_tv">帮忙添加这台电视</string>
     <string name="report_title_problem">报告问题</string>
     <string name="report_subtitle_new_tv">在 GitHub 上打开 cleanyourtv 的“My TV”表单</string>

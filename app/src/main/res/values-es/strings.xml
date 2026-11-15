@@ -954,6 +954,7 @@
     <string name="shell_full_screen">%1$s necesita una terminal a pantalla completa. Aquí no funciona.</string>
     <string name="shell_dropped_prefix">(se quitó \"adb shell\")</string>
     <string name="shell_lost">Se perdió la TV antes de que terminara el comando. Puede que solo se ejecutara en parte.</string>
+    <string name="shell_failed">Error del shell: %1$s. Puede que el comando solo se ejecutara en parte. El siguiente abre un shell nuevo.</string>
     <string name="report_title_new_tv">Ayuda a añadir esta TV</string>
     <string name="report_title_problem">Informar de un problema</string>
     <string name="report_subtitle_new_tv">Abre el formulario “My TV” de cleanyourtv en GitHub</string>

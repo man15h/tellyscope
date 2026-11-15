@@ -908,6 +908,7 @@
     <string name="shell_full_screen">%1$s को फ़ुल-स्क्रीन टर्मिनल चाहिए। यह यहाँ काम नहीं करता।</string>
     <string name="shell_dropped_prefix">(\"adb shell\" हटाया)</string>
     <string name="shell_lost">कमांड पूरी होने से पहले TV से कनेक्शन टूट गया। हो सकता है वह सिर्फ़ आधी चली हो।</string>
+    <string name="shell_failed">शेल में गड़बड़ी: %1$s। हो सकता है कमांड सिर्फ़ आधी चली हो। अगली कमांड नया शेल खोलेगी।</string>
     <string name="report_title_new_tv">इस TV को जोड़ने में मदद करें</string>
     <string name="report_title_problem">समस्या की शिकायत करें</string>
     <string name="report_subtitle_new_tv">GitHub पर cleanyourtv का “My TV” फ़ॉर्म खोलता है</string>
