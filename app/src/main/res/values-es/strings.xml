@@ -788,6 +788,11 @@
         <item quantity="other">%1$d de %2$d apps sugeridas desactivadas</item>
     </plurals>
     <string name="tabs_suggested_no_list">Aún no hay lista para esta TV</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d no sugerida</item>
+        <item quantity="many">%1$d no sugeridas</item>
+        <item quantity="other">%1$d no sugeridas</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">No se pudieron cargar las listas de dispositivos</string>
     <string name="tabs_suggested_offline">Conéctate a la TV para ver sus sugerencias</string>
     <string name="tabs_suggested_loading">Buscando la lista de esta TV…</string>
@@ -853,6 +858,19 @@
     <string name="lists_disable_text">Cada una se desactiva y deja de ejecutarse. No se borra nada; todas aparecen en Historial, donde puedes reactivarlas.</string>
     <string name="lists_disable_yes">Sí, desactivarlas</string>
     <string name="lists_cancel">Cancelar</string>
+    <string name="lists_dont_suggest_one">No volver a sugerir %1$s</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">No volver a sugerir la %1$d app sin marcar</item>
+        <item quantity="many">No volver a sugerir las %1$d apps sin marcar</item>
+        <item quantity="other">No volver a sugerir las %1$d apps sin marcar</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d de ellas puede estropear algo en la TV.</item>
+        <item quantity="many">%1$d de ellas pueden estropear algo en la TV.</item>
+        <item quantity="other">%1$d de ellas pueden estropear algo en la TV.</item>
+    </plurals>
+    <string name="lists_not_suggested">No sugeridas (%1$d)</string>
+    <string name="lists_suggest_again">Volver a sugerir</string>
     <string name="lists_about_title">Acerca de Tellyscope</string>
     <string name="lists_about_version">Versión %1$s</string>
     <string name="lists_about_website">Sitio web</string>
@@ -955,6 +973,12 @@
     <string name="shell_dropped_prefix">(se quitó \"adb shell\")</string>
     <string name="shell_lost">Se perdió la TV antes de que terminara el comando. Puede que solo se ejecutara en parte.</string>
     <string name="shell_failed">Error del shell: %1$s. Puede que el comando solo se ejecutara en parte. El siguiente abre un shell nuevo.</string>
+    <string name="shell_copy_all">Copiar todo</string>
+    <plurals name="shell_copied">
+        <item quantity="one">%1$d línea copiada</item>
+        <item quantity="many">%1$d líneas copiadas</item>
+        <item quantity="other">%1$d líneas copiadas</item>
+    </plurals>
     <string name="report_title_new_tv">Ayuda a añadir esta TV</string>
     <string name="report_title_problem">Informar de un problema</string>
     <string name="report_subtitle_new_tv">Abre el formulario “My TV” de cleanyourtv en GitHub</string>

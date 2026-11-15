@@ -676,6 +676,8 @@ internal data class DebloatState(
     val todo: Boolean,
     /** Of [total], the ones off right now, however they were turned off. */
     val off: Int = 0,
+    /** Apps on the list the user asked not to see again, left out of the rest. */
+    val hidden: Int = 0,
 )
 
 /**
@@ -715,12 +717,13 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val ours = ui.history.filter { it.action == Action.Disable && it.undoneAt == null }.map { it.packageName }.toSet()
     val back = ui.apps.filter { it.enabled && it.packageName in ours }.map { it.packageName }.toSet()
     val ready = ui.lists as? Suggestions.Ready
-    val listed = ready?.list?.let { l -> l.groups.flatMap { g -> g.packages.map { it.pkg } }.filter { it !in l.keep }.toSet() }.orEmpty()
+    val hidden = ready?.hidden.orEmpty().map { it.pkg }.toSet()
+    val listed = ready?.list?.let { l -> l.groups.flatMap { g -> g.packages.map { it.pkg } }.filter { it !in l.keep && it !in hidden }.toSet() }.orEmpty()
     val candidates = ui.apps.filter { it.packageName in listed && (!it.enabled || it.protectedReason == null) }
     val on = candidates.filter { it.enabled }.map { it.packageName }.toSet()
     val count = (on + back).size
     val off = candidates.count { !it.enabled }
-    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off)
+    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off, hidden.size)
 }
 
 /**
@@ -827,6 +830,9 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
                     }
                     else -> TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
                 }
+            }
+            if (lists is Suggestions.Ready && d.hidden > 0) {
+                Text(pluralStringResource(R.plurals.tabs_not_suggested, d.hidden, d.hidden), Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
             if (d.back > 0) {
                 val required = stringResource(R.string.tabs_action_required)

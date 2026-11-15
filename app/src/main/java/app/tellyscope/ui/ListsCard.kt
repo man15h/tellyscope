@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.selection.triStateToggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,8 +33,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -48,6 +52,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -115,8 +120,8 @@ private fun Muted(text: String) {
 fun DebloatScreen(
     lists: Suggestions?,
     onPick: (String) -> Unit,
-    /** The ticked apps, name and package, in the order the confirm lists them. */
-    onDisable: (List<ResetApp>) -> Unit,
+    /** The ticked apps, name and package, in the order the confirm lists them, and the unticked ones not to suggest again. */
+    onDisable: (List<ResetApp>, List<String>) -> Unit,
     back: () -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     /** The user's own list source, null for the default; set in Settings. */
@@ -133,6 +138,8 @@ fun DebloatScreen(
     onHelpAdd: () -> Unit = {},
     /** Loads this TV's list again after it didn't load. */
     onRetry: () -> Unit = {},
+    /** Suggest again on an app in "Not suggested": back on the list. */
+    onSuggestAgain: (String) -> Unit = {},
 ) {
     val ready = lists as? Suggestions.Ready
     val devices = when (lists) {
@@ -158,6 +165,7 @@ fun DebloatScreen(
         mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { it.ticked }.map { it.pkg }.toSet())
     }
     var confirming by remember { mutableStateOf(false) }
+    var unfolded by rememberSaveable { mutableStateOf(false) }
     val showing = ready?.takeIf { chosen == null || it.list.id == chosen }
     // With no list, every app that's on and not protected, by name.
     val groups = when {
@@ -166,7 +174,7 @@ fun DebloatScreen(
             SuggestedGroup(
                 stringResource(R.string.lists_apps_on_tv),
                 tvApps.filter { it.enabled && it.protectedReason == null && !it.builtInLauncher }.sortedBy { it.label.lowercase() }
-                    .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false) },
+                    .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false, warn = it.warn) },
             ),
         )
         else -> null
@@ -174,7 +182,15 @@ fun DebloatScreen(
     if (confirming && groups != null) {
         // The dialog's list is exactly what gets disabled.
         val apps = groups.flatMap { it.packages }.filter { it.pkg in ticked }
-        DisableDialog(apps, onDisable = { confirming = false; onDisable(apps.map { ResetApp(it.pkg, it.label) }) }, onDismiss = { confirming = false }, enabled = !busy)
+        // Only a list suggests: apps picked by hand have nothing to stop suggesting.
+        val unticked = if (showing == null) emptyList() else groups.flatMap { it.packages }.filter { it.pkg !in ticked }
+        DisableDialog(
+            apps,
+            onDisable = { hide -> confirming = false; onDisable(apps.map { ResetApp(it.pkg, it.label) }, if (hide) unticked.map { it.pkg } else emptyList()) },
+            onDismiss = { confirming = false },
+            enabled = !busy,
+            unticked = unticked,
+        )
     }
     val use = { marked?.let { if (it != ready?.list?.id) { chosen = it; onPick(it) } }; searching = false }
     val keyboard = LocalSoftwareKeyboardController.current
@@ -328,12 +344,54 @@ fun DebloatScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                p.warn?.let { WarnLine(it) }
                             }
                         }
                     }
                 }
+                // Apps the user asked not to see again, folded at the foot, each with its way back.
+                val hidden = showing?.hidden.orEmpty()
+                if (hidden.isNotEmpty()) {
+                    item(key = "hidden") { HiddenRow(hidden.size, unfolded) { unfolded = !unfolded } }
+                    if (unfolded) items(hidden, key = { "h:" + it.pkg }) { p -> HiddenApp(p) { onSuggestAgain(p.pkg) } }
+                }
             }
         }
+    }
+}
+
+/** What turning an app off breaks, in red under its name: a list's [Suggested.warn] or [AppInfo.warn]. */
+@Composable
+internal fun WarnLine(text: String) {
+    val c = MaterialTheme.colorScheme
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.Warning, contentDescription = null, Modifier.size(14.dp), tint = c.error)
+        Spacer(Modifier.width(4.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = c.error)
+    }
+}
+
+/** "Not suggested (N)", at the foot of the list: unfolds to the apps it hides. */
+@Composable
+private fun HiddenRow(count: Int, unfolded: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.padding(top = 8.dp).fillMaxWidth().heightIn(min = 48.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(if (unfolded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null, Modifier.padding(horizontal = 12.dp))
+        Text(stringResource(R.string.lists_not_suggested, count), style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+@Composable
+private fun HiddenApp(p: Suggested, onSuggestAgain: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = Indent + 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(p.label, style = MaterialTheme.typography.bodyLarge)
+            Muted(p.pkg)
+            p.warn?.let { WarnLine(it) }
+        }
+        OutlinedButton(onClick = onSuggestAgain) { Text(stringResource(R.string.lists_suggest_again)) }
     }
 }
 
@@ -474,8 +532,21 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
     }
 }
 
+/**
+ * The confirm before a run. Apps with a warning come first, under one red line. With [unticked]
+ * apps from a list, a checkbox (off to start) stops suggesting them on this TV; [onDisable] gets its tick.
+ */
 @Composable
-internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
+internal fun DisableDialog(
+    apps: List<Suggested>,
+    onDisable: (hide: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    enabled: Boolean = true,
+    unticked: List<Suggested> = emptyList(),
+) {
+    val c = MaterialTheme.colorScheme
+    val warned = apps.filter { it.warn != null }
+    var hide by rememberSaveable { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lists_disable_apps_confirm, apps.size, apps.size)) },
@@ -484,16 +555,31 @@ internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismi
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.lists_disable_text))
                 LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(apps, key = { it.pkg }) { a ->
+                    if (warned.isNotEmpty()) item(key = "warned") {
+                        Text(pluralStringResource(R.plurals.lists_disable_warned, warned.size, warned.size), color = c.error)
+                    }
+                    items(warned + (apps - warned.toSet()), key = { it.pkg }) { a ->
                         Column {
                             Text(a.label, style = MaterialTheme.typography.bodyLarge)
-                            Text(a.pkg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(a.pkg, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                            a.warn?.let { WarnLine(it) }
                         }
                     }
                 }
+                if (unticked.isNotEmpty()) Row(
+                    Modifier.fillMaxWidth().clip(MaterialTheme.shapes.medium).toggleable(hide, role = Role.Checkbox) { hide = it },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(hide, onCheckedChange = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        unticked.singleOrNull()?.let { stringResource(R.string.lists_dont_suggest_one, it.label) }
+                            ?: pluralStringResource(R.plurals.lists_dont_suggest, unticked.size, unticked.size),
+                    )
+                }
             }
         },
-        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text(stringResource(R.string.lists_disable_yes)) } },
+        confirmButton = { Button(onClick = { onDisable(hide) }, enabled = enabled) { Text(stringResource(R.string.lists_disable_yes)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.lists_cancel)) } },
     )
 }

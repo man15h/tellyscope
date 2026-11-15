@@ -88,7 +88,7 @@ class BusyGatingTest {
 
     @Test fun debloatWaitsWhileTheTvIsBusy() {
         // A Disable started on the Apps tab is still running when Debloat opens.
-        compose.setContent { DebloatScreen(lists, {}, {}, {}, busy = true) }
+        compose.setContent { DebloatScreen(lists, {}, { _, _ -> }, {}, busy = true) }
         compose.onNodeWithText("Disable 1 app").assertIsNotEnabled()
     }
 
@@ -99,7 +99,7 @@ class BusyGatingTest {
     }
 
     @Test fun idleDebloatStillWorks() {
-        compose.setContent { DebloatScreen(lists, {}, {}, {}) }
+        compose.setContent { DebloatScreen(lists, {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 1 app").assertIsEnabled()
     }
 }

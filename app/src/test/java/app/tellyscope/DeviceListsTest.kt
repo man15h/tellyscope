@@ -13,6 +13,7 @@ import app.tellyscope.data.ListMatch
 import app.tellyscope.data.ListPackage
 import app.tellyscope.data.UiText
 import app.tellyscope.data.matches
+import app.tellyscope.data.notSuggested
 import app.tellyscope.data.merge
 import app.tellyscope.data.SourceResult
 import app.tellyscope.data.normalize
@@ -209,6 +210,36 @@ class DeviceListsTest {
         assertEquals(mapOf("com.a.one" to false, "com.a.two" to false), ticks(31))
         assertEquals(mapOf("com.a.one" to false, "com.a.two" to false), ticks(null))
         assertEquals(mapOf("com.a.one" to false, "com.a.two" to false), suggest(list.copy(sdk = null), apps, null).flatMap { it.packages }.associate { it.pkg to it.ticked })
+    }
+
+    @Test fun aWarnedAppIsNeverTickedToStart() {
+        val list = DeviceList("x", "X", null, 30, emptySet(), listOf(ListGroup("Junk", listOf(ListPackage("com.a.one", null, false), ListPackage("com.a.cast", null, false)))))
+        val apps = listOf(app("com.a.one"), app("com.a.cast").copy(warn = "Casting to this TV stops working."))
+        val got = suggest(list, apps, 30).flatMap { it.packages }.associateBy { it.pkg }
+        assertTrue(got.getValue("com.a.one").ticked)
+        assertFalse(got.getValue("com.a.cast").ticked)
+        assertEquals("Casting to this TV stops working.", got.getValue("com.a.cast").warn)
+    }
+
+    @Test fun aHiddenAppLeavesTheListForNotSuggested() {
+        fun p(pkg: String) = ListPackage(pkg, null, false)
+        val list = DeviceList("x", "X", null, 30, emptySet(), listOf(ListGroup("Junk", listOf(p("com.a.one"), p("com.a.two"), p("com.a.off")))))
+        val apps = listOf(app("com.a.one"), app("com.a.two"), app("com.a.off", enabled = false))
+        val hidden = setOf("com.a.two", "com.a.off", "com.a.missing")
+        assertEquals(listOf("com.a.one"), suggest(list, apps, 30, hidden).flatMap { it.packages }.map { it.pkg })
+        // Only what the list would otherwise suggest: not one that's off or not on this TV.
+        assertEquals(listOf("com.a.two"), notSuggested(list, apps, hidden).map { it.pkg })
+    }
+
+    @Test fun hiddenAppsAreKeptPerTvAndCanComeBack() {
+        DeviceLists(tmp.root).hide("sn:one", listOf("com.a.one", "com.a.two", "bad;reboot"), hide = true)
+        val lists = DeviceLists(tmp.root)
+        assertEquals(setOf("com.a.one", "com.a.two"), lists.hidden("sn:one"))
+        assertEquals(emptySet<String>(), lists.hidden("sn:two"))
+        lists.hide("sn:one", listOf("com.a.one"), hide = false)
+        assertEquals(setOf("com.a.two"), DeviceLists(tmp.root).hidden("sn:one"))
+        lists.hide("sn:one", listOf("com.a.two"), hide = false)
+        assertEquals(emptySet<String>(), DeviceLists(tmp.root).hidden("sn:one"))
     }
 
     @Test fun anAppInTwoGroupsOrTwoGroupsWithOneTitleShowOnce() {

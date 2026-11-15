@@ -14,6 +14,7 @@ import app.tellyscope.data.hasServiceFrom
 import app.tellyscope.data.parseLabels
 import app.tellyscope.data.parseLaunchers
 import app.tellyscope.data.parseProtected
+import app.tellyscope.data.parseWarn
 import app.tellyscope.ui.RECOMMENDED
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -133,6 +134,20 @@ class LaunchersTest {
         )
         assertTrue(parseProtected(text.replace("\"schema\":1", "\"schema\":2")).isEmpty())
         assertTrue(parseProtected("{").isEmpty())
+    }
+
+    /** A warning is one plain line of at most 120, and never for an app that can't be turned off. */
+    @Test fun warnLinesSkipProtectedAppsAndAreCut() {
+        val long = "x".repeat(130)
+        val text = """{"schema":1,"groups":[{"name":"Acme","packages":{"com.acme.help":"tv_inputs_remote"}}],"warn":[
+            {"name":"Acme","packages":{"com.acme.speaker":"Sound may\u202E get quieter.","com.acme.help":"x","com.acme.long":"$long","not a package":"x","com.acme.blank":" "}},
+            {"name":"Built in","packages":{"com.android.settings":"x","com.acme.remote":"x"}},
+            {"name":"No packages"}
+        ]}"""
+        assertEquals(mapOf("com.acme.speaker" to "Sound may get quieter.", "com.acme.long" to "x".repeat(120)), parseWarn(text))
+        assertTrue(parseWarn(text.replace("\"schema\":1", "\"schema\":2")).isEmpty())
+        assertTrue(parseWarn("""{"schema":1,"groups":[]}""").isEmpty())
+        assertTrue(parseWarn("{").isEmpty())
     }
 
     private fun sha(b: ByteArray) = MessageDigest.getInstance("SHA-256").digest(b).joinToString("") { "%02x".format(it) }

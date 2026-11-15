@@ -1413,7 +1413,7 @@ class ScreenshotTest {
     /** The TV's own list: straight to the apps, with "Not this TV?" in case it's wrong. */
     private fun debloatModel(dark: Boolean) {
         val lists = deviceState().device.lists as Suggestions.Ready
-        shot("18_debloat_model", dark) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_model", dark) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         compose.onNodeWithText(lists.list.name).assertExists()
         compose.onNodeWithText("This model's list", substring = true).assertExists()
         compose.onNodeWithText("These apps will be disabled", substring = true).assertExists()
@@ -1440,7 +1440,7 @@ class ScreenshotTest {
 
     private fun debloatMaker(dark: Boolean) {
         val lists = makerLists()
-        shot("18_debloat_maker", dark) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_maker", dark) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         compose.onNodeWithText("XGIMI").assertExists()
         compose.onNodeWithText("No list for this model", substring = true).assertExists()
         compose.onNodeWithText("Nothing is ticked", substring = true).assertExists()
@@ -1460,7 +1460,7 @@ class ScreenshotTest {
         val tv = s.selected!!.let { it.copy(model = "TCL 55C735", manufacturer = "TCL", hit = it.hit.copy(maker = "TCL", hostname = null)) }
         var disabled = emptyList<String>()
         shot("18_debloat_none", dark) {
-            DebloatScreen(Suggestions.NoList(null, ready.devices), {}, { disabled = it.map { a -> a.packageName } }, {}, tv = tv, tvApps = s.device.apps)
+            DebloatScreen(Suggestions.NoList(null, ready.devices), {}, { apps, _ -> disabled = apps.map { a -> a.packageName } }, {}, tv = tv, tvApps = s.device.apps)
         }
         compose.onNodeWithText("TCL 55C735").assertExists()
         compose.onNodeWithText("No list for this TV or its maker yet").assertExists()
@@ -1484,7 +1484,7 @@ class ScreenshotTest {
 
     @Test fun debloat_notThisTv() {
         val lists = deviceState().device.lists
-        shot("18_debloat_search", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_search", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         // The search starts at the TV's maker, with nothing marked until a list is tapped.
         compose.onNodeWithText("XGIMI MoGo 2 projector").assertExists()
         compose.onNodeWithText("TCL C-series").assertDoesNotExist()
@@ -1494,7 +1494,7 @@ class ScreenshotTest {
     @Test fun debloat_searchByBrand() {
         // Philips TVs report their factory, TPV, as manufacturer; the brand finds the list.
         val lists = makerLists()
-        shot("18_debloat_search_brand", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("Philips", "TPV")) }
+        shot("18_debloat_search_brand", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("Philips", "TPV")) }
         compose.onNodeWithText("Philips 55OLED708").assertExists()
         compose.onNodeWithText("No list for", substring = true).assertDoesNotExist()
     }
@@ -1502,7 +1502,7 @@ class ScreenshotTest {
     @Test fun debloat_searchUnknownMaker() {
         // A maker no list names: the full list, with a line saying so, and nothing guessed.
         val lists = makerLists()
-        shot("18_debloat_search_unknown", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("TPV")) }
+        shot("18_debloat_search_unknown", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("TPV")) }
         compose.onNodeWithText("No list for \u201cTPV\u201d", substring = true).assertExists()
         compose.onNodeWithText("Chromecast with Google TV 4K").assertExists()
     }
@@ -1511,7 +1511,7 @@ class ScreenshotTest {
         // No list for this TV's maker, and the TV is connected: offer to send its apps to cleanyourtv.
         val asked = mutableListOf<Unit>()
         val tv = deviceState().selected
-        shot("85_debloat_help_add", before = notThisTv) { DebloatScreen(makerLists(), {}, {}, {}, tvMakers = listOf("TPV"), tv = tv, onHelpAdd = { asked += Unit }) }
+        shot("85_debloat_help_add", before = notThisTv) { DebloatScreen(makerLists(), {}, { _, _ -> }, {}, tvMakers = listOf("TPV"), tv = tv, onHelpAdd = { asked += Unit }) }
         compose.onNodeWithText("Not in the list? Help add this TV").assertExists()
         compose.onNodeWithText("Help add this TV").performClick()
         assertEquals(1, asked.size)
@@ -1606,7 +1606,7 @@ class ScreenshotTest {
         val lists = makerLists()
         val picked = mutableListOf<String>()
         val pick = { notThisTv(); compose.mainClock.advanceTimeBy(1_000); compose.onNodeWithText("Philips 55OLED708").performClick(); Unit }
-        shot("18_debloat_search_manual", before = pick) { DebloatScreen(lists, { picked += it }, {}, {}, tvMakers = listOf("TPV")) }
+        shot("18_debloat_search_manual", before = pick) { DebloatScreen(lists, { picked += it }, { _, _ -> }, {}, tvMakers = listOf("TPV")) }
         compose.onNodeWithText("Use this list").performClick()
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals(1, picked.size)
@@ -1618,7 +1618,7 @@ class ScreenshotTest {
         val lists = (deviceState().device.lists as Suggestions.Ready).let { r ->
             r.copy(sdk = 28, groups = r.groups.map { g -> g.copy(packages = g.packages.map { it.copy(ticked = false) }) })
         }
-        shot("19_debloat_review_other_android") { DebloatScreen(lists, {}, {}, {}) }
+        shot("19_debloat_review_other_android") { DebloatScreen(lists, {}, { _, _ -> }, {}) }
         compose.onNodeWithText("not this TV's Android", substring = true).assertExists()
         compose.onNodeWithText("Nothing is ticked", substring = true).assertExists()
         compose.onNodeWithText("Disable 0 apps").assertIsNotEnabled()
@@ -1664,7 +1664,7 @@ class ScreenshotTest {
     }
 
     @Test fun readme_debloat() {
-        shot("20_readme_debloat") { DebloatScreen(readmeLists(), {}, {}, {}) }
+        shot("20_readme_debloat") { DebloatScreen(readmeLists(), {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 4 apps").assertIsEnabled()
     }
 
@@ -1674,7 +1674,7 @@ class ScreenshotTest {
             compose.onNodeWithText("Disable 4 apps").performClick()
             Unit
         }
-        shot("21_readme_confirm", screen = true, before = confirm) { DebloatScreen(readmeLists(), {}, {}, {}) }
+        shot("21_readme_confirm", screen = true, before = confirm) { DebloatScreen(readmeLists(), {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 4 apps?").assertExists()
     }
 

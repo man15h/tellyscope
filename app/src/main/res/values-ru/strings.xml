@@ -831,6 +831,12 @@
         <item quantity="other">Отключено рекомендованных приложений: %1$d из %2$d</item>
     </plurals>
     <string name="tabs_suggested_no_list">Для этого телевизора пока нет списка</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d не предлагается</item>
+        <item quantity="few">%1$d не предлагаются</item>
+        <item quantity="many">%1$d не предлагаются</item>
+        <item quantity="other">%1$d не предлагаются</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">Не удалось загрузить списки устройств</string>
     <string name="tabs_suggested_offline">Подключитесь к телевизору, чтобы увидеть рекомендации</string>
     <string name="tabs_suggested_loading">Ищем список для этого телевизора…</string>
@@ -899,6 +905,21 @@
     <string name="lists_disable_text">Каждое из них будет отключено и перестанет работать. Ничего не удаляется; все они появятся в разделе «История», где их можно снова включить.</string>
     <string name="lists_disable_yes">Да, отключить</string>
     <string name="lists_cancel">Отмена</string>
+    <string name="lists_dont_suggest_one">Больше не предлагать %1$s</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">Больше не предлагать %1$d неотмеченное приложение</item>
+        <item quantity="few">Больше не предлагать %1$d неотмеченных приложения</item>
+        <item quantity="many">Больше не предлагать %1$d неотмеченных приложений</item>
+        <item quantity="other">Больше не предлагать %1$d неотмеченного приложения</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d из них может что-то сломать на телевизоре.</item>
+        <item quantity="few">%1$d из них могут что-то сломать на телевизоре.</item>
+        <item quantity="many">%1$d из них могут что-то сломать на телевизоре.</item>
+        <item quantity="other">%1$d из них могут что-то сломать на телевизоре.</item>
+    </plurals>
+    <string name="lists_not_suggested">Не предлагаются (%1$d)</string>
+    <string name="lists_suggest_again">Снова предлагать</string>
     <string name="lists_about_title">О Tellyscope</string>
     <string name="lists_about_version">Версия %1$s</string>
     <string name="lists_about_website">Сайт</string>
@@ -1011,6 +1032,13 @@
     <string name="shell_dropped_prefix">(убрано «adb shell»)</string>
     <string name="shell_lost">Связь с телевизором пропала до конца команды. Возможно, она выполнилась только частично.</string>
     <string name="shell_failed">Ошибка оболочки: %1$s. Возможно, команда выполнилась только частично. Следующая откроет новую оболочку.</string>
+    <string name="shell_copy_all">Скопировать всё</string>
+    <plurals name="shell_copied">
+        <item quantity="one">Скопирована %1$d строка</item>
+        <item quantity="few">Скопировано %1$d строки</item>
+        <item quantity="many">Скопировано %1$d строк</item>
+        <item quantity="other">Скопировано %1$d строки</item>
+    </plurals>
     <string name="report_title_new_tv">Помогите добавить этот телевизор</string>
     <string name="report_title_problem">Сообщить о проблеме</string>
     <string name="report_subtitle_new_tv">Открывает форму «My TV» от cleanyourtv на GitHub</string>

@@ -464,6 +464,8 @@ internal fun AppRow(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (app.homeServiceOff) Text(Copy.SERVICE_OFF.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // Only while it's on: once it's off, what it took with it is already gone.
+                    if (app.enabled && app.protectedReason == null) app.warn?.let { WarnLine(it) }
                 }
             }
             if (busy && !offline) androidx.compose.material3.LoadingIndicator(Modifier.size(32.dp))
@@ -506,6 +508,7 @@ internal fun AppRow(
                         else Copy.explain(proposed, app.label, app.packageName).resolve(),
                         style = MaterialTheme.typography.bodyMedium,
                     )
+                    if (proposed == Action.Disable) app.warn?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed).resolve()) }
                         TextButton(onClick = actions.cancel) { Text(stringResource(R.string.device_cancel)) }

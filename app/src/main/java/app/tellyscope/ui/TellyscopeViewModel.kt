@@ -2075,13 +2075,22 @@ class TellyscopeViewModel(
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.touchpad = on }
     }
 
-    /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */
-    fun disableSuggested(apps: List<ResetApp>) {
+    /**
+     * Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far.
+     * [hide] are the unticked ones the user asked not to see again, saved first so the list read after the run leaves them out.
+     */
+    fun disableSuggested(apps: List<ResetApp>, hide: List<String> = emptyList()) {
         val id = _state.value.selectedId ?: return
         // One run at a time on a TV, as with Reset: a second tap or a Debloat over a Reset does nothing.
         if (_state.value.device.busy != null) return
         _state.update { it.copy(device = it.device.copy(busy = DISABLING, debloat = DebloatRun(apps))) }
         viewModelScope.launch {
+            // The TV is read for its key: one that dropped still runs, and says so per app below.
+            if (hide.isNotEmpty()) try {
+                source.hideSuggested(id, hide, hide = true)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {}
             // One change for the whole list: the TV's stats are read again once, after the last app.
             source.batch(id) {
                 for (app in apps) {
@@ -2103,6 +2112,23 @@ class TellyscopeViewModel(
             val (history, restorable) = historyOf(id)
             updateDevice(id) { it.copy(apps = read ?: it.apps, busy = null, history = history, restorable = restorable, debloat = it.debloat?.copy(ran = true)) }
             loadLists(id) { read ?: source.apps(id) }
+        }
+    }
+
+    /** Suggest again on an app in Debloat's "Not suggested": back on the list, unticked. */
+    fun suggestAgain(pkg: String) {
+        val id = _state.value.selectedId ?: return
+        listsJob?.cancel()
+        listsJob = viewModelScope.launch {
+            try {
+                source.hideSuggested(id, listOf(pkg), hide = false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                return@launch
+            }
+            loadLists(id) { shownApps(id) }
         }
     }
 

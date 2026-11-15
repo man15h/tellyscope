@@ -702,6 +702,9 @@
         <item quantity="other">提案された %2$d 個中 %1$d 個のアプリが無効です</item>
     </plurals>
     <string name="tabs_suggested_no_list">このテレビのリストはまだありません</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="other">%1$d 個はおすすめしない</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">デバイスのリストを読み込めませんでした</string>
     <string name="tabs_suggested_offline">提案を表示するには、テレビに接続してください</string>
     <string name="tabs_suggested_loading">このテレビのリストを探しています…</string>
@@ -761,6 +764,15 @@
     <string name="lists_disable_text">それぞれ無効になり、動作を停止します。何も削除されません。すべて履歴に表示され、そこから有効に戻せます。</string>
     <string name="lists_disable_yes">無効にする</string>
     <string name="lists_cancel">キャンセル</string>
+    <string name="lists_dont_suggest_one">%1$s を今後おすすめしない</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="other">チェックを外した %1$d 個のアプリを今後おすすめしない</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="other">このうち %1$d 個は、テレビの機能が使えなくなる可能性があります。</item>
+    </plurals>
+    <string name="lists_not_suggested">おすすめしないアプリ（%1$d）</string>
+    <string name="lists_suggest_again">再びおすすめする</string>
     <string name="lists_about_title">Tellyscope について</string>
     <string name="lists_about_version">バージョン %1$s</string>
     <string name="lists_about_website">ウェブサイト</string>
@@ -858,6 +870,10 @@
     <string name="shell_dropped_prefix">（「adb shell」を省きました）</string>
     <string name="shell_lost">コマンドが終わる前にテレビとの接続が切れました。一部だけ実行された可能性があります。</string>
     <string name="shell_failed">シェルのエラー: %1$s。コマンドは一部だけ実行された可能性があります。次のコマンドは新しいシェルで動きます。</string>
+    <string name="shell_copy_all">すべてコピー</string>
+    <plurals name="shell_copied">
+        <item quantity="other">%1$d 行をコピーしました</item>
+    </plurals>
     <string name="report_title_new_tv">このテレビの追加に協力する</string>
     <string name="report_title_problem">問題を報告</string>
     <string name="report_subtitle_new_tv">GitHub で cleanyourtv の「My TV」フォームを開きます</string>
