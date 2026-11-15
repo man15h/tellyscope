@@ -479,6 +479,35 @@
         <item quantity="other">%2$d 個中 %1$d 個のアプリを無効にしました</item>
     </plurals>
     <string name="copy_still_on">%1$s はまだ有効です</string>
+    <string name="copy_debloat_still_running">不要アプリの整理はまだ実行中です。完了したら移動できます。</string>
+    <string name="copy_reset_still_running">リセットはまだ実行中です。完了したら移動できます。</string>
+    <string name="copy_stopping_after">%1$s の後で中止します…</string>
+    <string name="copy_stopping_after_app">このアプリの後で中止します…</string>
+    <string name="copy_stopping_after_step">この手順の後で中止します…</string>
+    <string name="copy_debloat_stopped">不要アプリの整理を中止しました</string>
+    <string name="copy_debloat_stopped_text">%1$s の後で中止しました。</string>
+    <plurals name="copy_not_changed">
+        <item quantity="other">%1$d 個のアプリは変更されていません</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="other">残りの %1$d 個を無効にする</item>
+    </plurals>
+    <string name="copy_reset_stopped">リセットを中止しました</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="other">%1$d 個のアプリの後で中止しました。</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">途中で中止しました。</string>
+    <string name="copy_not_done">未完了</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="other">有効にするアプリ %1$d 個</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="other">復元するアプリ %1$d 個</item>
+    </plurals>
+    <string name="copy_left_home">ホーム画面</string>
+    <string name="copy_left_dns">プライベート DNS</string>
+    <string name="copy_left_animations">アニメーションの速度</string>
+    <string name="copy_finish_reset">リセットを完了する</string>
     <plurals name="copy_to_put_back">
         <item quantity="other">復元する変更が %1$d 件</item>
     </plurals>

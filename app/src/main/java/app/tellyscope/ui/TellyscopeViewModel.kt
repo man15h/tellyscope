@@ -70,6 +70,7 @@ import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
+import app.tellyscope.data.after
 import app.tellyscope.data.isFireOs
 import app.tellyscope.data.summary
 import app.tellyscope.data.why
@@ -178,20 +179,26 @@ data class DeviceUi(
 
 /**
  * Debloat turning off the ticked [apps], in order. [at] counts the ones the TV has answered for,
- * and [failed] holds why each refused one is still on. [ran] once the last has answered; Try again
- * runs just the failed ones.
+ * and [failed] holds why each refused one is still on. [ran] once the last has answered, or once
+ * Stop ([stopping]) has let the running one finish; Try again runs the failed ones and [left].
  */
 data class DebloatRun(
     val apps: List<ResetApp>,
     val at: Int = 0,
     val failed: Map<String, UiText> = emptyMap(),
     val ran: Boolean = false,
-)
+    val stopping: Boolean = false,
+) {
+    /** The apps Stop kept the run from reaching. */
+    val left get() = apps.drop(at)
+    val stopped get() = ran && left.isNotEmpty()
+}
 
 /**
  * Reset TV's screen. [plan] is what the TV said, null while it's read ([error] if that failed).
- * While a run goes, [running] is what it's doing and [progress] how far. After one, [ran] is set
- * and [failed] holds the steps that didn't work; Try again runs just those, into History's [entry].
+ * While a run goes, [running] is what it's doing and [progress] how far; [stopping] once Stop is
+ * tapped. After one, [ran] is set, [failed] holds the steps that didn't work and [left] what Stop
+ * kept it from; Try again runs just those, into History's [entry].
  */
 data class ResetUi(
     val plan: ResetPlan? = null,
@@ -201,6 +208,8 @@ data class ResetUi(
     val ran: Boolean = false,
     val failed: List<ResetFailure> = emptyList(),
     val entry: Long? = null,
+    val stopping: Boolean = false,
+    val left: ResetPlan? = null,
 )
 
 /**
@@ -2094,6 +2103,8 @@ class TellyscopeViewModel(
             // One change for the whole list: the TV's stats are read again once, after the last app.
             source.batch(id) {
                 for (app in apps) {
+                    // Stop lets the app being turned off finish, then starts no other.
+                    if (stopping(id) { it.debloat?.stopping == true }) break
                     val why = try {
                         source.act(id, Action.Disable, app.packageName)
                         null
@@ -2132,12 +2143,22 @@ class TellyscopeViewModel(
         }
     }
 
-    /** Try again on Debloat's result: just the apps the TV refused. */
+    /** Try again on Debloat's result: just the apps the TV refused, and the ones Stop left. */
     fun retryDebloat() {
         val run = _state.value.device.debloat ?: return
         if (_state.value.device.busy != null) return
-        disableSuggested(run.apps.filter { it.packageName in run.failed })
+        disableSuggested(run.apps.filter { it.packageName in run.failed } + run.left)
     }
+
+    /** Stop on Debloat's run: the app being turned off finishes, and the result shows what's left. */
+    fun stopDebloat() {
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { if (it.busy == DISABLING) it.copy(debloat = it.debloat?.copy(stopping = true)) else it }
+    }
+
+    /** Whether [id], still the TV on screen, has had Stop tapped on the run that [stopped] reads. */
+    private fun stopping(id: String, stopped: (DeviceUi) -> Boolean) =
+        _state.value.let { it.selectedId == id && stopped(it.device) }
 
     /** Debloat closed: a finished run is forgotten, one still going shows again when it reopens. */
     fun closeDebloat() {
@@ -2255,22 +2276,27 @@ class TellyscopeViewModel(
         val ui = _state.value.device.reset ?: return
         val plan = ui.plan ?: return
         if (_state.value.device.busy != null) return
+        // Finish the reset after a Stop runs what was left too, in the plan's order.
+        val left = ui.left ?: ResetPlan()
         val todo = if (!retry) plan else ResetPlan(
-            turnOn = ui.failed.filter { it.part == ResetPart.TurnOn }.mapNotNull { it.app },
-            bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app },
+            turnOn = ui.failed.filter { it.part == ResetPart.TurnOn }.mapNotNull { it.app } + left.turnOn,
+            bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app } + left.bringBack,
             // A Home failure with an app is its service, still on: Try again does just that.
-            home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } },
-            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } },
-            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } },
+            home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } || left.home != null },
+            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } || left.dns != null },
+            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } || left.animations != null },
         )
-        updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList())) }
+        updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList(), stopping = false, left = null)) }
         viewModelScope.launch {
+            val stop = { stopping(id) { it.reset?.stopping == true } }
+            var gone = false
             val (entry, failed) = try {
-                source.reset(id, todo, ui.entry) { p -> updateDevice(id) { d -> d.copy(reset = d.reset?.copy(progress = p)) } }
+                source.reset(id, todo, ui.entry, stop) { p -> updateDevice(id) { d -> d.copy(reset = d.reset?.copy(progress = p)) } }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 // The TV went away before any step could say: every step it was to run failed.
+                gone = true
                 val why = e.why(R.string.vm_tv_didnt_answer_reason)
                 ui.entry to todo.turnOn.map { ResetFailure(ResetPart.TurnOn, it, why) } +
                     todo.bringBack.map { ResetFailure(ResetPart.BringBack, it, why) } +
@@ -2288,9 +2314,11 @@ class TellyscopeViewModel(
             val tweaks = if (todo.dns != null || todo.animations != null) runCatching { source.tweaks(id) }.getOrNull() else null
             val (history, restorable) = historyOf(id)
             updateDevice(id) { d ->
+                // Stopped: what comes after the last step it started. Stop tapped on the last step leaves nothing.
+                val rest = d.reset?.takeIf { it.stopping && !gone }?.let { r -> r.progress?.let(todo::after) ?: todo }?.takeIf { it.changes > 0 }
                 d.copy(
                     apps = apps ?: d.apps, tweaks = tweaks ?: d.tweaks, history = history, restorable = restorable, busy = null,
-                    reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry),
+                    reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry, stopping = false, left = rest),
                 )
             }
             if (apps != null) loadLists(id) { apps }
@@ -2300,6 +2328,12 @@ class TellyscopeViewModel(
     fun closeReset() {
         val id = _state.value.selectedId ?: return
         updateDevice(id) { if (it.busy == RESETTING) it else it.copy(reset = null) }
+    }
+
+    /** Stop on Reset's run: the step under way finishes, and the result shows what's left. */
+    fun stopReset() {
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { if (it.busy == RESETTING) it.copy(reset = it.reset?.copy(stopping = true)) else it }
     }
 
     /** History opened: its newest change is seen, so ⋮ loses its dot until the next one. */

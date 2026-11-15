@@ -42,6 +42,22 @@ enum class ResetPart { TurnOn, BringBack, Home, Dns, Animations }
 /** How far a running reset is: [done] of [of] in [part]. */
 data class ResetProgress(val part: ResetPart, val done: Int, val of: Int)
 
+/** What's left of this plan once [p]'s step has finished: the rest of its part, then every part after it. */
+fun ResetPlan.after(p: ResetProgress): ResetPlan {
+    fun rest(part: ResetPart, apps: List<ResetApp>) = when {
+        part < p.part -> emptyList()
+        part == p.part -> apps.drop(p.done + 1)
+        else -> apps
+    }
+    return copy(
+        turnOn = rest(ResetPart.TurnOn, turnOn),
+        bringBack = rest(ResetPart.BringBack, bringBack),
+        home = home?.takeIf { p.part < ResetPart.Home },
+        dns = dns?.takeIf { p.part < ResetPart.Dns },
+        animations = animations?.takeIf { p.part < ResetPart.Animations },
+    )
+}
+
 /** A step that didn't work: the [app] it was for (none for Home) and the TV's [reason]. */
 data class ResetFailure(val part: ResetPart, val app: ResetApp?, val reason: UiText)
 

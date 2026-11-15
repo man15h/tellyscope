@@ -12,6 +12,7 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.ResetPart
+import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
 import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
@@ -827,6 +828,38 @@ object Copy {
     fun turnedOff(done: Int, of: Int) =
         if (done == of) UiText.plural(R.plurals.copy_turned_off_all, of) else UiText.plural(R.plurals.copy_turned_off_some, of, done, of)
     fun stillOn(app: String) = UiText(R.string.copy_still_on, app)
+
+    /** Debloat and Reset while they run: Back's snackbar, Stop's line until the running step finishes, then what Stop left. */
+    val DEBLOAT_STILL_RUNNING = UiText(R.string.copy_debloat_still_running)
+    val RESET_STILL_RUNNING = UiText(R.string.copy_reset_still_running)
+    fun stoppingAfter(app: String) = UiText(R.string.copy_stopping_after, app)
+    fun resetStopping(part: ResetPart?) =
+        UiText(if (part == ResetPart.TurnOn || part == ResetPart.BringBack) R.string.copy_stopping_after_app else R.string.copy_stopping_after_step)
+    val DEBLOAT_STOPPED = UiText(R.string.copy_debloat_stopped)
+    fun debloatStoppedText(app: String?) =
+        UiText.Join(listOf(app?.let { UiText(R.string.copy_debloat_stopped_text, it) } ?: UiText(R.string.copy_reset_stopped_partway), DEBLOAT_RESULT_TEXT), " ")
+    fun notChanged(n: Int) = UiText.plural(R.plurals.copy_not_changed, n)
+    fun disableTheRest(n: Int) = UiText.plural(R.plurals.copy_disable_the_rest, n)
+    val RESET_STOPPED = UiText(R.string.copy_reset_stopped)
+    fun resetStoppedText(apps: Int) = UiText.Join(
+        listOf(if (apps > 0) UiText.plural(R.plurals.copy_reset_stopped_text, apps) else UiText(R.string.copy_reset_stopped_partway), UiText(R.string.copy_reset_kept_data)),
+        " ",
+    )
+    val NOT_DONE = UiText(R.string.copy_not_done)
+    /** What Stop left of a reset, in the order it runs. */
+    fun resetLeft(left: ResetPlan): UiText = UiText.Capitalized(
+        UiText.Join(
+            listOfNotNull(
+                UiText.plural(R.plurals.copy_left_turn_on, left.turnOn.size).takeIf { left.turnOn.isNotEmpty() },
+                UiText.plural(R.plurals.copy_left_bring_back, left.bringBack.size).takeIf { left.bringBack.isNotEmpty() },
+                UiText(R.string.copy_left_home).takeIf { left.home != null },
+                UiText(R.string.copy_left_dns).takeIf { left.dns != null },
+                UiText(R.string.copy_left_animations).takeIf { left.animations != null },
+            ),
+            ", ",
+        ),
+    )
+    val FINISH_RESET = UiText(R.string.copy_finish_reset)
 
     /** Under History in the menu, and on top of the History screen: the changes Restore everything puts back. */
     fun toPutBack(n: Int) = UiText.plural(R.plurals.copy_to_put_back, n)

@@ -106,9 +106,12 @@ import app.tellyscope.data.ResetHome
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.after
 import app.tellyscope.ui.ResetActions
 import app.tellyscope.ui.ResetScreen
 import app.tellyscope.ui.ResetUi
+import app.tellyscope.ui.DebloatRun
+import app.tellyscope.ui.DebloatRunScreen
 import app.tellyscope.ui.TweaksBlock
 import app.tellyscope.ui.DeviceUi
 import app.tellyscope.ui.DisableDialog
@@ -919,6 +922,53 @@ class ScreenshotTest {
         compose.onNodeWithText(Copy.tryAgain("Sports").text()).assertHasClickAction()
     }
     @Test fun reset_partlyDone_dark() = reset("a6_reset_partly", true, ResetUi(plan = resetPlan, ran = true, failed = sportsFailed))
+    private val stopping = running.copy(stopping = true)
+    @Test fun reset_stopping() {
+        reset("a7_reset_stopping", false, stopping)
+        compose.onNodeWithText(Copy.resetStopping(ResetPart.TurnOn).text()).assertExists()
+    }
+    @Test fun reset_stopping_dark() = reset("a7_reset_stopping", true, stopping)
+    // Stopped after the seventh app: seven of fourteen on, then the rest, Bring back and Home not done.
+    private val resetStopped = ResetUi(plan = resetPlan, ran = true, left = resetPlan.after(ResetProgress(ResetPart.TurnOn, 6, 14)))
+    @Test fun reset_stopped() {
+        reset("a8_reset_stopped", false, resetStopped)
+        compose.onNodeWithText(Copy.turnedOn(7, 14).text()).assertExists()
+        compose.onNodeWithText(Copy.FINISH_RESET.text()).assertHasClickAction()
+    }
+    @Test fun reset_stopped_dark() = reset("a8_reset_stopped", true, resetStopped)
+
+    // Debloat's run, as the frames drew it: seven apps, the fourth (Sports) turning off.
+    private val debloatApps = listOf(
+        "YouTube Kids" to "com.google.android.youtube.tvkids", "Google Play Movies & TV" to "com.google.android.videos",
+        "Google Play Games" to "com.google.android.play.games", "Sports" to "com.google.android.tvrecommendations.sports",
+        "XGIMI Assistant" to "com.xgimi.assistant", "Live Channels" to "com.google.android.tv", "Google Feedback" to "com.google.android.feedback",
+    ).map { (label, pkg) -> ResetApp(pkg, label) }
+    private fun debloatRun(name: String, dark: Boolean, run: DebloatRun, back: Boolean = false) {
+        lateinit var dispatcher: OnBackPressedDispatcher
+        shot(name, dark, before = { if (back) compose.runOnUiThread { dispatcher.onBackPressed() } }) {
+            dispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            DebloatRunScreen(run, back = {}, retry = {})
+        }
+    }
+    private val debloatRunning = DebloatRun(debloatApps, at = 3)
+    @Test fun debloat_running() {
+        debloatRun("b1_debloat_running", false, debloatRunning)
+        compose.onNodeWithContentDescription("Back").assertDoesNotExist()
+    }
+    @Test fun debloat_running_dark() = debloatRun("b1_debloat_running", true, debloatRunning)
+    @Test fun debloat_backPressed() {
+        debloatRun("b2_debloat_back", false, debloatRunning, back = true)
+        compose.onNodeWithText(Copy.DEBLOAT_STILL_RUNNING.text()).assertExists()
+    }
+    @Test fun debloat_backPressed_dark() = debloatRun("b2_debloat_back", true, debloatRunning, back = true)
+    @Test fun debloat_stopping() = debloatRun("b3_debloat_stopping", false, debloatRunning.copy(stopping = true))
+    @Test fun debloat_stopping_dark() = debloatRun("b3_debloat_stopping", true, debloatRunning.copy(stopping = true))
+    private val debloatStopped = DebloatRun(debloatApps, at = 4, ran = true, stopping = true)
+    @Test fun debloat_stopped() {
+        debloatRun("b4_debloat_stopped", false, debloatStopped)
+        compose.onNodeWithText(Copy.disableTheRest(3).text()).assertHasClickAction()
+    }
+    @Test fun debloat_stopped_dark() = debloatRun("b4_debloat_stopped", true, debloatStopped)
 
     @Test fun device_overview() {
         shot("04_device") { DeviceTabsScreen(deviceState(), DeviceActions()) }
