@@ -21,6 +21,9 @@ import app.tellyscope.data.depth
 import app.tellyscope.data.parseIndex
 import app.tellyscope.data.parseList
 import app.tellyscope.data.suggest
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,6 +38,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.IOException
 import java.security.MessageDigest
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.CoroutineContext
 
 /** org.json is Android's, so this runs under Robolectric. */
 @RunWith(RobolectricTestRunner::class)
@@ -361,6 +367,27 @@ class DeviceListsTest {
         assertEquals(SourceResult.Ok, lists.setSource(null))
         assertNull(lists.custom())
         assertNull(lists.index()) // nothing from the fork is left to fall back on
+    }
+
+    @Test fun aCancelThatLandsWhileTheSwitchIsSavedStillSwitches() = runTest {
+        val forked = index().decodeToString().replace("30626a8e4714", "f0f0f0f0f0f0").toByteArray()
+        val lists = DeviceLists(tmp.root) { url -> if (url == fork + "index.json") forked else index() }
+        assertEquals("30626a8e4714", lists.index()?.commit)
+        // setSource runs here, one task at a time, so the cancel can land after the write and before it returns.
+        val tasks = LinkedBlockingQueue<Runnable>()
+        val here = object : CoroutineDispatcher() {
+            override fun dispatch(context: CoroutineContext, block: Runnable) = tasks.put(block)
+        }
+        val job = CoroutineScope(here).launch { lists.setSource(fork) }
+        tasks.take().run() // up to the write, which goes off to Dispatchers.IO
+        val back = tasks.poll(5, TimeUnit.SECONDS)!! // the write is done and setSource is about to return
+        job.cancel()
+        back.run()
+        while (!job.isCompleted) tasks.poll(5, TimeUnit.SECONDS)!!.run()
+
+        assertTrue(job.isCancelled)
+        assertEquals(fork, lists.custom())
+        assertEquals("f0f0f0f0f0f0", lists.index()?.commit)
     }
 
     @Test fun sourceAddressesAreHttpsFoldersAndReadShort() {

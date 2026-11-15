@@ -1937,7 +1937,8 @@ class TellyscopeViewModel(
 
     /**
      * "Pick your TV": remember the choice for this TV and show its list. A list that doesn't load
-     * leaves the TV on the one it had, and the snackbar names both.
+     * isn't kept: the TV goes back to the one it had, and the snackbar names both, or only the
+     * new one when it had none.
      */
     fun pickList(listId: String) {
         val id = _state.value.selectedId ?: return
@@ -1947,10 +1948,18 @@ class TellyscopeViewModel(
         listsJob = viewModelScope.launch {
             val was = source.pickList(id, listId)
             val got = source.suggestions(id) { shownApps(id) }
-            if (got !is Suggestions.Unavailable || before !is Suggestions.Ready) return@launch showLists(id, got)
+            if (got !is Suggestions.Unavailable) return@launch showLists(id, got)
             source.pickList(id, was)
-            val name = before.devices.firstOrNull { it.id == listId }?.name ?: listId
-            _notice.value = UiText(R.string.vm_list_not_loaded, name, before.list.name)
+            val all = when (before) {
+                is Suggestions.Ready -> before.devices
+                is Suggestions.NoList -> before.devices
+                is Suggestions.Unavailable -> before.devices
+                null -> emptyList()
+            } + got.devices
+            val name = all.firstOrNull { it.id == listId }?.name ?: listId
+            _notice.value =
+                if (before is Suggestions.Ready) UiText(R.string.vm_list_not_loaded, name, before.list.name)
+                else UiText(R.string.vm_pick_not_loaded, name)
             loadLists(id) { shownApps(id) }
         }
     }
@@ -1979,6 +1988,8 @@ class TellyscopeViewModel(
             try {
                 source.setListSource(url)
             } catch (e: CancellationException) {
+                // A Cancel that landed while the source was being saved is too late: it's saved, so the screen catches up.
+                withContext(NonCancellable) { if (source.listSource() != _state.value.listSource) sourceTaken(close = false) }
                 throw e
             } catch (e: Exception) {
                 // The dialog stays open with the address, and says why under it.
@@ -1986,17 +1997,20 @@ class TellyscopeViewModel(
                 return@launch
             }
             // Taken: a Cancel now is too late to undo it, so the screen catches up regardless.
-            withContext(NonCancellable) {
-                val now = source.listSource()
-                // Every TV's list came from the old source.
-                lastLists.clear()
-                val id = _state.value.selectedId
-                _state.update { it.copy(sourceCheck = null, listSource = now, device = it.device.copy(lists = null)) }
-                _notice.value = Copy.listSource(now)
-                listsJob?.cancel()
-                if (id != null) listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
-            }
+            withContext(NonCancellable) { sourceTaken(close = true) }
         }
+    }
+
+    /** Shows the source the lists now come from and reloads this TV's list; [close] ends the check too. */
+    private suspend fun sourceTaken(close: Boolean) {
+        val now = source.listSource()
+        // Every TV's list came from the old source.
+        lastLists.clear()
+        val id = _state.value.selectedId
+        _state.update { it.copy(sourceCheck = if (close) null else it.sourceCheck, listSource = now, device = it.device.copy(lists = null)) }
+        _notice.value = Copy.listSource(now)
+        listsJob?.cancel()
+        if (id != null) listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
     }
 
     /** Cancel in the own-lists dialog: stops a check that's still running. */

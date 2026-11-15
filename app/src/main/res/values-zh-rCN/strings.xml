@@ -602,6 +602,7 @@
     <string name="vm_didnt_work">操作未成功。</string>
     <string name="vm_nothing_to_put_back">没有需要恢复的内容。</string>
     <string name="vm_list_not_loaded">无法加载 %1$s 的列表。仍使用 %2$s。</string>
+    <string name="vm_pick_not_loaded">无法加载 %1$s 的列表。</string>
     <plurals name="vm_put_back">
         <item quantity="other">已恢复 %1$d 处更改。</item>
     </plurals>

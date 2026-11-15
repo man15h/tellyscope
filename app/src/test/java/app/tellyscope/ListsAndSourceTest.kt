@@ -34,7 +34,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/** One online TV whose lists load, except [broken] ones and while [down]. */
+/** One online TV whose lists load, except [broken] ones and while [down]; with no pick it has no list. */
 private class OneTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val entries = listOf(ListEntry("tcl", "TCL C-series", null, null, "tcl.json", ""), ListEntry("sony", "Sony Bravia 2023", null, null, "sony.json", ""))
     var picked: String? = "tcl"
@@ -43,6 +43,8 @@ private class OneTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario
     var sourceGate: CompletableDeferred<Unit>? = null
     var sourceRefuses = false
     var sourceSet: String? = null
+    /** Saves the address before [sourceGate], like a Cancel that lands during the write. */
+    var savesFirst = false
 
     override suspend fun known() =
         listOf(Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L))
@@ -53,7 +55,8 @@ private class OneTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario
 
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions {
         val id = picked
-        if (down || id == null || id in broken) return Suggestions.Unavailable(entries)
+        if (down || id in broken) return Suggestions.Unavailable(entries)
+        if (id == null) return Suggestions.NoList(null, entries)
         val name = entries.first { it.id == id }.name
         return Suggestions.Ready(null, DeviceList(id, name, null, null, emptySet(), emptyList()), null, emptyList(), entries)
     }
@@ -63,6 +66,7 @@ private class OneTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario
     override suspend fun listSource() = sourceSet
 
     override suspend fun setListSource(url: String?) {
+        if (savesFirst) sourceSet = url
         sourceGate?.await()
         if (sourceRefuses) throw IllegalStateException("no index.json at that address")
         sourceSet = url
@@ -96,6 +100,33 @@ class ListsAndSourceTest {
         assertEquals("tcl", shownList())
         assertEquals("tcl", source.picked)
         assertEquals("Couldn't load the Sony Bravia 2023 list. Still on TCL C-series.", vm.notice.value?.text())
+    }
+
+    @Test fun aPickThatDoesntLoadIsntKeptOnATvWithNoList() = with(test) {
+        source.picked = null
+        vm = TellyscopeViewModel(source, clock = { 0L })
+        runCurrent()
+        assertTrue(vm.state.value.device.lists is Suggestions.NoList)
+
+        source.broken += "sony"
+        vm.pickList("sony")
+        runCurrent()
+        assertTrue(vm.state.value.device.lists is Suggestions.NoList)
+        assertNull(source.picked)
+        assertEquals("Couldn't load the Sony Bravia 2023 list.", vm.notice.value?.text())
+    }
+
+    @Test fun aPickThatDoesntLoadIsntKeptOnATvWhoseListFailed() = with(test) {
+        source.broken += setOf("tcl", "sony")
+        vm = TellyscopeViewModel(source, clock = { 0L })
+        runCurrent()
+        assertTrue(vm.state.value.device.lists is Suggestions.Unavailable)
+
+        vm.pickList("sony")
+        runCurrent()
+        assertTrue(vm.state.value.device.lists is Suggestions.Unavailable)
+        assertEquals("tcl", source.picked)
+        assertEquals("Couldn't load the Sony Bravia 2023 list.", vm.notice.value?.text())
     }
 
     @Test fun aFailedListOffersEveryListAndTryAgainLoadsIt() = with(test) {
@@ -143,6 +174,20 @@ class ListsAndSourceTest {
         runCurrent()
         assertNull(vm.state.value.sourceCheck)
         assertNull(source.sourceSet)
+    }
+
+    @Test fun aCancelThatLandsWhileTheSourceIsSavedStillShowsIt() = with(test) {
+        vm = TellyscopeViewModel(source, clock = { 0L })
+        runCurrent()
+        source.savesFirst = true
+        source.sourceGate = CompletableDeferred()
+        vm.setListSource("https://example.com/lists/")
+        runCurrent()
+        vm.cancelListSource()
+        runCurrent()
+        assertNull(vm.state.value.sourceCheck)
+        assertEquals("https://example.com/lists/", vm.state.value.listSource)
+        assertEquals("tcl", shownList())
     }
 
     @Test fun aTakenSourceClosesTheCheckAndReloads() = with(test) {

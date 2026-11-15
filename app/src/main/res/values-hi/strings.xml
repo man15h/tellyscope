@@ -640,6 +640,7 @@
     <string name="vm_didnt_work">यह काम नहीं किया।</string>
     <string name="vm_nothing_to_put_back">रीस्टोर करने के लिए कुछ नहीं है।</string>
     <string name="vm_list_not_loaded">%1$s की सूची लोड नहीं हो सकी। अभी %2$s की सूची ही है।</string>
+    <string name="vm_pick_not_loaded">%1$s की सूची लोड नहीं हो सकी।</string>
     <plurals name="vm_put_back">
         <item quantity="one">%1$d बदलाव रीस्टोर किया।</item>
         <item quantity="other">%1$d बदलाव रीस्टोर किए।</item>

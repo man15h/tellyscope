@@ -1058,11 +1058,13 @@ class AdbDeviceSource(
     override suspend fun listSource(): String? = lists.custom()
 
     override suspend fun setListSource(url: String?) {
-        when (lists.setSource(url)) {
-            SourceResult.Ok -> {
-                keep.clear() // the old source's keep entries
-                scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
-            }
+        // Runs with the switch itself, so a Cancel that lands while it's saved can't skip it.
+        val result = lists.setSource(url) {
+            keep.clear() // the old source's keep entries
+            scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
+        }
+        when (result) {
+            SourceResult.Ok -> Unit
             SourceResult.NotHttps -> throw UiTextException(UiText(R.string.data_lists_not_https))
             SourceResult.Unreachable -> throw UiTextException(UiText(R.string.data_lists_unreachable))
             SourceResult.NotAList -> throw UiTextException(NOT_A_LIST)
