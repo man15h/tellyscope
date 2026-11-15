@@ -65,7 +65,7 @@ private class DebloatedTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Sc
 
     override suspend fun resetPlan(deviceId: String) = ResetPlan(turnOn = listOf(ResetApp(JUNK, "Junk")))
 
-    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> {
+    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, stop: () -> Boolean, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> {
         on = true
         return 1L to emptyList()
     }

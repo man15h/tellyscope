@@ -148,6 +148,28 @@ class DebloatRunTest {
         assertNull(run)
     }
 
+    /** Stop lets the app being turned off finish, then the run ends; Try again picks up the rest. */
+    @Test fun stopLetsTheRunningAppFinishThenEnds() = with(test) {
+        open()
+        val gate = CompletableDeferred<Unit>()
+        source.gate = gate
+        vm.disableSuggested(listOf(KIDS, SPORTS, FEEDBACK))
+        runCurrent()
+        vm.stopDebloat()
+        assertTrue(run!!.stopping)
+        source.gate = null
+        gate.complete(Unit)
+        runCurrent()
+        assertEquals(listOf(KIDS.packageName), source.asked)
+        assertTrue(run!!.stopped)
+        assertEquals(listOf(SPORTS, FEEDBACK), run!!.left)
+        assertNull(vm.state.value.device.busy)
+        vm.retryDebloat()
+        runCurrent()
+        assertEquals(listOf(KIDS, SPORTS, FEEDBACK).map { it.packageName }, source.asked)
+        assertFalse(run!!.stopped)
+    }
+
     /** Tapping the TV already on screen does nothing: the run and its progress stay. */
     @Test fun pickingTheSameTvAgainKeepsTheRun() = with(test) {
         open()

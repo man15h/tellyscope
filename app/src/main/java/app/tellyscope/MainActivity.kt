@@ -312,11 +312,11 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         HistoryScreen(state, onUndo = vm::undo, onRestoreAll = vm::restoreAll, back = { history = false }, snackbar = snackbar, onRestoredSeen = vm::restoredShown)
     } else if (resetting && state.device.reset != null) {
         val close = { vm.closeReset(); resetting = false }
-        // Leaving mid-run only closes the screen; the run goes on, and History has it when done.
-        BackHandler(onBack = close)
+        // The screen holds Back while the reset runs: Stop is the way out of it.
         ResetScreen(
             state,
-            ResetActions(reset = { vm.runReset() }, retry = { vm.runReset(retry = true) }, reload = vm::openReset, back = close),
+            ResetActions(reset = { vm.runReset() }, retry = { vm.runReset(retry = true) }, reload = vm::openReset, back = close, stop = vm::stopReset),
+            snackbar = snackbar,
         )
     } else if (access || state.device.removal != null) {
         // A removal started from the warning opens this screen too, and back steps out of it first.
@@ -367,8 +367,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             play = BuildConfig.PLAY,
         )
     } else if (debloat && state.device.debloat != null) {
-        // Leaving mid-run only closes the screen; the run goes on, and History has each app.
-        DebloatRunScreen(state.device.debloat!!, back = { vm.closeDebloat(); debloat = false }, retry = vm::retryDebloat)
+        // The screen holds Back while the run goes: Stop is the way out of it.
+        DebloatRunScreen(state.device.debloat!!, back = { vm.closeDebloat(); debloat = false }, retry = vm::retryDebloat, stop = vm::stopDebloat, snackbar = snackbar)
     } else if (debloat) {
         // Its own back handler closes the list search before leaving.
         DebloatScreen(

@@ -883,7 +883,7 @@ class AdbDeviceSource(
         )
     }
 
-    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
+    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, stop: () -> Boolean, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
         fireHomes -= deviceId
         val key = key(deviceId)
         val shell = session(deviceId)
@@ -897,21 +897,25 @@ class AdbDeviceSource(
             entry = entry?.let { book.amend(it.id, extra, label) }
                 ?: book.record(key, System.currentTimeMillis(), Action.Reset, RESET, label, undo = Action.Reset, previous = extra)
         }
-        suspend fun each(part: ResetPart, field: String, apps: List<ResetApp>, change: suspend (String) -> Unit) = apps.forEachIndexed { i, app ->
-            onProgress(ResetProgress(part, i, apps.size))
-            try {
-                change(app.packageName)
-                note(mapOf(field to (ResetRecord.list(entry?.previous, field) + app.packageName).distinct().joinToString(",")))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // A step that fails doesn't stop the rest: each one stands alone.
-                failed += ResetFailure(part, app, e.why(R.string.data_tv_refused))
+        // Stop is checked before each step, never inside one: the step running when it's tapped finishes.
+        suspend fun each(part: ResetPart, field: String, apps: List<ResetApp>, change: suspend (String) -> Unit) {
+            for ((i, app) in apps.withIndex()) {
+                if (stop()) return
+                onProgress(ResetProgress(part, i, apps.size))
+                try {
+                    change(app.packageName)
+                    note(mapOf(field to (ResetRecord.list(entry?.previous, field) + app.packageName).distinct().joinToString(",")))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // A step that fails doesn't stop the rest: each one stands alone.
+                    failed += ResetFailure(part, app, e.why(R.string.data_tv_refused))
+                }
             }
         }
         each(ResetPart.TurnOn, ResetRecord.ON, plan.turnOn, tv::turnOn)
         each(ResetPart.BringBack, ResetRecord.BACK, plan.bringBack, tv::bringBack)
-        plan.home?.let { h ->
+        plan.home?.takeUnless { stop() }?.let { h ->
             onProgress(ResetProgress(ResetPart.Home, 0, 1))
             try {
                 // Home moved but the service stayed on, or the hand-off to it didn't finish: Undo still needs the move.
@@ -925,7 +929,7 @@ class AdbDeviceSource(
             }
         }
         val tweaks = Tweaks(shell)
-        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?) = planned?.let {
+        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?) = planned?.takeUnless { stop() }?.let {
             onProgress(ResetProgress(part, 0, 1))
             try {
                 resetSetting(tweaks, tweak)?.let(::note)

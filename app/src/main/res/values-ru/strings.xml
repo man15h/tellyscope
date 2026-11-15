@@ -554,6 +554,50 @@
         <item quantity="other">Отключено %1$d из %2$d приложения</item>
     </plurals>
     <string name="copy_still_on">%1$s по-прежнему включено</string>
+    <string name="copy_debloat_still_running">Очистка ещё идёт. Выйти можно, когда она закончится.</string>
+    <string name="copy_reset_still_running">Сброс ещё идёт. Выйти можно, когда он закончится.</string>
+    <string name="copy_stopping_after">Остановка после «%1$s»…</string>
+    <string name="copy_stopping_after_app">Остановка после этого приложения…</string>
+    <string name="copy_stopping_after_step">Остановка после этого шага…</string>
+    <string name="copy_debloat_stopped">Очистка остановлена</string>
+    <string name="copy_debloat_stopped_text">Вы остановили её после «%1$s».</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d приложение не изменено</item>
+        <item quantity="few">%1$d приложения не изменены</item>
+        <item quantity="many">%1$d приложений не изменено</item>
+        <item quantity="other">%1$d приложения не изменено</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Отключить оставшееся</item>
+        <item quantity="few">Отключить остальные %1$d</item>
+        <item quantity="many">Отключить остальные %1$d</item>
+        <item quantity="other">Отключить остальные %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Сброс остановлен</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">Вы остановили его после %1$d приложения.</item>
+        <item quantity="few">Вы остановили его после %1$d приложений.</item>
+        <item quantity="many">Вы остановили его после %1$d приложений.</item>
+        <item quantity="other">Вы остановили его после %1$d приложения.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">Вы остановили его на полпути.</string>
+    <string name="copy_not_done">Не выполнено</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d приложение включить</item>
+        <item quantity="few">%1$d приложения включить</item>
+        <item quantity="many">%1$d приложений включить</item>
+        <item quantity="other">%1$d приложения включить</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d вернуть</item>
+        <item quantity="few">%1$d вернуть</item>
+        <item quantity="many">%1$d вернуть</item>
+        <item quantity="other">%1$d вернуть</item>
+    </plurals>
+    <string name="copy_left_home">главный экран</string>
+    <string name="copy_left_dns">частный DNS</string>
+    <string name="copy_left_animations">скорость анимации</string>
+    <string name="copy_finish_reset">Завершить сброс</string>
     <plurals name="copy_to_put_back">
         <item quantity="one">%1$d изменение нужно восстановить</item>
         <item quantity="few">%1$d изменения нужно восстановить</item>

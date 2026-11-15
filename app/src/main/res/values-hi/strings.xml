@@ -504,6 +504,40 @@
         <item quantity="other">%2$d में से %1$d ऐप बंद किए</item>
     </plurals>
     <string name="copy_still_on">%1$s अब भी चालू है</string>
+    <string name="copy_debloat_still_running">डीब्लोट अभी चल रहा है। पूरा होने पर आप बाहर जा सकते हैं।</string>
+    <string name="copy_reset_still_running">रीसेट अभी चल रहा है। पूरा होने पर आप बाहर जा सकते हैं।</string>
+    <string name="copy_stopping_after">%1$s के बाद रोका जा रहा है…</string>
+    <string name="copy_stopping_after_app">इस ऐप के बाद रोका जा रहा है…</string>
+    <string name="copy_stopping_after_step">इस चरण के बाद रोका जा रहा है…</string>
+    <string name="copy_debloat_stopped">डीब्लोट रोका गया</string>
+    <string name="copy_debloat_stopped_text">आपने इसे %1$s के बाद रोका।</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d ऐप नहीं बदला</item>
+        <item quantity="other">%1$d ऐप नहीं बदले</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">बाकी ऐप बंद करें</item>
+        <item quantity="other">बाकी %1$d बंद करें</item>
+    </plurals>
+    <string name="copy_reset_stopped">रीसेट रोका गया</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">आपने इसे %1$d ऐप के बाद रोका।</item>
+        <item quantity="other">आपने इसे %1$d ऐप के बाद रोका।</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">आपने इसे बीच में रोका।</string>
+    <string name="copy_not_done">नहीं हुआ</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d ऐप चालू करना है</item>
+        <item quantity="other">%1$d ऐप चालू करने हैं</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d वापस लाना है</item>
+        <item quantity="other">%1$d वापस लाने हैं</item>
+    </plurals>
+    <string name="copy_left_home">होम स्क्रीन</string>
+    <string name="copy_left_dns">निजी DNS</string>
+    <string name="copy_left_animations">ऐनिमेशन की स्पीड</string>
+    <string name="copy_finish_reset">रीसेट पूरा करें</string>
     <plurals name="copy_to_put_back">
         <item quantity="one">%1$d बदलाव रीस्टोर करना है</item>
         <item quantity="other">%1$d बदलाव रीस्टोर करने हैं</item>

@@ -130,11 +130,12 @@ interface DeviceSource {
     suspend fun resetPlan(deviceId: String): ResetPlan = ResetPlan()
 
     /**
-     * Runs [plan], reporting each step to [onProgress], and goes on past a step that fails. All of
-     * it is one History entry; a retry ([into], that entry's id) adds to it. Returns the entry's id,
-     * null when nothing changed, and what failed.
+     * Runs [plan], reporting each step to [onProgress], and goes on past a step that fails. Once
+     * [stop] says so it starts no further step: the one running finishes. All of it is one History
+     * entry; a retry ([into], that entry's id) adds to it. Returns the entry's id, null when nothing
+     * changed, and what failed.
      */
-    suspend fun reset(deviceId: String, plan: ResetPlan, into: Long? = null, onProgress: (ResetProgress) -> Unit = {}): Pair<Long?, List<ResetFailure>> = null to emptyList()
+    suspend fun reset(deviceId: String, plan: ResetPlan, into: Long? = null, stop: () -> Boolean = { false }, onProgress: (ResetProgress) -> Unit = {}): Pair<Long?, List<ResetFailure>> = null to emptyList()
 
     /** The version of [packageName] on the TV, or null when it isn't installed. */
     suspend fun installed(deviceId: String, packageName: String): InstalledVersion?
