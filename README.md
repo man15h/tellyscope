@@ -3,7 +3,7 @@
 Debloat your Android TV, install apps, and browse and transfer files on it, all from your phone. No root, no PC.
 
 <p>
-  <img src="https://img.shields.io/badge/size-3%20MB-00696B" alt="3 MB">
+  <img src="https://img.shields.io/badge/size-under%205%20MB-00696B" alt="Under 5 MB">
   <img src="https://img.shields.io/badge/tracking-none-00696B" alt="No tracking">
   <img src="https://img.shields.io/badge/root-not%20needed-00696B" alt="No root">
   <img src="https://img.shields.io/badge/languages-6-00696B" alt="6 languages">
