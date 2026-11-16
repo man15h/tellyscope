@@ -1327,6 +1327,16 @@
     <string name="remote_touchpad">Touchpad</string>
     <string name="remote_touchpad_swipe">Deslize para mover</string>
     <string name="remote_touchpad_tap">Toque para OK</string>
+    <string name="remote_pointer">Ponteiro</string>
+    <string name="remote_pointer_drag">Arraste para mover o ponteiro</string>
+    <string name="remote_pointer_tap">Toque para clicar · Dois dedos para rolar</string>
+    <string name="remote_pointer_refused">Esta TV não permite</string>
+    <string name="remote_controller">Controle de jogo</string>
+    <string name="remote_controller_close">Voltar ao Controle</string>
+    <string name="remote_controller_stick">Analógico</string>
+    <string name="remote_controller_buttons_only">Esta TV aceita só os botões. Jogos que procuram um controle conectado podem não responder.</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">Voltar</string>
     <string name="remote_home">Início</string>
     <string name="remote_menu">Menu</string>

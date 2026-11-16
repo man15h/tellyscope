@@ -1040,6 +1040,16 @@
     <string name="remote_touchpad">タッチパッド</string>
     <string name="remote_touchpad_swipe">スワイプで移動</string>
     <string name="remote_touchpad_tap">タップで OK</string>
+    <string name="remote_pointer">ポインター</string>
+    <string name="remote_pointer_drag">ドラッグでポインターを移動</string>
+    <string name="remote_pointer_tap">タップでクリック · 2 本指でスクロール</string>
+    <string name="remote_pointer_refused">このテレビでは使えません</string>
+    <string name="remote_controller">ゲームコントローラー</string>
+    <string name="remote_controller_close">リモコンに戻る</string>
+    <string name="remote_controller_stick">スティック</string>
+    <string name="remote_controller_buttons_only">このテレビはボタンだけを受け付けます。接続されたコントローラーを探すゲームは反応しないことがあります。</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">戻る</string>
     <string name="remote_home">ホーム</string>
     <string name="remote_menu">メニュー</string>
