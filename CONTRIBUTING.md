@@ -9,6 +9,7 @@ Thanks for helping! Tellyscope is young, so the code and its structure are still
 - **One change per pull request.** Smaller is easier to review.
 - **Don't edit [CHANGELOG.md](CHANGELOG.md).** Put your change's line in the pull request description instead, as `Changelog: **New:** …`, `**Improved:**` or `**Fixed:**`, in the format the changelog's header gives. Leave it out when users won't notice the change. The release pull requests add the lines.
 - **`./gradlew build` must pass** before you open a PR. CI runs the same command.
+- **The release APK stays under 5 MB.** `assembleRelease` fails past 5,000,000 bytes (`checkGithubReleaseApkSize`). Room for new features and languages is fine; a new library or a large asset should be worth what it adds.
 - **New files start with an SPDX header:** `// SPDX-License-Identifier: GPL-3.0-only`.
 - **Licensing.** By contributing you agree that your work is licensed under GPL-3.0. If you adapt code or lists from another project, check that its license is compatible and add it to [NOTICE](NOTICE) in the same PR.
 
