@@ -27,8 +27,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -529,7 +531,8 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
     // The sheet slides away before what was picked opens.
     val pick = { then: () -> Unit -> scope.launch { sheet.hide() }.invokeOnCompletion { open = false; then() } }
     ModalBottomSheet(onDismissRequest = { open = false }, sheetState = sheet) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        // Taller than a short screen, so it scrolls: else the sheet only drags and Forget stays cut off.
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             Row(Modifier.padding(start = 4.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Cookie(device, 48.dp)
                 Spacer(Modifier.width(16.dp))
