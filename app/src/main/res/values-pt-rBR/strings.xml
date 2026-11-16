@@ -564,7 +564,7 @@
     <string name="copy_reset_done_animations">As animações voltaram à velocidade normal.</string>
     <string name="copy_reset_kept_data">Dados e contas dos apps ficaram.</string>
     <plurals name="copy_reset_partly_text">
-        <item quantity="one">Um passo não funcionou. O resto voltou como veio. Nada foi perdido.</item>
+        <item quantity="one">%1$d passo não funcionou. O resto voltou como veio. Nada foi perdido.</item>
         <item quantity="other">%1$d passos não funcionaram. O resto voltou como veio. Nada foi perdido.</item>
     </plurals>
     <plurals name="copy_turned_on_all">
@@ -611,6 +611,40 @@
         <item quantity="other">Desativei %1$d de %2$d apps</item>
     </plurals>
     <string name="copy_still_on">%1$s continua ativo</string>
+    <string name="copy_debloat_still_running">A limpeza ainda está em andamento. Você pode sair quando terminar.</string>
+    <string name="copy_reset_still_running">A restauração ainda está em andamento. Você pode sair quando terminar.</string>
+    <string name="copy_stopping_after">Parando depois de %1$s…</string>
+    <string name="copy_stopping_after_app">Parando depois deste app…</string>
+    <string name="copy_stopping_after_step">Parando depois deste passo…</string>
+    <string name="copy_debloat_stopped">Limpeza parada</string>
+    <string name="copy_debloat_stopped_text">Você parou depois de %1$s.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d app não mudou</item>
+        <item quantity="other">%1$d apps não mudaram</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Desativar %1$d outro app</item>
+        <item quantity="other">Desativar os outros %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Restauração parada</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">Você parou depois de %1$d app.</item>
+        <item quantity="other">Você parou depois de %1$d apps.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">Você parou no meio do caminho.</string>
+    <string name="copy_not_done">Não feito</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d app para ativar</item>
+        <item quantity="other">%1$d apps para ativar</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d para trazer de volta</item>
+        <item quantity="other">%1$d para trazer de volta</item>
+    </plurals>
+    <string name="copy_left_home">a tela inicial</string>
+    <string name="copy_left_dns">DNS privado</string>
+    <string name="copy_left_animations">velocidade das animações</string>
+    <string name="copy_finish_reset">Terminar a restauração</string>
     <plurals name="copy_to_put_back">
         <item quantity="one">%1$d mudança para restaurar</item>
         <item quantity="other">%1$d mudanças para restaurar</item>
@@ -622,7 +656,7 @@
     </plurals>
     <!-- The count is how many didn't go back; one line for each follows. -->
     <plurals name="copy_restored_left">
-        <item quantity="one">Esta continua como o Tellyscope deixou:</item>
+        <item quantity="one">%1$d item ainda está como o Tellyscope deixou:</item>
         <item quantity="other">Estas %1$d continuam como o Tellyscope deixou:</item>
     </plurals>
     <string name="copy_restored_hint">Desfaça cada uma pela linha dela no Histórico ou restaure de novo mais tarde.</string>
@@ -911,7 +945,7 @@
     <!-- %1$s is the name of a debloat list, usually the TV model -->
     <string name="tabs_suggested_none">Nada da lista %1$s está nesta TV</string>
     <plurals name="tabs_suggested_all_off">
-        <item quantity="one">O app sugerido está desativado</item>
+        <item quantity="one">%1$d app sugerido está desativado</item>
         <item quantity="other">Todos os %1$d apps sugeridos estão desativados</item>
     </plurals>
     <!-- %1$d apps off out of %2$d suggested; picked by %2$d -->
@@ -920,6 +954,10 @@
         <item quantity="other">%1$d de %2$d apps sugeridos estão desativados</item>
     </plurals>
     <string name="tabs_suggested_no_list">Ainda não há lista para esta TV</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d não sugerido</item>
+        <item quantity="other">%1$d não sugeridos</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">Falha ao carregar as listas</string>
     <string name="tabs_suggested_offline">Conecte à TV para ver as sugestões</string>
     <string name="tabs_suggested_loading">Procurando a lista desta TV…</string>
@@ -995,6 +1033,17 @@
     <string name="lists_disable_text">Cada um é desativado e para de rodar. Nada é apagado; todos aparecem no Histórico, onde você pode reativar.</string>
     <string name="lists_disable_yes">Sim, desativar</string>
     <string name="lists_cancel">Cancelar</string>
+    <string name="lists_dont_suggest_one">Não sugerir %1$s de novo</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">Não sugerir de novo o %1$d app desmarcado</item>
+        <item quantity="other">Não sugerir de novo os %1$d apps desmarcados</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d deles pode quebrar algo na TV.</item>
+        <item quantity="other">%1$d deles podem quebrar algo na TV.</item>
+    </plurals>
+    <string name="lists_not_suggested">Não sugeridos (%1$d)</string>
+    <string name="lists_suggest_again">Sugerir de novo</string>
     <string name="lists_about_title">Sobre o Tellyscope</string>
     <string name="lists_about_version">Versão %1$s</string>
     <string name="lists_about_website">Site</string>
@@ -1075,6 +1124,11 @@
     <string name="shell_dropped_prefix">(\"adb shell\" removido)</string>
     <string name="shell_lost">A TV caiu antes de o comando terminar. Ele pode ter rodado só em parte.</string>
     <string name="shell_failed">Erro no Shell: %1$s. O comando pode ter rodado só em parte. O próximo abre um novo shell.</string>
+    <string name="shell_copy_all">Copiar tudo</string>
+    <plurals name="shell_copied">
+        <item quantity="one">%1$d linha copiada</item>
+        <item quantity="other">%1$d linhas copiadas</item>
+    </plurals>
     <string name="advanced_loading">Carregando estatísticas…</string>
     <string name="advanced_network">Rede</string>
     <string name="advanced_cpu">CPU</string>
