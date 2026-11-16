@@ -5,6 +5,8 @@ package app.tellyscope.data
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.ConnectionRequest
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
 import app.tellyscope.adb.Peripheral
@@ -194,6 +196,24 @@ interface DeviceSource {
      * Remote's volume keys do nothing (see [app.tellyscope.adb.Remote.musicFixed]). Throws when it's gone.
      */
     suspend fun volumeFixed(deviceId: String): Boolean = false
+
+    /**
+     * The TV lets Tellyscope add a virtual mouse or gamepad (`/dev/uhid`, Android 10 and later on
+     * most TVs): the Remote's Pointer needs it, and so does the game controller's stick. Throws when it's gone.
+     */
+    suspend fun uhid(deviceId: String): Boolean = false
+
+    /** Adds the virtual [device] to the TV, or takes both away with null. False when the TV refused. */
+    suspend fun hid(deviceId: String, device: HidDevice?): Boolean = false
+
+    /** Moves the virtual mouse; see [app.tellyscope.adb.KeyHelper.mouse]. */
+    suspend fun mouse(deviceId: String, dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean = false
+
+    /** Sets the virtual gamepad to [pad]. */
+    suspend fun gamepad(deviceId: String, pad: GamepadReport): Boolean = false
+
+    /** A gamepad key down or up, injected, on a TV without the virtual gamepad. */
+    suspend fun gamepadKey(deviceId: String, code: Int, down: Boolean): Boolean = false
 
     /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.sendable] first. */
     suspend fun type(deviceId: String, text: String): Boolean

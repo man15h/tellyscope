@@ -467,7 +467,13 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     screenOff = vm::setScreenOff,
                     screenOffTipSeen = vm::screenOffTipSeen,
                     checkVolume = vm::checkVolume,
-                    touchpad = vm::setTouchpad,
+                    pad = vm::setPad,
+                    closeController = vm::closeController,
+                    checkUhid = vm::checkUhid,
+                    hid = vm::hid,
+                    mouse = vm::mouse,
+                    gamepad = vm::gamepad,
+                    gamepadKey = vm::gamepadKey,
                 ),
             )
         }

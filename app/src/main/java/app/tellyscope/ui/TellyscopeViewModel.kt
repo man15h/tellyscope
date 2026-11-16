@@ -14,6 +14,8 @@ import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
 import app.tellyscope.adb.Peripheral
 import app.tellyscope.adb.Progress
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.Remote
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.Report
@@ -35,6 +37,7 @@ import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.RemotePad
 import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
 import app.tellyscope.data.LauncherPick
@@ -364,8 +367,10 @@ data class UiState(
     val screenOffTip: Boolean = false,
     /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
     val volumeFixed: Set<String> = emptySet(),
-    /** The Remote shows the touchpad instead of the D-pad. Per phone, not per TV. */
-    val touchpad: Boolean = false,
+    /** What the Remote shows in the D-pad's place. Per phone, not per TV. */
+    val pad: RemotePad = RemotePad.DPAD,
+    /** Per TV, whether it allows a virtual mouse and gamepad, once asked: Pointer and the controller's stick need it. */
+    val uhid: Map<String, Boolean> = emptyMap(),
     /** Debloat with nothing left on the list explains why it opens Apps, until Don't show again. */
     val debloatGate: Boolean = true,
     /** The Apps tabs whose System section the user folded away. */
@@ -498,6 +503,8 @@ class TellyscopeViewModel(
 
     /** Keys go out one at a time, in the order pressed. */
     private val keys = Mutex()
+    /** Where the controller's ✕ goes back to. */
+    private var padBeforeController = RemotePad.DPAD
     /**
      * A volume tap is waiting for [keys]. Further taps while it waits are dropped rather than queued,
      * so a burst of taps can't keep a slow TV changing volume after the thumb stops.
@@ -556,7 +563,7 @@ class TellyscopeViewModel(
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(checkUpdates = u.enabled, alphaBuild = u.alpha) } }
         }
         keyHaptics?.let { k ->
-            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, touchpad = k.touchpad) } }
+            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, pad = k.pad) } }
         }
         gates?.let { g ->
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(debloatGate = DEBLOAT_GATE !in g.folded()) } }
@@ -2078,11 +2085,16 @@ class TellyscopeViewModel(
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.on = on }
     }
 
-    /** The touchpad (true) or the D-pad on the Remote, kept for this phone. */
-    fun setTouchpad(on: Boolean) {
-        _state.update { it.copy(touchpad = on) }
-        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.touchpad = on }
+    /** What the Remote shows in the D-pad's place, kept for this phone. */
+    fun setPad(pad: RemotePad) {
+        val was = _state.value.pad
+        if (pad == RemotePad.CONTROLLER && was != RemotePad.CONTROLLER) padBeforeController = was
+        _state.update { it.copy(pad = pad) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.pad = pad }
     }
+
+    /** The controller's ✕: back to the pad the Remote had before it, or the D-pad when the app opened on the controller. */
+    fun closeController() = setPad(padBeforeController)
 
     /**
      * Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far.
@@ -2238,6 +2250,56 @@ class TellyscopeViewModel(
             }
             _state.update { it.copy(volumeFixed = if (fixed) it.volumeFixed + id else it.volumeFixed - id) }
         }
+    }
+
+    /** Asks once whether the selected TV allows a virtual mouse and gamepad, for the Remote's Pointer and stick. */
+    fun checkUhid() {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch {
+            val allowed = try {
+                source.uhid(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch
+            }
+            _state.update { it.copy(uhid = it.uhid + (id to allowed)) }
+        }
+    }
+
+    /**
+     * Adds the virtual mouse or gamepad to the selected TV, or takes it away with null, as Pointer or
+     * the controller opens and closes. Not cancelled with the screen, so the pointer always goes away.
+     */
+    fun hid(device: HidDevice?) {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch { remoteCall { source.hid(id, device) } }
+    }
+
+    /** Moves the TV's pointer; false when the TV didn't take it. */
+    suspend fun mouse(dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.mouse(id, dx, dy, buttons, wheel) }
+    }
+
+    suspend fun gamepad(pad: GamepadReport): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.gamepad(id, pad) }
+    }
+
+    suspend fun gamepadKey(code: Int, down: Boolean): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.gamepadKey(id, code, down) }
+    }
+
+    /** A pointer or controller call: a lost TV shows as one notice, as a key does, and answers false. */
+    private suspend fun remoteCall(call: suspend () -> Boolean): Boolean = try {
+        call()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        _notice.value = Copy.REMOTE_LOST
+        false
     }
 
     /** Under [keys]. True once the picture is back on. Throws when the TV is gone. */

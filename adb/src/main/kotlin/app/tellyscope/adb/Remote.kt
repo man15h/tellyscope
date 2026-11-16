@@ -25,6 +25,49 @@ enum class RemoteKey(val code: Int, val repeats: Boolean = false) {
     DEL(67, repeats = true),
 }
 
+/** A virtual device the key helper can add to the TV through `/dev/uhid`. */
+enum class HidDevice { MOUSE, GAMEPAD }
+
+/**
+ * The game controller's buttons: [bit] in the virtual gamepad's report, and [code], the key a TV
+ * without one gets instead.
+ */
+enum class GamepadButton(val bit: Int, val code: Int) {
+    A(0, 96),
+    B(1, 97),
+    X(3, 99),
+    Y(4, 100),
+    SELECT(10, 109),
+    START(11, 108),
+}
+
+/**
+ * The virtual gamepad's state: [buttons] held as [GamepadButton.bit]s, the D-pad [hat] (0 to 7
+ * clockwise from up, [HAT_CENTRE] when none is held) and the stick, [x] and [y] from -127 to 127.
+ */
+data class GamepadReport(val buttons: Int = 0, val hat: Int = HAT_CENTRE, val x: Int = 0, val y: Int = 0) {
+    companion object {
+        const val HAT_CENTRE = 8
+
+        /** The hat for the D-pad arrows held; opposite arrows cancel out. */
+        fun hat(up: Boolean, down: Boolean, left: Boolean, right: Boolean): Int {
+            val v = (if (down) 1 else 0) - (if (up) 1 else 0)
+            val h = (if (right) 1 else 0) - (if (left) 1 else 0)
+            return when (v to h) {
+                -1 to 0 -> 0
+                -1 to 1 -> 1
+                0 to 1 -> 2
+                1 to 1 -> 3
+                1 to 0 -> 4
+                1 to -1 -> 5
+                0 to -1 -> 6
+                -1 to -1 -> 7
+                else -> HAT_CENTRE
+            }
+        }
+    }
+}
+
 /** What [Remote.openUpdates] opened on the TV. */
 enum class UpdateScreen {
     /** A screen with Check for updates: Android's update screen, or Fire OS's About. */
@@ -113,6 +156,25 @@ class Remote(private val session: AdbSession, private val keys: KeyHelper? = nul
      * key helper can: false when it isn't running or the TV refused. Throws if the link is gone.
      */
     suspend fun screen(on: Boolean): Boolean = keys?.screen(on) ?: false
+
+    /** Whether the TV lets Tellyscope add a virtual mouse or gamepad. False when the key helper isn't running. */
+    suspend fun uhid(): Boolean = keys?.uhid() ?: false
+
+    /** See [KeyHelper.hid]; false when the TV refused or the key helper isn't running. */
+    suspend fun hid(device: HidDevice?): Boolean = keys?.hid(device) ?: false
+
+    /** See [KeyHelper.mouse]. */
+    suspend fun mouse(dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean = keys?.mouse(dx, dy, buttons, wheel) ?: false
+
+    /** See [KeyHelper.gamepad]. */
+    suspend fun gamepad(pad: GamepadReport): Boolean = keys?.gamepad(pad) ?: false
+
+    /**
+     * A gamepad key, pressed ([down]) or let go, for a TV without the virtual gamepad. Without the key
+     * helper, `input gamepad keyevent` taps it on the press and the release sends nothing.
+     */
+    suspend fun gamepadKey(code: Int, down: Boolean): Boolean =
+        keys?.gamepadKey(code, down) ?: (!down || session.shell("input gamepad keyevent $code").exitCode == 0)
 
     /**
      * Restarts the TV. adbd's `reboot:` service works for the shell user on stock builds; where a
