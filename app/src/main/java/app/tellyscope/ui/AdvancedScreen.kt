@@ -208,7 +208,8 @@ private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit
             Column(Modifier.weight(1f)) {
                 Text(device.hit.hostname ?: name(device), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(address, Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    // In full, never cut: where it doesn't fit beside Shell the port goes under the IP.
+                    Text(address.replace(":", "\u200B:"), Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace))
                     IconButton(onClick = { clipboard.setText(AnnotatedString(address)) }, Modifier.size(32.dp)) {
                         Icon(CopyIcon, stringResource(R.string.advanced_copy_address), Modifier.size(16.dp), tint = c.onSurfaceVariant)
                     }
