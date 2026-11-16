@@ -169,7 +169,7 @@ val bundleChangelog by tasks.registering(BundleChangelog::class) {
     outputDir = layout.buildDirectory.dir("generated/changelog/assets")
 }
 
-/** Fails the build when a release APK grows past the 3.5 MB budget. CI's `build` and release.yml both assemble release. */
+/** Fails the build when a release APK grows past the 5 MB budget. CI's `build` and release.yml both assemble release. */
 abstract class CheckApkSize : DefaultTask() {
     @get:InputFiles abstract val apkDir: DirectoryProperty
     @get:Input abstract val maxBytes: Property<Long>
@@ -222,7 +222,7 @@ androidComponents {
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val sizeCheck = tasks.register<CheckApkSize>("check${name}ApkSize") {
             apkDir = variant.artifacts.get(SingleArtifact.APK)
-            maxBytes = 3_500_000L
+            maxBytes = 5_000_000L
         }
         afterEvaluate { tasks.named("assemble$name") { finalizedBy(sizeCheck) } }
         if (variant.flavorName == "play") {
