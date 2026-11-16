@@ -406,6 +406,8 @@
     <string name="copy_cant_type_one_line">A TV só aceita uma linha por vez.</string>
     <!-- %1$s is the one character the TV can't type -->
     <string name="copy_cant_type_odd">A TV só digita letras, números e símbolos simples, não “%1$s”.</string>
+    <!-- %1$s is the first character that had to be pasted -->
+    <string name="copy_cant_paste">A TV não aceitou “%1$s”. Letras assim entram colando, e esta caixa de texto ou esta TV não aceita colar. Letras, números e símbolos simples continuam sendo digitados.</string>
     <!-- %s here is literal: the text the user typed contains it -->
     <string name="copy_cant_type_percent_s" formatted="false">A TV lê “%s” como espaço, então não consegue digitar isso.</string>
 
