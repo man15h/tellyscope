@@ -2,6 +2,8 @@
 package app.tellyscope.adb
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import okio.source
 import java.io.File
 
@@ -66,7 +68,8 @@ class Sideload(private val session: AdbSession) {
     /**
      * Installs [apks], the base first for a split app. One APK streams with byte progress; a split
      * set goes through Kadb's install session, which reports nothing until it finishes, so
-     * [onProgress] then only sees an unknown total.
+     * [onProgress] then only sees an unknown total. A TV that won't take the stream gets the APK
+     * copied over and installed from there instead.
      */
     suspend fun install(
         apks: List<File>,
@@ -98,11 +101,42 @@ class Sideload(private val session: AdbSession) {
         } catch (e: Exception) {
             // Kadb throws IllegalStateException or IOException with "Failure [INSTALL_...]" in it.
             val out = e.message.orEmpty()
-            InstallResult.Refused(refusal(out), out.substringAfter("Install failed: ").trim())
+            if (apks.size == 1 && STREAM_REFUSED in out) return copyThenInstall(apks.single(), options, onProgress)
+            refused(out)
         }
     }
 
+    /**
+     * For TVs that close the install stream before it opens (seen on Android 9): copies the APK to
+     * [TMP_APK], runs `pm install` on it, then deletes the copy whether it installed or not.
+     */
+    private suspend fun copyThenInstall(f: File, options: Array<String>, onProgress: (Progress) -> Unit): InstallResult {
+        val path = shellQuote(TMP_APK)
+        return try {
+            runTransfer { stopped ->
+                f.source().use { src ->
+                    session.push(src.counting(f.length(), stopped, onProgress), TMP_APK, FILE_MODE, System.currentTimeMillis())
+                }
+            }
+            val out = session.shell("pm install ${options.joinToString(" ")} $path").output
+            if ("Success" in out) InstallResult.Done else refused(out)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            refused(e.message.orEmpty())
+        } finally {
+            withContext(NonCancellable) { runCatching { session.shell("rm -f $path") } }
+        }
+    }
+
+    private fun refused(out: String) = InstallResult.Refused(refusal(out), out.substringAfter("Install failed: ").trim())
+
     companion object {
+        /** Kadb's words when the TV shuts the install stream before accepting it. */
+        private const val STREAM_REFUSED = "closed before OKAY"
+        const val TMP_APK = "/data/local/tmp/tellyscope-install.apk"
+        private const val FILE_MODE = 420 // 0644
+
         /**
          * The version from `dumpsys package <pkg>`. Only the active entry counts: an updated
          * system app also lists its factory copy under "Hidden system packages".
