@@ -325,6 +325,7 @@
     </plurals>
     <string name="copy_cant_type_one_line">TV tek seferde yalnızca bir satır alabilir.</string>
     <string name="copy_cant_type_odd">TV yalnızca düz harf, rakam ve simge yazabilir, “%1$s” yazamaz.</string>
+    <string name="copy_cant_paste">TV “%1$s” karakterini almadı. Bu tür harfler yapıştırılarak girilir ve bu metin kutusu ya da TV yapıştırmayı kabul etmiyor. Düz harfler, rakamlar ve simgeler yine yazılır.</string>
     <string name="copy_cant_type_percent_s">TV “%s” ifadesini boşluk olarak okur, bu yüzden bunu yazamaz.</string>
     <string name="copy_remote_restart">TV\'yi yeniden başlat</string>
     <string name="copy_reboot_title">TV yeniden başlatılsın mı?</string>
