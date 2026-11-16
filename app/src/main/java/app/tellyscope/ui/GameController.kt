@@ -10,6 +10,7 @@ import android.hardware.SensorManager
 import android.provider.Settings
 import android.view.Surface as Rotation
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,10 +30,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -42,9 +47,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -216,24 +218,17 @@ private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHapti
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            SingleChoiceSegmentedButtonRow {
-                SegmentedButton(
-                    selected = useStick,
-                    onClick = {
-                        // An arrow held as the pad goes would stay held.
-                        Arrow.entries.forEach { held[it] = false }
-                        stick = true
-                        update()
-                    },
-                    shape = SegmentedButtonDefaults.itemShape(0, 2),
-                    enabled = virtual,
-                ) { Text(stringResource(R.string.remote_controller_stick)) }
-                SegmentedButton(
-                    selected = !useStick,
-                    onClick = { stick = false; report = report.copy(x = 0, y = 0) },
-                    shape = SegmentedButtonDefaults.itemShape(1, 2),
-                ) { Text(stringResource(R.string.remote_dpad)) }
-            }
+            StickSwitch(
+                stick = useStick,
+                stickAllowed = virtual,
+                onStick = {
+                    // An arrow held as the pad goes would stay held.
+                    Arrow.entries.forEach { held[it] = false }
+                    stick = true
+                    update()
+                },
+                onDpad = { stick = false; report = report.copy(x = 0, y = 0) },
+            )
         }
         Row(
             Modifier.weight(1f).fillMaxWidth().alpha(if (live) 1f else 0.38f),
@@ -274,6 +269,38 @@ private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHapti
         }
     }
 }
+
+/**
+ * The Stick | D-pad switch: one outlined pill, the side in use filled and ticked. Built from a Surface
+ * rather than M3's segmented buttons, which nothing else in the app uses and which kept the APK over its size gate.
+ */
+@Composable
+private fun StickSwitch(stick: Boolean, stickAllowed: Boolean, onStick: () -> Unit, onDpad: () -> Unit) {
+    val c = MaterialTheme.colorScheme
+    Surface(shape = RoundedCornerShape(50), color = Color.Transparent, border = BorderStroke(1.dp, c.outline)) {
+        Row(Modifier.height(40.dp).selectableGroup()) {
+            for ((on, label, allowed, pick) in listOf(
+                Choice(stick, R.string.remote_controller_stick, stickAllowed, onStick),
+                Choice(!stick, R.string.remote_dpad, true, onDpad),
+            )) {
+                Row(
+                    Modifier.fillMaxHeight()
+                        .background(if (on) c.secondaryContainer else Color.Transparent)
+                        .selectable(selected = on, enabled = allowed, role = Role.RadioButton, onClick = pick)
+                        .padding(horizontal = 16.dp)
+                        .alpha(if (allowed) 1f else 0.38f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (on) Icon(Icons.Default.Check, null, Modifier.size(18.dp))
+                    Text(stringResource(label), style = MaterialTheme.typography.labelLarge, color = if (on) c.onSecondaryContainer else c.onSurface)
+                }
+            }
+        }
+    }
+}
+
+private data class Choice(val on: Boolean, val label: Int, val allowed: Boolean, val pick: () -> Unit)
 
 /** A raised key's face, label and lip colours. */
 private data class KeyColors(val face: Color, val content: Color, val lip: Color)

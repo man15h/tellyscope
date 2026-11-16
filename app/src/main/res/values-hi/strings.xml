@@ -1102,6 +1102,16 @@
     <string name="remote_touchpad">टचपैड</string>
     <string name="remote_touchpad_swipe">हिलाने के लिए स्वाइप करें</string>
     <string name="remote_touchpad_tap">OK के लिए टैप करें</string>
+    <string name="remote_pointer">पॉइंटर</string>
+    <string name="remote_pointer_drag">पॉइंटर हिलाने के लिए खींचें</string>
+    <string name="remote_pointer_tap">क्लिक के लिए टैप करें · स्क्रॉल के लिए दो उंगलियाँ</string>
+    <string name="remote_pointer_refused">यह TV इसकी अनुमति नहीं देता</string>
+    <string name="remote_controller">गेम कंट्रोलर</string>
+    <string name="remote_controller_close">रिमोट पर वापस</string>
+    <string name="remote_controller_stick">स्टिक</string>
+    <string name="remote_controller_buttons_only">यह TV सिर्फ़ बटन लेता है। जो गेम जुड़ा हुआ कंट्रोलर ढूँढते हैं, वे शायद जवाब न दें।</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">वापस जाएं</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">मेन्यू</string>
