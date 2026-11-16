@@ -27,6 +27,8 @@ import app.tellyscope.adb.ConnectionPrompt
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.Connector
 import app.tellyscope.adb.DeviceLink
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.KeyHelper
 import app.tellyscope.adb.LabelHelper
 import app.tellyscope.adb.LanScanner
@@ -131,6 +133,8 @@ class AdbDeviceSource(
     private val fireHomes = ConcurrentHashMap<String, Pair<AdbSession, String?>>()
     /** Per TV, the session [volumeKeys] read on and the keys per tap it worked out. */
     private val volumeSteps = ConcurrentHashMap<String, Pair<AdbSession, Int>>()
+    /** Per TV, the session [uhid] asked on and whether the TV allows a virtual mouse or gamepad. */
+    private val uhidAllowed = ConcurrentHashMap<String, Pair<AdbSession, Boolean>>()
     /** The remote's key helper on each TV, while the remote is open. */
     private val keyHelpers = ConcurrentHashMap<String, KeyHelper>()
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
@@ -279,6 +283,7 @@ class AdbDeviceSource(
         keyHelpers.remove(deviceId)?.close()
         fireHomes -= deviceId
         volumeSteps -= deviceId
+        uhidAllowed -= deviceId
         links.remove(deviceId)?.disconnect()
         hits.remove(deviceId)
         services.remove(deviceId)
@@ -1151,6 +1156,22 @@ class AdbDeviceSource(
     override suspend fun volumeFixed(deviceId: String) = Remote(session(deviceId)).volumeFixed()
 
     override suspend fun type(deviceId: String, text: String) = busy(deviceId) { remote(deviceId).type(text) }
+
+    /** Asked once per session, so reopening the Remote doesn't ask again; a reconnect does. */
+    override suspend fun uhid(deviceId: String): Boolean = busy(deviceId) {
+        val session = session(deviceId)
+        uhidAllowed[deviceId]?.takeIf { it.first === session }?.let { return@busy it.second }
+        remote(deviceId).uhid().also { uhidAllowed[deviceId] = session to it }
+    }
+
+    override suspend fun hid(deviceId: String, device: HidDevice?) = busy(deviceId) { remote(deviceId).hid(device) }
+
+    override suspend fun mouse(deviceId: String, dx: Int, dy: Int, buttons: Int, wheel: Int) =
+        busy(deviceId) { remote(deviceId).mouse(dx, dy, buttons, wheel) }
+
+    override suspend fun gamepad(deviceId: String, pad: GamepadReport) = busy(deviceId) { remote(deviceId).gamepad(pad) }
+
+    override suspend fun gamepadKey(deviceId: String, code: Int, down: Boolean) = busy(deviceId) { remote(deviceId).gamepadKey(code, down) }
 
 
     override suspend fun screen(deviceId: String, on: Boolean) = busy(deviceId) { remote(deviceId).screen(on) }

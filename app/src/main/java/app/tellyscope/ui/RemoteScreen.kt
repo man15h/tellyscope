@@ -157,13 +157,17 @@ import app.tellyscope.data.Png
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.StreamingService
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.RemoteKey
+import app.tellyscope.data.RemotePad
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import kotlin.math.roundToInt
 import kotlin.math.abs
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -198,8 +202,20 @@ data class RemoteActions(
     val screenOffTipSeen: () -> Unit = {},
     /** Read whether the TV's volume is fixed over HDMI, into [UiState.volumeFixed]. */
     val checkVolume: () -> Unit = {},
-    /** The touchpad (true) or the D-pad in the D-pad's place, kept for this phone. */
-    val touchpad: (Boolean) -> Unit = {},
+    /** What goes in the D-pad's place, kept for this phone. */
+    val pad: (RemotePad) -> Unit = {},
+    /** The game controller's ✕: back to the Remote. */
+    val closeController: () -> Unit = {},
+    /** Ask whether the TV allows a virtual mouse and gamepad, into [UiState.uhid]. */
+    val checkUhid: () -> Unit = {},
+    /** Adds the virtual mouse or gamepad to the TV, or takes it away with null. */
+    val hid: (HidDevice?) -> Unit = {},
+    /** Moves the TV's pointer by dx, dy with buttons held and wheel notches; false when the TV didn't take it. */
+    val mouse: suspend (Int, Int, Int, Int) -> Boolean = { _, _, _, _ -> true },
+    /** Sets the virtual gamepad. */
+    val gamepad: suspend (GamepadReport) -> Boolean = { true },
+    /** A gamepad key down (true) or up, on a TV without the virtual gamepad. */
+    val gamepadKey: suspend (Int, Boolean) -> Boolean = { _, _ -> true },
 )
 
 /** A held key repeats after this, then every [REPEAT_EVERY_MS], or slower if the TV is slower. */
@@ -253,7 +269,7 @@ fun RemoteScreen(
     // Android 14 moved the call that turns the picture off out of the shell's reach.
     val screenControl = (device.android?.substringBefore('.')?.toIntOrNull() ?: 0) < 14 || screenOff
     // A box on HDMI with its volume fixed ignores mute and volume: they gray out, with the reason under them.
-    LaunchedEffect(device.id, live) { if (live) actions.checkVolume() }
+    LaunchedEffect(device.id, live) { if (live) { actions.checkVolume(); actions.checkUhid() } }
     val volumeFixed = live && device.id in state.volumeFixed
     val volume = live && !volumeFixed
     val volumeAlpha = if (volumeFixed) Modifier.alpha(0.38f) else Modifier
@@ -292,7 +308,17 @@ fun RemoteScreen(
     }
     // A swipe pad can't be explored by touch, so TalkBack always gets the D-pad.
     val talkBack = talkBackOn()
-    val pad = state.touchpad && !talkBack
+    // Null until asked; a TV that refused gets the D-pad in Pointer's place.
+    val uhid = state.uhid[device.id]
+    val pad = when {
+        talkBack -> RemotePad.DPAD
+        state.pad == RemotePad.POINTER && uhid == false -> RemotePad.DPAD
+        else -> state.pad
+    }
+    if (pad == RemotePad.CONTROLLER) {
+        GameController(name(device), live, uhid == true, state.keyHaptics, actions)
+        return
+    }
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
     val services = SharedLists.state.collectAsState().value.streaming
     val streamingApps = remember(state.device.apps, services) { RemoteButtons.streamingApps(state.device.apps, services) }
@@ -330,7 +356,7 @@ fun RemoteScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null }) {
-                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBack) null else pad, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBack) null else pad, pointer = uhid != false, onRestart = { confirmReboot = true }, onButtons = { editing = true })
                 }
                 CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) { Column(
                     Modifier.weight(1f).alpha(if (live) 1f else 0.38f),
@@ -349,8 +375,11 @@ fun RemoteScreen(
                             LaunchedEffect(cramped, hintFits) { if (cramped) tight = true else if (hintFits) tight = false }
                             // 12 dp clear above and below while there's room; the gap gives way before the pad does,
                             // and the pad never outgrows its box, so it can't overlap the header or the keys.
-                            if (pad) Touchpad(live, actions.press, Modifier.fillMaxSize().padding(vertical = 12.dp))
-                            else DPad(live, actions.press, (room - 24.dp).coerceIn(DPAD_MIN, DPAD_MAX).coerceAtMost(room))
+                            when (pad) {
+                                RemotePad.TOUCHPAD -> Touchpad(live, actions.press, Modifier.fillMaxSize().padding(vertical = 12.dp))
+                                RemotePad.POINTER -> Pointer(live, actions.hid, actions.mouse, Modifier.fillMaxSize().padding(vertical = 12.dp))
+                                else -> DPad(live, actions.press, (room - 24.dp).coerceIn(DPAD_MIN, DPAD_MAX).coerceAtMost(room))
+                            }
                         }
                         // Up above down, like the rocker on the side of a real remote.
                         if (short) Column(Modifier.width(56.dp).then(volumeAlpha), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -736,6 +765,109 @@ private fun Touchpad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, mo
     }
 }
 
+/** Pointer counts per dp of drag: a thumb's sweep across the pad crosses about half a 1080p screen. */
+private const val POINTER_SPEED = 3f
+
+/** A two-finger drag this far in dp scrolls one wheel notch. */
+private const val WHEEL_DP = 24f
+
+/**
+ * Moves and clicks not yet sent to the TV. Moves made while the TV is still taking the last one are
+ * added up and go as one, so a slow link never leaves the pointer trailing the finger. Fractions of a
+ * count stay for the next send.
+ */
+private class PointerMoves {
+    private var x = 0f
+    private var y = 0f
+    private var wheel = 0f
+    private var clicks = 0
+    val ready = Channel<Unit>(Channel.CONFLATED)
+
+    fun move(dx: Float, dy: Float) { x += dx; y += dy; ready.trySend(Unit) }
+    fun scroll(notches: Float) { wheel += notches; ready.trySend(Unit) }
+    fun click() { clicks++; ready.trySend(Unit) }
+
+    /** Whole counts of x, y and wheel, and the clicks, taken out. */
+    fun take(): IntArray {
+        val out = intArrayOf(x.toInt(), y.toInt(), wheel.toInt(), clicks)
+        x -= out[0]
+        y -= out[1]
+        wheel -= out[2]
+        clicks = 0
+        return out
+    }
+}
+
+/**
+ * Pointer, in the D-pad's place: the TV draws its own mouse pointer, for a virtual mouse added while
+ * this is on screen and taken away after. Drag moves it, a tap clicks, two fingers scroll. Every change
+ * is consumed, so a downward drag never pulls the sheet closed.
+ */
+@Composable
+private fun Pointer(enabled: Boolean, hid: (HidDevice?) -> Unit, mouse: suspend (Int, Int, Int, Int) -> Boolean, modifier: Modifier = Modifier) {
+    val haptic = LocalHapticFeedback.current
+    val haptics = LocalKeyHaptics.current
+    val c = MaterialTheme.colorScheme
+    val moves = remember { PointerMoves() }
+    DisposableEffect(enabled) {
+        if (enabled) hid(HidDevice.MOUSE)
+        onDispose { if (enabled) hid(null) }
+    }
+    LaunchedEffect(enabled) {
+        if (!enabled) return@LaunchedEffect
+        while (true) {
+            moves.ready.receive()
+            val (dx, dy, wheel, clicks) = moves.take()
+            if (dx != 0 || dy != 0 || wheel != 0) mouse(dx, dy, 0, wheel)
+            repeat(clicks) { mouse(0, 0, 1, 0); mouse(0, 0, 0, 0) }
+        }
+    }
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = c.surfaceContainerHigh,
+        modifier = modifier.pointerInput(enabled, haptics) {
+            if (!enabled) return@pointerInput
+            awaitEachGesture {
+                val down = awaitFirstDown()
+                down.consume()
+                var travelled = 0f
+                var fingers = 1
+                while (true) {
+                    val event = awaitPointerEvent()
+                    val pressed = event.changes.filter { it.pressed }
+                    fingers = maxOf(fingers, pressed.size)
+                    if (pressed.size >= 2) {
+                        // Two fingers: their average move turns the wheel. Up the pad goes down the page, as on a
+                        // phone, and a HID wheel turned down is negative, so the move's sign carries over as is.
+                        val dy = pressed.map { it.position.y - it.previousPosition.y }.average().toFloat()
+                        moves.scroll(dy.toDp().value / WHEEL_DP)
+                    } else if (fingers == 1) {
+                        event.changes.firstOrNull { it.id == down.id && it.pressed }?.let {
+                            val d = it.position - it.previousPosition
+                            travelled += d.getDistance()
+                            moves.move(d.x.toDp().value * POINTER_SPEED, d.y.toDp().value * POINTER_SPEED)
+                        }
+                    }
+                    event.changes.forEach { it.consume() }
+                    if (pressed.isEmpty()) break
+                }
+                // A tap is one finger that barely moved.
+                if (fingers == 1 && travelled < viewConfiguration.touchSlop) {
+                    if (haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    moves.click()
+                }
+            }
+        },
+    ) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Icon(AccessIcons.Mouse, null, tint = c.onSurfaceVariant)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.remote_pointer_drag), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+            Text(stringResource(R.string.remote_pointer_tap), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
+        }
+    }
+}
+
 @Composable
 fun RebootDialog(onRestart: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
@@ -822,7 +954,7 @@ private fun StatusShape(icon: ImageVector, container: Color, content: Color) {
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, pad: Boolean?, onRestart: () -> Unit, onButtons: () -> Unit) {
+private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, pad: RemotePad?, pointer: Boolean, onRestart: () -> Unit, onButtons: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     val tip = rememberTooltipState(isPersistent = true)
     LaunchedEffect(showTip, screenControl) {
@@ -869,16 +1001,30 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
                 enabled = live,
                 onClick = { open = false; onRestart() },
             )
-            // D-pad or touchpad, the current one checked; left out while TalkBack keeps the D-pad.
+            // What goes in the D-pad's place, the current one checked; left out while TalkBack keeps the D-pad.
+            // Pointer grays out, with the reason under it, on a TV that won't take a virtual mouse.
             if (pad != null) {
                 HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                for ((touch, label, glyph) in listOf(Triple(false, R.string.remote_dpad, RemoteIcons.Gamepad), Triple(true, R.string.remote_touchpad, RemoteIcons.TouchApp))) {
+                val modes = listOf(
+                    Triple(RemotePad.DPAD, R.string.remote_dpad, RemoteIcons.Gamepad),
+                    Triple(RemotePad.TOUCHPAD, R.string.remote_touchpad, RemoteIcons.TouchApp),
+                    Triple(RemotePad.POINTER, R.string.remote_pointer, AccessIcons.Mouse),
+                    Triple(RemotePad.CONTROLLER, R.string.remote_controller, AccessIcons.Controller),
+                )
+                for ((mode, label, glyph) in modes) {
+                    val allowed = mode != RemotePad.POINTER || pointer
                     DropdownMenuItem(
-                        text = { Text(stringResource(label)) },
+                        text = {
+                            Column {
+                                Text(stringResource(label))
+                                if (!allowed) Text(stringResource(R.string.remote_pointer_refused), style = MaterialTheme.typography.bodySmall)
+                            }
+                        },
                         leadingIcon = { Icon(glyph, null) },
-                        trailingIcon = { if (pad == touch) Icon(Icons.Default.Check, null) },
-                        modifier = Modifier.semantics { selected = pad == touch },
-                        onClick = { open = false; actions.touchpad(touch) },
+                        trailingIcon = { if (pad == mode) Icon(Icons.Default.Check, null) },
+                        enabled = allowed,
+                        modifier = Modifier.semantics { selected = pad == mode },
+                        onClick = { open = false; actions.pad(mode) },
                     )
                 }
             }

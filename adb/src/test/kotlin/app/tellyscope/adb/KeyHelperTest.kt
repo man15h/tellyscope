@@ -85,6 +85,20 @@ class KeyHelperTest {
         assertTrue(sh.execClosed)
     }
 
+    @Test fun pointerAndGamepadLinesKeepTheHelper() = runBlocking {
+        // "0" to a device line is the TV refusing it, not a broken helper: keys still go through it.
+        val sh = FakeShell().apply { execOutput = "ready\n0\n1\n1\n1\n1\n1\n" }
+        val keys = KeyHelper(sh, dex)
+        assertEquals(false, keys.uhid())
+        assertEquals(true, keys.hid(HidDevice.MOUSE))
+        assertEquals(true, keys.mouse(-300, 12, 1, -2))
+        assertEquals(true, keys.gamepad(GamepadReport(buttons = 1, hat = 2, x = -127, y = 64)))
+        assertEquals(true, keys.gamepadKey(96, down = true))
+        assertEquals(true, keys.hid(null))
+        assertEquals("u\nhm\nm-300 12 1 -2\ng1 2 -127 64\nb1 96\nh-\n", sh.execInput.readUtf8())
+        assertEquals(1, sh.execs.size)
+    }
+
     @Test fun closeEndsTheHelper() = runBlocking {
         val sh = FakeShell().apply { execOutput = "ready\n1\n" }
         val keys = KeyHelper(sh, dex)

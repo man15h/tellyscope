@@ -19,6 +19,31 @@ class RemoteTest {
         assertEquals(listOf("input keyevent 20", "input keyevent 164"), sh.ran)
     }
 
+    @Test fun withoutTheHelperAGamepadKeyIsTappedOnThePressOnly() = runTest {
+        val sh = FakeShell()
+        assertTrue(Remote(sh).gamepadKey(GamepadButton.A.code, down = true))
+        assertTrue(Remote(sh).gamepadKey(GamepadButton.A.code, down = false))
+        assertEquals(listOf("input gamepad keyevent 96"), sh.ran)
+    }
+
+    @Test fun withoutTheHelperThereIsNoVirtualDevice() = runTest {
+        val sh = FakeShell()
+        assertFalse(Remote(sh).uhid())
+        assertFalse(Remote(sh).hid(HidDevice.MOUSE))
+        assertTrue(sh.ran.isEmpty())
+    }
+
+    @Test fun theHatPointsWhereTheArrowsHeldDo() {
+        assertEquals(GamepadReport.HAT_CENTRE, GamepadReport.hat(up = false, down = false, left = false, right = false))
+        assertEquals(0, GamepadReport.hat(up = true, down = false, left = false, right = false))
+        assertEquals(1, GamepadReport.hat(up = true, down = false, left = false, right = true))
+        assertEquals(4, GamepadReport.hat(up = false, down = true, left = false, right = false))
+        assertEquals(7, GamepadReport.hat(up = true, down = false, left = true, right = false))
+        // Opposite arrows cancel out.
+        assertEquals(GamepadReport.HAT_CENTRE, GamepadReport.hat(up = true, down = true, left = false, right = false))
+        assertEquals(6, GamepadReport.hat(up = true, down = true, left = true, right = false))
+    }
+
     @Test fun keysGoThroughTheHelperWhileItRuns() = runBlocking { // see KeyHelperTest
         val sh = FakeShell().apply { execOutput = "ready\n1\n" }
         assertTrue(Remote(sh, KeyHelper(sh, byteArrayOf(1))).press(RemoteKey.LEFT))

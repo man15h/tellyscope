@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The remote's key sender. Runs on the TV as the shell user, through {@code app_process}, and stays
@@ -30,6 +32,11 @@ import java.lang.reflect.Method;
  * can't move it; {@code 0} means neither worked, and the caller presses the keys instead.
  * {@code p0} turns the TV's picture off and {@code p2} back on, through SurfaceFlinger: the TV stays
  * awake, so ADB stays connected, and the picture stays off after the helper exits.
+ * {@code u} answers whether the TV lets the shell make virtual devices ({@link Uhid}); {@code hm} adds
+ * the virtual mouse, {@code hg} the gamepad, and {@code h-} takes both away. {@code m} and four
+ * numbers (move X and Y, buttons held, wheel) moves the mouse; {@code g} and four (buttons held, hat,
+ * stick X and Y) sets the gamepad; each answers {@code 0} without its device. Where there is no
+ * gamepad, {@code b1} or {@code b0} and a key code presses or lets go of a gamepad button, injected.
  */
 public final class Keys {
     /** InputManager's INJECT_INPUT_EVENT_MODE_WAIT_FOR_FINISH: answers once the focused app is done with it. */
@@ -37,6 +44,11 @@ public final class Keys {
     /** AudioManager.STREAM_MUSIC and FLAG_SHOW_UI. */
     private static final int STREAM_MUSIC = 3;
     private static final int FLAG_SHOW_UI = 1;
+
+    private static Uhid mouse;
+    private static Uhid gamepad;
+    /** When each gamepad button still down went down, for its release. */
+    private static final Map<Integer, Long> buttonsDown = new HashMap<>();
 
     public static void main(String[] args) throws Exception {
         Object manager;
@@ -76,6 +88,11 @@ public final class Keys {
                     out.flush();
                     continue;
                 }
+                if (line.startsWith("u") || line.startsWith("h") || line.startsWith("m") || line.startsWith("g") || line.startsWith("b")) {
+                    out.print(hid(manager, inject, line) ? "1\n" : "0\n");
+                    out.flush();
+                    continue;
+                }
                 int code = Integer.parseInt(line.trim());
                 long now = SystemClock.uptimeMillis();
                 ok = send(manager, inject, now, KeyEvent.ACTION_DOWN, code, 0)
@@ -86,6 +103,73 @@ public final class Keys {
             out.print(ok ? "1\n" : "0\n");
             out.flush();
         }
+    }
+
+    /** The {@code u}, {@code h}, {@code m}, {@code g} and {@code b} lines; see the class comment. */
+    private static boolean hid(Object manager, Method inject, String line) throws Exception {
+        char kind = line.charAt(0);
+        String[] n = line.substring(1).trim().split(" ");
+        switch (kind) {
+            case 'u':
+                return Uhid.allowed();
+            case 'h':
+                if (line.equals("hm")) {
+                    if (mouse != null) mouse.close();
+                    mouse = null;
+                    mouse = new Uhid("Tellyscope pointer", Uhid.MOUSE);
+                    return true;
+                }
+                if (line.equals("hg")) {
+                    if (gamepad != null) gamepad.close();
+                    gamepad = null;
+                    gamepad = new Uhid("Tellyscope game controller", Uhid.GAMEPAD);
+                    return true;
+                }
+                if (mouse != null) mouse.close();
+                if (gamepad != null) gamepad.close();
+                mouse = null;
+                gamepad = null;
+                return true;
+            case 'm': {
+                if (mouse == null) return false;
+                int dx = Integer.parseInt(n[0]), dy = Integer.parseInt(n[1]), wheel = Integer.parseInt(n[3]);
+                byte buttons = (byte) Integer.parseInt(n[2]);
+                // A report moves at most 127 each way, so a long move goes as several.
+                do {
+                    int x = clamp(dx), y = clamp(dy), w = clamp(wheel);
+                    mouse.send(new byte[] {buttons, (byte) x, (byte) y, (byte) w});
+                    dx -= x;
+                    dy -= y;
+                    wheel -= w;
+                } while (dx != 0 || dy != 0 || wheel != 0);
+                return true;
+            }
+            case 'g': {
+                if (gamepad == null) return false;
+                int buttons = Integer.parseInt(n[0]);
+                int hat = Integer.parseInt(n[1]);
+                gamepad.send(new byte[] {
+                    (byte) buttons, (byte) (buttons >> 8),
+                    (byte) clamp(Integer.parseInt(n[2])), (byte) clamp(Integer.parseInt(n[3])),
+                    (byte) (hat >= 0 && hat <= 7 ? hat : 8),
+                });
+                return true;
+            }
+            default: {
+                boolean down = n[0].equals("1");
+                int code = Integer.parseInt(n[1]);
+                long now = SystemClock.uptimeMillis();
+                Long since = down ? Long.valueOf(now) : buttonsDown.remove(code);
+                if (down) buttonsDown.put(code, now);
+                KeyEvent e = new KeyEvent(since != null ? since : now, now, down ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP, code, 0, 0,
+                    KeyCharacterMap.VIRTUAL_KEYBOARD, 0, 0, InputDevice.SOURCE_GAMEPAD);
+                return (Boolean) inject.invoke(manager, e, WAIT_FOR_FINISH);
+            }
+        }
+    }
+
+    private static int clamp(int v) {
+        return Math.max(-127, Math.min(127, v));
     }
 
     /**
