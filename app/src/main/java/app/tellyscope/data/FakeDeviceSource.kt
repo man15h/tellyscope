@@ -10,8 +10,10 @@ import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
+import app.tellyscope.adb.Learned
 import app.tellyscope.adb.Peripheral
 import app.tellyscope.adb.Progress
+import app.tellyscope.adb.RemapStart
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
@@ -418,6 +420,32 @@ class FakeDeviceSource(
     override suspend fun dock(deviceId: String) = docks[deviceId]
 
     override suspend fun setDock(deviceId: String, dock: List<Docked>) = docks.set(deviceId, dock)
+
+    private val remaps = RemapBook()
+    /** The demo TVs running the script; a learn press is always the Green key. */
+    private val remapping = mutableSetOf<String>()
+
+    override suspend fun remap(deviceId: String) = RemapState(remaps[deviceId], remaps.on(deviceId), deviceId in remapping)
+
+    override suspend fun startRemap(deviceId: String): RemapStart {
+        delay(800)
+        remapping += deviceId
+        remaps.setOn(deviceId, true)
+        return RemapStart.Started
+    }
+
+    override suspend fun stopRemap(deviceId: String, clear: Boolean) {
+        remapping -= deviceId
+        remaps.setOn(deviceId, false)
+        if (clear) remaps.set(deviceId, emptyList())
+    }
+
+    override suspend fun setRemap(deviceId: String, buttons: List<RemapButton>) = remaps.set(deviceId, buttons)
+
+    override suspend fun learnRemap(deviceId: String): Learned {
+        delay(1_500)
+        return Learned.Key("PROG_GREEN")
+    }
 
     override suspend fun reboot(deviceId: String): Boolean {
         delay(300)

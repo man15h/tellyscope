@@ -32,11 +32,15 @@ import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.KeyHelper
 import app.tellyscope.adb.LabelHelper
 import app.tellyscope.adb.LanScanner
+import app.tellyscope.adb.Learned
 import app.tellyscope.adb.NetworkStats
 import app.tellyscope.adb.Parsers
 import app.tellyscope.adb.Peripherals
 import app.tellyscope.adb.Protected
 import app.tellyscope.adb.ProtectedReason
+import app.tellyscope.adb.RemapKeys
+import app.tellyscope.adb.RemapStart
+import app.tellyscope.adb.Remapper
 import app.tellyscope.adb.Remote
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.Reset as TvReset
@@ -121,6 +125,7 @@ class AdbDeviceSource(
     private val book = HistoryBook(File(appContext.filesDir, "history.tsv"))
     private val names = NameBook(File(appContext.filesDir, "names.tsv"))
     private val docks = DockBook(File(appContext.filesDir, "docks.tsv"))
+    private val remaps = RemapBook(File(appContext.filesDir, "remap.tsv"))
     /** TVs whose Apps tab got Not now on the card about a better home screen. */
     private val launcherCards = FoldBook(File(appContext.filesDir, "launcher-card.properties"))
     private val mine = MineBook(File(appContext.filesDir, "mine.tsv"))
@@ -210,7 +215,10 @@ class AdbDeviceSource(
                 if (st == AdbState.ONLINE) {
                     restoring -= host
                     // Read again on every connect: a new TV may have taken over a saved address.
-                    launch { readKey(host) }
+                    launch {
+                        readKey(host)
+                        remapAgain(host)
+                    }
                 }
                 if (st == AdbState.ONLINE || st == AdbState.OFFLINE) remember(host)
             }
@@ -1200,6 +1208,68 @@ class AdbDeviceSource(
         docks.set(key(deviceId), dock)
     }
 
+    override suspend fun remap(deviceId: String): RemapState {
+        restored.await()
+        val key = key(deviceId)
+        return RemapState(remaps[key], remaps.on(key), Remapper(session(deviceId), helperDex).running())
+    }
+
+    override suspend fun startRemap(deviceId: String): RemapStart {
+        restored.await()
+        val key = key(deviceId)
+        val remapper = Remapper(session(deviceId), helperDex)
+        val started = remapper.start(remapMap(remapper, remaps[key]))
+        if (started == RemapStart.Started) remaps.setOn(key, true)
+        return started
+    }
+
+    override suspend fun stopRemap(deviceId: String, clear: Boolean) {
+        restored.await()
+        val key = key(deviceId)
+        Remapper(session(deviceId), helperDex).stop(clear)
+        remaps.setOn(key, false)
+        if (clear) remaps.set(key, emptyList())
+    }
+
+    override suspend fun setRemap(deviceId: String, buttons: List<RemapButton>) {
+        restored.await()
+        val key = key(deviceId)
+        remaps.set(key, buttons)
+        val remapper = Remapper(session(deviceId), helperDex)
+        if (remapper.running()) remapper.setMap(remapMap(remapper, remaps[key]))
+    }
+
+    override suspend fun learnRemap(deviceId: String): Learned =
+        Remapper(session(deviceId), helperDex).learn(Remapper.LEARN_SECONDS)
+
+    /** The script's `map` for [buttons]: each one with an action, its app resolved to what the script starts. */
+    private suspend fun remapMap(remapper: Remapper, buttons: List<RemapButton>): String = RemapKeys.map(
+        buttons.mapNotNull { b ->
+            when (val a = b.action) {
+                null -> null
+                RemapAction.DoNothing -> b.key to "-"
+                is RemapAction.Open -> b.key to remapper.target(a.packageName)
+            }
+        }.toMap(),
+    )
+
+    /**
+     * A TV that was remapping when it powered off fully comes back without the script: start it
+     * again on connect, so the buttons work without opening Remap TV remote. Quietly: a TV that
+     * refuses shows it on that screen, as Stopped.
+     */
+    private suspend fun remapAgain(host: String) {
+        val key = keys[host] ?: return
+        if (!remaps.on(key)) return
+        try {
+            val remapper = Remapper(session(host), helperDex)
+            if (!remapper.running()) remapper.start(remapMap(remapper, remaps[key]))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+        }
+    }
+
     override suspend fun tweaks(deviceId: String): TvTweaks {
         val t = Tweaks(session(deviceId))
         val fire = fireOs(deviceId, Actions(session(deviceId)).installed(FIRE_TV_LAUNCHER))
@@ -1330,6 +1400,7 @@ class AdbDeviceSource(
             book.rekey(deviceId, key)
             names.rekey(deviceId, key)
             docks.rekey(deviceId, key)
+            remaps.rekey(deviceId, key)
             mine.rekey(deviceId, key)
             knownKeys.rekey(deviceId, key)
             remember(deviceId)
