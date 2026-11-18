@@ -1442,8 +1442,8 @@
         <item quantity="other">Apunta el mando a la TV. Escuchando durante %1$d s.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Detiene el script y olvida %1$d botón. Vuelve a hacer lo que hace la TV.</item>
-        <item quantity="many">Detiene el script y olvida %1$d botones. Vuelven a hacer lo que hace la TV.</item>
-        <item quantity="other">Detiene el script y olvida %1$d botones. Vuelven a hacer lo que hace la TV.</item>
+        <item quantity="one">El script se detiene en la TV y tu botón vuelve a hacer lo que hace la TV. Puedes asignarlo de nuevo más tarde.</item>
+        <item quantity="many">El script se detiene en la TV y tus %1$d botones vuelven a hacer lo que hace la TV. Puedes asignarlos de nuevo más tarde.</item>
+        <item quantity="other">El script se detiene en la TV y tus %1$d botones vuelven a hacer lo que hace la TV. Puedes asignarlos de nuevo más tarde.</item>
     </plurals>
 </resources>

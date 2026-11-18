@@ -1387,7 +1387,7 @@
         <item quantity="other">Kumandayı TV\'ye doğrultun. %1$d sn dinleniyor.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Betiği durdurur ve %1$d düğmeyi unutur. Düğmeler yeniden TV\'nin yaptığını yapar.</item>
-        <item quantity="other">Betiği durdurur ve %1$d düğmeyi unutur. Düğmeler yeniden TV\'nin yaptığını yapar.</item>
+        <item quantity="one">TV\'deki betik durur ve düğmeniz yeniden TV\'nin yaptığını yapar. Daha sonra yeniden eşleyebilirsiniz.</item>
+        <item quantity="other">TV\'deki betik durur ve %1$d düğmeniz yeniden TV\'nin yaptığını yapar. Daha sonra yeniden eşleyebilirsiniz.</item>
     </plurals>
 </resources>

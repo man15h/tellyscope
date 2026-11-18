@@ -1315,6 +1315,6 @@
         <item quantity="other">リモコンをテレビに向けてください。%1$d 秒間待機中。</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="other">スクリプトを停止し、%1$d 個のボタンを消去します。ボタンはテレビ本来の動作に戻ります。</item>
+        <item quantity="other">テレビ上のスクリプトが停止し、%1$d 個のボタンはテレビ本来の動作に戻ります。あとでもう一度割り当てられます。</item>
     </plurals>
 </resources>

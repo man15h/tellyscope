@@ -1315,6 +1315,6 @@
         <item quantity="other">请将遥控器对准电视。正在监听 %1$d 秒。</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="other">停止脚本并清除 %1$d 个按键。这些按键将恢复电视原本的功能。</item>
+        <item quantity="other">电视上的脚本会停止，你的 %1$d 个按键将恢复电视原本的功能。之后可以重新映射。</item>
     </plurals>
 </resources>

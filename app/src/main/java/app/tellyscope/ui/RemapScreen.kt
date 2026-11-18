@@ -634,7 +634,8 @@ private fun OtherRow(b: RemapButton, apps: List<AppInfo>, services: List<Streami
 @Composable
 private fun ListenDialog(since: Long, state: UiState, onCancel: () -> Unit) {
     val total = Remapper.LEARN_SECONDS * 1000L
-    var now by remember { mutableLongStateOf(state.clock()) }
+    val start = state.clock()
+    var now by remember { mutableLongStateOf(start) }
     LaunchedEffect(since) {
         while (true) {
             now = System.currentTimeMillis()

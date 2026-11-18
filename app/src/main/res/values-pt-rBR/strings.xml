@@ -1669,8 +1669,8 @@
         <item quantity="other">Aponte o controle para a TV. Ouvindo por %1$d s.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Para o script e esquece %1$d botão. Ele volta a fazer o que a TV faz.</item>
-        <item quantity="other">Para o script e esquece %1$d botões. Eles voltam a fazer o que a TV faz.</item>
+        <item quantity="one">O script para na TV, e seu %1$d botão volta a fazer o que a TV faz. Você pode mapeá-lo de novo depois.</item>
+        <item quantity="other">O script para na TV, e seus %1$d botões voltam a fazer o que a TV faz. Você pode mapeá-los de novo depois.</item>
     </plurals>
 </resources>
 

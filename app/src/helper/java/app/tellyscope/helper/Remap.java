@@ -66,9 +66,8 @@ public final class Remap {
     private Map<String, String> map = new HashMap<>();
     private long mapStamp = -1;
     private boolean learning;
-    /** A refused press passed on while learning: its remote stays held until this key's release is passed on too. */
+    /** The remote a refused learn press came from: kept held until every key it passed on has been released. */
     private Dev waitUp;
-    private int waitCode;
     private Uhid mouse;
     private boolean mouseRefused;
 
@@ -264,10 +263,7 @@ public final class Remap {
             // the release to the TV's own reader, which never saw the press, so the key would stay down.
             if (d.grabbed) {
                 pass(d, code, name, value);
-                if (d.held.containsKey(code)) {
-                    waitUp = d;
-                    waitCode = code;
-                }
+                if (passedDown(d)) waitUp = d;
             }
             regrab();
             return;
@@ -286,10 +282,16 @@ public final class Remap {
             return;
         }
         pass(d, code, name, value);
-        if (value == 0 && d == waitUp && code == waitCode) {
+        if (d == waitUp && !passedDown(d)) {
             waitUp = null;
             regrab();
         }
+    }
+
+    /** Whether a key this remote passed on is still down: let go now, and its release would reach only the TV. */
+    private static boolean passedDown(Dev d) {
+        for (long[] h : d.held.values()) if (h[2] != 0) return true;
+        return false;
     }
 
     /** Passes a key on as its Android key: down, each repeat (a long press), up. */
