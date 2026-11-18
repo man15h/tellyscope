@@ -390,6 +390,37 @@ class ActionsTest {
         assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
     }
 
+    /** Google TV: with its launcher off, Home falls to the setup app and stays there once the launcher is back on. */
+    @Test fun rollbackThatHomeDoesNotTakeSaysSo() = runTest {
+        val sh = twoLaunchers(accepts = false, outranks = true)
+        var fell = false
+        sh.answer.let { prev ->
+            sh.answer = {
+                if (it.startsWith("pm disable-user")) fell = true
+                if (fell && it.startsWith("cmd package resolve-activity")) ok("priority=0\ncom.google.android.tungsten.setupwraith/.MainActivity\n") else prev(it)
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
+        assertEquals(Actions.HOME_NOT_BACK, r.output)
+        assertTrue("Home opens com.google.android.tungsten.setupwraith/.MainActivity, not com.google.android.tvlauncher/.MainActivity" in r.details, r.details)
+        // It still tried: the old launcher is on again and was set as Home.
+        assertTrue(sh.ran.contains("pm enable --user 0 com.google.android.tvlauncher 2>&1"))
+        assertEquals("cmd package set-home-activity --user 0 'com.google.android.tvlauncher/.MainActivity' 2>&1", sh.ran.last { "set-home" in it })
+    }
+
+    @Test fun homeCheckFailsAndHomeDoesNotGoBackSaysSo() = runTest {
+        val sh = twoLaunchers(accepts = false)
+        sh.answer.let { prev ->
+            sh.answer = {
+                if (it.startsWith("cmd package resolve-activity") && sh.ran.any { c -> "set-home" in c }) ok("priority=0\nandroid/com.android.internal.app.ResolverActivity\n") else prev(it)
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
+        assertEquals(Actions.HOME_NOT_BACK, r.output)
+        assertTrue(r.details.endsWith("Home opens the chooser, not com.google.android.tvlauncher/.MainActivity"), r.details)
+        assertTrue(sh.ran.none { it.startsWith("pm disable") })
+    }
+
     @Test fun failedTurnBackOnSaysWhereToDoIt() = runTest {
         val sh = twoLaunchers(accepts = false, outranks = true)
         sh.answer.let { prev -> sh.answer = { if (it.startsWith("pm enable")) ok("Error: refused\n") else prev(it) } }
@@ -462,6 +493,22 @@ class ActionsTest {
         sh.answer.let { prev -> sh.answer = { if (it.startsWith("cmd package set-home-activity")) ok("Success\n") else prev(it) } }
         assertTrue(Actions(sh).homeBack("com.google.android.tvlauncher", "com.google.android.tvlauncher/.MainActivity") is HomeResult.Failed)
         assertTrue(Actions(sh).homeBack("com.spocky.projengmenu") is HomeResult.Failed) // already Home
+    }
+
+    @Test fun homeBackThatLeavesHomeNowhereSaysSo() = runTest {
+        val sh = twoLaunchers()
+        Actions(sh).makeHome("com.spocky.projengmenu")
+        sh.answer.let { prev ->
+            sh.answer = {
+                when {
+                    it.startsWith("cmd package set-home-activity") -> ok("Success\n")
+                    it.startsWith("cmd package resolve-activity") && sh.ran.count { c -> "set-home" in c } > 1 -> ok("priority=0\ncom.google.android.tungsten.setupwraith/.MainActivity\n")
+                    else -> prev(it)
+                }
+            }
+        }
+        val r = Actions(sh).homeBack("com.google.android.tvlauncher", "com.google.android.tvlauncher/.MainActivity") as HomeResult.Failed
+        assertEquals(Actions.HOME_NOT_BACK, r.output)
     }
 
     @Test fun launchableListsEveryAppWithALauncherIcon() = runTest {

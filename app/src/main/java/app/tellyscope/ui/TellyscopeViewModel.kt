@@ -27,6 +27,7 @@ import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
+import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Changelog
 import app.tellyscope.data.ConnectResult
@@ -491,6 +492,8 @@ class TellyscopeViewModel(
     /** One-shot snackbar lines: the TV refused, went away mid-action, or a restore or copy finished. */
     private val _notice = MutableStateFlow<UiText?>(null)
     val notice: StateFlow<UiText?> = _notice.asStateFlow()
+    /** A notice [run] logged itself, with the app it was about, so the log doesn't get it twice. */
+    private var noticeLogged: UiText? = null
 
     /** This session's messages, newest last, for a report's log. Kept in memory only. */
     private val sessionLog = ArrayDeque<UiText>()
@@ -578,7 +581,7 @@ class TellyscopeViewModel(
             }
         }
         rescan()
-        viewModelScope.launch { notice.collect { it?.let(::log) } }
+        viewModelScope.launch { notice.collect { it?.takeUnless { n -> n === noticeLogged }?.let(::log) } }
         viewModelScope.launch { source.refreshListsOnNetwork() }
         viewModelScope.launch {
             // Off Wi-Fi or under a VPN a scan has nothing to sweep; start over the moment there's a LAN to sweep.
@@ -1430,7 +1433,13 @@ class TellyscopeViewModel(
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 // A reset's Undo can get partway, so History shows where it ended.
                 if (undoing != null) runCatching { historyOf(id) }.getOrNull()?.let { (h, r) -> updateDevice(id) { it.copy(history = h, restorable = r) } }
-                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                val why = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                // A refusal doesn't name the app, so a report wouldn't say which one it was.
+                log(UiText.Join(listOf(UiText.Raw("${action.name} $pkg:"), why), " "))
+                // What the TV printed, or where Home ended up after a rollback, is for the report only.
+                (e as? ActionFailed)?.details?.takeIf { it.isNotBlank() }?.let { log(UiText.Raw(it)) }
+                noticeLogged = why
+                _notice.value = why
                 rereadAfterFailure(id)
                 return@launch
             }
