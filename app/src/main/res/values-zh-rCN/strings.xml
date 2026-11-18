@@ -1271,7 +1271,7 @@
     <string name="remap_on">重新映射已开启</string>
     <string name="remap_restarted_title">已停止。电视已重启。</string>
     <string name="remap_stopped_title">已停止</string>
-    <string name="remap_stopped_text">你的按键设置已保留。</string>
+    <string name="remap_stopped_text">你的按键设置已保留，但在重新开始重映射之前无法更改。</string>
     <string name="remap_start_again">重新开始</string>
     <string name="remap_restarted_caption">在 Tellyscope 重新连接之前，遥控器按原样工作。</string>
     <string name="remap_stopped_caption">在你重新开始之前，遥控器按原样工作。</string>
@@ -1297,10 +1297,10 @@
     <string name="remap_do_nothing_text">该按键将不再起作用。</string>
     <string name="remap_tv_default">电视默认</string>
     <string name="remap_tv_default_text">移除这条线。按键重新由电视处理。</string>
-    <string name="remap_search_apps">搜索应用</string>
+    <string name="remap_search_apps">搜索此电视上的应用</string>
     <string name="remap_back_to_tv">%1$s 恢复为电视的默认操作</string>
     <string name="remap_clear_title">停止重新映射并清除按键？</string>
-    <string name="remap_clear_confirm">清除</string>
+    <string name="remap_clear_confirm">停止并清除</string>
     <string name="remap_red">红色</string>
     <string name="remap_green">绿色</string>
     <string name="remap_yellow">黄色</string>
@@ -1312,9 +1312,9 @@
         <item quantity="other">已学会 %1$d 个应用按键</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="other">还剩 %1$d 秒</item>
+        <item quantity="other">请将遥控器对准电视。正在监听 %1$d 秒。</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="other">停止脚本并清除 %1$d 个按键。遥控器恢复原样。</item>
+        <item quantity="other">停止脚本并清除 %1$d 个按键。这些按键将恢复电视原本的功能。</item>
     </plurals>
 </resources>

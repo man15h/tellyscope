@@ -1623,7 +1623,7 @@
     <string name="remap_on">Remapeamento ativo</string>
     <string name="remap_restarted_title">Parado. A TV reiniciou.</string>
     <string name="remap_stopped_title">Parado</string>
-    <string name="remap_stopped_text">Seus botões foram mantidos.</string>
+    <string name="remap_stopped_text">Seus botões foram mantidos, mas não podem ser alterados até o remapeamento começar de novo.</string>
     <string name="remap_start_again">Começar de novo</string>
     <string name="remap_restarted_caption">O controle funciona como original até o Tellyscope reconectar.</string>
     <string name="remap_stopped_caption">O controle funciona como original até você começar de novo.</string>
@@ -1649,10 +1649,10 @@
     <string name="remap_do_nothing_text">O botão para de funcionar.</string>
     <string name="remap_tv_default">Padrão da TV</string>
     <string name="remap_tv_default_text">Remove a linha. A TV volta a cuidar dele.</string>
-    <string name="remap_search_apps">Buscar apps</string>
+    <string name="remap_search_apps">Buscar apps nesta TV</string>
     <string name="remap_back_to_tv">%1$s volta a fazer o que a TV faz</string>
     <string name="remap_clear_title">Parar de remapear e limpar os botões?</string>
-    <string name="remap_clear_confirm">Limpar</string>
+    <string name="remap_clear_confirm">Parar e limpar</string>
     <string name="remap_red">Vermelho</string>
     <string name="remap_green">Verde</string>
     <string name="remap_yellow">Amarelo</string>
@@ -1665,12 +1665,12 @@
         <item quantity="other">%1$d botões de app aprendidos</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="one">Falta %1$d segundo</item>
-        <item quantity="other">Faltam %1$d segundos</item>
+        <item quantity="one">Aponte o controle para a TV. Ouvindo por %1$d s.</item>
+        <item quantity="other">Aponte o controle para a TV. Ouvindo por %1$d s.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Para o script e esquece %1$d botão. O controle volta a funcionar como original.</item>
-        <item quantity="other">Para o script e esquece %1$d botões. O controle volta a funcionar como original.</item>
+        <item quantity="one">Para o script e esquece %1$d botão. Ele volta a fazer o que a TV faz.</item>
+        <item quantity="other">Para o script e esquece %1$d botões. Eles voltam a fazer o que a TV faz.</item>
     </plurals>
 </resources>
 

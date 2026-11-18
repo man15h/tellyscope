@@ -1271,7 +1271,7 @@
     <string name="remap_on">割り当て中</string>
     <string name="remap_restarted_title">停止しました。テレビが再起動しました。</string>
     <string name="remap_stopped_title">停止しました</string>
-    <string name="remap_stopped_text">ボタンの設定は保存されています。</string>
+    <string name="remap_stopped_text">ボタンの設定は保存されていますが、リマップを再開するまで変更できません。</string>
     <string name="remap_start_again">再開</string>
     <string name="remap_restarted_caption">Tellyscope が再接続するまで、リモコンは元の動作になります。</string>
     <string name="remap_stopped_caption">再開するまで、リモコンは元の動作になります。</string>
@@ -1297,10 +1297,10 @@
     <string name="remap_do_nothing_text">ボタンが無効になります。</string>
     <string name="remap_tv_default">テレビの既定</string>
     <string name="remap_tv_default_text">線を消します。テレビが再び処理します。</string>
-    <string name="remap_search_apps">アプリを検索</string>
+    <string name="remap_search_apps">このテレビのアプリを検索</string>
     <string name="remap_back_to_tv">%1$s はテレビの動作に戻ります</string>
     <string name="remap_clear_title">割り当てを停止してボタンを消去しますか？</string>
-    <string name="remap_clear_confirm">消去</string>
+    <string name="remap_clear_confirm">停止して消去</string>
     <string name="remap_red">赤</string>
     <string name="remap_green">緑</string>
     <string name="remap_yellow">黄</string>
@@ -1312,9 +1312,9 @@
         <item quantity="other">アプリボタンを %1$d 個覚えました</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="other">残り %1$d 秒</item>
+        <item quantity="other">リモコンをテレビに向けてください。%1$d 秒間待機中。</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="other">スクリプトを停止し、%1$d 個のボタンを消去します。リモコンは元の動作に戻ります。</item>
+        <item quantity="other">スクリプトを停止し、%1$d 個のボタンを消去します。ボタンはテレビ本来の動作に戻ります。</item>
     </plurals>
 </resources>

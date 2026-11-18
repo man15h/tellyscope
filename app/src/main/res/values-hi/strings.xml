@@ -1335,7 +1335,7 @@
     <string name="remap_on">रीमैपिंग चालू</string>
     <string name="remap_restarted_title">रुक गया। TV रीस्टार्ट हुआ।</string>
     <string name="remap_stopped_title">रुक गया</string>
-    <string name="remap_stopped_text">आपके बटन सहेजे गए हैं।</string>
+    <string name="remap_stopped_text">आपके बटन सहेजे गए हैं, पर रीमैपिंग फिर से शुरू होने तक बदले नहीं जा सकते।</string>
     <string name="remap_start_again">फिर से शुरू करें</string>
     <string name="remap_restarted_caption">Tellyscope के दोबारा जुड़ने तक रिमोट पहले की तरह काम करता है।</string>
     <string name="remap_stopped_caption">फिर से शुरू करने तक रिमोट पहले की तरह काम करता है।</string>
@@ -1361,10 +1361,10 @@
     <string name="remap_do_nothing_text">बटन काम करना बंद कर देता है।</string>
     <string name="remap_tv_default">TV डिफ़ॉल्ट</string>
     <string name="remap_tv_default_text">लाइन हट जाती है। TV फिर से इसे संभालता है।</string>
-    <string name="remap_search_apps">ऐप खोजें</string>
+    <string name="remap_search_apps">इस टीवी पर ऐप खोजें</string>
     <string name="remap_back_to_tv">%1$s फिर से वही करता है जो TV करता है</string>
     <string name="remap_clear_title">रीमैपिंग रोकें और बटन हटाएँ?</string>
-    <string name="remap_clear_confirm">हटाएँ</string>
+    <string name="remap_clear_confirm">रोकें और हटाएँ</string>
     <string name="remap_red">लाल</string>
     <string name="remap_green">हरा</string>
     <string name="remap_yellow">पीला</string>
@@ -1377,11 +1377,11 @@
         <item quantity="other">%1$d ऐप बटन सीखे गए</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="one">%1$d सेकंड बाकी</item>
-        <item quantity="other">%1$d सेकंड बाकी</item>
+        <item quantity="one">रिमोट को टीवी की ओर करें। %1$d सेकंड तक सुन रहे हैं।</item>
+        <item quantity="other">रिमोट को टीवी की ओर करें। %1$d सेकंड तक सुन रहे हैं।</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">स्क्रिप्ट रोकता है और %1$d बटन भूल जाता है। रिमोट फिर पहले की तरह काम करता है।</item>
-        <item quantity="other">स्क्रिप्ट रोकता है और %1$d बटन भूल जाता है। रिमोट फिर पहले की तरह काम करता है।</item>
+        <item quantity="one">स्क्रिप्ट रोकता है और %1$d बटन भूल जाता है। वे फिर वही करेंगे जो टीवी करता है।</item>
+        <item quantity="other">स्क्रिप्ट रोकता है और %1$d बटन भूल जाता है। वे फिर वही करेंगे जो टीवी करता है।</item>
     </plurals>
 </resources>

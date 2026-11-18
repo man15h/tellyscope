@@ -66,6 +66,9 @@ public final class Remap {
     private Map<String, String> map = new HashMap<>();
     private long mapStamp = -1;
     private boolean learning;
+    /** A refused press passed on while learning: its remote stays held until this key's release is passed on too. */
+    private Dev waitUp;
+    private int waitCode;
     private Uhid mouse;
     private boolean mouseRefused;
 
@@ -206,7 +209,7 @@ public final class Remap {
     /** Holds each remote that has a mapped button, or while learning, any button that could be; lets go of the rest. */
     private void regrab() throws Exception {
         for (Dev d : devices.values()) {
-            boolean want = d.layout.names(learning ? KeyLayout.ALLOWED : map.keySet());
+            boolean want = d == waitUp || d.layout.names(learning ? KeyLayout.ALLOWED : map.keySet());
             if (want == d.grabbed) continue;
             if (want) {
                 grab(d.fd);
@@ -257,8 +260,15 @@ public final class Remap {
                 return;
             }
             learning = false;
-            // Not one that may be mapped: it still does what it always did, then the remote is let go.
-            if (d.grabbed) pass(d, code, name, value);
+            // Not one that may be mapped: it still does what it always did. Letting go of the remote now would send
+            // the release to the TV's own reader, which never saw the press, so the key would stay down.
+            if (d.grabbed) {
+                pass(d, code, name, value);
+                if (d.held.containsKey(code)) {
+                    waitUp = d;
+                    waitCode = code;
+                }
+            }
             regrab();
             return;
         }
@@ -276,6 +286,10 @@ public final class Remap {
             return;
         }
         pass(d, code, name, value);
+        if (value == 0 && d == waitUp && code == waitCode) {
+            waitUp = null;
+            regrab();
+        }
     }
 
     /** Passes a key on as its Android key: down, each repeat (a long press), up. */
@@ -362,6 +376,7 @@ public final class Remap {
     }
 
     private void drop(Dev d) {
+        if (d == waitUp) waitUp = null;
         close(d);
         devices.remove(d.info.path);
         // Seen again on the next scan, even if the list looks the same.

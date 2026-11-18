@@ -1653,7 +1653,7 @@
     <string name="remap_on">Remapping on</string>
     <string name="remap_restarted_title">Stopped. The TV restarted.</string>
     <string name="remap_stopped_title">Stopped</string>
-    <string name="remap_stopped_text">Your buttons are kept.</string>
+    <string name="remap_stopped_text">Your buttons are kept, but can\'t be changed until remapping starts again.</string>
     <string name="remap_start_again">Start again</string>
     <string name="remap_restarted_caption">The remote works as stock until Tellyscope reconnects.</string>
     <string name="remap_stopped_caption">The remote works as stock until you start again.</string>
@@ -1679,10 +1679,10 @@
     <string name="remap_do_nothing_text">The button stops working.</string>
     <string name="remap_tv_default">TV default</string>
     <string name="remap_tv_default_text">Removes the line. The TV handles it again.</string>
-    <string name="remap_search_apps">Search apps</string>
+    <string name="remap_search_apps">Search apps on this TV</string>
     <string name="remap_back_to_tv">%1$s goes back to what the TV does</string>
     <string name="remap_clear_title">Stop remapping and clear buttons?</string>
-    <string name="remap_clear_confirm">Clear</string>
+    <string name="remap_clear_confirm">Stop and clear</string>
     <string name="remap_red">Red</string>
     <string name="remap_green">Green</string>
     <string name="remap_yellow">Yellow</string>
@@ -1695,11 +1695,11 @@
         <item quantity="other">%1$d app buttons learned</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="one">%1$d second left</item>
-        <item quantity="other">%1$d seconds left</item>
+        <item quantity="one">Point the remote at the TV. Listening for %1$d s.</item>
+        <item quantity="other">Point the remote at the TV. Listening for %1$d s.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Stops the script and forgets %1$d button. The remote works as stock again.</item>
-        <item quantity="other">Stops the script and forgets %1$d buttons. The remote works as stock again.</item>
+        <item quantity="one">Stops the script and forgets %1$d button. It goes back to what the TV does.</item>
+        <item quantity="other">Stops the script and forgets %1$d buttons. They go back to what the TV does.</item>
     </plurals>
 </resources>

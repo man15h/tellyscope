@@ -1341,7 +1341,7 @@
     <string name="remap_on">Yeniden eşleme açık</string>
     <string name="remap_restarted_title">Durdu. TV yeniden başladı.</string>
     <string name="remap_stopped_title">Durdu</string>
-    <string name="remap_stopped_text">Düğmeleriniz saklandı.</string>
+    <string name="remap_stopped_text">Düğmeleriniz saklandı, ancak yeniden eşleme tekrar başlayana kadar değiştirilemez.</string>
     <string name="remap_start_again">Yeniden başlat</string>
     <string name="remap_restarted_caption">Tellyscope yeniden bağlanana kadar kumanda fabrika ayarındaki gibi çalışır.</string>
     <string name="remap_stopped_caption">Yeniden başlatana kadar kumanda fabrika ayarındaki gibi çalışır.</string>
@@ -1367,10 +1367,10 @@
     <string name="remap_do_nothing_text">Düğme çalışmayı bırakır.</string>
     <string name="remap_tv_default">TV varsayılanı</string>
     <string name="remap_tv_default_text">Çizgiyi kaldırır. TV düğmeyi yeniden işler.</string>
-    <string name="remap_search_apps">Uygulama ara</string>
+    <string name="remap_search_apps">Bu TV\'deki uygulamalarda ara</string>
     <string name="remap_back_to_tv">%1$s yeniden TV\'nin yaptığını yapıyor</string>
     <string name="remap_clear_title">Yeniden eşleme durdurulup düğmeler temizlensin mi?</string>
-    <string name="remap_clear_confirm">Temizle</string>
+    <string name="remap_clear_confirm">Durdur ve temizle</string>
     <string name="remap_red">Kırmızı</string>
     <string name="remap_green">Yeşil</string>
     <string name="remap_yellow">Sarı</string>
@@ -1383,11 +1383,11 @@
         <item quantity="other">%1$d uygulama düğmesi öğrenildi</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="one">%1$d saniye kaldı</item>
-        <item quantity="other">%1$d saniye kaldı</item>
+        <item quantity="one">Kumandayı TV\'ye doğrultun. %1$d sn dinleniyor.</item>
+        <item quantity="other">Kumandayı TV\'ye doğrultun. %1$d sn dinleniyor.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Betiği durdurur ve %1$d düğmeyi unutur. Kumanda yeniden fabrika ayarındaki gibi çalışır.</item>
-        <item quantity="other">Betiği durdurur ve %1$d düğmeyi unutur. Kumanda yeniden fabrika ayarındaki gibi çalışır.</item>
+        <item quantity="one">Betiği durdurur ve %1$d düğmeyi unutur. Düğmeler yeniden TV\'nin yaptığını yapar.</item>
+        <item quantity="other">Betiği durdurur ve %1$d düğmeyi unutur. Düğmeler yeniden TV\'nin yaptığını yapar.</item>
     </plurals>
 </resources>

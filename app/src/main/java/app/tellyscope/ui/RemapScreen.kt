@@ -39,7 +39,6 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -212,6 +211,7 @@ fun RemapScreen(state: UiState, actions: RemapActions, snackbar: SnackbarHostSta
                 services = services,
                 fire = fire,
                 live = live,
+                dimmed = phase == Phase.Restarted || phase == Phase.Stopped,
                 firstRun = phase == Phase.FirstRun,
                 listening = ui.listening?.slot?.takeIf { phase == Phase.FirstRun },
                 onSlot = { slot, b -> if (b == null) listen(slot) else if (phase != Phase.FirstRun) { editing = b to true } },
@@ -325,7 +325,7 @@ private fun StatusCard(phase: Phase, failed: String?, actions: RemapActions, onD
                 Text(stringResource(R.string.remap_start))
             }
         }
-        Phase.Failed -> InfoCard(c.errorContainer, c.onErrorContainer, Icons.Default.Warning, stringResource(R.string.remap_failed_title), stringResource(R.string.remap_failed_text)) {
+        Phase.Failed -> InfoCard(c.errorContainer, c.onErrorContainer, RemapIcons.ErrorOutline, stringResource(R.string.remap_failed_title), stringResource(R.string.remap_failed_text)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Button(onClick = actions.start) {
                     Icon(Icons.Default.Refresh, null, Modifier.size(18.dp))
@@ -454,6 +454,7 @@ private fun RemoteDrawing(
     services: List<StreamingService>,
     fire: Boolean,
     live: Boolean,
+    dimmed: Boolean,
     firstRun: Boolean,
     listening: Int?,
     onSlot: (Int, RemapButton?) -> Unit,
@@ -465,7 +466,7 @@ private fun RemoteDrawing(
     val slots = (0 until RemapButton.SLOTS).map { s -> buttons.firstOrNull { it.slot == s && !it.colour } }
     val colours = RemapKeys.COLOURS.map { k -> buttons.firstOrNull { it.key == k } }
     val line = c.primary
-    BoxWithConstraints(Modifier.fillMaxWidth().height(height).alpha(if (live) 1f else 0.38f)) {
+    BoxWithConstraints(Modifier.fillMaxWidth().height(height).alpha(if (dimmed) 0.38f else 1f)) {
         val w = maxWidth
         val cx = w / 2
         val left = CHIP / 2
@@ -804,6 +805,7 @@ internal object RemapIcons {
             "M12 20C10.15 20 8.45 19.37 7.1 18.31L18.31 7.1C19.37 8.45 20 10.15 20 12C20 16.42 16.42 20 12 20Z",
     )
     val Keyboard = icon("Keyboard", "M20 5L4 5C2.9 5 2.01 5.9 2.01 7L2 17C2 18.1 2.9 19 4 19L20 19C21.1 19 22 18.1 22 17L22 7C22 5.9 21.1 5 20 5ZM11 8L13 8L13 10L11 10L11 8ZM11 11L13 11L13 13L11 13L11 11ZM8 8L10 8L10 10L8 10L8 8ZM8 11L10 11L10 13L8 13L8 11ZM7 13L5 13L5 11L7 11L7 13ZM7 10L5 10L5 8L7 8L7 10ZM16 17L8 17L8 15L16 15L16 17ZM16 13L14 13L14 11L16 11L16 13ZM16 10L14 10L14 8L16 8L16 10ZM19 13L17 13L17 11L19 11L19 13ZM19 10L17 10L17 8L19 8L19 10Z")
+    val ErrorOutline = icon("ErrorOutline", "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4ZM11 7H13V13H11ZM11 15H13V17H11Z")
     val Pause = icon("Pause", "M6 19L10 19L10 5L6 5L6 19Z M14 5L14 19L18 19L18 5L14 5Z")
     val TouchApp = icon(
         "TouchApp",

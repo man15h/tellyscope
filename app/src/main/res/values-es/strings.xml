@@ -1394,7 +1394,7 @@
     <string name="remap_on">Reasignación activa</string>
     <string name="remap_restarted_title">Detenido. La TV se reinició.</string>
     <string name="remap_stopped_title">Detenido</string>
-    <string name="remap_stopped_text">Tus botones se conservan.</string>
+    <string name="remap_stopped_text">Tus botones se conservan, pero no se pueden cambiar hasta que vuelvas a iniciar la reasignación.</string>
     <string name="remap_start_again">Empezar de nuevo</string>
     <string name="remap_restarted_caption">El mando funciona como de fábrica hasta que Tellyscope se vuelva a conectar.</string>
     <string name="remap_stopped_caption">El mando funciona como de fábrica hasta que empieces de nuevo.</string>
@@ -1420,10 +1420,10 @@
     <string name="remap_do_nothing_text">El botón deja de funcionar.</string>
     <string name="remap_tv_default">Lo que hace la TV</string>
     <string name="remap_tv_default_text">Quita la línea. La TV vuelve a gestionarlo.</string>
-    <string name="remap_search_apps">Buscar apps</string>
+    <string name="remap_search_apps">Buscar apps en esta TV</string>
     <string name="remap_back_to_tv">%1$s vuelve a hacer lo que hace la TV</string>
     <string name="remap_clear_title">¿Dejar de reasignar y borrar los botones?</string>
-    <string name="remap_clear_confirm">Borrar</string>
+    <string name="remap_clear_confirm">Detener y borrar</string>
     <string name="remap_red">Rojo</string>
     <string name="remap_green">Verde</string>
     <string name="remap_yellow">Amarillo</string>
@@ -1437,13 +1437,13 @@
         <item quantity="other">%1$d botones de app aprendidos</item>
     </plurals>
     <plurals name="remap_listen_text">
-        <item quantity="one">Queda %1$d segundo</item>
-        <item quantity="many">Quedan %1$d segundos</item>
-        <item quantity="other">Quedan %1$d segundos</item>
+        <item quantity="one">Apunta el mando a la TV. Escuchando durante %1$d s.</item>
+        <item quantity="many">Apunta el mando a la TV. Escuchando durante %1$d s.</item>
+        <item quantity="other">Apunta el mando a la TV. Escuchando durante %1$d s.</item>
     </plurals>
     <plurals name="remap_clear_text">
-        <item quantity="one">Detiene el script y olvida %1$d botón. El mando vuelve a funcionar como de fábrica.</item>
-        <item quantity="many">Detiene el script y olvida %1$d botones. El mando vuelve a funcionar como de fábrica.</item>
-        <item quantity="other">Detiene el script y olvida %1$d botones. El mando vuelve a funcionar como de fábrica.</item>
+        <item quantity="one">Detiene el script y olvida %1$d botón. Vuelve a hacer lo que hace la TV.</item>
+        <item quantity="many">Detiene el script y olvida %1$d botones. Vuelven a hacer lo que hace la TV.</item>
+        <item quantity="other">Detiene el script y olvida %1$d botones. Vuelven a hacer lo que hace la TV.</item>
     </plurals>
 </resources>
