@@ -10,11 +10,11 @@ import app.tellyscope.data.Updates
 import java.io.File
 
 // What the GitHub build has that the Play build doesn't (app/src/play/…/Store.kt): its own update check,
-// and the Fire OS launcher downloaded from its developer's GitHub releases.
+// the Fire OS launcher downloaded from its developer's GitHub releases, and VLC from VideoLAN's downloads.
 
 /** Every 30 minutes, whether GitHub has a newer release than [version]. Alpha builds install as app.tellyscope.alpha. */
 internal fun updates(context: Context, version: String): Updates? =
     UpdateCheck(File(context.filesDir, "updates.properties"), version, alpha = context.packageName.endsWith(".alpha"))
 
-/** Downloads a launcher, or checks a file the user picked. */
+/** Downloads a launcher or VLC, or checks a launcher file the user picked. */
 internal fun launcherPick(context: Context): LauncherPick = AndroidLauncherDownload(context)

@@ -105,7 +105,7 @@ interface DeviceSource {
     /** Puts away the TV page's card about [packageName]'s service being off, until the next switch. */
     suspend fun dismissServiceNote(deviceId: String, packageName: String) {}
 
-    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from `launchers.json`; false when it didn't open. */
+    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from `launchers.json` or [PLAYER]; false when it didn't open. */
     suspend fun openStore(deviceId: String, packageName: String): Boolean = false
 
     /** Whether [packageName] is installed yet, and if not, whether the Store is still on screen. */
@@ -158,6 +158,18 @@ interface DeviceSource {
     suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit): String
 
     suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit)
+
+    /** The packages that open [file] in [folder] as [mime], in the TV's order; stubs and all, as the TV says. */
+    suspend fun fileHandlers(deviceId: String, folder: TvFolder, file: TvFile, mime: String): List<String> = emptyList()
+
+    /**
+     * Opens [file] on the TV in [packageName], or in what the TV picks when null. [allowReading]: first let it read the
+     * shared folders, so it doesn't ask on the TV; only for [PLAYER], which Tellyscope offered. False when it didn't open.
+     */
+    suspend fun openFile(deviceId: String, folder: TvFolder, file: TvFile, mime: String, packageName: String?, allowReading: Boolean = false): Boolean = false
+
+    /** The TV's CPU types, best first, for which build of an app to download. */
+    suspend fun abis(deviceId: String): List<String> = emptyList()
 
     /**
      * What the TV's list from tellyscope-devices suggests turning off. Never throws; offline it

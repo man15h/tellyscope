@@ -17,7 +17,7 @@ Debloat your Android TV, install apps, and browse and transfer files on it, all 
 
 **Google Play (testing)**
 
-Tellyscope is in closed testing on Google Play. Join the testers group, accept the test, then install it from Play. Play keeps this build updated, so it has no in-app update check, and it doesn't download launchers from GitHub.
+Tellyscope is in closed testing on Google Play. Join the testers group, accept the test, then install it from Play. Play keeps this build updated, so it has no in-app update check, and it doesn't download launchers from GitHub or VLC from VideoLAN.
 
 <a href="https://play.google.com/store/apps/details?id=app.tellyscope"><img src="docs/badges/get-it-on-google-play.png" alt="Get it on Google Play (testing)" height="60"></a>
 
@@ -78,6 +78,7 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 - **Install apps.** From an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone; the picker opens in Downloads and shows only apps. It says first whether it's new, an update or an older version.
 - **A better home screen.** Install Projectivy, FLauncher, AT4K or Monet and make it Home. Android TV installs it from the TV's Play Store, or it can be downloaded directly from its developer's GitHub releases after a warning (FLauncher from a community fork that keeps it updated). Fire TV has no Play Store, so Tellyscope downloads Projectivy from its developer's GitHub releases. The Play Store build of Tellyscope downloads nothing from GitHub: on Fire TV you download Projectivy in the TV's browser and pick the file. Switch between launchers, or back to the TV's own, from the Home screen card in Tweaks; only the TV's own is ever turned off. A launcher's accessibility service turns on only if you say yes. Signatures: see [what the lists can't do](#the-shared-lists).
 - **Send files.** To and from the TV's Download and Movies folders.
+- **Open on TV.** Plays a video or a song, or shows a picture, from those folders on the TV. When nothing on the TV plays it (a gallery or a browser that only opens it doesn't count), Tellyscope offers VLC: from the TV's Play Store, or on a Fire TV the Appstore, and in the GitHub build also downloaded directly from VideoLAN after a warning, then opens the file in it. Only a VLC signed by VideoLAN is installed.
 - **Remote.** D-pad, or from ⋮ a touchpad (swipe to move, tap for OK), a **pointer** on the TV (drag to move, tap to click, two fingers to scroll) or a sideways **game controller** (D-pad or stick, A/B/X/Y, Select and Start), Back, Home, Menu, mute and volume, typing on the TV, buttons that open Netflix, YouTube, Plex and 20 more streaming apps (hold one to pick up to three), restart the TV, and **Screen off** for music with the picture off (Android 13 or older).
 - **Reset TV.** In ⋮: turn the TV back to how it shipped, with one Undo. Preinstalled apps come back on, uninstalled ones too, and the TV's own launcher is Home again; apps the maker shipped off stay off.
 - **Tweaks.** Block ads with Private DNS, faster animations, clear caches, take a screenshot.
@@ -104,7 +105,7 @@ Debloating a TV can break it if done carelessly. Tellyscope keeps to these rules
 4. **You see it first.** Every change names the apps it touches and asks before it runs.
 5. **No root, no exploits.** Only what ADB allows on a stock TV.
 6. **Nothing left on the TV.** Two small helpers run from `/data/local/tmp`: one reads app names and icons and is deleted at once, the other runs the Remote and is deleted when the Remote closes. A TV that won't take an APK streamed into its installer gets a copy there instead, deleted once the install ends. Pointer and the game controller add a virtual mouse or gamepad through `/dev/uhid` (Android 10 and later); it goes when the Remote closes.
-7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists), and in the GitHub build also check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases when you ask for it. The Play Store build has no update check and downloads nothing from GitHub. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
+7. **Private.** No ads, tracking or accounts. The only internet requests fetch the [shared lists](#the-shared-lists), and in the GitHub build also check for a new version every 30 minutes, which you can turn off in Settings, and download Projectivy from its developer's GitHub releases, or VLC from VideoLAN's downloads (get.videolan.org and its mirrors), when you ask for it. The Play Store build has no update check and downloads nothing from GitHub or VideoLAN. Everything else stays on your Wi-Fi, except the DNS lookup of each TV's name during the scan.
 
 ## The shared lists
 
@@ -152,7 +153,7 @@ Modules: `:app` (the phone app, Kotlin and Jetpack Compose), `:adb` (pure Kotlin
 ./gradlew :app:installGithubDebug
 ```
 
-There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The update check and the Projectivy download live in `app/src/github` only, with stubs in `app/src/play`, and every Play build fails if its code names `api.github.com`. What differs on screen checks `BuildConfig.PLAY`. Unit tests run on the `github` build.
+There are two builds of the same app, as Gradle flavors: `github`, the APK on GitHub releases, and `play`, the Play Store's. The update check and the Projectivy and VLC downloads live in `app/src/github` only, with stubs in `app/src/play`, and every Play build fails if its code names `api.github.com`. What differs on screen checks `BuildConfig.PLAY`. Unit tests run on the `github` build.
 
 ## Contributing
 

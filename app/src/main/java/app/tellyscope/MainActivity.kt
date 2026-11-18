@@ -70,6 +70,7 @@ import app.tellyscope.ui.LauncherScreen
 import app.tellyscope.ui.LocalNow
 import app.tellyscope.ui.LoggedOutScreen
 import app.tellyscope.ui.PermissionScreen
+import app.tellyscope.ui.PlayerActions
 import app.tellyscope.ui.RemoteActions
 import app.tellyscope.ui.RemoteScreen
 import app.tellyscope.ui.ReportKind
@@ -426,6 +427,14 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 pickFile = { folder -> vm.folder(folder); pickFile.launch(arrayOf("*/*")) },
                 saveFile = { f -> vm.saving(f); saveFile.launch(f.name) },
                 cancelTransfer = vm::cancelTransfer,
+                player = PlayerActions(
+                    open = vm::openFile,
+                    store = vm::playerFromStore,
+                    direct = vm::playerDirect,
+                    download = vm::playerDownload,
+                    other = vm::playerOther,
+                    close = vm::closePlayer,
+                ),
                 remote = { remote = true },
                 // A run that finished while Debloat was closed is done with.
                 debloat = { vm.closeDebloat(); debloat = true },

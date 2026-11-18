@@ -387,7 +387,7 @@ fun LauncherScreen(
 }
 
 @Composable
-private fun IconButtonText(icon: ImageVector, text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+internal fun IconButtonText(icon: ImageVector, text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
     Button(onClick = onClick, modifier = modifier, enabled = enabled, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
         Icon(icon, contentDescription = null, Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
@@ -704,7 +704,7 @@ private fun clockTime(millis: Long): String =
  * release and its size; it opens the release page. With no [release] read, it says the latest one and opens that.
  */
 @Composable
-private fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () -> Unit) {
+internal fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () -> Unit) {
     val c = MaterialTheme.colorScheme
     Surface(
         onClick = onOpen,
@@ -728,7 +728,7 @@ private fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () -> 
 /** The warning and the failures: a filled warning in the error colour's cookie, so it reads at a glance. */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun WarningBadge() {
+internal fun WarningBadge() {
     val c = MaterialTheme.colorScheme
     Box(Modifier.size(56.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(c.errorContainer), contentAlignment = Alignment.Center) {
         Icon(Icons.Default.Warning, null, Modifier.size(32.dp), tint = c.onErrorContainer)
@@ -1025,7 +1025,7 @@ private fun bold(text: String, vararg words: String) = buildAnnotatedString {
     words.forEach { w -> text.indexOf(w).takeIf { it >= 0 }?.let { addStyle(SpanStyle(fontWeight = FontWeight.Medium), it, it + w.length) } }
 }
 
-private object LauncherIcons {
+internal object LauncherIcons {
     // Absolute commands only: Compose's path parser misplaces a relative move after a close.
     val Download = icon("Download", "M5 20H19V18H5ZM19 9H15V3H9V9H5L12 16Z")
     val ErrorOutline = icon("ErrorOutline", "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4ZM11 7H13V13H11ZM11 15H13V17H11Z")
