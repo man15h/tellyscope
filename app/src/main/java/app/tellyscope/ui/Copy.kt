@@ -643,6 +643,25 @@ object Copy {
     /** A Fire TV's store is the Appstore. */
     fun notOnTv(name: String, fire: Boolean = false) = UiText(if (fire) R.string.copy_not_on_tv_fire else R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
+
+    /** Open on TV in the Files tab: how it went, and the prompt that offers [app.tellyscope.data.PLAYER] when nothing plays the file. */
+    fun openedFile(file: String) = UiText(R.string.copy_player_opened, file)
+    fun openedFileIn(file: String, app: String) = UiText(R.string.copy_player_opened_in, file, app)
+    fun cantOpenFile(file: String) = UiText(R.string.copy_player_cant_open, file)
+    fun nothingOpens(file: String) = UiText(R.string.copy_player_nothing_opens, file)
+    fun openFile(file: String) = UiText(R.string.copy_player_open_file, file)
+    fun noPlayer(audio: Boolean) = UiText(if (audio) R.string.copy_player_no_audio else R.string.copy_player_no_video)
+    fun playerOtherText(audio: Boolean, other: String, file: String, player: String) =
+        UiText(if (audio) R.string.copy_player_other_audio else R.string.copy_player_other_video, other, file, player)
+    fun playerNothingText(file: String, player: String) = UiText(R.string.copy_player_nothing_text, file, player)
+    val PLAYER_ABOUT = UiText(R.string.copy_player_about)
+    fun openAnyway(app: String) = UiText(R.string.copy_player_open_anyway, app)
+    fun installPlayer(player: String) = UiText(R.string.copy_player_install_title, player)
+    fun playerStoreOpen(player: String) = UiText(R.string.copy_player_store_open, player)
+    fun playerWaiting(player: String, file: String) = UiText(R.string.copy_player_waiting, player, file)
+    val OPEN_APPSTORE = UiText(R.string.copy_player_open_appstore)
+    fun downloadingPlayer(player: String) = UiText(R.string.copy_player_downloading, player)
+    fun playerProgress(done: Long, total: Long, from: String) = UiText(R.string.copy_player_progress, bytes(done), bytes(total), from)
     fun storeOpened(name: String) = UiText(R.string.copy_store_opened, name)
     fun storeCantOpen(name: String) = UiText(R.string.copy_store_cant_open, name)
     val OPEN_AN_APP = UiText(R.string.copy_open_an_app)

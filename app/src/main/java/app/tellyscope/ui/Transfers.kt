@@ -57,7 +57,10 @@ import app.tellyscope.adb.TvFolder
 import app.tellyscope.ui.theme.SmallNumber
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import app.tellyscope.R
+import app.tellyscope.data.media
 import app.tellyscope.data.resolve
 
 /**
@@ -162,15 +165,19 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
         }
         files.error != null -> Muted(files.error.resolve())
         else -> {
-            list.forEach { f -> FileRow(f, now) { actions.saveFile(f) } }
+            list.forEach { f ->
+                val open = if (media(f.name) != null) ({ actions.player.open(f) }) else null
+                FileRow(f, now, open) { actions.saveFile(f) }
+            }
             // Only with files to tap; an empty folder shows its own page instead.
             if (list.isNotEmpty()) Muted(stringResource(R.string.transfers_tap_to_save))
         }
     }
 }
 
+/** [onOpen]: Open on TV, for a video, a song or a picture; other files only save. */
 @Composable
-private fun FileRow(f: TvFile, now: Long, onSave: () -> Unit) {
+private fun FileRow(f: TvFile, now: Long, onOpen: (() -> Unit)?, onSave: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onSave).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -182,6 +189,11 @@ private fun FileRow(f: TvFile, now: Long, onSave: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+        }
+        if (onOpen != null) {
+            // The file's name in what TalkBack says, or every row's button reads the same.
+            val label = Copy.openFile(f.name).resolve()
+            TextButton(onClick = onOpen, modifier = Modifier.semantics { contentDescription = label }) { Text(stringResource(R.string.copy_open_on_tv)) }
         }
         TextButton(onClick = onSave) { Text(stringResource(R.string.transfers_save)) }
     }

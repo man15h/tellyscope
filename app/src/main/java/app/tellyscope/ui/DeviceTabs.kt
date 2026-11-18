@@ -469,6 +469,7 @@ fun DeviceTabsScreen(
             if (!offline) ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
             ui.sideload?.let { SideloadDialog(it, actions) }
             ui.transfer?.let { TransferDialog(it, actions.cancelTransfer) }
+            ui.player?.let { PlayerDialog(it, name(device), actions.player) }
         }
         // Over everything, so the cookie and name can pass from the list into the bar.
         if (!searching) HeroMorphOverlay(device, morph) { collapse }

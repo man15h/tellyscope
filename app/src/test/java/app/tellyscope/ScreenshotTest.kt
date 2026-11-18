@@ -72,7 +72,9 @@ import app.tellyscope.data.TvSettings
 import app.tellyscope.data.TvAccess
 import app.tellyscope.data.TvTweaks
 import app.tellyscope.data.ListEntry
+import app.tellyscope.data.MediaKind
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.PlayerRelease
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.ScanKind
@@ -120,6 +122,10 @@ import app.tellyscope.ui.FilesBlock
 import app.tellyscope.ui.FilesUi
 import app.tellyscope.ui.RestoreDialog
 import app.tellyscope.ui.PermissionScreen
+import app.tellyscope.ui.PlayerActions
+import app.tellyscope.ui.PlayerDialog
+import app.tellyscope.ui.PlayerFlow
+import app.tellyscope.ui.PlayerStore
 import app.tellyscope.ui.WelcomeScreen
 import app.tellyscope.ui.RebootDialog
 import app.tellyscope.ui.RemoteActions
@@ -1941,6 +1947,33 @@ class ScreenshotTest {
     }
     @Test fun access_overview() = accessOverview(false)
     @Test fun access_overview_dark() = accessOverview(true)
+
+    // Open on TV with no player on the TV: each step of the dialog that offers VLC.
+    private val vlc = PlayerRelease("3.7.1", "armeabi-v7a", "https://get.videolan.org/vlc-android/3.7.1/",
+        "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-armeabi-v7a.apk", 47_073_346, "0".repeat(64))
+    private fun playerFlow(
+        step: PlayerFlow.Step = PlayerFlow.Step.Ask,
+        store: PlayerStore = PlayerStore.Play,
+        download: Boolean = true,
+        gallery: Boolean = true,
+        progress: Progress? = null,
+    ) = PlayerFlow(
+        TvFolder.DOWNLOAD, TvFile("holiday-2025.mp4", 774_400_000, 0L), MediaKind.Video, "video/mp4", store, download, step,
+        other = "com.android.gallery3d".takeIf { gallery }, otherLabel = "Gallery".takeIf { gallery }, release = vlc, progress = progress,
+    )
+    private fun player(name: String, p: PlayerFlow, dark: Boolean) = shot(name, dark, screen = true) { PlayerDialog(p, "Projector", PlayerActions()) }
+    @Test fun player_gallery() = player("36_player_gallery", playerFlow(), false)
+    @Test fun player_gallery_dark() = player("36_player_gallery", playerFlow(), true)
+    @Test fun player_nothing() = player("36_player_nothing", playerFlow(gallery = false), false)
+    @Test fun player_no_store() = player("36_player_no_store", playerFlow(store = PlayerStore.None, gallery = false), false)
+    @Test fun player_store_waiting() = player("36_player_store_waiting", playerFlow(PlayerFlow.Step.Waiting), false)
+    @Test fun player_warn() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), false)
+    @Test fun player_warn_dark() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), true)
+    @Test fun player_downloading() = player("36_player_downloading", playerFlow(PlayerFlow.Step.Downloading, progress = Progress(21_600_000, 47_073_346)), false)
+    @Test fun player_installing() = player("36_player_installing", playerFlow(PlayerFlow.Step.Installing), false)
+    @Test fun player_appstore() = player("36_player_appstore", playerFlow(store = PlayerStore.Appstore, download = false, gallery = false), false)
+    @Test fun player_appstore_waiting() =
+        player("36_player_appstore_waiting", playerFlow(PlayerFlow.Step.Waiting, store = PlayerStore.Appstore, download = false, gallery = false), false)
 
     private fun accessScreen(name: String, dark: Boolean, removal: Removal?) {
         val state = accessState(removal)

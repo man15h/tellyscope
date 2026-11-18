@@ -28,6 +28,7 @@ import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.AppNames
 import app.tellyscope.data.Changelog
 import app.tellyscope.data.ConnectResult
 import app.tellyscope.data.Device
@@ -42,10 +43,14 @@ import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
 import app.tellyscope.data.LauncherPick
 import app.tellyscope.data.LauncherRelease
+import app.tellyscope.data.MediaKind
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.NotAnApp
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.PLAYER
+import app.tellyscope.data.PlayerDownload
+import app.tellyscope.data.PlayerRelease
 import app.tellyscope.data.RateLimited
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.ResetApp
@@ -74,7 +79,9 @@ import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
 import app.tellyscope.data.WrongApk
 import app.tellyscope.data.after
+import app.tellyscope.data.handlers
 import app.tellyscope.data.isFireOs
+import app.tellyscope.data.media
 import app.tellyscope.data.summary
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
@@ -150,6 +157,8 @@ data class DeviceUi(
     val files: FilesUi = FilesUi(),
     /** A file copy in progress; its dialog stays up until it finishes or Cancel is tapped. */
     val transfer: TransferUi? = null,
+    /** Open on TV offering [PLAYER], while it's open; null otherwise. */
+    val player: PlayerFlow? = null,
     /** The TV's debloat list; null while it loads. */
     val lists: Suggestions? = null,
     /** Private DNS and animation speed; null until read, or when the TV wouldn't say. */
@@ -327,6 +336,33 @@ data class FilesUi(
 
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
 
+/**
+ * Open on TV for a video or a song nothing on the TV plays: [PLAYER] is offered ([Step.Ask]), with [other], an app that
+ * only opens it, as Open in … anyway. From the Play Store ([store]), Tellyscope opens its page and waits ([Step.Waiting]);
+ * from the Appstore, the user opens it first. The GitHub build can also download it ([download]): straight away
+ * where there's no Play Store, after Download directly's warning ([Step.Warn]) where there is. Once it's in, the file
+ * opens in it and the dialog closes. [opened]: the Play Store opened at its page, so the dialog says so.
+ */
+data class PlayerFlow(
+    val folder: TvFolder,
+    val file: TvFile,
+    val kind: MediaKind,
+    val mime: String,
+    val store: PlayerStore,
+    val download: Boolean,
+    val step: Step = Step.Ask,
+    val other: String? = null,
+    val otherLabel: String? = null,
+    val release: PlayerRelease? = null,
+    val progress: Progress? = null,
+    val opened: Boolean = true,
+) {
+    enum class Step { Ask, Warn, Waiting, Downloading, Installing }
+}
+
+/** Where the TV gets [PLAYER] from: its Play Store, Fire OS's Appstore, or neither. */
+enum class PlayerStore { Play, Appstore, None }
+
 /** Settings' own-lists address: [Checking] while the source is read, then [Refused] with why. */
 sealed interface SourceCheck {
     data object Checking : SourceCheck
@@ -469,8 +505,8 @@ class TellyscopeViewModel(
     /** This build and phone, for reports. */
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
     /**
-     * A launcher's APK for Fire OS: a [LauncherDownload] from its developer's GitHub in the GitHub build. The Play
-     * build's only checks a file the user picked.
+     * A launcher's APK for Fire OS: a [LauncherDownload] from its developer's GitHub in the GitHub build, which is also
+     * the [PlayerDownload] for VLC. The Play build's only checks a file the user picked.
      */
     private val launcherDownload: LauncherPick? = null,
     /** `data/`'s address while the launcher list fails its check, or null once it passes. */
@@ -540,6 +576,8 @@ class TellyscopeViewModel(
     private var removalJob: Job? = null
     /** Watches the TV for a launcher's install from the Play Store. */
     private var launcherJob: Job? = null
+    /** Open on TV: [PLAYER]'s install, then the file. */
+    private var playerJob: Job? = null
     private var updateJob: Job? = null
     /** The clock and the device refresh, every second. */
     private var tickJob: Job? = null
@@ -809,7 +847,7 @@ class TellyscopeViewModel(
 
     /** A launcher install, Debloat or Reset under way on the TV on screen, which [show] would drop. */
     private val running: Boolean
-        get() = launcherJob?.isActive == true || _state.value.device.busy.let { it == DISABLING || it == RESETTING }
+        get() = launcherJob?.isActive == true || playerJob?.isActive == true || _state.value.device.busy.let { it == DISABLING || it == RESETTING }
 
     /**
      * TV [id] came online. It's shown afresh, unless it's the TV on screen and that would drop a run on it:
@@ -827,6 +865,7 @@ class TellyscopeViewModel(
     private fun show(id: String?) {
         stopWatching()
         launcherJob?.cancel()
+        playerJob?.cancel()
         // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
         val transfer = id?.let(transfers::get)
         _state.value.let { s ->
@@ -1558,6 +1597,211 @@ class TellyscopeViewModel(
         val pkg = _state.value.device.sideload?.app?.info?.packageName ?: return
         closeSideload()
         run(pkg, Action.Open)
+    }
+
+    /** The player's download, when this build has one: never in the Play build. */
+    private val playerDownload get() = launcherDownload as? PlayerDownload
+
+    private fun setPlayer(id: String, f: (PlayerFlow) -> PlayerFlow) = updateDevice(id) { d -> d.copy(player = d.player?.let(f)) }
+
+    private fun appLabel(pkg: String) =
+        if (pkg == PLAYER.pkg) PLAYER.name else _state.value.device.apps.firstOrNull { it.packageName == pkg }?.label ?: AppNames.fallback(pkg)
+
+    /**
+     * Open on TV in a file's row. A picture opens in whatever the TV has. A video or a song opens in [PLAYER] when it's
+     * there, else in the TV's own player; with none, [PlayerFlow] offers [PLAYER].
+     */
+    fun openFile(file: TvFile) {
+        val id = _state.value.selectedId ?: return
+        val folder = _state.value.device.files.folder
+        val (kind, mime) = media(file.name) ?: return
+        if (playerJob?.isActive == true) return
+        playerJob = viewModelScope.launch {
+            val found = try {
+                handlers(kind, source.fileHandlers(id, folder, file, mime))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _notice.value = Copy.REMOTE_LOST
+                return@launch
+            }
+            when {
+                PLAYER.pkg in found.players -> openIn(id, folder, file, mime, PLAYER.pkg)
+                // The TV's default, or its chooser when it has several.
+                found.players.isNotEmpty() -> openIn(id, folder, file, mime, null)
+                kind == MediaKind.Image -> _notice.value = Copy.nothingOpens(file.name)
+                else -> offerPlayer(id, PlayerFlow(folder, file, kind, mime, PlayerStore.None, download = false, other = found.others.firstOrNull()))
+            }
+        }
+    }
+
+    /** Opens [file] in [pkg], or the TV's pick when null, and the snackbar says how it went. */
+    private suspend fun openIn(id: String, folder: TvFolder, file: TvFile, mime: String, pkg: String?) {
+        val ok = try {
+            source.openFile(id, folder, file, mime, pkg, allowReading = pkg == PLAYER.pkg)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+        _notice.value = when {
+            !ok -> Copy.cantOpenFile(file.name)
+            pkg == null -> Copy.openedFile(file.name)
+            else -> Copy.openedFileIn(file.name, appLabel(pkg))
+        }
+    }
+
+    /** The prompt for [flow], where the TV's store or this build can get [PLAYER]; else the app that only opens it, if any. */
+    private suspend fun offerPlayer(id: String, flow: PlayerFlow) {
+        val device = _state.value.selected ?: return
+        val apps = _state.value.device.apps
+        val store = when {
+            hasPlayStore(apps) -> PlayerStore.Play
+            isFireOs(device, apps) && apps.any { it.packageName == AMAZON_APPSTORE && it.enabled } -> PlayerStore.Appstore
+            else -> PlayerStore.None
+        }
+        val download = playerDownload != null
+        // Nowhere to get it from: the app that only opens it is all there is.
+        if (store == PlayerStore.None && !download) {
+            if (flow.other != null) openIn(id, flow.folder, flow.file, flow.mime, flow.other) else _notice.value = Copy.nothingOpens(flow.file.name)
+            return
+        }
+        updateDevice(id) { it.copy(player = flow.copy(store = store, download = download, otherLabel = flow.other?.let(::appLabel))) }
+    }
+
+    /** Open in … anyway: the file in the app that only opens it. */
+    fun playerOther() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        val other = p.other ?: return
+        closePlayer()
+        playerJob = viewModelScope.launch { openIn(id, p.folder, p.file, p.mime, other) }
+    }
+
+    /**
+     * Get it from Play Store, or Open Appstore: opens the TV's store, then checks every few seconds whether [PLAYER] is
+     * in, and opens the file in it. The Play Store closing without it goes back to the prompt; after [STORE_WAIT_MS] it stops.
+     */
+    fun playerFromStore() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        if (p.store == PlayerStore.None) return
+        val play = p.store == PlayerStore.Play
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Waiting, opened = true) }
+        playerJob = viewModelScope.launch {
+            val opened = try {
+                if (play) source.openStore(id, PLAYER.pkg) else source.launch(id, AMAZON_APPSTORE)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+            if (!opened) setPlayer(id) { it.copy(opened = false) }
+            var seen = opened && play
+            repeat((STORE_WAIT_MS / STORE_POLL_MS).toInt()) {
+                delay(STORE_POLL_MS)
+                val now = try {
+                    source.storeState(id, PLAYER.pkg)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    return@repeat // a dropped read: the next one tells
+                }
+                when (now) {
+                    StoreState.Installed -> return@launch playerInstalled(id, p)
+                    StoreState.InStore -> seen = true
+                    // Only the Play Store is seen on screen; the Appstore is waited out.
+                    StoreState.Elsewhere -> if (seen && play) {
+                        setPlayer(id) { it.copy(step = PlayerFlow.Step.Ask) }
+                        _notice.value = Copy.wasntInstalled(PLAYER.name)
+                        return@launch
+                    }
+                }
+            }
+            playerFailed(id, Copy.wasntInstalled(PLAYER.name))
+        }
+    }
+
+    /** Download directly: the warning, with where the download comes from once it's read. */
+    fun playerDirect() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        val download = playerDownload ?: return
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Warn) }
+        if (p.release == null) playerJob = viewModelScope.launch {
+            val release = latestPlayer(id, download) ?: return@launch
+            setPlayer(id) { it.copy(release = release) }
+        }
+    }
+
+    /**
+     * Download anyway, or Download and install where there's no Play Store: downloads [PLAYER], which must be
+     * VideoLAN's, installs it over adb like any sideload, then opens the file in it. Nothing reaches the TV unless
+     * the check passes.
+     */
+    fun playerDownload() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        val download = playerDownload ?: return
+        if (p.step != PlayerFlow.Step.Ask && p.step != PlayerFlow.Step.Warn) return
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Downloading, progress = null) }
+        playerJob = viewModelScope.launch {
+            val release = p.release ?: latestPlayer(id, download) ?: return@launch
+            setPlayer(id) { it.copy(release = release) }
+            val app = try {
+                download.fetchPlayer(release) { pr -> setPlayer(id) { it.copy(progress = pr) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: WrongApk) {
+                return@launch playerFailed(id, Copy.wrongApk(PLAYER.name))
+            } catch (_: Exception) {
+                return@launch playerFailed(id, Copy.noDownload(PLAYER.name))
+            }
+            setPlayer(id) { it.copy(step = PlayerFlow.Step.Installing, progress = null) }
+            val result = try {
+                source.install(id, app.files, app.info, allowDowngrade = false) {}
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch playerFailed(id, Copy.SIDELOAD_LOST)
+            }
+            when (result) {
+                InstallResult.Done -> playerInstalled(id, p)
+                is InstallResult.Refused -> playerFailed(id, Copy.installRefused(result.reason, PLAYER.name))
+            }
+        }
+    }
+
+    /** VideoLAN's latest build for the TV's CPU; null, with the prompt closed and the snackbar saying so, when it can't be read. */
+    private suspend fun latestPlayer(id: String, download: PlayerDownload): PlayerRelease? = try {
+        download.latestPlayer(source.abis(id))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        playerFailed(id, Copy.noDownload(PLAYER.name))
+        null
+    }
+
+    /** [PLAYER] is on the TV: the dialog closes and [p]'s file opens in it. */
+    private suspend fun playerInstalled(id: String, p: PlayerFlow) {
+        updateDevice(id) { it.copy(player = null) }
+        openIn(id, p.folder, p.file, p.mime, PLAYER.pkg)
+    }
+
+    private fun playerFailed(id: String, why: UiText) {
+        updateDevice(id) { it.copy(player = null) }
+        _notice.value = why
+    }
+
+    /** Cancel, or a tap outside the prompt. Not while installing: the dialog has no button then. */
+    fun closePlayer() {
+        val id = _state.value.selectedId ?: return
+        if (_state.value.device.player?.step == PlayerFlow.Step.Installing) return
+        playerJob?.cancel()
+        updateDevice(id) { it.copy(player = null) }
     }
 
     fun folder(folder: TvFolder) {

@@ -13,6 +13,7 @@ import app.tellyscope.adb.ActionResult
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.BatchedShell
 import app.tellyscope.adb.Files
+import app.tellyscope.adb.OpenFile
 import app.tellyscope.adb.HomeOptions
 import app.tellyscope.adb.HomeResult
 import app.tellyscope.adb.InstallResult
@@ -791,7 +792,7 @@ class AdbDeviceSource(
 
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
         // Only a launcher the list names: the Store link is the one thing this opens.
-        if (SharedLists.launchers.none { it.pkg == packageName }) return false
+        if (packageName != PLAYER.pkg && SharedLists.launchers.none { it.pkg == packageName }) return false
         return Actions(session(deviceId)).openStore(packageName)
     }
 
@@ -1360,6 +1361,18 @@ class AdbDeviceSource(
     }
 
     override suspend fun files(deviceId: String, folder: TvFolder) = Files(session(deviceId)).list(folder)
+
+    override suspend fun fileHandlers(deviceId: String, folder: TvFolder, file: TvFile, mime: String) =
+        OpenFile(session(deviceId)).handlers(folder, file.name, mime)
+
+    override suspend fun openFile(deviceId: String, folder: TvFolder, file: TvFile, mime: String, packageName: String?, allowReading: Boolean): Boolean {
+        val open = OpenFile(session(deviceId))
+        // Only the player Tellyscope offered gets the folders: nothing else it didn't install.
+        if (allowReading && packageName == PLAYER.pkg) open.allowReading(packageName)
+        return open.open(folder, file.name, mime, packageName)
+    }
+
+    override suspend fun abis(deviceId: String) = OpenFile(session(deviceId)).abis()
 
     override suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit): String {
         val session = liveSession(deviceId)

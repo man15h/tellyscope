@@ -434,6 +434,27 @@
     <string name="copy_buttons_hint">Pick up to %1$d. Drag to set the order. To pick another, untick one first.</string>
     <string name="copy_not_on_tv">%1$s isn\'t on this TV. Install it from the Play Store on the TV.</string>
     <string name="copy_not_on_tv_fire">%1$s isn\'t on this TV. Install it from the Appstore on the TV.</string>
+    <!-- Open on TV in the Files tab, and VLC offered when nothing on the TV plays the file. %1$s the file's name, or VLC; see each -->
+    <string name="copy_player_no_video">No video player on the TV</string>
+    <string name="copy_player_no_audio">No audio player on the TV</string>
+    <!-- %1$s the app that opens it (a gallery or a browser), %2$s the file, %3$s VLC -->
+    <string name="copy_player_other_video">%1$s can open %2$s, but it isn\'t made for video. %3$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
+    <string name="copy_player_other_audio">%1$s can open %2$s, but it isn\'t made for music. %3$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
+    <string name="copy_player_nothing_text">Nothing on the TV can open %1$s. %2$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
+    <string name="copy_player_about">VideoLAN · free and open source</string>
+    <string name="copy_player_open_anyway">Open in %1$s anyway</string>
+    <string name="copy_player_install_title">Install %1$s on the TV</string>
+    <string name="copy_player_store_open">%1$s\'s page is open in the Play Store on the TV. Install it with the remote.</string>
+    <string name="copy_player_waiting">Waiting for %1$s… then %2$s opens</string>
+    <string name="copy_player_open_appstore">Open Appstore</string>
+    <string name="copy_player_downloading">Downloading %1$s</string>
+    <!-- %1$s and %2$s are sizes, %3$s where it downloads from, like videolan.org -->
+    <string name="copy_player_progress">%1$s of %2$s · from %3$s</string>
+    <string name="copy_player_opened">Opened %1$s on the TV</string>
+    <string name="copy_player_opened_in">Opened %1$s on the TV in %2$s</string>
+    <string name="copy_player_cant_open">Couldn\'t open %1$s on the TV</string>
+    <string name="copy_player_nothing_opens">Nothing on the TV can open %1$s</string>
+    <string name="copy_player_open_file">Open %1$s on TV</string>
     <string name="copy_cant_open">The TV couldn\'t open %1$s. If it\'s disabled, enable it in Apps.</string>
     <string name="copy_left_dock_one">%1$s was uninstalled, so its button left the Remote.</string>
     <plurals name="copy_left_dock">
