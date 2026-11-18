@@ -216,6 +216,8 @@ data class RemoteActions(
     val gamepad: suspend (GamepadReport) -> Boolean = { true },
     /** A gamepad key down (true) or up, on a TV without the virtual gamepad. */
     val gamepadKey: suspend (Int, Boolean) -> Boolean = { _, _ -> true },
+    /** ⋮ › Remap TV remote: the TV remote's own buttons, on a page of their own. */
+    val remap: () -> Unit = {},
 )
 
 /** A held key repeats after this, then every [REPEAT_EVERY_MS], or slower if the TV is slower. */
@@ -949,7 +951,7 @@ private fun StatusShape(icon: ImageVector, container: Color, content: Color) {
 }
 
 /**
- * The header's ⋮: Screen off (or on again), Restart TV, then Remote buttons. It drops below the ⋮,
+ * The header's ⋮: Screen off (or on again), Restart TV, then Remote buttons and Remap TV remote. It drops below the ⋮,
  * so the TV's name stays readable. Explains Screen off on the first visit.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1033,6 +1035,11 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
                 text = { Text(Copy.REMOTE_BUTTONS.resolve()) },
                 leadingIcon = { Icon(Icons.Default.Edit, null) },
                 onClick = { open = false; onButtons() },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.remap_title)) },
+                leadingIcon = { Icon(RemapIcons.SettingsRemote, null) },
+                onClick = { open = false; actions.remap() },
             )
         }
     }
@@ -1217,7 +1224,7 @@ private fun AddButtons(enabled: Boolean, onClick: () -> Unit, modifier: Modifier
  * [RemoteButtons.look] against the sheet behind it.
  */
 @Composable
-private fun ServicePill(s: StreamingService, modifier: Modifier = Modifier, interactions: InteractionSource? = null) {
+internal fun ServicePill(s: StreamingService, modifier: Modifier = Modifier, interactions: InteractionSource? = null) {
     val c = MaterialTheme.colorScheme
     val dark = c.surface.luminance() < 0.5f
     val look = RemoteButtons.look(s, c.surfaceContainerLow.toArgb().toLong() and 0xFFFFFFFF, dark)

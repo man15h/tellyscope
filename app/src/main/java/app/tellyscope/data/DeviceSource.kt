@@ -9,8 +9,10 @@ import app.tellyscope.adb.GamepadReport
 import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
+import app.tellyscope.adb.Learned
 import app.tellyscope.adb.Peripheral
 import app.tellyscope.adb.Progress
+import app.tellyscope.adb.RemapStart
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.TvFacts
 import app.tellyscope.adb.TvFile
@@ -237,6 +239,24 @@ interface DeviceSource {
     suspend fun dock(deviceId: String): List<Docked>
 
     suspend fun setDock(deviceId: String, dock: List<Docked>)
+
+    /**
+     * Remap TV remote on this TV: its buttons, kept on the phone, whether it's on, and whether the
+     * script runs ([app.tellyscope.adb.Remapper]). Throws when the TV is gone.
+     */
+    suspend fun remap(deviceId: String): RemapState = RemapState()
+
+    /** Starts the script with this TV's buttons and turns remapping on; [RemapStart.Failed] says why it didn't start. */
+    suspend fun startRemap(deviceId: String): RemapStart = RemapStart.Failed("")
+
+    /** Stops the script, so the remote is the TV's again, and turns remapping off; [clear] also forgets the buttons. */
+    suspend fun stopRemap(deviceId: String, clear: Boolean) {}
+
+    /** Saves [buttons] for this TV, and hands them to the script when it runs. Throws when the TV is gone. */
+    suspend fun setRemap(deviceId: String, buttons: List<RemapButton>) {}
+
+    /** Waits for the next button pressed on the TV's remote, through the running script. */
+    suspend fun learnRemap(deviceId: String): Learned = Learned.NoPress
 
     /** Opens the TV's system update screen on the TV, or as near to it as the TV allows. */
     suspend fun openUpdates(deviceId: String): UpdateScreen

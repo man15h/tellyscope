@@ -16,6 +16,9 @@ import app.tellyscope.adb.Peripheral
 import app.tellyscope.adb.Progress
 import app.tellyscope.adb.GamepadReport
 import app.tellyscope.adb.HidDevice
+import app.tellyscope.adb.Learned
+import app.tellyscope.adb.RemapKeys
+import app.tellyscope.adb.RemapStart
 import app.tellyscope.adb.Remote
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.Report
@@ -47,6 +50,7 @@ import app.tellyscope.data.NotAnApp
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
 import app.tellyscope.data.RateLimited
+import app.tellyscope.data.RemapButton
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.ResetApp
 import app.tellyscope.data.ResetFailure
@@ -174,6 +178,8 @@ data class DeviceUi(
     val debloat: DebloatRun? = null,
     /** Restore everything's result while some of it didn't go back, until its dialog is closed; null otherwise. */
     val restored: RestoreResult? = null,
+    /** Remap TV remote, while its screen is open; null otherwise. */
+    val remap: RemapUi? = null,
 ) {
     /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
     val restore: RestoreSummary
@@ -214,6 +220,35 @@ data class ResetUi(
     val stopping: Boolean = false,
     val left: ResetPlan? = null,
 )
+
+/**
+ * Remap TV remote's screen. [buttons], [on] and [running] are as the TV and phone last said
+ * ([loaded] once read). [starting] while Start remapping runs, [failed] with the TV's words when it
+ * didn't. [firstRun] from the first start until Done: the press-the-buttons frame. [listening] while
+ * a press is awaited, and [heard] what it turned out to be, until its dialog or sheet closes.
+ */
+data class RemapUi(
+    val buttons: List<RemapButton> = emptyList(),
+    val on: Boolean = false,
+    val running: Boolean = false,
+    val loaded: Boolean = false,
+    val starting: Boolean = false,
+    val failed: String? = null,
+    val firstRun: Boolean = false,
+    val listening: Listening? = null,
+    val heard: Heard? = null,
+) {
+    /** Waiting for a press since [since], to fill app [slot] ([RemapButton.NO_SLOT] for Add a button). */
+    data class Listening(val slot: Int, val since: Long)
+
+    sealed interface Heard {
+        /** A button to pick an action for: new, or [known] and already in the list. */
+        data class Button(val button: RemapButton, val known: Boolean) : Heard
+        data object NoPress : Heard
+        data object NotSent : Heard
+        data object Refused : Heard
+    }
+}
 
 /**
  * Install a home screen: pick a launcher ([Step.Pick]), install it from the Play Store the TV
@@ -2528,6 +2563,143 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         updateDevice(id) { it.copy(dock = dock) }
         viewModelScope.launch { source.setDock(id, dock) }
+    }
+
+    private var listen: Job? = null
+
+    /** Remap TV remote opened: reads its buttons and whether the script runs. */
+    fun openRemap() {
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { it.copy(remap = RemapUi()) }
+        viewModelScope.launch {
+            val r = remapCall { source.remap(id) } ?: return@launch
+            updateRemap(id) { it.copy(buttons = r.buttons, on = r.on, running = r.running, loaded = true) }
+        }
+    }
+
+    fun closeRemap() {
+        listen?.cancel()
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { it.copy(remap = null) }
+    }
+
+    /** Start remapping, Start again and Try again. The first start, with no buttons yet, asks for presses. */
+    fun startRemap() {
+        val id = _state.value.selectedId ?: return
+        updateRemap(id) { it.copy(starting = true, failed = null) }
+        viewModelScope.launch {
+            val started = remapCall { source.startRemap(id) }
+            updateRemap(id) {
+                when (started) {
+                    null -> it.copy(starting = false)
+                    is RemapStart.Failed -> it.copy(starting = false, failed = started.detail)
+                    RemapStart.Started -> it.copy(starting = false, running = true, on = true, firstRun = it.buttons.isEmpty())
+                }
+            }
+        }
+    }
+
+    /** Stop keeps the buttons; Clear all buttons forgets them too. */
+    fun stopRemap(clear: Boolean) {
+        val id = _state.value.selectedId ?: return
+        listen?.cancel()
+        viewModelScope.launch {
+            remapCall { source.stopRemap(id, clear) } ?: return@launch
+            updateRemap(id) {
+                it.copy(running = false, on = false, firstRun = false, listening = null, buttons = if (clear) emptyList() else it.buttons)
+            }
+        }
+    }
+
+    /** Done on the press-the-buttons frame. */
+    fun remapDone() {
+        val id = _state.value.selectedId ?: return
+        updateRemap(id) { it.copy(firstRun = false) }
+    }
+
+    /**
+     * Listens for the next press, for app [slot] or Add a button. On the first run a learned button
+     * just takes its place; otherwise it opens Pick action, as an edit when it's already in the list.
+     */
+    fun listenRemap(slot: Int) {
+        val id = _state.value.selectedId ?: return
+        listen?.cancel()
+        updateRemap(id) { it.copy(listening = RemapUi.Listening(slot, clock()), heard = null) }
+        listen = viewModelScope.launch {
+            val learned = remapCall { source.learnRemap(id) }
+            val ui = _state.value.device.remap?.takeIf { _state.value.selectedId == id } ?: return@launch
+            val done = ui.copy(listening = null)
+            val next = when (learned) {
+                null -> done
+                Learned.NoPress -> done.copy(heard = RemapUi.Heard.NoPress)
+                Learned.NotSent -> done.copy(heard = RemapUi.Heard.NotSent)
+                is Learned.Refused -> done.copy(heard = RemapUi.Heard.Refused)
+                is Learned.Key -> {
+                    val known = ui.buttons.firstOrNull { it.key == learned.name }
+                    val selected = _state.value.selected
+                    val brand = RemapKeys.brand(learned.name, sony = selected?.manufacturer?.contains("sony", ignoreCase = true) == true, fire = selected?.let { isFireOs(it, _state.value.device.apps) } == true)
+                    val fresh = RemapButton(learned.name, placeFor(ui.buttons, slot, brand, learned.name), brand = brand)
+                    when {
+                        !ui.firstRun -> done.copy(heard = RemapUi.Heard.Button(known ?: fresh, known != null))
+                        known != null -> done
+                        else -> done.copy(buttons = ui.buttons + fresh).also { saveRemap(id, it.buttons) }
+                    }
+                }
+            }
+            updateRemap(id) { next }
+        }
+    }
+
+    /** Where a newly learned app button goes: the slot tapped, else a free slot if its service is known, else Other buttons. */
+    private fun placeFor(buttons: List<RemapButton>, slot: Int, brand: String?, key: String): Int {
+        if (key in RemapKeys.COLOURS) return RemapButton.NO_SLOT
+        val taken = buttons.map { it.slot }.toSet()
+        if (slot != RemapButton.NO_SLOT && slot !in taken) return slot
+        if (brand == null) return RemapButton.NO_SLOT
+        return (0 until RemapButton.SLOTS).firstOrNull { it !in taken } ?: RemapButton.NO_SLOT
+    }
+
+    fun cancelListen() {
+        listen?.cancel()
+        val id = _state.value.selectedId ?: return
+        updateRemap(id) { it.copy(listening = null) }
+    }
+
+    /** The heard dialog or Pick action sheet closed. */
+    fun heardShown() {
+        val id = _state.value.selectedId ?: return
+        updateRemap(id) { it.copy(heard = null) }
+    }
+
+    /**
+     * Saves one button: Pick action's Save, TV default and Undo. A colour or an Other button left to
+     * the TV comes off the list; an app slot keeps its learned button.
+     */
+    fun setRemapButton(button: RemapButton) {
+        val id = _state.value.selectedId ?: return
+        val ui = _state.value.device.remap ?: return
+        val drop = button.action == null && button.slot == RemapButton.NO_SLOT
+        val others = ui.buttons.filter { it.key != button.key }
+        val list = if (drop) others else ui.buttons.indexOfFirst { it.key == button.key }
+            .let { i -> if (i < 0) ui.buttons + button else ui.buttons.toMutableList().apply { set(i, button) } }
+        updateRemap(id) { it.copy(buttons = list, heard = null) }
+        saveRemap(id, list)
+    }
+
+    private fun saveRemap(id: String, buttons: List<RemapButton>) {
+        viewModelScope.launch { remapCall { source.setRemap(id, buttons) } }
+    }
+
+    private fun updateRemap(id: String, f: (RemapUi) -> RemapUi) = updateDevice(id) { d -> d.remap?.let { d.copy(remap = f(it)) } ?: d }
+
+    /** A Remap TV remote call: a lost TV shows as one notice and answers null. */
+    private suspend fun <T> remapCall(call: suspend () -> T): T? = try {
+        call()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        _notice.value = Copy.REMOTE_LOST
+        null
     }
 
     /** A Remote button: opens the app on the TV, without a history entry. */

@@ -116,7 +116,7 @@ android {
     }
 }
 
-// The TV helpers (src/helper: Labels, and the remote's Keys): plain Java against android.jar, dexed on
+// The TV helpers (src/helper: Labels, the remote's Keys, and Remap TV remote's Remap): plain Java against android.jar, dexed on
 // their own and shipped as one asset. They run on the TV through app_process, so they must not touch
 // app code or libraries.
 val compileLabelHelper by tasks.registering(JavaCompile::class) {

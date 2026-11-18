@@ -70,6 +70,8 @@ import app.tellyscope.ui.LauncherScreen
 import app.tellyscope.ui.LocalNow
 import app.tellyscope.ui.LoggedOutScreen
 import app.tellyscope.ui.PermissionScreen
+import app.tellyscope.ui.RemapActions
+import app.tellyscope.ui.RemapScreen
 import app.tellyscope.ui.RemoteActions
 import app.tellyscope.ui.RemoteScreen
 import app.tellyscope.ui.ReportKind
@@ -205,6 +207,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     var settings by rememberSaveable { mutableStateOf(false) }
     var whatsNew by rememberSaveable { mutableStateOf(false) }
     var access by rememberSaveable { mutableStateOf(false) }
+    var remap by rememberSaveable { mutableStateOf(false) }
     // Connect again from the logged-out page: which TV, and since when, for its Allow screen.
     var rejoinId by rememberSaveable { mutableStateOf<String?>(null) }
     var rejoinSince by rememberSaveable { mutableStateOf(0L) }
@@ -234,10 +237,10 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     LoggedOutSnackbars(snackbar, { state.devices }, { state.selectedId }, onView = vm::select)
 
     // A newly connected TV becomes the selection; leave the add flow then, not on tap.
-    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null }
+    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; remap = false; rejoinId = null }
     // Logged out mid-screen: the page takes over, and the TV comes back on Overview once allowed again.
     val loggedOutAt = state.selected?.loggedOutAt
-    LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false } }
+    LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; remap = false } }
     // The Allow screen while the TV is asked; allowed lands on Overview, a Deny there is a plain refusal (its card).
     val rejoining = state.selected?.takeIf { it.id == rejoinId && it.state == DeviceState.Waiting }
     LaunchedEffect(state.selected?.state, loggedOutAt) {
@@ -294,6 +297,28 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             now = state.clock(),
             onConnect = { rejoinId = selected.id; rejoinSince = System.currentTimeMillis(); vm.reconnect(selected.id) },
             onBack = back,
+        )
+    } else if (remap) {
+        // Opened from the Remote's ⋮, so Back goes back to the Remote.
+        val back = { remap = false; remote = true }
+        BackHandler(onBack = back)
+        DisposableEffect(Unit) {
+            vm.openRemap()
+            onDispose { vm.closeRemap() }
+        }
+        RemapScreen(
+            state,
+            RemapActions(
+                back = back,
+                start = vm::startRemap,
+                stop = vm::stopRemap,
+                done = vm::remapDone,
+                listen = vm::listenRemap,
+                cancelListen = vm::cancelListen,
+                heardShown = vm::heardShown,
+                set = vm::setRemapButton,
+            ),
+            snackbar = snackbar,
         )
     } else if (advanced) {
         BackHandler { advanced = false }
@@ -474,6 +499,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     mouse = vm::mouse,
                     gamepad = vm::gamepad,
                     gamepadKey = vm::gamepadKey,
+                    remap = { remote = false; remap = true },
                 ),
             )
         }
