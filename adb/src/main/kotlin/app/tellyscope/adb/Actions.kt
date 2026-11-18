@@ -105,7 +105,8 @@ class Actions(private val shell: AdbShell) {
      * disabled; if it doesn't, the old home is set back and nothing is turned off. The one
      * exception: Android skips the default while a launcher with a higher Home priority is on, as
      * Android TV Home is. Such an old launcher is turned off first, and turned back on and made
-     * Home again if Home still doesn't open [pkg].
+     * Home again if Home still doesn't open [pkg]. Every way back is checked: when Home doesn't open
+     * the old launcher again (Google TV can fall to its setup app), the result says so.
      */
     suspend fun makeHome(pkg: String): HomeResult {
         require(PACKAGE.matches(pkg)) { "not a package name: $pkg" }
@@ -121,28 +122,35 @@ class Actions(private val shell: AdbShell) {
         Protected.reason(old)?.takeIf { it != ProtectedReason.HOME_SCREEN }?.let { return HomeResult.Refused(it) }
         if (old in userPackages()) {
             if (setHome(to)) return HomeResult.Switched(from, to, kept = true)
-            setHome(from)
-            return HomeResult.Failed("the TV kept the home screen it has")
+            return rollBack(from, HomeResult.Failed("the TV kept the home screen it has"))
         }
         val checked = setHome(to)
         val priority = prioritiesIn(homes)
         if (!checked && (priority[old] ?: 0) <= (priority[pkg] ?: 0)) {
-            setHome(from)
-            return HomeResult.Failed("the TV kept its own home screen, so nothing was turned off")
+            return rollBack(from, HomeResult.Failed("the TV kept its own home screen, so nothing was turned off"))
         }
         require(PACKAGE.matches(old)) { "not a package name: $old" } // read from the TV, and it goes into a shell line
         val off = exec("pm disable-user --user 0 $old", undo = null) { "disabled-user" in it }
         if (off is ActionResult.Failed) {
-            setHome(from)
-            return HomeResult.Failed("the TV wouldn't turn the old home screen off, so nothing changed", off.output)
+            return rollBack(from, HomeResult.Failed("the TV wouldn't turn the old home screen off, so nothing changed", off.output))
         }
         if (checked || setHome(to)) return HomeResult.Switched(from, to)
         val on = exec("pm enable --user 0 $old", undo = null) { "enabled" in it }
-        setHome(from)
         if (on is ActionResult.Failed) {
+            setHome(from)
             return HomeResult.Failed("Home didn't open it, and the old home screen didn't turn back on. Turn it back on from Apps → Built-in", on.output)
         }
-        return HomeResult.Failed("Home still didn't open it, so the old home screen was turned back on")
+        return rollBack(from, HomeResult.Failed("Home still didn't open it, so the old home screen was turned back on"))
+    }
+
+    /**
+     * Sets Home back to [from] after a switch that didn't take. [failed] stands when Home opens
+     * [from] again; when it doesn't, the result says so, and its details name what Home opens now.
+     */
+    private suspend fun rollBack(from: String, failed: HomeResult.Failed): HomeResult.Failed {
+        if (setHome(from)) return failed
+        val now = currentHome() ?: "the chooser"
+        return HomeResult.Failed(HOME_NOT_BACK, listOf(failed.details, "Home opens $now, not $from").filter { it.isNotEmpty() }.joinToString("\n"))
     }
 
     /**
@@ -158,10 +166,7 @@ class Actions(private val shell: AdbShell) {
         val on = exec("pm enable --user 0 $pkg", undo = null) { "enabled" in it }
         if (on is ActionResult.Failed) return HomeResult.Failed("the TV wouldn't turn it back on", on.output)
         val to = activity ?: launchers()[pkg] ?: return HomeResult.Failed("it has no home screen")
-        if (!setHome(to)) {
-            setHome(from)
-            return HomeResult.Failed("the TV kept the home screen it has")
-        }
+        if (!setHome(to)) return rollBack(from, HomeResult.Failed("the TV kept the home screen it has"))
         return HomeResult.Switched(from, to)
     }
 
@@ -335,6 +340,9 @@ class Actions(private val shell: AdbShell) {
          * shell may only move a package between default, enabled and disabled-user.
          */
         const val SHELL_REFUSED = "Shell cannot change component state"
+
+        /** A switch didn't take, and Home didn't go back to the launcher it had either. */
+        const val HOME_NOT_BACK = "Home didn't open it, and didn't go back to the old home screen either. Make that one the home screen again before the TV restarts"
 
         /** The Store, then the apps its sign-in and consent screens run in, newer Android and older. */
         private val STORE_SCREENS = listOf(Commands.PLAY_STORE, "com.google.android.gms", "com.google.android.gsf.login")
