@@ -29,6 +29,7 @@ import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
+import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.Changelog
@@ -1481,6 +1482,8 @@ class TellyscopeViewModel(
                 val why = UiText.Capitalized(e.why(R.string.vm_didnt_work))
                 // A refusal doesn't name the app, so a report wouldn't say which one it was.
                 log(UiText.Join(listOf(UiText.Raw("${action.name} $pkg:"), why), " "))
+                // What the TV printed, or where Home ended up after a rollback, is for the report only.
+                (e as? ActionFailed)?.details?.takeIf { it.isNotBlank() }?.let { log(UiText.Raw(it)) }
                 noticeLogged = why
                 _notice.value = why
                 rereadAfterFailure(id)
