@@ -78,7 +78,7 @@ private val gallery = AppInfo(GALLERY, "Gallery", null, true, true, null, "1.0")
 private fun tv(manufacturer: String, model: String) = Device("tv", ScanHit("tv", 5555, ScanKind.Classic, null, null), DeviceState.Online, model, manufacturer, "11", 0L)
 
 /** A TV whose apps answer for a file as [answer] says; it records what it was asked to open and install. */
-private class Tv(val device: Device = tv("XGIMI", "Horizon Pro"), val own: List<AppInfo> = listOf(playStore, gallery)) :
+private class PlayerTv(val device: Device = tv("XGIMI", "Horizon Pro"), val own: List<AppInfo> = listOf(playStore, gallery)) :
     DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     var answer = listOf(GALLERY, STUBS)
     var store = StoreState.InStore
@@ -136,7 +136,7 @@ class OpenOnTvTest {
     }
 
     /** [download]: the GitHub build's; null is the Play build, which downloads nothing. */
-    private fun TestScope.vm(source: Tv, download: Download? = Download()): TellyscopeViewModel {
+    private fun TestScope.vm(source: PlayerTv, download: Download? = Download()): TellyscopeViewModel {
         val v = TellyscopeViewModel(source, clock = { 0L }, launcherDownload = download)
         vm = v
         runCurrent()
@@ -161,7 +161,7 @@ class OpenOnTvTest {
     }
 
     @Test fun vlcOnTheTvOpensItWithTheFoldersReadable() = with(test) {
-        val tv = Tv().apply { answer = listOf(GALLERY, PLAYER.pkg, STUBS) }
+        val tv = PlayerTv().apply { answer = listOf(GALLERY, PLAYER.pkg, STUBS) }
         val v = vm(tv)
         v.openFile(holiday)
         runCurrent()
@@ -171,7 +171,7 @@ class OpenOnTvTest {
     }
 
     @Test fun anotherPlayerOpensItWithoutAGrant() = with(test) {
-        val tv = Tv().apply { answer = listOf(KODI, STUBS) }
+        val tv = PlayerTv().apply { answer = listOf(KODI, STUBS) }
         val v = vm(tv)
         v.openFile(holiday)
         runCurrent()
@@ -179,7 +179,7 @@ class OpenOnTvTest {
     }
 
     @Test fun onlyAGalleryOffersVlcWithTheGalleryAnyway() = with(test) {
-        val tv = Tv()
+        val tv = PlayerTv()
         val v = vm(tv)
         v.openFile(holiday)
         runCurrent()
@@ -198,7 +198,7 @@ class OpenOnTvTest {
     }
 
     @Test fun nothingButTheStubsOffersVlcAlone() = with(test) {
-        val tv = Tv().apply { answer = listOf(STUBS) }
+        val tv = PlayerTv().apply { answer = listOf(STUBS) }
         val v = vm(tv)
         v.openFile(podcast)
         runCurrent()
@@ -208,7 +208,7 @@ class OpenOnTvTest {
     }
 
     @Test fun aPictureOpensInTheGallery() = with(test) {
-        val tv = Tv().apply { answer = listOf(GALLERY, STUBS) }
+        val tv = PlayerTv().apply { answer = listOf(GALLERY, STUBS) }
         val v = vm(tv)
         v.openFile(photo)
         runCurrent()
@@ -217,7 +217,7 @@ class OpenOnTvTest {
     }
 
     @Test fun thePlayStoreThenTheFileOpensInVlc() = with(test) {
-        val tv = Tv()
+        val tv = PlayerTv()
         val v = vm(tv)
         v.openFile(holiday)
         runCurrent()
@@ -234,7 +234,7 @@ class OpenOnTvTest {
     }
 
     @Test fun downloadDirectlyWarnsFirstThenInstallsAndOpens() = with(test) {
-        val tv = Tv()
+        val tv = PlayerTv()
         val download = Download()
         val v = vm(tv, download)
         v.openFile(holiday)
@@ -254,7 +254,7 @@ class OpenOnTvTest {
     }
 
     @Test fun aDownloadVideoLanDidntSignInstallsNothing() = with(test) {
-        val tv = Tv(own = listOf(gallery))
+        val tv = PlayerTv(own = listOf(gallery))
         val v = vm(tv, Download(signed = false))
         v.openFile(holiday)
         runCurrent()
@@ -269,7 +269,7 @@ class OpenOnTvTest {
     }
 
     @Test fun firesPlayBuildOffersTheAppstore() = with(test) {
-        val tv = Tv(tv("Amazon", "AFTKRT"), listOf(appstore))
+        val tv = PlayerTv(tv("Amazon", "AFTKRT"), listOf(appstore))
         val v = vm(tv, download = null)
         tv.answer = listOf(STUBS)
         v.openFile(holiday)
@@ -280,7 +280,7 @@ class OpenOnTvTest {
     }
 
     @Test fun thePlayBuildWithNoStoreOpensTheGallery() = with(test) {
-        val tv = Tv(own = listOf(gallery))
+        val tv = PlayerTv(own = listOf(gallery))
         val v = vm(tv, download = null)
         v.openFile(holiday)
         runCurrent()
