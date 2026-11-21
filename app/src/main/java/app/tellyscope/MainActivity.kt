@@ -12,6 +12,7 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -234,8 +235,14 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     Snackbars(snackbar, vm.done, vm.notice, vm::doneShown, vm::noticeShown) { vm.undo(it.entry, it.deviceId) }
     LoggedOutSnackbars(snackbar, { state.devices }, { state.selectedId }, onView = vm::select)
 
-    // A newly connected TV becomes the selection; leave the add flow then, not on tap.
-    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null }
+    // A newly connected TV becomes the selection; leave the add flow then, not on tap. The TV last acted on is
+    // saved, so a rotation (the game controller's) doesn't read as a new selection and close what's open.
+    var shownId by rememberSaveable { mutableStateOf(state.selectedId) }
+    LaunchedEffect(state.selectedId) {
+        if (state.selectedId == shownId) return@LaunchedEffect
+        shownId = state.selectedId
+        adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null
+    }
     // Logged out mid-screen: the page takes over, and the TV comes back on Overview once allowed again.
     val loggedOutAt = state.selected?.loggedOutAt
     LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false } }
@@ -460,7 +467,9 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         )
         // A sheet over the TV's page, so the page stays where it was underneath; Back or a drag closes it.
         if (remote) {
-            DisposableEffect(Unit) { onDispose { vm.closeRemote() } }
+            // Not when only rotating: the Remote comes straight back, with the TV's picture still off.
+            val activity = LocalActivity.current
+            DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) vm.closeRemote() } }
             RemoteScreen(
                 state = state,
                 snackbar = snackbar,

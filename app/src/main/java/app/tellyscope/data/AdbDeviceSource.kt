@@ -828,7 +828,7 @@ class AdbDeviceSource(
         fun app(pkg: String) = labelOf(pkg).asUiText()
         for (pkg in plan.turnOn) run.step(app(pkg)) { act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg)) }
         // Home and its services, one step: turning a launcher on may have put them back already.
-        val home = target.home?.takeIf { it.substringBefore('/') in listed }
+        val home = target.homes.firstOrNull { it.substringBefore('/') in listed }
         val homeNow = home?.let { actions.currentHome() }
         val moveTo = home?.takeIf { homeNow?.substringBefore('/') != it.substringBefore('/') }
         val services = target.services.filter { (service, wasOn) -> service.substringBefore('/') in listed && actions.serviceOn(service) != wasOn }
