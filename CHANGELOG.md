@@ -26,7 +26,6 @@ fails CI until this file has a section for its version.
 - **Fixed:** The TV menu scrolls all the way to Forget this TV, and Advanced shows the TV's address in full. [#442](../../pull/442)
 - **Fixed:** Shell no longer closes the app on an unexpected error from the TV, and no longer freezes on fast output like logcat. [#433](../../pull/433)
 - **Fixed:** Debloat lists show loading and failed states with Try again, Restore everything and Reset name what didn't go back, History says why a row has no Undo, the own-lists dialog checks the address before closing, Report a problem asks before discarding, one name per action (Disable/Enable, Restore, Memory, Restart TV), and long text wraps at large font sizes. [#432](../../pull/432), [#435](../../pull/435)
-- **Fixed:** The home screen explainer says Disable like the rest of the app, and a picked list that doesn't load is always undone. [#435](../../pull/435)
 - **Fixed:** Tapping the TV you're on, or the TV reconnecting, no longer cancels a Debloat or Reset that's running. [#393](../../pull/393)
 - **Fixed:** Add your TV lets you reopen finished steps and no longer skips ahead by itself. [#430](../../pull/430)
 - **Fixed:** TVs stay connected while the app is in the background. [#428](../../pull/428)
