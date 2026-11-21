@@ -100,7 +100,7 @@ class RestoreTest {
         book.record(tv, 1, Action.Home, own, "A", Action.Enable, previous = mapOf("from" to "$own/.Main", "to" to "$a/.Main"))
         book.record(tv, 2, Action.Home, a, "B", Action.Enable, previous = mapOf("from" to "$a/.Main", "to" to "$b/.Main"))
         val restorable = book.restorable(tv)
-        assertEquals("$own/.Main", restorable.home)
+        assertEquals("$own/.Main", restorable.homes.first())
         // Newest first: undoing A → B makes A Home, then L → A makes L Home.
         assertEquals(listOf(a, own), restorable.plan { if (it == b) Was.On else Was.Off }.turnOn)
 
@@ -113,6 +113,23 @@ class RestoreTest {
         val onlyA = restorable.summary(listOf(app(own, true), app(a, false), app(b, true, home = true)), null)
         assertEquals(1, onlyA.turnOn)
         assertTrue(onlyA.home)
+    }
+
+    @Test fun homeGoesToTheFirstLauncherStillInstalled() {
+        // P → L by a switch, then P uninstalled and A installed and made Home, then Reset TV: A → L.
+        // P is gone, so Home goes back to A, and L can go off again.
+        val own = "com.google.android.tvlauncher"
+        val p = "com.spocky.projengmenu"
+        val a = "com.overdevs.at4k"
+        val book = HistoryBook()
+        book.record(tv, 1, Action.HomeBack, p, "L", Action.Home, previous = mapOf("from" to "$p/.Main", "to" to "$own/.Main"))
+        book.record(tv, 2, Action.Reset, "", "Reset TV", Action.Reset, previous = mapOf(ResetRecord.FROM to "$a/.MainActivity", ResetRecord.TO to "$own/.Main"))
+        val restorable = book.restorable(tv)
+        assertEquals(listOf("$p/.Main", "$a/.MainActivity"), restorable.homes)
+
+        fun app(pkg: String, home: Boolean = false) = AppInfo(pkg, pkg, null, false, true, null, "1", home = home)
+        assertTrue(restorable.summary(listOf(app(own, home = true), app(a)), null).home)
+        assertFalse(restorable.summary(listOf(app(own), app(a, home = true)), null).home)
     }
 
     @Test fun settingsGoBackToTheirFirstValue() = runTest {

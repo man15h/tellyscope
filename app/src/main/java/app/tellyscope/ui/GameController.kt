@@ -156,12 +156,15 @@ internal fun GameController(tvName: String, live: Boolean, virtual: Boolean, key
     }
 }
 
-/** Turns the screen sideways while on screen, and back as it was after, unless the screen is only being rebuilt. */
+/**
+ * Turns the screen sideways while on screen, and back as it was after, unless the screen is only being rebuilt.
+ * How it was is saved: the rebuilt screen already reads sideways, and going back to that kept the app there.
+ */
 @Composable
 private fun Sideways() {
     val activity = LocalActivity.current ?: return
+    val before = rememberSaveable { activity.requestedOrientation }
     DisposableEffect(activity) {
-        val before = activity.requestedOrientation
         activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         onDispose { if (!activity.isChangingConfigurations) activity.requestedOrientation = before }
     }

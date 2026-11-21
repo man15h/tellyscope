@@ -61,9 +61,20 @@ class TvShell(
     private var fresh = false
     /** One command at a time: Tab's lookup and Enter share the shell. */
     private val turn = Mutex()
+    /** The TV sent something back for this command. */
+    @Volatile private var heard = false
 
     suspend fun run(command: String, print: (ShellChunk) -> Unit): ShellEnd = turn.withLock {
+        val kept = channel != null
+        val end = attempt(command, print)
+        // A shell kept from before the link dropped (the app was in the background) is dead before the TV hears
+        // the command: it fails with nothing back, so the command goes once more, into a new shell.
+        if (kept && !heard && (end == ShellEnd.Lost || end is ShellEnd.Failed)) attempt(command, print) else end
+    }
+
+    private suspend fun attempt(command: String, print: (ShellChunk) -> Unit): ShellEnd {
         stopped = false
+        heard = false
         val ch = try {
             channel ?: open()?.also { opened ->
                 channel = opened
@@ -118,7 +129,9 @@ class TvShell(
         val outText = Utf8()
         val errText = Utf8()
         while (true) {
-            when (val p = ch.read()) {
+            val p = ch.read()
+            heard = true
+            when (p) {
                 is ShellPacket.Err -> errText.decode(p.bytes).takeIf { it.isNotEmpty() }?.let { print(ShellChunk(it, error = true)) }
                 is ShellPacket.Exit -> {
                     if (out.isNotEmpty()) print(ShellChunk(out.toString(), error = false))
