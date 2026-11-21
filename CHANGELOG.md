@@ -13,7 +13,24 @@ last release under `## Unreleased`, and changes nothing else. A release
 renames that heading to its version and date. A pull request into `main`
 fails CI until this file has a section for its version.
 
-## Unreleased
+## 0.17.0 — 2026-11-21
+
+- **New:** Files has Open on TV, which installs VLC when the TV lacks a player. [#449](../../pull/449)
+- **New:** The Remote can show a pointer on the TV, or act as a game controller. [#443](../../pull/443)
+- **New:** Shell output can be selected and copied, apps that take something with them show what breaks wherever they can be disabled, and Debloat can stop suggesting the apps you leave unticked. [#437](../../pull/437)
+- **New:** Turkish support, translated by @Dikistutmaz-Sabri. [#436](../../pull/436)
+- **New:** Brazilian Portuguese support, translated by @mafhper. [#441](../../pull/441)
+- **Improved:** Debloat and Reset TV stay open until they finish, and Stop ends one after the current app. [#439](../../pull/439)
+- **Improved:** The TV gets fewer background requests: network details are read only while Advanced is open. [#431](../../pull/431)
+- **Fixed:** Installs on TVs that won't take an APK streamed to them (some Android 9 sets) now copy the APK over and install from there. [#444](../../pull/444)
+- **Fixed:** The TV menu scrolls all the way to Forget this TV, and Advanced shows the TV's address in full. [#442](../../pull/442)
+- **Fixed:** Shell no longer closes the app on an unexpected error from the TV, and no longer freezes on fast output like logcat. [#433](../../pull/433)
+- **Fixed:** Debloat lists show loading and failed states with Try again, Restore everything and Reset name what didn't go back, History says why a row has no Undo, the own-lists dialog checks the address before closing, Report a problem asks before discarding, one name per action (Disable/Enable, Restore, Memory, Restart TV), and long text wraps at large font sizes. [#432](../../pull/432), [#435](../../pull/435)
+- **Fixed:** The home screen explainer says Disable like the rest of the app, and a picked list that doesn't load is always undone. [#435](../../pull/435)
+- **Fixed:** Tapping the TV you're on, or the TV reconnecting, no longer cancels a Debloat or Reset that's running. [#393](../../pull/393)
+- **Fixed:** Add your TV lets you reopen finished steps and no longer skips ahead by itself. [#430](../../pull/430)
+- **Fixed:** TVs stay connected while the app is in the background. [#428](../../pull/428)
+- **Fixed:** A tampered list index can no longer pass the signature check or block later list updates. [#427](../../pull/427)
 
 ## 0.16.0 — 2026-11-06
 
