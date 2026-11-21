@@ -730,6 +730,7 @@
     <string name="copy_peripheral_free">%1$s libres</string>
     <string name="copy_peripheral_bluetooth">Bluetooth · %1$s</string>
     <string name="vm_still_wants_code">La TV sigue pidiendo un código. Revisa el número en pantalla y vuelve a intentarlo.</string>
+    <string name="vm_pair_needs_android_12">Vincular con un código requiere Android 12 o posterior en este teléfono. Una TV ya vinculada se sigue conectando.</string>
     <string name="vm_not_an_ip">Eso no parece una dirección IP. Debería ser cuatro números separados por puntos, como la de los ajustes de red de tu TV.</string>
     <string name="vm_bad_port">El puerto después de los dos puntos debe ser un número del 1 al 65535, como 5555.</string>
     <string name="vm_didnt_work">No funcionó.</string>

@@ -13,6 +13,13 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+/**
+ * Builds that leave out Kadb's hidden-API bypass (org.lsposed.hiddenapibypass), which Play flags. Kadb
+ * uses it only to reach the platform's Conscrypt when pairing; these builds compile src/conscryptShim
+ * instead, which Kadb finds by name and which pairs through the public SSLSockets (Android 12+).
+ */
+val conscryptShimFlavors = setOf("play")
+
 android {
     namespace = "app.tellyscope"
     compileSdk = 37
@@ -56,7 +63,13 @@ android {
             dimension = "store"
             buildConfigField("boolean", "PLAY", "true")
         }
+        configureEach {
+            val shim = name in conscryptShimFlavors
+            buildConfigField("boolean", "CONSCRYPT_SHIM", "$shim")
+            if (shim) proguardFiles("proguard-conscrypt-shim.pro")
+        }
     }
+    conscryptShimFlavors.forEach { sourceSets[it].java.srcDir("src/conscryptShim/java") }
 
     // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
     // Material ship (about 440 KB). A new values-xx/strings.xml adds its code here too.
@@ -238,6 +251,10 @@ androidComponents {
             }
         }
     }
+}
+
+configurations.configureEach {
+    if (conscryptShimFlavors.any { name.startsWith(it) }) exclude(group = "org.lsposed.hiddenapibypass")
 }
 
 dependencies {

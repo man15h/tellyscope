@@ -693,6 +693,7 @@
     <string name="copy_peripheral_free">%1$s boş</string>
     <string name="copy_peripheral_bluetooth">Bluetooth · %1$s</string>
     <string name="vm_still_wants_code">TV hâlâ bir kod istiyor. Ekrandaki sayıyı kontrol edip tekrar deneyin.</string>
+    <string name="vm_pair_needs_android_12">Kodla eşleme için bu telefonda Android 12 veya daha yenisi gerekir. Daha önce eşlenmiş TV yine bağlanır.</string>
     <string name="vm_not_an_ip">Bu bir IP adresine benzemiyor. TV\'nizin ağ ayarlarındaki gibi, noktalarla ayrılmış dört sayıdan oluşmalı.</string>
     <string name="vm_bad_port">İki noktadan sonraki port 1 ile 65535 arasında bir sayı olmalı; örneğin 5555.</string>
     <string name="vm_didnt_work">Bu işe yaramadı.</string>

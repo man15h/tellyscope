@@ -644,6 +644,7 @@
     <string name="copy_peripheral_free">空き %1$s</string>
     <string name="copy_peripheral_bluetooth">Bluetooth・%1$s</string>
     <string name="vm_still_wants_code">テレビがまだコードを求めています。画面の数字を確認して、もう一度お試しください。</string>
+    <string name="vm_pair_needs_android_12">コードでのペア設定には、このスマートフォンに Android 12 以降が必要です。ペア設定済みのテレビには引き続き接続できます。</string>
     <string name="vm_not_an_ip">IP アドレスの形式ではありません。テレビのネットワーク設定に表示されているような、ドットで区切られた 4 つの数字を入力してください。</string>
     <string name="vm_bad_port">コロンの後のポートは、5555 のような 1～65535 の数字にしてください。</string>
     <string name="vm_didnt_work">うまくいきませんでした。</string>

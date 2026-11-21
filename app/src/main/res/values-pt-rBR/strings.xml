@@ -815,6 +815,7 @@
 
     <!-- Scan screen: a TV's code row and Add by IP -->
     <string name="vm_still_wants_code">A TV ainda quer um código. Confira o número na tela e tente de novo.</string>
+    <string name="vm_pair_needs_android_12">Parear com código exige Android 12 ou mais recente neste celular. Uma TV já pareada continua se conectando.</string>
     <string name="vm_not_an_ip">Isso não parece um endereço IP. Deve ser quatro números com pontos, como o das configurações de rede da sua TV.</string>
     <string name="vm_bad_port">A porta depois dos dois-pontos deve ser um número de 1 a 65535, como 5555.</string>
 

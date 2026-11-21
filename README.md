@@ -126,7 +126,7 @@ Tellyscope downloads two sets of public lists from GitHub, so they can change wi
 - **Google Play (testing):** follow the steps at the top of this page.
 - **[Obtainium](https://github.com/ImranR98/Obtainium)** or **[Orion Store](https://github.com/RookieEnough/Orion-Store):** tap the badge above on your phone for automatic updates.
 
-You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV.
+You need a phone on Android 8.0 or newer, on the same Wi-Fi as the TV. Pairing a wireless-debugging TV with its code needs Android 10 or newer on the phone, or Android 12 or newer with the Google Play build.
 
 ## Setting up your TV
 
