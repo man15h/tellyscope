@@ -827,6 +827,7 @@
 
     <!-- Scan screen: a TV's code row and Add by IP -->
     <string name="vm_still_wants_code">The TV still wants a code. Check the number on screen and try again.</string>
+    <string name="vm_pair_needs_android_12">Pairing with a code needs Android 12 or newer on this phone. A TV that\'s already paired still connects.</string>
     <string name="vm_not_an_ip">That doesn\'t look like an IP address. It should look like four numbers with dots, like the one in your TV\'s network settings.</string>
     <string name="vm_bad_port">The port after the colon should be a number from 1 to 65535, like 5555.</string>
 

@@ -773,6 +773,7 @@
     <string name="copy_peripheral_free">Свободно %1$s</string>
     <string name="copy_peripheral_bluetooth">Bluetooth · %1$s</string>
     <string name="vm_still_wants_code">Телевизор все еще запрашивает код. Проверьте число на экране и повторите попытку.</string>
+    <string name="vm_pair_needs_android_12">Для сопряжения по коду на телефоне нужен Android 12 или новее. Уже сопряженный телевизор по-прежнему подключается.</string>
     <string name="vm_not_an_ip">Это не похоже на IP-адрес. Он должен выглядеть как четыре числа через точки, как в настройках сети телевизора.</string>
     <string name="vm_bad_port">Порт после двоеточия должен быть числом от 1 до 65535, например 5555.</string>
     <string name="vm_didnt_work">Не получилось.</string>

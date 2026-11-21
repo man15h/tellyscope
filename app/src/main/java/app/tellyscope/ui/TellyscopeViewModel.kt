@@ -3,8 +3,10 @@
 package app.tellyscope.ui
 
 import android.net.Uri
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.tellyscope.BuildConfig
 import app.tellyscope.R
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.ConnectionRequest
@@ -769,6 +771,11 @@ class TellyscopeViewModel(
 
     fun pair(hit: ScanHit) {
         val row = _state.value.scan.rows[hit.ip] as? RowState.Code ?: return
+        // Pairing through src/conscryptShim exports the TLS key with SSLSockets, which is Android 12+.
+        if (BuildConfig.CONSCRYPT_SHIM && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            setRow(hit.ip, row.copy(busy = false, error = UiText(R.string.vm_pair_needs_android_12), detail = null))
+            return
+        }
         setRow(hit.ip, row.copy(busy = true, error = null, detail = null))
         viewModelScope.launch {
             when (val r = source.pair(hit, row.input)) {
