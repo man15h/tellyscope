@@ -28,7 +28,7 @@ Tellyscope is in closed testing on Google Play. Join the testers group, accept t
 <table>
   <tr>
     <td width="25%"><img src="docs/screenshots/tv-page.png" alt="A TV's page: the TV at a glance, its vitals, and the Install, Debloat and Send buttons"></td>
-    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: Screen off and Restart under a menu in the top bar, a D-pad, icon keys for Back, Home, Menu, mute and volume, a keyboard key for typing on the TV, and along the bottom three streaming buttons, YouTube, Netflix and Jellyfin, then a key to open any app"></td>
+    <td width="25%"><img src="docs/screenshots/remote.png" alt="The Remote: a button in the top bar for picking a touchpad, pointer or game controller instead, Screen off and Restart under the menu beside it, a D-pad, icon keys for Back, Home, Menu, mute and volume, a keyboard key for typing on the TV, and along the bottom three streaming buttons, YouTube, Netflix and Jellyfin, then a key to open any app"></td>
     <td width="25%"><img src="docs/screenshots/debloat.png" alt="Debloat: the TV's model on top, then the apps it will turn off, each with its package name"></td>
     <td width="25%"><img src="docs/screenshots/install.png" alt="Updating Netflix on the TV from split APKs on the phone: the dialog says it updates the TV's copy from 11.2.0 to 11.3.0 and its settings stay"></td>
   </tr>
@@ -51,15 +51,15 @@ Tellyscope is in closed testing on Google Play. Join the testers group, accept t
     <td align="center"><sub>The TV in detail</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/cpu.png" alt="Advanced monitor, CPU: the last minute's CPU use over the apps using it most"></td>
-    <td><img src="docs/screenshots/ram.png" alt="Advanced monitor, RAM: memory in use over the apps holding the most"></td>
-    <td><img src="docs/screenshots/network.png" alt="Advanced monitor, Network: the TV's traffic and connection, then the data each app has used"></td>
+    <td><img src="docs/screenshots/who-has-access.png" alt="Who has access: this phone and another computer connected now, the second with It's mine, then the four computers the TV allows, each with its key's fingerprint and when it was last seen"></td>
+    <td><img src="docs/screenshots/controller.png" alt="The game controller, phone held sideways: a D-pad on the left, Home, Select and Start in the middle, X, Y, A and B on the right, and Stick or D-pad at the top"></td>
+    <td><img src="docs/screenshots/open-or-save.png" alt="A video tapped in the TV's Movies folder: its sheet offers Open on TV, Save to your phone and, in red, Delete on TV"></td>
     <td><img src="docs/screenshots/shell.png" alt="Shell: a terminal on the TV after getprop and pm list packages"></td>
   </tr>
   <tr>
-    <td align="center"><sub>What is using the CPU</sub></td>
-    <td align="center"><sub>What is using the RAM</sub></td>
-    <td align="center"><sub>What is using the network</sub></td>
+    <td align="center"><sub>See who can reach your TV</sub></td>
+    <td align="center"><sub>Play games with your phone</sub></td>
+    <td align="center"><sub>Open, save or delete the TV's files</sub></td>
     <td align="center"><sub>A shell on the TV</sub></td>
   </tr>
 </table>

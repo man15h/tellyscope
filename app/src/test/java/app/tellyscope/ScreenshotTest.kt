@@ -121,6 +121,7 @@ import app.tellyscope.ui.DisableDialog
 import app.tellyscope.ui.ForgetDialog
 import app.tellyscope.ui.FilesBlock
 import app.tellyscope.ui.FilesUi
+import app.tellyscope.ui.GameController
 import app.tellyscope.ui.RestoreDialog
 import app.tellyscope.ui.PermissionScreen
 import app.tellyscope.ui.PlayerActions
@@ -1834,9 +1835,21 @@ class ScreenshotTest {
     }
     private fun advancedTab(label: String) = { compose.onAllNodes(hasText(label) and hasClickAction()).onFirst().performClick(); Unit }
     @Test fun readme_thisTv() = shot("31_readme_this_tv") { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_cpu() = shot("32_readme_cpu", before = advancedTab("CPU")) { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_ram() = shot("33_readme_ram", before = advancedTab("Memory")) { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_network() = shot("34_readme_network", before = advancedTab("Network")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+
+    // The game controller, sideways over the whole screen, on a TV that took the virtual gamepad.
+    @Config(qualifiers = "w891dp-h411dp-land-xxhdpi")
+    @Test fun readme_controller() = shot("37_readme_controller", screen = true) {
+        GameController("Projector", live = true, virtual = true, pointer = true, keyHaptics = false, actions = RemoteActions())
+    }
+
+    // A video tapped in Movies: its sheet with Open on TV and Save to your phone.
+    @Test fun readme_mediaSheet() {
+        val state = moviesState()
+        // The sheet slides up only on a running clock; nothing on this page animates forever, so it settles.
+        val tap = { compose.onNodeWithText("holiday-2025.mp4").performClick(); compose.mainClock.autoAdvance = true; compose.waitForIdle() }
+        shot("38_readme_media_sheet", screen = true, before = tap) { DeviceTabsScreen(state, DeviceActions(), startTab = TvTab.Files) }
+        compose.onNodeWithText("Save to your phone").assertExists()
+    }
 
     /** A shell on the TV that answers each command from [replies] and ends it with TvShell's marker line. */
     private class ReadmeChannel(val replies: Map<String, String>) : ShellChannel {
