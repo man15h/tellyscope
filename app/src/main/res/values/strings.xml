@@ -437,7 +437,7 @@
     <!-- Open on TV in the Files tab, and VLC offered when nothing on the TV plays the file. %1$s the file's name, or VLC; see each -->
     <string name="copy_player_no_video">No video player on the TV</string>
     <string name="copy_player_no_audio">No audio player on the TV</string>
-    <!-- %1$s the app that opens it (a gallery or a browser), %2$s the file, %3$s VLC -->
+    <!-- %1$s the file, %2$s VLC -->
     <string name="copy_player_nothing_text">Nothing on the TV can open %1$s. %2$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
     <string name="copy_player_about">VideoLAN · free and open source</string>
     <string name="copy_player_install_title">Install %1$s on the TV</string>
@@ -1513,7 +1513,7 @@
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">To %1$s</string>
     <string name="transfers_tap_to_save">Tap a file to save it. Tap a video, song or picture to open it on the TV or save it.</string>
-    <string name="transfers_save">Save in your phone</string>
+    <string name="transfers_save">Save to your phone</string>
     <string name="transfers_reading">Reading the app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Couldn\'t install %1$s</string>
