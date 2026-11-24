@@ -223,8 +223,8 @@ private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
             val right = starts.getOrNull(i + 1)?.takeIf { l.getLineForOffset(it) == line }
                 ?.let { l.getHorizontalPosition(it, usePrimaryDirection = true) } ?: l.size.width.toFloat()
             val middle = (l.getLineTop(line) + l.getLineBottom(line)) / 2
-            val wrapsFrom = starts.getOrNull(i - 1)?.let { l.getLineForOffset(it) != line } == true
-            val wrapsTo = starts.getOrNull(i + 1)?.let { l.getLineForOffset(it) != line } == true
+            val wrapsFrom = l.getLineForOffset(starts.first()) != line
+            val wrapsTo = l.getLineForOffset(starts.last()) != line
             with(density) {
                 val target = 48.dp.toPx()
                 val top = (if (wrapsFrom) l.getLineTop(line) else middle - target / 2) + topPadding.toPx()
