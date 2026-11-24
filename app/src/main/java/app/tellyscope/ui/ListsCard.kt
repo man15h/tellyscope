@@ -390,13 +390,13 @@ private fun LazyItemScope.ListLoading() {
 @Composable
 private fun LazyItemScope.ListFailed(onRetry: () -> Unit, onNotThis: (() -> Unit)?) {
     Column(
-        Modifier.fillParentMaxSize().padding(horizontal = 24.dp),
+        Modifier.fillParentMaxSize().padding(horizontal = PageMargin),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Icon(CloudOff, contentDescription = null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        StatusHero(HeroTone.Failed, CloudOff)
         Spacer(Modifier.height(16.dp))
-        Text(stringResource(R.string.lists_failed), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
+        Text(stringResource(R.string.lists_failed), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
         Spacer(Modifier.height(8.dp))
         Text(
             stringResource(R.string.lists_failed_hint),

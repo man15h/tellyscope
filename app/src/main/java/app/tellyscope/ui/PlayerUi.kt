@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -110,11 +112,11 @@ fun PlayerDialog(p: PlayerFlow, tv: String, actions: PlayerActions) {
             val release = p.release
             AlertDialog(
                 onDismissRequest = actions.close,
+                // The launcher's Download directly, but as a dialog: the 24 dp warning icon over the title.
+                icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
+                title = { Text(Copy.downloadDirectly(name).resolve()) },
                 text = {
-                    // The launcher's Download directly, as it is there: the badge over the title, both to the left.
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                        WarningBadge()
-                        Text(Copy.downloadDirectly(name).resolve(), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurface)
                         Text(Copy.downloadsFrom(name).resolve())
                         SourceRow(SOURCE, release?.let { LauncherRelease(it.version, it.page, it.apk, it.size) }) {
                             uri.openUri(release?.page ?: "${PLAYER_DOWNLOADS}last/")

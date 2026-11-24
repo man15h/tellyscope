@@ -207,7 +207,7 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                     }
                 }
             }
-            FlowRow(Modifier.padding(top = 12.dp, start = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(Modifier.fillMaxWidth().padding(top = 12.dp, start = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
                 FilledTonalButton(onClick = { others.singleOrNull()?.let { actions.markMine(it.address) } ?: onWho() }) {
                     Text(Copy.ITS_MINE.resolve())
                 }

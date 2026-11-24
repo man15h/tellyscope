@@ -20,6 +20,9 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.FlowRowScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -295,15 +298,15 @@ fun LauncherScreen(
                             have == null -> Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 val both = direct && downloadable(chosen)
                                 if (both) {
-                                    Row(Modifier.align(Alignment.CenterHorizontally), verticalAlignment = Alignment.CenterVertically) {
+                                    Row(Modifier.align(Alignment.End), verticalAlignment = Alignment.CenterVertically) {
                                         Icon(Icons.Default.Check, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                                         Spacer(Modifier.width(6.dp))
                                         Text(Copy.STORE_RECOMMENDED.resolve(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
-                                IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth()) { actions.install(chosen) }
-                                if (both) {
-                                    TextButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
+                                BarButtons {
+                                    if (both) TextButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
+                                    IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve()) { actions.install(chosen) }
                                 }
                             }
                             // Current, or a TV that can't take it as Home: only Open.
@@ -314,7 +317,7 @@ fun LauncherScreen(
                             else -> IconButtonText(DeviceIcons.Tv, Copy.OPEN.resolve()) { actions.open(chosen) }
                         }
                     }
-                    LauncherFlow.Step.Waiting -> TextButton(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN.resolve()) }
+                    LauncherFlow.Step.Waiting -> Button(onClick = { actions.install(flow.pkg) }) { Text(Copy.OPEN_STORE_AGAIN.resolve()) }
                     LauncherFlow.Step.Installed -> {
                         TextButton(onClick = actions.later) { Text(Copy.NOT_NOW.resolve()) }
                         Button(onClick = { if (app?.homeService == true) askService = true else actions.switch(false) }, enabled = current != null) {
@@ -565,15 +568,20 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, p
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
-            null, FireInstall.Step.Checking -> if (!play) IconButtonText(LauncherIcons.Download, Copy.INSTALL.resolve(), wide, enabled = f.step == null, onClick = check)
-            // The safe way first and filled; the download only as the text second.
-            FireInstall.Step.Confirm -> if (f.store) {
-                IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
+            null, FireInstall.Step.Checking -> if (!play) BarButtons {
+                IconButtonText(LauncherIcons.Download, Copy.INSTALL.resolve(), enabled = f.step == null, onClick = check)
+            }
+            // The safe way filled and last; the download only as the text beside it.
+            FireInstall.Step.Confirm -> {
                 if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
-                TextButton(onClick = actions.fireInstall, enabled = !f.gated, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
-            } else {
-                if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
-                IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), wide, enabled = !f.gated, onClick = actions.fireInstall)
+                BarButtons {
+                    if (f.store) {
+                        TextButton(onClick = actions.fireInstall, enabled = !f.gated) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
+                        IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), onClick = store)
+                    } else {
+                        IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), enabled = !f.gated, onClick = actions.fireInstall)
+                    }
+                }
             }
             FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> Unit
             FireInstall.Step.WrongApk -> when {
@@ -584,7 +592,7 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, p
                     TextButton(onClick = actions.firePick) { Text(Copy.PICK_ANOTHER.resolve()) }
                     Button(onClick = check) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }
                 }
-                f.store -> IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
+                f.store -> BarButtons { IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), onClick = store) }
                 else -> Row(wide, horizontalArrangement = Arrangement.End) {
                     Button(onClick = check) { Text(Copy.TRY_AGAIN.resolve()) }
                 }
@@ -725,6 +733,13 @@ internal fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () ->
             Icon(OpenInNew, null, Modifier.size(18.dp), tint = c.primary)
         }
     }
+}
+
+/** A bar's buttons at the end, the main one last. A pair too wide for one line puts the main one on its own line under the other. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun BarButtons(buttons: @Composable FlowRowScope.() -> Unit) {
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp), content = buttons)
 }
 
 /** The warning and the failures: a filled warning in the error colour's cookie, so it reads at a glance. */

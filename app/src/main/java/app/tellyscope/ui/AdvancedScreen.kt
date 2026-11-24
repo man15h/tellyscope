@@ -293,7 +293,7 @@ private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: 
         val busiest = rows.filter { it.cpu >= 1 }.sortedByDescending { it.cpu }.take(3).takeIf { s.cpuPercent > 33 }.orEmpty()
         if (busiest.isNotEmpty()) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            SectionHeader(stringResource(R.string.advanced_busiest))
+            SectionHeader(stringResource(R.string.advanced_busiest), padded = false)
             val max = busiest.maxOf { it.cpu }.coerceAtLeast(1.0)
             busiest.forEach { r ->
                 Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onApp(r.name) }, verticalAlignment = Alignment.CenterVertically) {
@@ -455,7 +455,7 @@ private fun LazyListScope.appList(
     if (heading) {
         item {
             val n = rows.count { it.running }
-            SectionHeader(pluralStringResource(R.plurals.advanced_apps_running, n, n), Modifier.padding(start = 8.dp))
+            SectionHeader(pluralStringResource(R.plurals.advanced_apps_running, n, n), Modifier.padding(start = 8.dp), padded = false)
         }
     }
     item {
