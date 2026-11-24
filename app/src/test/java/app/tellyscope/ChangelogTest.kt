@@ -29,6 +29,7 @@ class ChangelogTest {
           - Hold a button to pick up to three.
           - Screen off moved into ⋮.
         - **Fixed:** On Fire TV, Open opens the app. [#248](../../pull/248)
+        - **Improved:** Files opens on the TV. [#249](../../pull/249), [#250](../../pull/250)
 
         ## 0.12.0 — 2026-10-28
 
@@ -41,12 +42,13 @@ class ChangelogTest {
         assertEquals(listOf("2026-10-29", "2026-10-28"), releases.map { it.date })
         assertEquals(
             listOf(
-                Change(Kind.New, "Remote buttons open Netflix and more.", 224, listOf("Hold a button to pick up to three.", "Screen off moved into ⋮.")),
-                Change(Kind.Fixed, "On Fire TV, Open opens the app.", 248),
+                Change(Kind.New, "Remote buttons open Netflix and more.", listOf(224), listOf("Hold a button to pick up to three.", "Screen off moved into ⋮.")),
+                Change(Kind.Fixed, "On Fire TV, Open opens the app.", listOf(248)),
+                Change(Kind.Improved, "Files opens on the TV.", listOf(249, 250)),
             ),
             releases[0].changes,
         )
-        assertEquals(listOf(Change(Kind.Improved, "The Remote opens as a sheet.", 198)), releases[1].changes)
+        assertEquals(listOf(Change(Kind.Improved, "The Remote opens as a sheet.", listOf(198))), releases[1].changes)
     }
 
     @Test fun aPullRequestOpensOnTheMainRepo() {
@@ -57,7 +59,7 @@ class ChangelogTest {
     @Test fun aHeadingWithoutADateStillCounts() {
         val r = Changelog.parse("## 1.0.0\n\n- A line with no tag or link\n").single()
         assertEquals(null, r.date)
-        assertEquals(Change(null, "A line with no tag or link", null), r.changes.single())
+        assertEquals(Change(null, "A line with no tag or link", emptyList()), r.changes.single())
     }
 
     /** The bundled file itself: every released line has a tag and a PR, so the page never shows a bare line. */
@@ -66,7 +68,7 @@ class ChangelogTest {
         val releases = Changelog.parse(file.readText())
         assertTrue(releases.isNotEmpty())
         assertTrue(releases.none { it.version.equals("Unreleased", ignoreCase = true) })
-        val bare = releases.flatMap { r -> r.changes.filter { it.kind == null || it.pr == null }.map { "${r.version}: ${it.text}" } }
+        val bare = releases.flatMap { r -> r.changes.filter { it.kind == null || it.prs.isEmpty() }.map { "${r.version}: ${it.text}" } }
         assertEquals(emptyList<String>(), bare)
     }
 }
