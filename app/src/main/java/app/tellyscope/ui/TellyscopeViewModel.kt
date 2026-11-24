@@ -80,6 +80,7 @@ import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.WrongApk
 import app.tellyscope.data.after
 import app.tellyscope.data.handlers
@@ -339,8 +340,8 @@ data class FilesUi(
     val deleteFailed: DeleteFailed? = null,
 )
 
-/** [detail]: the TV's own words, untranslated. */
-data class DeleteFailed(val name: String, val detail: String?)
+/** [detail]: the TV's own words, untranslated. [why]: Tellyscope's reason when the TV never answered, such as it going offline. */
+data class DeleteFailed(val name: String, val detail: String?, val why: UiText? = null)
 
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
 
@@ -1916,7 +1917,8 @@ class TellyscopeViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                updateFiles(folder) { it.copy(deleteFailed = DeleteFailed(file.name, e.message)) }
+                val failed = if (e is UiTextException) DeleteFailed(file.name, null, e.text) else DeleteFailed(file.name, e.message)
+                updateFiles(folder) { it.copy(deleteFailed = failed) }
                 return@launch
             }
             updateFiles(folder) { ui -> ui.copy(list = ui.list?.filterNot { it.name == file.name }) }

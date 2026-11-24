@@ -266,6 +266,7 @@ private fun DeleteFailedDialog(d: DeleteFailed, actions: DeviceActions) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(stringResource(R.string.transfers_delete_still_there), style = MaterialTheme.typography.bodyMedium)
+                d.why?.let { Text(it.resolve(), style = MaterialTheme.typography.bodyMedium) }
                 d.detail?.takeIf { it.isNotBlank() }?.let {
                     Text(stringResource(R.string.transfers_tv_said, it), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
                 }
