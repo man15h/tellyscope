@@ -30,6 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -44,8 +45,10 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,9 +56,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,6 +75,8 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -91,6 +98,7 @@ import app.tellyscope.data.listKind
 import app.tellyscope.data.listMakers
 import app.tellyscope.data.sourceName
 import app.tellyscope.data.squash
+import kotlinx.coroutines.launch
 
 @Composable
 private fun Muted(text: String) {
@@ -103,7 +111,7 @@ private fun Muted(text: String) {
  * searches every list instead. The confirm names each app before anything runs; once it's
  * confirmed, MainActivity shows [DebloatRunScreen] in its place.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DebloatScreen(
     lists: Suggestions?,
@@ -128,6 +136,10 @@ fun DebloatScreen(
     onRetry: () -> Unit = {},
     /** Suggest again on an app in "Not suggested": back on the list. */
     onSuggestAgain: (String) -> Unit = {},
+    /** Refresh in the top bar: the lists fetched again; null when it didn't run. */
+    onRefresh: suspend () -> ListsRefresh? = { null },
+    /** That refresh is running: the icon shows the loading shape, the list stays. */
+    refreshing: Boolean = false,
 ) {
     val ready = lists as? Suggestions.Ready
     val devices = when (lists) {
@@ -148,10 +160,14 @@ fun DebloatScreen(
     val prefill = remember(devices) { tvMakers.map { it.trim() }.firstOrNull { it.isNotEmpty() && finds(it).isNotEmpty() } }
     var typed by rememberSaveable { mutableStateOf<String?>(null) }
     val q = typed ?: prefill.orEmpty()
-    // Ticks start from the list and reset whenever it reloads.
+    // Ticks start from the list. When the same list loads again, as after Refresh, an app on it before
+    // keeps the tick it had, so nothing unticked by hand comes back ticked; a new app takes the list's.
+    val before = remember { mutableStateOf<Ticks?>(null) }
     var ticked by remember(lists) {
-        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { it.ticked }.map { it.pkg }.toSet())
+        val was = before.value?.takeIf { it.list != null && it.list == ready?.list?.id }
+        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { if (was != null && it.pkg in was.pkgs) it.pkg in was.ticked else it.ticked }.map { it.pkg }.toSet())
     }
+    SideEffect { before.value = Ticks(ready?.list?.id, ready?.groups.orEmpty().flatMap { it.packages }.map { it.pkg }.toSet(), ticked) }
     var confirming by remember { mutableStateOf(false) }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     val showing = ready?.takeIf { chosen == null || it.list.id == chosen }
@@ -183,6 +199,20 @@ fun DebloatScreen(
     val use = { marked?.let { if (it != ready?.list?.id) { chosen = it; onPick(it) } }; searching = false }
     val keyboard = LocalSoftwareKeyboardController.current
     val goBack = { if (searching) searching = false else back() }
+    val scope = rememberCoroutineScope()
+    val res = LocalContext.current.resources
+    fun refresh() {
+        scope.launch {
+            when (onRefresh()) {
+                ListsRefresh.Failed -> {
+                    val again = snackbar.showSnackbar(res.getString(R.string.lists_refresh_failed), actionLabel = res.getString(R.string.lists_try_again), duration = SnackbarDuration.Long)
+                    if (again == SnackbarResult.ActionPerformed) refresh()
+                }
+                ListsRefresh.Same -> snackbar.showSnackbar(res.getString(R.string.lists_up_to_date), duration = SnackbarDuration.Short)
+                ListsRefresh.Changed, null -> {}
+            }
+        }
+    }
     BackHandler(onBack = goBack)
 
     Scaffold(
@@ -192,6 +222,17 @@ fun DebloatScreen(
                 title = { Text(stringResource(if (searching) R.string.lists_which_tv else R.string.lists_debloat)) },
                 navigationIcon = {
                     IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.lists_back)) }
+                },
+                actions = {
+                    // The list and its ticks stay while it runs; a new list swaps in when it lands.
+                    if (!searching) {
+                        val label = stringResource(R.string.lists_refresh)
+                        if (refreshing) {
+                            LoadingIndicator(Modifier.padding(12.dp).size(24.dp).semantics { contentDescription = label })
+                        } else {
+                            IconButton(onClick = ::refresh) { Icon(Icons.Default.Refresh, contentDescription = label) }
+                        }
+                    }
                 },
             )
         },
@@ -655,3 +696,6 @@ private fun ListRow(e: ListEntry, maker: String, selected: Boolean, onClick: (()
         modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).then(pick),
     )
 }
+
+/** Debloat's ticks as they were on [list] (its id), over the apps [pkgs], kept for when it loads again. */
+private class Ticks(val list: String?, val pkgs: Set<String>, val ticked: Set<String>)

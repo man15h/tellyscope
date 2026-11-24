@@ -1006,6 +1006,9 @@
     <string name="lists_which_tv">Qual é esta TV?</string>
     <string name="lists_debloat">Limpar</string>
     <string name="lists_back">Voltar</string>
+    <string name="lists_refresh">Atualizar a lista</string>
+    <string name="lists_refresh_failed">Não foi possível atualizar a lista. Verifique a internet do celular.</string>
+    <string name="lists_up_to_date">A lista está atualizada</string>
     <string name="lists_use_this">Usar esta lista</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">Desativar %1$d app</item>
@@ -1227,7 +1230,8 @@
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
     <string name="device_as_of">Em %1$s</string>
-    <string name="device_last_checked">Última verificação: %1$s</string>
+    <string name="device_last_seen">Visto por último %1$s</string>
+    <string name="device_last_seen_updating">Visto por último %1$s · atualizando…</string>
     <string name="device_internal_storage">Armazenamento interno</string>
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s usados</string>

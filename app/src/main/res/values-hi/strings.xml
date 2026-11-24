@@ -824,6 +824,9 @@
     <string name="lists_which_tv">यह कौन सा TV है?</string>
     <string name="lists_debloat">डीब्लोट</string>
     <string name="lists_back">वापस जाएं</string>
+    <string name="lists_refresh">सूची रीफ़्रेश करें</string>
+    <string name="lists_refresh_failed">सूची रीफ़्रेश नहीं हो सकी। फ़ोन का इंटरनेट जाँचें।</string>
+    <string name="lists_up_to_date">सूची अप टू डेट है</string>
     <string name="lists_use_this">यह सूची इस्तेमाल करें</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">%1$d ऐप बंद करें</item>
@@ -1027,7 +1030,8 @@
     <string name="report_no_browser">कोई ब्राउज़र नहीं खुला, इसलिए कुछ भी पोस्ट नहीं हुआ। किसी दूसरे डिवाइस से पोस्ट करने के लिए लिंक कॉपी करें।</string>
     <string name="report_copy_link">लिंक कॉपी करें</string>
     <string name="device_as_of">%1$s तक</string>
-    <string name="device_last_checked">आख़िरी जाँच: %1$s</string>
+    <string name="device_last_seen">आखिरी बार देखा गया: %1$s</string>
+    <string name="device_last_seen_updating">आखिरी बार देखा गया: %1$s · अपडेट हो रहा है…</string>
     <string name="device_internal_storage">इंटरनल स्टोरेज</string>
     <string name="device_gb_used">%1$s इस्तेमाल हुआ</string>
     <string name="device_cpu">CPU</string>

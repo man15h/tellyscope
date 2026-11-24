@@ -371,6 +371,16 @@ class DeviceLists(
         }
     }
 
+    /**
+     * Refresh: forgets the index read this launch and fetches it again. False when the fetch didn't
+     * give one to keep (offline, or the signature check above), and [index] goes on with the cached copy.
+     */
+    suspend fun reload(): Boolean {
+        lock.withLock { index = null }
+        index()
+        return lock.withLock { index != null }
+    }
+
     /** One index, read once, and the lists it names: whether they pass ([verified]) and what they hold ([shared]) can't come from two. */
     class Snapshot internal constructor(private val index: ListIndex?, private val read: suspend (ListFile) -> ByteArray?) {
         /**

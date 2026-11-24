@@ -45,6 +45,9 @@ interface DeviceSource {
      */
     suspend fun refreshListsOnNetwork() {}
 
+    /** Debloat's Refresh: the list source's index fetched again; false when it couldn't be, and the saved one stays. */
+    suspend fun reloadLists(): Boolean = true
+
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
 

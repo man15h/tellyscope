@@ -1084,6 +1084,8 @@ class AdbDeviceSource(
 
     override suspend fun listSource(): String? = lists.custom()
 
+    override suspend fun reloadLists(): Boolean = lists.reload()
+
     // By the saved key alone: a TV that hasn't answered since launch has no link to ask.
     override suspend fun lastState(deviceId: String): LastState? =
         keys[deviceId]?.let { tv -> withContext(Dispatchers.IO) { lastStates.load(tv) } }

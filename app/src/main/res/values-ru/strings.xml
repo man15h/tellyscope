@@ -924,6 +924,9 @@
     <string name="lists_which_tv">Какой у вас телевизор?</string>
     <string name="lists_debloat">Очистка</string>
     <string name="lists_back">Назад</string>
+    <string name="lists_refresh">Обновить список</string>
+    <string name="lists_refresh_failed">Не удалось обновить список. Проверьте интернет на телефоне.</string>
+    <string name="lists_up_to_date">Список актуален</string>
     <string name="lists_use_this">Использовать этот список</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">Отключить %1$d приложение</item>
@@ -1149,7 +1152,8 @@
     <string name="report_no_browser">Браузер не открылся, поэтому ничего не отправлено. Скопируйте ссылку, чтобы отправить отчёт с другого устройства.</string>
     <string name="report_copy_link">Копировать ссылку</string>
     <string name="device_as_of">Данные: %1$s</string>
-    <string name="device_last_checked">Последняя проверка: %1$s</string>
+    <string name="device_last_seen">Был в сети %1$s</string>
+    <string name="device_last_seen_updating">Был в сети %1$s · обновление…</string>
     <string name="device_internal_storage">Внутренняя память</string>
     <string name="device_gb_used">Занято %1$s</string>
     <string name="device_cpu">ЦП</string>
