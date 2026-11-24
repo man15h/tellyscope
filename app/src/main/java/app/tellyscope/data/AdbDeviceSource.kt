@@ -1090,7 +1090,9 @@ class AdbDeviceSource(
 
     override suspend fun saveLastState(deviceId: String, apps: List<AppInfo>, lists: Suggestions?) {
         val tv = keys[deviceId] ?: return
-        withContext(Dispatchers.IO) { lastStates.save(tv, apps, lists) }
+        // Checked under the book's lock: Forget removes the TV from saved before it deletes the
+        // file, so a save racing it either lands first and is deleted, or finds the TV gone.
+        withContext(Dispatchers.IO) { synchronized(lastStates) { if (deviceId in saved) lastStates.save(tv, apps, lists) } }
     }
 
     override suspend fun setListSource(url: String?) {
