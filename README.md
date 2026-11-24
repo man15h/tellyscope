@@ -52,7 +52,7 @@ Tellyscope is in closed testing on Google Play. Join the testers group, accept t
   </tr>
   <tr>
     <td><img src="docs/screenshots/who-has-access.png" alt="Who has access: this phone and another computer connected now, the second with It's mine, then the four computers the TV allows, each with its key's fingerprint and when it was last seen"></td>
-    <td><img src="docs/screenshots/controller.png" alt="The game controller, phone held sideways: a D-pad on the left, Home, Select and Start in the middle, X, Y, A and B on the right, and Stick or D-pad at the top"></td>
+    <td><img src="docs/screenshots/controller.png" alt="The game controller, with the phone shown upright and the controller sideways on it: a D-pad at the top, Home, Select and Start in the middle, X, Y, A and B at the bottom, and Stick or D-pad along the side"></td>
     <td><img src="docs/screenshots/open-or-save.png" alt="A video tapped in the TV's Movies folder: its sheet offers Open on TV, Save to your phone and, in red, Delete on TV"></td>
     <td><img src="docs/screenshots/shell.png" alt="Shell: a terminal on the TV after getprop and pm list packages"></td>
   </tr>
