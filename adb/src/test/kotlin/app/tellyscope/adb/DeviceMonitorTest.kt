@@ -17,6 +17,7 @@ import java.io.IOException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -179,6 +180,19 @@ class DeviceMonitorTest {
         advanceTimeBy(5_000); runCurrent()
         assertTrue(calls > 0)
         assertTrue(readings.isNotEmpty())
+    }
+
+    @Test fun checkingEndsOnTheFirstReadAfterAPause() = runTest {
+        // A healthy TV is good again once it answers, before the second sample a reading needs.
+        val gate = StatsGate().apply { paused.value = true }
+        val readings = mutableListOf<Stats>()
+        backgroundScope.launch { DeviceMonitor(device(), gate = gate).stats().collect { readings += it } }
+        runCurrent()
+        assertTrue(gate.checking.value)
+        gate.paused.value = false
+        runCurrent()
+        assertFalse(gate.checking.value)
+        assertEquals(emptyList<Stats>(), readings)
     }
 
     @Test fun aTvThatDiesMidChangeIsStillLost() = runTest {
