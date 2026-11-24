@@ -160,15 +160,16 @@ internal fun SystemWidget(s: Snapshot) = SystemWidget(s.storageUsedGb, s.storage
 
 /**
  * The same card for a TV that's away: storage as it was [asOf] the last visit, and the live
- * numbers as dashes, since old ones don't speak for a TV that isn't there.
+ * numbers as dashes, since old ones don't speak for a TV that isn't there. [checking]: back from the
+ * background, the TV is online but hasn't answered yet, so [live] is its last reading and [asOf] when that was.
  */
 @Composable
-internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, asOf: String? = null) {
+internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, asOf: String? = null, checking: Boolean = false) {
     val dash = "\u2014"
     AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             if (asOf != null) {
-                Text(stringResource(R.string.device_as_of, asOf), Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(if (checking) R.string.device_last_checked else R.string.device_as_of, asOf), Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val used = usedGb
             val total = totalGb?.takeIf { it > 0 }

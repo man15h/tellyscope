@@ -1031,6 +1031,7 @@
     <string name="report_no_browser">Tarayıcı açılmadı, bu yüzden hiçbir şey gönderilmedi. Başka bir cihazdan göndermek için bağlantıyı kopyalayın.</string>
     <string name="report_copy_link">Bağlantıyı kopyala</string>
     <string name="device_as_of">Son durum: %1$s</string>
+    <string name="device_last_checked">Son kontrol: %1$s</string>
     <string name="device_internal_storage">Dahili depolama</string>
     <string name="device_gb_used">%1$s kullanılıyor</string>
     <string name="device_cpu">CPU</string>

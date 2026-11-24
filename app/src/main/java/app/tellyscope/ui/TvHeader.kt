@@ -26,6 +26,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedButton
@@ -60,6 +61,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -71,6 +74,7 @@ import app.tellyscope.R
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Snapshot
+import app.tellyscope.data.UiText
 import app.tellyscope.data.deviceKind
 import app.tellyscope.data.resolve
 
@@ -168,9 +172,13 @@ fun TvHero(state: UiState, live: Snapshot?, actions: DeviceActions, chips: Boole
                 val made = makerLine(device)
                 if (made.isNotEmpty()) Text(made, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
                 val health = live?.let { Copy.health(it, heaviest(it, state.device.apps)) }
+                val checkingLabel = Copy.CHECKING.resolve()
                 Surface(shape = CircleShape, color = if (health?.ok == false) c.errorContainer else c.secondaryContainer) {
                     Row(Modifier.padding(horizontal = 12.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        if (health != null) {
+                        // Back from the background and not answered yet: the last state, with the loading shape in the icon's place.
+                        if (health != null && state.device.checking) {
+                            LoadingIndicator(Modifier.size(16.dp).semantics { contentDescription = checkingLabel }, color = if (health.ok) c.primary else c.error)
+                        } else if (health != null) {
                             Icon(if (health.ok) Icons.Default.CheckCircle else Icons.Default.Warning, null, Modifier.size(16.dp), tint = if (health.ok) c.primary else c.error)
                         } else StateDot(device.state)
                         Spacer(Modifier.width(8.dp))
@@ -345,13 +353,13 @@ internal fun EmptyState(icon: ImageVector, title: String, line: String) {
     }
 }
 
-/** Where [EmptyState] would sit, while the TV's app list is still on its way: the same hero, waiting. */
+/** Where [EmptyState] would sit, while the TV's app list, or the TV's first answer since the return, is on its way: the same hero, waiting. */
 @Composable
-internal fun AppsLoading() {
+internal fun AppsLoading(title: UiText = Copy.READING_APPS) {
     Column(Modifier.fillMaxWidth().padding(top = 96.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         StatusHero(HeroTone.Waiting, null)
         Spacer(Modifier.height(16.dp))
-        Text(Copy.READING_APPS.resolve(), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+        Text(title.resolve(), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
         Text(Copy.READING_APPS_LINE.resolve(), style
  = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)

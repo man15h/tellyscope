@@ -20,6 +20,7 @@ import app.tellyscope.adb.TvShell
 import app.tellyscope.adb.UpdateScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import okio.Sink
 import okio.Source
 import java.io.File
@@ -85,6 +86,12 @@ interface DeviceSource {
      * read and a dropped TV isn't retried; open connections stay, so a running copy or install goes on.
      */
     fun pause(paused: Boolean) {}
+
+    /**
+     * True from the return to the foreground until [deviceId] answers a fresh read, or stops being online:
+     * its connection sat idle in the background, so what it last said may be out of date.
+     */
+    fun checking(deviceId: String): Flow<Boolean> = flowOf(false)
 
     suspend fun apps(deviceId: String): List<AppInfo>
 

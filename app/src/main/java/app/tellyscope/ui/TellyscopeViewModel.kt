@@ -97,6 +97,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -148,6 +149,8 @@ data class DeviceUi(
     val apps: List<AppInfo> = emptyList(),
     /** The first read of [apps] after opening the TV is still out; ends on success, empty or error. */
     val appsLoading: Boolean = false,
+    /** Back from the background, the TV hasn't answered a fresh read yet: the page shows its last values. */
+    val checking: Boolean = false,
     val network: NetworkInfo? = null,
     val history: List<HistoryEntry> = emptyList(),
     /** [DeviceSource.restorable], read with [history]. */
@@ -585,6 +588,7 @@ class TellyscopeViewModel(
     private var updateJob: Job? = null
     /** The clock and the device refresh, every second. */
     private var tickJob: Job? = null
+    private var checkJob: Job? = null
     /** In the background since [pause]; [resume] starts everything again. */
     private var paused = false
     /** The scan was running, or asked for, while in the background, so [resume] starts it. */
@@ -657,6 +661,7 @@ class TellyscopeViewModel(
         if (paused) return
         paused = true
         tickJob?.cancel()
+        checkJob?.cancel()
         scanOnResume = scanJob?.isActive == true
         scanJob?.cancel()
         stopWatching()
@@ -670,7 +675,23 @@ class TellyscopeViewModel(
         source.pause(false)
         startTick()
         if (scanOnResume) rescan()
-        viewModelScope.launch {
+        checkJob = viewModelScope.launch {
+            // Its connection sat idle: the TV on screen keeps its last values, checking, until it answers
+            // a fresh read. Read before that, it would fail and show offline and Try again for a moment.
+            val id = _state.value.selectedId
+            if (id != null) {
+                val checking = source.checking(id)
+                if (checking.first()) {
+                    updateDevice(id) { it.copy(checking = true) }
+                    try {
+                        checking.first { !it }
+                    } finally {
+                        updateDevice(id) { it.copy(checking = false) }
+                    }
+                }
+                // Another TV picked meanwhile is read already.
+                if (_state.value.selectedId != id) return@launch
+            }
             if (!refreshDevices()) _state.value.selected?.let(::watch)
         }
     }

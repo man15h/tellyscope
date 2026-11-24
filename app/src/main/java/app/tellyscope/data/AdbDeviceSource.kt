@@ -64,6 +64,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
@@ -485,6 +486,11 @@ class AdbDeviceSource(
         links.values.forEach { it.gate.paused.value = paused }
         // Back in front: lists that couldn't be downloaded at launch get another go.
         if (!paused) scope.launch(Dispatchers.IO) { SharedLists.refresh() }
+    }
+
+    override fun checking(deviceId: String): Flow<Boolean> {
+        val link = links[deviceId] ?: return flowOf(false)
+        return combine(link.gate.checking, link.state) { checking, state -> checking && state == AdbState.ONLINE }
     }
 
     /**
