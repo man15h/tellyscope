@@ -347,11 +347,8 @@
     <string name="copy_not_on_tv_fire">%1$s इस TV पर नहीं है। इसे TV पर Appstore से इंस्टॉल करें।</string>
     <string name="copy_player_no_video">TV पर कोई वीडियो प्लेयर नहीं है</string>
     <string name="copy_player_no_audio">TV पर कोई ऑडियो प्लेयर नहीं है</string>
-    <string name="copy_player_other_video">%1$s, %2$s को खोल सकता है, पर यह वीडियो के लिए नहीं बना है। %3$s इसे रिमोट से चलाता है, और इंस्टॉल होते ही Tellyscope फ़ाइल उसमें खोल देगा।</string>
-    <string name="copy_player_other_audio">%1$s, %2$s को खोल सकता है, पर यह संगीत के लिए नहीं बना है। %3$s इसे रिमोट से चलाता है, और इंस्टॉल होते ही Tellyscope फ़ाइल उसमें खोल देगा।</string>
     <string name="copy_player_nothing_text">TV पर कुछ भी %1$s को नहीं खोल सकता। %2$s इसे रिमोट से चलाता है, और इंस्टॉल होते ही Tellyscope फ़ाइल उसमें खोल देगा।</string>
     <string name="copy_player_about">VideoLAN · मुफ़्त और ओपन सोर्स</string>
-    <string name="copy_player_open_anyway">फिर भी %1$s में खोलें</string>
     <string name="copy_player_install_title">TV पर %1$s इंस्टॉल करें</string>
     <string name="copy_player_store_open">TV पर Play Store में %1$s का पेज खुला है। इसे रिमोट से इंस्टॉल करें।</string>
     <string name="copy_player_waiting">%1$s का इंतज़ार है… फिर %2$s खुलेगी</string>
@@ -362,7 +359,6 @@
     <string name="copy_player_opened_in">%1$s TV पर %2$s में खोली गई</string>
     <string name="copy_player_cant_open">%1$s TV पर नहीं खुल सकी</string>
     <string name="copy_player_nothing_opens">TV पर कुछ भी %1$s को नहीं खोल सकता</string>
-    <string name="copy_player_open_file">%1$s TV पर खोलें</string>
     <string name="copy_cant_open">TV, %1$s को खोल नहीं सका। अगर यह बंद है, तो इसे ऐप्स में चालू करें।</string>
     <string name="copy_left_dock_one">%1$s अनइंस्टॉल हो गया, इसलिए उसका बटन रिमोट से हट गया।</string>
     <plurals name="copy_left_dock">
@@ -1236,8 +1232,8 @@
     <string name="transfers_debloat">डीब्लोट करें</string>
     <string name="transfers_send_file">फ़ाइल भेजें</string>
     <string name="transfers_to_folder">%1$s में</string>
-    <string name="transfers_tap_to_save">फ़ाइल की कॉपी अपने फ़ोन में सेव करने के लिए उस पर टैप करें।</string>
-    <string name="transfers_save">सेव करें</string>
+    <string name="transfers_tap_to_save">किसी फ़ाइल को सेव करने के लिए उस पर टैप करें। वीडियो, गाने या तस्वीर पर टैप करके उसे टीवी पर खोलें या सेव करें।</string>
+    <string name="transfers_save">अपने फ़ोन में सेव करें</string>
     <string name="transfers_reading">ऐप पढ़ा जा रहा है</string>
     <string name="transfers_install_failed">%1$s इंस्टॉल नहीं हो सका</string>
     <string name="transfers_cant_install">इसे इंस्टॉल नहीं किया जा सकता</string>

@@ -347,11 +347,8 @@
     <string name="copy_not_on_tv_fire">%1$s bu TV\'de yok. TV\'deki Appstore\'dan yükleyin.</string>
     <string name="copy_player_no_video">TV\'de video oynatıcı yok</string>
     <string name="copy_player_no_audio">TV\'de ses oynatıcı yok</string>
-    <string name="copy_player_other_video">%1$s, %2$s dosyasını açabilir ama video için yapılmamış. %3$s onu kumandayla oynatır ve yüklendiğinde Tellyscope dosyayı onda açar.</string>
-    <string name="copy_player_other_audio">%1$s, %2$s dosyasını açabilir ama müzik için yapılmamış. %3$s onu kumandayla oynatır ve yüklendiğinde Tellyscope dosyayı onda açar.</string>
     <string name="copy_player_nothing_text">TV\'de %1$s dosyasını açabilen bir şey yok. %2$s onu kumandayla oynatır ve yüklendiğinde Tellyscope dosyayı onda açar.</string>
     <string name="copy_player_about">VideoLAN · ücretsiz ve açık kaynak</string>
-    <string name="copy_player_open_anyway">Yine de %1$s ile aç</string>
     <string name="copy_player_install_title">%1$s uygulamasını TV\'ye yükleyin</string>
     <string name="copy_player_store_open">TV\'de Play Store, %1$s sayfasında açık. Kumandayla yükleyin.</string>
     <string name="copy_player_waiting">%1$s bekleniyor… sonra %2$s açılır</string>
@@ -362,7 +359,6 @@
     <string name="copy_player_opened_in">%1$s TV\'de %2$s ile açıldı</string>
     <string name="copy_player_cant_open">%1$s TV\'de açılamadı</string>
     <string name="copy_player_nothing_opens">TV\'de %1$s dosyasını açabilen bir şey yok</string>
-    <string name="copy_player_open_file">%1$s dosyasını TV\'de aç</string>
     <string name="copy_cant_open">TV %1$s uygulamasını açamadı. Kapalıysa Uygulamalar\'dan açın.</string>
     <string name="copy_left_dock_one">%1$s kaldırıldı, bu yüzden düğmesi Kumanda\'dan çıkarıldı.</string>
     <plurals name="copy_left_dock">
@@ -1242,8 +1238,8 @@
     <string name="transfers_debloat">Temizlik</string>
     <string name="transfers_send_file">Dosya gönder</string>
     <string name="transfers_to_folder">Hedef: %1$s</string>
-    <string name="transfers_tap_to_save">Telefonunuza bir kopyasını kaydetmek için bir dosyaya dokunun.</string>
-    <string name="transfers_save">Kaydet</string>
+    <string name="transfers_tap_to_save">Kaydetmek için bir dosyaya dokunun. TV\'de açmak veya kaydetmek için bir videoya, şarkıya ya da resme dokunun.</string>
+    <string name="transfers_save">Telefonunuza kaydet</string>
     <string name="transfers_reading">Uygulama okunuyor</string>
     <string name="transfers_install_failed">%1$s yüklenemedi</string>
     <string name="transfers_cant_install">Bu yüklenemiyor</string>

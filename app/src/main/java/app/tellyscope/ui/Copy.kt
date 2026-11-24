@@ -649,13 +649,9 @@ object Copy {
     fun openedFileIn(file: String, app: String) = UiText(R.string.copy_player_opened_in, file, app)
     fun cantOpenFile(file: String) = UiText(R.string.copy_player_cant_open, file)
     fun nothingOpens(file: String) = UiText(R.string.copy_player_nothing_opens, file)
-    fun openFile(file: String) = UiText(R.string.copy_player_open_file, file)
     fun noPlayer(audio: Boolean) = UiText(if (audio) R.string.copy_player_no_audio else R.string.copy_player_no_video)
-    fun playerOtherText(audio: Boolean, other: String, file: String, player: String) =
-        UiText(if (audio) R.string.copy_player_other_audio else R.string.copy_player_other_video, other, file, player)
     fun playerNothingText(file: String, player: String) = UiText(R.string.copy_player_nothing_text, file, player)
     val PLAYER_ABOUT = UiText(R.string.copy_player_about)
-    fun openAnyway(app: String) = UiText(R.string.copy_player_open_anyway, app)
     fun installPlayer(player: String) = UiText(R.string.copy_player_install_title, player)
     fun playerStoreOpen(player: String) = UiText(R.string.copy_player_store_open, player)
     fun playerWaiting(player: String, file: String) = UiText(R.string.copy_player_waiting, player, file)

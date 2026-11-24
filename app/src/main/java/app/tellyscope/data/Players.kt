@@ -52,8 +52,8 @@ private val MEDIA = mapOf(
 private val STUBS = setOf("com.google.android.tv.frameworkpackagestubs")
 
 /**
- * Apps that open a video or a song but aren't made to play one: galleries and browsers. A file only they open still
- * gets the player offered, with them as "Open in … anyway". Vendors add their own; this grows as TVs show them.
+ * Apps that open a video or a song but aren't made to play one: galleries and browsers. A player still goes first,
+ * but a file only they open opens in them rather than offering one. Vendors add their own; this grows as TVs show them.
  */
 private val NOT_PLAYERS = setOf(
     "com.android.gallery3d",

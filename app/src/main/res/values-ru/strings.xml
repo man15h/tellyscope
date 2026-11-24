@@ -367,11 +367,8 @@
     <string name="copy_not_on_tv_fire">%1$s нет на этом телевизоре. Установите его из Appstore на телевизоре.</string>
     <string name="copy_player_no_video">На телевизоре нет видеоплеера</string>
     <string name="copy_player_no_audio">На телевизоре нет аудиоплеера</string>
-    <string name="copy_player_other_video">%1$s может открыть %2$s, но не предназначено для видео. %3$s воспроизводит его с пульта, а Tellyscope откроет в нем файл после установки.</string>
-    <string name="copy_player_other_audio">%1$s может открыть %2$s, но не предназначено для музыки. %3$s воспроизводит его с пульта, а Tellyscope откроет в нем файл после установки.</string>
     <string name="copy_player_nothing_text">На телевизоре нечем открыть %1$s. %2$s воспроизводит его с пульта, а Tellyscope откроет в нем файл после установки.</string>
     <string name="copy_player_about">VideoLAN · бесплатно и с открытым кодом</string>
-    <string name="copy_player_open_anyway">Все равно открыть в %1$s</string>
     <string name="copy_player_install_title">Установите %1$s на телевизор</string>
     <string name="copy_player_store_open">На телевизоре открыта страница %1$s в Play Маркете. Установите его пультом.</string>
     <string name="copy_player_waiting">Ждем %1$s… затем откроется %2$s</string>
@@ -382,7 +379,6 @@
     <string name="copy_player_opened_in">%1$s открыт на телевизоре в %2$s</string>
     <string name="copy_player_cant_open">Не удалось открыть %1$s на телевизоре</string>
     <string name="copy_player_nothing_opens">На телевизоре нечем открыть %1$s</string>
-    <string name="copy_player_open_file">Открыть %1$s на телевизоре</string>
     <string name="copy_cant_open">Телевизору не удалось открыть %1$s. Если приложение отключено, включите его в разделе «Приложения».</string>
     <string name="copy_left_dock_one">%1$s удалено, поэтому его кнопка убрана с пульта.</string>
     <plurals name="copy_left_dock">
@@ -1362,8 +1358,8 @@
     <string name="transfers_debloat">Очистка</string>
     <string name="transfers_send_file">Отправить файл</string>
     <string name="transfers_to_folder">В %1$s</string>
-    <string name="transfers_tap_to_save">Нажмите на файл, чтобы сохранить копию на телефоне.</string>
-    <string name="transfers_save">Сохранить</string>
+    <string name="transfers_tap_to_save">Нажмите на файл, чтобы сохранить его. Нажмите на видео, песню или изображение, чтобы открыть на телевизоре или сохранить.</string>
+    <string name="transfers_save">Сохранить на телефоне</string>
     <string name="transfers_reading">Читаем приложение</string>
     <string name="transfers_install_failed">Не удалось установить %1$s</string>
     <string name="transfers_cant_install">Невозможно установить</string>
