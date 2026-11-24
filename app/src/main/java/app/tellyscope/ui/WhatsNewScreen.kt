@@ -185,7 +185,8 @@ private fun KindHeading(kind: Kind) {
 /**
  * One change and its indented points. Each #PR opens its pull request on the main repo. A link's tap
  * target is 48 dp tall and runs to the next link on its line, or to the line's end, so it overlaps
- * plain text but never another link; it stays inside this item's 16 dp padding.
+ * plain text but never another link; it stays inside this item's 16 dp padding. Where the links wrap,
+ * the two targets meet at the line boundary instead, so neither reaches over the other's row.
  */
 @Composable
 private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
@@ -222,12 +223,17 @@ private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
             val right = starts.getOrNull(i + 1)?.takeIf { l.getLineForOffset(it) == line }
                 ?.let { l.getHorizontalPosition(it, usePrimaryDirection = true) } ?: l.size.width.toFloat()
             val middle = (l.getLineTop(line) + l.getLineBottom(line)) / 2
+            val wrapsFrom = starts.getOrNull(i - 1)?.let { l.getLineForOffset(it) != line } == true
+            val wrapsTo = starts.getOrNull(i + 1)?.let { l.getLineForOffset(it) != line } == true
             with(density) {
                 val target = 48.dp.toPx()
+                val top = (if (wrapsFrom) l.getLineTop(line) else middle - target / 2) + topPadding.toPx()
+                val bottom = (if (wrapsTo) l.getLineBottom(line) else middle + target / 2) + topPadding.toPx()
+                val y = top.coerceAtLeast(0f)
                 Box(
                     Modifier
-                        .offset { IntOffset((16.dp.toPx() + left).roundToInt(), (topPadding.toPx() + middle - target / 2).roundToInt().coerceAtLeast(0)) }
-                        .size(width = (right - left).toDp(), height = 48.dp)
+                        .offset { IntOffset((16.dp.toPx() + left).roundToInt(), y.roundToInt()) }
+                        .size(width = (right - left).toDp(), height = (bottom - y).toDp())
                         .clickable(role = Role.Button, onClickLabel = "#$pr") { openPr(pr) },
                 )
             }
