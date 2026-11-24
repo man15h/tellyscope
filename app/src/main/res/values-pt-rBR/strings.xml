@@ -1227,6 +1227,7 @@
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
     <string name="device_as_of">Em %1$s</string>
+    <string name="device_last_checked">Última verificação: %1$s</string>
     <string name="device_internal_storage">Armazenamento interno</string>
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s usados</string>

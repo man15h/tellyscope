@@ -1254,6 +1254,8 @@
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
     <string name="device_as_of">As of %1$s</string>
+    <!-- %1$s is how long ago, like "25 seconds ago"; shown while the app checks the TV after coming back -->
+    <string name="device_last_checked">Last checked %1$s</string>
     <string name="device_internal_storage">Internal storage</string>
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s used</string>

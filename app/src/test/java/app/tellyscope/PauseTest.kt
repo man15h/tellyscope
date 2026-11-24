@@ -19,6 +19,7 @@ import app.tellyscope.ui.TellyscopeViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -29,6 +30,7 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -37,6 +39,8 @@ import org.junit.Test
 private class Counted(private val tvs: Boolean = true) : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     val reads = mutableListOf<String>()
     val paused = mutableListOf<Boolean>()
+    /** The TV's connection went stale in the background and hasn't answered since. */
+    val stale = MutableStateFlow(false)
 
     override suspend fun known() = if (!tvs) emptyList() else listOf(
         Device("tv", ScanHit("tv", 5555, ScanKind.Classic, "tv", null), DeviceState.Online, null, null, null, 0L),
@@ -52,6 +56,8 @@ private class Counted(private val tvs: Boolean = true) : DeviceSource by FakeDev
     override fun pause(paused: Boolean) {
         this.paused += paused
     }
+
+    override fun checking(deviceId: String) = stale
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -98,6 +104,25 @@ class PauseTest {
         assertTrue(tv.reads.containsAll(listOf("live", "apps", "prompt", "access")))
         assertEquals(listOf(true, false), tv.paused)
         assertEquals("tv", vm.state.value.selectedId)
+    }
+
+    @Test fun backOnScreenAStaleTvIsCheckedBeforeItsPageReadsIt() = with(test) {
+        val tv = Counted()
+        open(tv)
+        vm.pause()
+        runCurrent()
+        tv.reads.clear()
+        tv.stale.value = true
+        vm.resume()
+        advanceTimeBy(1_000)
+        runCurrent()
+        // The page keeps its last values: nothing is read through the stale connection.
+        assertTrue(vm.state.value.device.checking)
+        assertTrue("apps" !in tv.reads)
+        tv.stale.value = false
+        runCurrent()
+        assertFalse(vm.state.value.device.checking)
+        assertTrue(tv.reads.containsAll(listOf("live", "apps", "prompt", "access")))
     }
 
     @Test fun startingTwiceStartsOnce() = with(test) {

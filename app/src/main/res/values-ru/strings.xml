@@ -1149,6 +1149,7 @@
     <string name="report_no_browser">Браузер не открылся, поэтому ничего не отправлено. Скопируйте ссылку, чтобы отправить отчёт с другого устройства.</string>
     <string name="report_copy_link">Копировать ссылку</string>
     <string name="device_as_of">Данные: %1$s</string>
+    <string name="device_last_checked">Последняя проверка: %1$s</string>
     <string name="device_internal_storage">Внутренняя память</string>
     <string name="device_gb_used">Занято %1$s</string>
     <string name="device_cpu">ЦП</string>

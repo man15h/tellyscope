@@ -966,6 +966,7 @@
     <string name="report_no_browser">未打开浏览器，因此未发布任何内容。复制链接后可在其他设备上发布。</string>
     <string name="report_copy_link">复制链接</string>
     <string name="device_as_of">截至 %1$s</string>
+    <string name="device_last_checked">上次检查：%1$s</string>
     <string name="device_internal_storage">内部存储空间</string>
     <string name="device_gb_used">已使用 %1$s</string>
     <string name="device_cpu">CPU</string>

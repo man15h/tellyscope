@@ -966,6 +966,7 @@
     <string name="report_no_browser">ブラウザが開かなかったため、何も投稿されていません。リンクをコピーして、別のデバイスから投稿してください。</string>
     <string name="report_copy_link">リンクをコピー</string>
     <string name="device_as_of">%1$s 時点</string>
+    <string name="device_last_checked">最終確認: %1$s</string>
     <string name="device_internal_storage">内部ストレージ</string>
     <string name="device_gb_used">%1$s 使用中</string>
     <string name="device_cpu">CPU</string>
