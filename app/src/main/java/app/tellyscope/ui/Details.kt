@@ -6,6 +6,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -38,10 +39,10 @@ fun Details(rows: List<Pair<String, String>>, modifier: Modifier = Modifier) {
     var open by rememberSaveable { mutableStateOf(false) }
     Column(modifier.animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec())) {
         Row(
-            Modifier.clip(MaterialTheme.shapes.small).clickable { open = !open }.padding(vertical = 4.dp),
+            Modifier.heightIn(min = 48.dp).clip(MaterialTheme.shapes.small).clickable { open = !open },
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(stringResource(R.string.details_title), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(stringResource(R.string.details_title), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Icon(
                 Icons.Default.KeyboardArrowDown,
                 contentDescription = stringResource(if (open) R.string.details_hide else R.string.details_show),

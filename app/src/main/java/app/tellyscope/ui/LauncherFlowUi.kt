@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,9 +54,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -67,7 +64,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.ripple
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -107,7 +103,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.tellyscope.R
 import app.tellyscope.data.Action
 import app.tellyscope.data.AppInfo
@@ -282,11 +277,14 @@ fun LauncherScreen(
             )
         },
         bottomBar = {
-            Row(
-                Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            // No bar while a Fire OS step has no buttons: under way, or the Play build's picker.
+            val empty = fire != null && when (fire.step) {
+                FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> true
+                FireInstall.Step.Checking -> play
+                null -> play && installedLauncher(apps, flow.pkg) == null
+                else -> false
+            }
+            if (!empty) ActionBar {
                 when (flow.step) {
                     // Fire OS's picker offers Install only on a launcher that isn't on the TV yet.
                     LauncherFlow.Step.Pick -> if (fire != null && (fire.step != null || installedLauncher(apps, flow.pkg) == null)) {
@@ -305,7 +303,7 @@ fun LauncherScreen(
                                 }
                                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth()) { actions.install(chosen) }
                                 if (both) {
-                                    OutlinedButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
+                                    TextButton(onClick = { actions.fireCheck(chosen) }, enabled = flow.fire == null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
                                 }
                             }
                             // Current, or a TV that can't take it as Home: only Open.
@@ -336,7 +334,7 @@ fun LauncherScreen(
         },
     ) { pad ->
         Column(
-            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp),
+            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -347,9 +345,9 @@ fun LauncherScreen(
             when (flow.step) {
                 LauncherFlow.Step.Pick -> if (fire != null) FireBody(fire, flow.pkg, device, play, apps, actions) else Picker(chosen, apps, direct) { chosen = it }
                 LauncherFlow.Step.Waiting -> {
-                    Hero(LauncherIcons.Download, c.secondaryContainer, c.onSecondaryContainer)
+                    StatusHero(HeroTone.Waiting, LauncherIcons.Download)
                     Headed(Copy.INSTALL_IT.resolve(), bold(Copy.installItText(label).resolve(), label, stringResource(R.string.launcher_install_word)))
-                    Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                    AppCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                             Column {
                                 Text(label, style = MaterialTheme.typography.bodyLarge)
@@ -361,7 +359,7 @@ fun LauncherScreen(
                     Text(Copy.DOWNLOADS_TAKE.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 }
                 LauncherFlow.Step.Installed -> {
-                    Hero(Icons.Default.Check, c.secondaryContainer, c.onSecondaryContainer)
+                    StatusHero(HeroTone.Done, Icons.Default.Check)
                     val explain = if (app != null && current != null && app.homeInstead != null) {
                         " " + if (flow.fire != null) Copy.explainFireHome(app.label, app.packageName, current).resolve()
                         else Copy.explainHome(app.label, app.packageName, current, app.homeInstead, app.homeService).resolve()
@@ -371,14 +369,14 @@ fun LauncherScreen(
                     Headed(Copy.MAKE_IT_HOME.resolve(), AnnotatedString(Copy.isInstalled(label).resolve() + explain))
                 }
                 LauncherFlow.Step.NoStore -> {
-                    Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
+                    StatusHero(HeroTone.Failed, LauncherIcons.ErrorOutline)
                     Headed(Copy.NO_STORE.resolve(), bold(Copy.noStoreText(name(device), label).resolve(), label))
-                    Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+                    AppCard(Modifier.fillMaxWidth()) {
                         Box(Modifier.padding(16.dp)) { WaitingLine() }
                     }
                 }
                 LauncherFlow.Step.Left -> {
-                    Hero(LauncherIcons.InfoOutline, c.surfaceContainerHighest, c.onSurfaceVariant)
+                    StatusHero(HeroTone.Neutral, LauncherIcons.InfoOutline)
                     Headed(Copy.notInstalled(label).resolve(), AnnotatedString(Copy.NOT_INSTALLED_TEXT.resolve()))
                 }
             }
@@ -411,14 +409,14 @@ private fun Picker(chosen: String, apps: List<AppInfo>, direct: Boolean, onChoos
     )
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (others.isNotEmpty()) {
-            Text(Copy.ON_THIS_TV.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+            SectionHeader(Copy.ON_THIS_TV.resolve())
             Column(Modifier.selectableGroup().padding(bottom = 20.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 others.forEachIndexed { i, a ->
                     PickRow(segment(i, others.lastIndex), a.packageName == chosen, a.label, a, vertical = 12.dp, onClick = { onChoose(a.packageName) })
                 }
             }
         }
-        Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+        SectionHeader(Copy.RECOMMENDED.resolve())
         Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             RECOMMENDED.forEachIndexed { i, l ->
                 RecommendedRow(l, segment(i, RECOMMENDED.lastIndex), l.pkg == chosen, installedLauncher(apps, l.pkg)) { onChoose(l.pkg) }
@@ -440,7 +438,7 @@ private fun FirePick(pkg: String, apps: List<AppInfo>, play: Boolean = false, on
     val all = fireLaunchers()
     if (onChoose != null && all.size > 1) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(Copy.RECOMMENDED.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary, modifier = Modifier.padding(bottom = 8.dp))
+            SectionHeader(Copy.RECOMMENDED.resolve())
             Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 all.forEachIndexed { i, l -> RecommendedRow(l, segment(i, all.lastIndex), l.pkg == pkg, installedLauncher(apps, l.pkg)) { onChoose(l.pkg) } }
             }
@@ -449,7 +447,7 @@ private fun FirePick(pkg: String, apps: List<AppInfo>, play: Boolean = false, on
         return
     }
     val l = RECOMMENDED.firstOrNull { it.pkg == pkg } ?: return
-    Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text(l.name, style = MaterialTheme.typography.bodyLarge)
             Text(l.about, style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
@@ -494,20 +492,20 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
         } else {
             FirePick(pkg, apps, onChoose = choose)
             if (release != null) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(Copy.WHERE_FROM.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
+                Column {
+                    SectionHeader(Copy.WHERE_FROM.resolve())
                     SourceRow(source, release, openPage)
                 }
                 Text(Copy.signedCheck(label).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
         }
         FireInstall.Step.Downloading, FireInstall.Step.Reading, FireInstall.Step.Installing -> {
-            Text(Copy.installing(label).resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
+            SectionHeader(Copy.installing(label).resolve())
             FireSteps(f, label, device)
             Text(Copy.INSTALL_KEEP_OPEN.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
         }
         FireInstall.Step.WrongApk -> {
-            Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
+            StatusHero(HeroTone.Failed, LauncherIcons.ErrorOutline)
             Headed(
                 (if (f.picked) Copy.wrongApkFile(label) else Copy.wrongApk(label)).resolve(),
                 AnnotatedString((if (f.picked) Copy.wrongApkFileText(label) else Copy.wrongApkText(label)).resolve()),
@@ -516,16 +514,16 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
             if (f.store) Text(Copy.STORE_INSTEAD.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
         }
         FireInstall.Step.NoDownload -> {
-            Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
+            StatusHero(HeroTone.Failed, LauncherIcons.ErrorOutline)
             val text = if (f.until != null) Copy.noDownloadLimited(clockTime(f.until)) else Copy.NO_DOWNLOAD_OFFLINE
             Headed(Copy.noDownload(label).resolve(), AnnotatedString(text.resolve()))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(Copy.OR_YOURSELF.resolve(), style = MaterialTheme.typography.labelLarge, color = c.primary)
+            Column {
+                SectionHeader(Copy.OR_YOURSELF.resolve())
                 Yourself(f, label, source, openPage, actions)
             }
         }
         FireInstall.Step.Refused -> {
-            Hero(LauncherIcons.ErrorOutline, c.errorContainer, c.onErrorContainer)
+            StatusHero(HeroTone.Failed, LauncherIcons.ErrorOutline)
             Headed(Copy.cantInstall(label).resolve(), AnnotatedString(f.error?.resolve().orEmpty()))
         }
     }
@@ -538,7 +536,7 @@ private fun FireBody(f: FireInstall, pkg: String, device: Device, play: Boolean,
 @Composable
 private fun Yourself(f: FireInstall, label: String, source: String?, openPage: () -> Unit, actions: LauncherActions) {
     val release = f.release
-    Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             Numbered(1) {
                 Text(Copy.YOURSELF_PAGE.resolve(), style = MaterialTheme.typography.bodyMedium)
@@ -547,7 +545,10 @@ private fun Yourself(f: FireInstall, label: String, source: String?, openPage: (
             Numbered(2) {
                 Text(Copy.yourselfPick(release?.apk?.substringAfterLast('/'), label).resolve(), style = MaterialTheme.typography.bodyMedium)
                 if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
-                FilledTonalButton(onClick = actions.firePick, enabled = !f.gated, modifier = Modifier.fillMaxWidth()) { Text(Copy.PICK_DOWNLOADED.resolve()) }
+                FilledTonalButton(onClick = actions.firePick, enabled = !f.gated, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+                    Icon(TabIcons.Folder, contentDescription = null, Modifier.size(ButtonDefaults.IconSize))
+                    Text(Copy.PICK_DOWNLOADED.resolve(), Modifier.padding(start = ButtonDefaults.IconSpacing))
+                }
             }
         }
     }
@@ -565,11 +566,11 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, p
         val wide = Modifier.fillMaxWidth()
         when (f.step) {
             null, FireInstall.Step.Checking -> if (!play) IconButtonText(LauncherIcons.Download, Copy.INSTALL.resolve(), wide, enabled = f.step == null, onClick = check)
-            // The safe way first and filled; the download only as the outlined second.
+            // The safe way first and filled; the download only as the text second.
             FireInstall.Step.Confirm -> if (f.store) {
                 IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
                 if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
-                OutlinedButton(onClick = actions.fireInstall, enabled = !f.gated, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
+                TextButton(onClick = actions.fireInstall, enabled = !f.gated, modifier = wide) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
             } else {
                 if (f.list != null) TrustRow(f.trusted, actions.fireTrust)
                 IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), wide, enabled = !f.gated, onClick = actions.fireInstall)
@@ -584,7 +585,9 @@ private fun FireButtons(f: FireInstall, pkg: String, actions: LauncherActions, p
                     Button(onClick = check) { Text(Copy.TRY_DOWNLOAD_AGAIN.resolve()) }
                 }
                 f.store -> IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), wide, onClick = store)
-                else -> Button(onClick = check, modifier = wide) { Text(Copy.TRY_AGAIN.resolve()) }
+                else -> Row(wide, horizontalArrangement = Arrangement.End) {
+                    Button(onClick = check) { Text(Copy.TRY_AGAIN.resolve()) }
+                }
             }
             FireInstall.Step.NoDownload -> Row(wide, horizontalArrangement = Arrangement.End) {
                 Button(onClick = check) { Text(Copy.TRY_AGAIN.resolve()) }
@@ -615,11 +618,10 @@ private enum class StepMark { Todo, Active, Done, Failed }
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun FireSteps(f: FireInstall, label: String, device: Device) {
-    val c = MaterialTheme.colorScheme
     val release = f.release
     val failed = f.step == FireInstall.Step.WrongApk
     val checked = f.step == FireInstall.Step.Installing
-    Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             when {
                 f.picked -> StepLine(1, StepMark.Done, Copy.STEP_PICKED, f.size?.let(Copy::bytes))
@@ -726,13 +728,9 @@ internal fun SourceRow(source: String?, release: LauncherRelease?, onOpen: () ->
 }
 
 /** The warning and the failures: a filled warning in the error colour's cookie, so it reads at a glance. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun WarningBadge() {
-    val c = MaterialTheme.colorScheme
-    Box(Modifier.size(56.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(c.errorContainer), contentAlignment = Alignment.Center) {
-        Icon(Icons.Default.Warning, null, Modifier.size(32.dp), tint = c.onErrorContainer)
-    }
+    StatusHero(HeroTone.Failed, Icons.Default.Warning)
 }
 
 /** The steps that can still download or pick the APK, which [UnverifiedCard] opens. */
@@ -745,12 +743,12 @@ private val UNVERIFIED_STEPS = setOf(null, FireInstall.Step.Checking, FireInstal
 @Composable
 private fun UnverifiedCard(list: String, signers: Set<String>) {
     val c = MaterialTheme.colorScheme
-    Surface(shape = MaterialTheme.shapes.large, color = c.errorContainer, contentColor = c.onErrorContainer, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth(), color = c.errorContainer) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Warning, null, Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(Copy.UNVERIFIED_TITLE.resolve(), style = MaterialTheme.typography.titleSmall)
+                Text(Copy.UNVERIFIED_TITLE.resolve(), style = MaterialTheme.typography.titleMedium)
             }
             Text(Copy.UNVERIFIED_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium)
             Column {
@@ -891,7 +889,7 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
             if (shot != ListImage.Missing) Column(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
                 val description = Copy.homeScreenOf(l.name).resolve()
                 Box(
-                    Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(RoundedCornerShape(12.dp)).background(c.surfaceContainerHighest)
+                    Modifier.fillMaxWidth().aspectRatio(16f / 9f).clip(MaterialTheme.shapes.medium).background(c.surfaceContainerHighest)
                         .then(if (shot == ListImage.Loading) Modifier.shimmer() else Modifier),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -901,15 +899,13 @@ private fun RecommendedRow(l: Recommended, shape: RoundedCornerShape, on: Boolea
                             Icon(LauncherIcons.HideImage, null, tint = c.onSurfaceVariant)
                             Text(Copy.PICTURE_FAILED.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 8.dp))
-                            TextButton(onClick = { tries++ }) {
-                                Text(Copy.TRY_AGAIN.resolve())
-                            }
+                            TryAgainButton(Copy.TRY_AGAIN.resolve(), { tries++ })
                         }
                         else -> {}
                     }
                 }
                 l.launcher.credit?.takeIf { shot is ListImage.Ready }?.let {
-                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, fontSize = 10.sp, fontWeight = FontWeight.Light,
+                    Text(it, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant,
                         modifier = Modifier.padding(start = 4.dp, top = 4.dp, end = 4.dp))
                 }
             }
@@ -980,7 +976,7 @@ private fun Modifier.shimmer(): Modifier {
 internal fun InstalledChip(home: Boolean) {
     val c = MaterialTheme.colorScheme
     Surface(
-        shape = RoundedCornerShape(8.dp),
+        shape = MaterialTheme.shapes.small,
         color = if (home) c.tertiary else Color.Transparent,
         contentColor = if (home) c.onTertiary else c.onSurfaceVariant,
         border = if (home) null else BorderStroke(1.dp, c.outline),
@@ -990,13 +986,6 @@ internal fun InstalledChip(home: Boolean) {
             Spacer(Modifier.width(4.dp))
             Text(if (home) Copy.CURRENT.resolve() else Copy.INSTALLED.resolve(), style = MaterialTheme.typography.labelMedium)
         }
-    }
-}
-
-@Composable
-private fun Hero(icon: ImageVector, bg: Color, fg: Color) {
-    Box(Modifier.size(64.dp).background(bg, CircleShape), contentAlignment = Alignment.Center) {
-        Icon(icon, null, Modifier.size(32.dp), tint = fg)
     }
 }
 

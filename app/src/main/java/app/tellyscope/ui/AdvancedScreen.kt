@@ -2,6 +2,7 @@
 
 package app.tellyscope.ui
 
+import android.content.ClipData
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,8 +32,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -53,6 +53,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -69,11 +70,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -91,6 +92,7 @@ import app.tellyscope.data.Proc
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.Socket
 import app.tellyscope.data.resolve
+import kotlinx.coroutines.launch
 
 /**
  * Everything with a number in it, kept off the TV's page, on four tabs: This TV (the stats and the
@@ -130,7 +132,7 @@ fun AdvancedScreen(
             },
         ) { pad ->
             Column(Modifier.fillMaxSize().padding(pad)) {
-                Header(state, Modifier.padding(horizontal = 16.dp), onShell = { shellFrom = it; shellOpen = true })
+                Header(state, Modifier.padding(horizontal = PageMargin), onShell = { shellFrom = it; shellOpen = true })
                 val tabs = listOf(R.string.advanced_this_tv, R.string.advanced_cpu, R.string.advanced_ram, R.string.advanced_network)
                 // Scrolls sideways when the labels don't fit: long translations, large text.
                 PrimaryScrollableTabRow(selectedTabIndex = tab, Modifier.padding(top = 12.dp), edgePadding = 16.dp) {
@@ -140,7 +142,7 @@ fun AdvancedScreen(
                 }
                 LazyColumn(
                     Modifier.fillMaxSize().swipeTabs(tab, tabs.size) { tab = it },
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 32.dp),
+                    contentPadding = PaddingValues(start = PageMargin, end = PageMargin, top = 16.dp, bottom = 32.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (snap == null) {
@@ -198,10 +200,11 @@ private fun appRows(apps: List<AppInfo>, procs: List<Proc>, network: NetworkInfo
 private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit) {
     val device = state.selected ?: return
     val c = MaterialTheme.colorScheme
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     val address = stringResource(R.string.advanced_address, device.hit.ip, device.hit.port)
     var center by remember { mutableStateOf(Offset.Zero) }
-    Card(modifier, colors = CardDefaults.cardColors(containerColor = c.surfaceContainer)) {
+    AppCard(modifier) {
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Cookie(device, 48.dp)
             Spacer(Modifier.width(12.dp))
@@ -210,7 +213,7 @@ private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     // In full, never cut: where it doesn't fit beside Shell the port goes under the IP.
                     Text(address.replace(":", "\u200B:"), Modifier.weight(1f, fill = false), style = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace))
-                    IconButton(onClick = { clipboard.setText(AnnotatedString(address)) }, Modifier.size(32.dp)) {
+                    IconButton(onClick = { scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(name(device), address))) } }, Modifier.size(32.dp)) {
                         Icon(CopyIcon, stringResource(R.string.advanced_copy_address), Modifier.size(16.dp), tint = c.onSurfaceVariant)
                     }
                 }
@@ -231,7 +234,7 @@ private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit
 /** A summary card; greyed under an "Offline · as of" line when [staleSince] is set. */
 @Composable
 private fun SummaryCard(staleSince: Long?, at: Long, body: @Composable () -> Unit) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+    AppCard {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (staleSince != null) {
                 Text(
@@ -290,10 +293,10 @@ private fun Stats(s: Snapshot, recent: List<Snapshot>, staleSince: Long?, rows: 
         val busiest = rows.filter { it.cpu >= 1 }.sortedByDescending { it.cpu }.take(3).takeIf { s.cpuPercent > 33 }.orEmpty()
         if (busiest.isNotEmpty()) {
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Text(stringResource(R.string.advanced_busiest), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            SectionHeader(stringResource(R.string.advanced_busiest))
             val max = busiest.maxOf { it.cpu }.coerceAtLeast(1.0)
             busiest.forEach { r ->
-                Row(Modifier.fillMaxWidth().clickable { onApp(r.name) }, verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { onApp(r.name) }, verticalAlignment = Alignment.CenterVertically) {
                     RowIcon(r, 32.dp)
                     Spacer(Modifier.width(12.dp))
                     Text(r.name, Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -352,7 +355,9 @@ private fun Speeds(s: Snapshot, style: TextStyle, apart: Boolean = true) {
 @Composable
 private fun Facts(device: Device, snap: Snapshot?, n: NetworkInfo?) {
     val dash = "—"
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val macLabel = stringResource(R.string.advanced_mac)
     var dbm by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row {
@@ -388,7 +393,7 @@ private fun Facts(device: Device, snap: Snapshot?, n: NetworkInfo?) {
         n?.mac?.let { mac ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Fact(Icons2.Tag, stringResource(R.string.advanced_mac), mac, Modifier.weight(1f), mono = true)
-                IconButton(onClick = { clipboard.setText(AnnotatedString(mac)) }) {
+                IconButton(onClick = { scope.launch { clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(macLabel, mac))) } }) {
                     Icon(CopyIcon, stringResource(R.string.advanced_copy_mac), Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -450,13 +455,13 @@ private fun LazyListScope.appList(
     if (heading) {
         item {
             val n = rows.count { it.running }
-            Text(pluralStringResource(R.plurals.advanced_apps_running, n, n), Modifier.padding(start = 8.dp, top = 8.dp), style = MaterialTheme.typography.titleSmall)
+            SectionHeader(pluralStringResource(R.plurals.advanced_apps_running, n, n), Modifier.padding(start = 8.dp))
         }
     }
     item {
         val res = LocalContext.current.resources
         val max = rows.maxOf(value).coerceAtLeast(1.0)
-        Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+        AppCard {
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 rows.forEach { r ->
                     Row(
@@ -670,7 +675,7 @@ private fun AppSheet(r: AppRow, onClose: () -> Unit) {
     val mono = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
     val number = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum")
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
-        LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(start = 24.dp, end = 24.dp, bottom = 24.dp)) {
+        LazyColumn(Modifier.navigationBarsPadding(), contentPadding = PaddingValues(start = PageMargin, end = PageMargin, bottom = 24.dp)) {
             item {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RowIcon(r, 48.dp)
@@ -690,7 +695,7 @@ private fun AppSheet(r: AppRow, onClose: () -> Unit) {
                 }
             }
             if (r.procs.isNotEmpty()) {
-                item { SheetHeading(stringResource(R.string.advanced_processes_n, r.procs.size)) }
+                item { SectionHeader(stringResource(R.string.advanced_processes_n, r.procs.size)) }
                 items(r.procs.sortedByDescending { it.cpuPercent }, key = { it.pid }) { p ->
                     Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(p.pid.toString(), Modifier.width(56.dp), style = mono, color = c.onSurfaceVariant)
@@ -702,7 +707,7 @@ private fun AppSheet(r: AppRow, onClose: () -> Unit) {
                 }
             }
             if (r.sockets.isNotEmpty()) {
-                item { SheetHeading(stringResource(R.string.advanced_connections_n, r.sockets.size)) }
+                item { SectionHeader(stringResource(R.string.advanced_connections_n, r.sockets.size)) }
                 items(r.sockets) { s ->
                     Row(Modifier.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(s.remote, Modifier.weight(1f), style = mono, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -712,11 +717,6 @@ private fun AppSheet(r: AppRow, onClose: () -> Unit) {
             }
         }
     }
-}
-
-@Composable
-private fun SheetHeading(text: String) {
-    Text(text, Modifier.padding(top = 24.dp, bottom = 4.dp), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
 }
 
 @StringRes

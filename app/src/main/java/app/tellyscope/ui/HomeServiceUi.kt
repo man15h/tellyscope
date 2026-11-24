@@ -17,8 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -88,11 +86,7 @@ fun HomeNoteCard(
     modifier: Modifier = Modifier,
 ) {
     val c = MaterialTheme.colorScheme
-    Card(
-        colors = CardDefaults.cardColors(containerColor = c.surfaceContainer),
-        shape = MaterialTheme.shapes.large,
-        modifier = modifier.fillMaxWidth(),
-    ) {
+    AppCard(modifier.fillMaxWidth()) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 12.dp)) {
             Row {
                 Box(Modifier.size(40.dp).background(c.tertiaryContainer, CircleShape), contentAlignment = Alignment.Center) {

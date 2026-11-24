@@ -61,11 +61,11 @@ internal fun splitApps(apps: List<AppInfo>, procs: List<Proc>, tab: AppsTab): Ap
 @Composable
 internal fun SystemHeader(count: Int, folded: Boolean, onFold: (Boolean) -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable { onFold(!folded) }.padding(vertical = 8.dp),
+        Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable { onFold(!folded) }.padding(top = 16.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.apps_system_count, Copy.SYSTEM.resolve(), count), style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.apps_system_count, Copy.SYSTEM.resolve(), count), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             Text(Copy.SYSTEM_WHY.resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Icon(

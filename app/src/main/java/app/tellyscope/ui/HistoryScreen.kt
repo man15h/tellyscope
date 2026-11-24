@@ -25,14 +25,14 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -102,7 +102,7 @@ fun HistoryScreen(
     ) { pad ->
         LazyColumn(
             Modifier.fillMaxSize().padding(pad),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+            contentPadding = PaddingValues(start = PageMargin, end = PageMargin, bottom = 32.dp),
         ) {
             item {
                 if (ui.history.isEmpty()) EmptyState(HistoryIcons.History, stringResource(R.string.history_empty_title), stringResource(R.string.history_empty_text))
@@ -116,6 +116,7 @@ fun HistoryScreen(
  * The Restore card while [restore] has anything to put back, then one row per change. While
  * anything runs on the TV, a restore included, Undo and Restore wait for it.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun HistoryList(
     history: List<HistoryEntry>,
@@ -137,19 +138,15 @@ internal fun HistoryList(
     }
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         if (off > 0) {
-            Card(
-                Modifier.fillMaxWidth().padding(bottom = 14.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-                shape = MaterialTheme.shapes.large,
-            ) {
+            AppCard(Modifier.fillMaxWidth().padding(bottom = 14.dp)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(Copy.putBackTitle(off).resolve(), style = MaterialTheme.typography.titleSmall)
+                    Text(Copy.putBackTitle(off).resolve(), style = MaterialTheme.typography.titleMedium)
                     Text(Copy.PUT_BACK_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     for (line in Copy.restoreLines(restore)) Text(line.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.size(8.dp))
                     FilledTonalButton(onClick = { confirming = true }, enabled = !busy) {
                         if (restoring) {
-                            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            LoadingIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(8.dp))
                             Text(stringResource(R.string.history_restoring))
                         } else {
@@ -217,7 +214,7 @@ private fun RestoredDialog(r: RestoreResult, onDismiss: () -> Unit) {
                 Text(Copy.RESTORED_HINT.resolve())
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.history_ok)) } },
+        confirmButton = { Button(onClick = onDismiss) { Text(stringResource(R.string.history_ok)) } },
     )
 }
 

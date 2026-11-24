@@ -3,16 +3,12 @@
 package app.tellyscope.ui
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,36 +49,28 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
             )
         },
         bottomBar = {
-            Row(
-                Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            ActionBar {
                 TextButton(onClick = onBack) { Text(stringResource(R.string.logged_out_back_to_tvs)) }
                 Button(onClick = onConnect) { Text(stringResource(R.string.logged_out_connect_again)) }
             }
         },
     ) { pad ->
         Column(
-            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp),
+            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(DeviceIcons.Tv, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(connectTitle(device), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Surface(Modifier.size(64.dp), shape = CircleShape, color = MaterialTheme.colorScheme.errorContainer) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(DeviceIcons.Logout, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
-                }
-            }
+            StatusHero(HeroTone.Failed, DeviceIcons.Logout)
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(Copy.LOGGED_OUT.resolve(), style = MaterialTheme.typography.headlineMedium)
                 Text(Copy.LOGGED_OUT_WHY.resolve(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(Copy.loggedOutAt(loggedOutAt, now).resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.logged_out_causes_title), style = MaterialTheme.typography.titleSmall)
+                SectionHeader(stringResource(R.string.logged_out_causes_title))
                 Copy.LOGGED_OUT_CAUSES.forEach { Text(stringResource(R.string.logged_out_cause, it.resolve()), style = MaterialTheme.typography.bodyMedium) }
             }
         }

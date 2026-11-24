@@ -3,6 +3,7 @@
 
 package app.tellyscope.ui
 
+import android.content.ClipData
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,18 +21,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenu
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -63,11 +62,11 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
@@ -113,24 +112,26 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
     if (discarding) DiscardDialog(onDiscard = { discarding = false; close() }, onKeep = { discarding = false })
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val title = stringResource(if (newTv) R.string.report_title_new_tv else R.string.report_title_problem)
     val noBrowser = stringResource(R.string.report_no_browser)
     val copyLink = stringResource(R.string.report_copy_link)
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             WrappingTopBar(
-                stringResource(if (newTv) R.string.report_title_new_tv else R.string.report_title_problem),
+                title,
                 navigationIcon = { IconButton(onClick = leave) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.report_close)) } },
             )
         },
         bottomBar = {
-            if (posted == null) Actions(
+            if (posted == null) ActionBar(
+                Modifier.imePadding(),
                 note = stringResource(R.string.report_note_own_account) + " " + stringResource(
                     if (report?.rest != null) R.string.report_note_rest else R.string.report_note_nothing_sent,
                 ),
-                cancel = leave,
             ) {
+                TextButton(onClick = leave) { Text(stringResource(R.string.report_cancel)) }
                 Button(
                     onClick = {
                         report?.let { rep ->
@@ -140,7 +141,7 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
                                 // No browser took it: nothing was posted, so the form stays, and the link can go to another device.
                                 scope.launch {
                                     if (snackbar.showSnackbar(noBrowser, copyLink, duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
-                                        clipboard.setText(AnnotatedString(rep.link))
+                                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(title, rep.link)))
                                     }
                                 }
                             }
@@ -166,7 +167,7 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
                 return@Column
             }
             // Read from the TV, so shown as facts rather than fields to edit.
-            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+            AppCard {
                 val tv = r.tv
                 val reading = stringResource(if (r.reading) R.string.report_reading_tv else R.string.report_no_tv)
                 Fact(stringResource(if (newTv) R.string.report_tv_model else R.string.report_tv), tv?.name ?: reading)
@@ -189,7 +190,7 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
                 minLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(stringResource(R.string.report_what_gets_sent), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+            SectionHeader(stringResource(R.string.report_what_gets_sent))
             if (report == null) {
                 Text(
                     when {
@@ -213,7 +214,9 @@ fun ReportScreen(r: ReportUi, onOpened: (Report) -> Unit, close: () -> Unit) {
 @Composable
 fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
     val browser = LocalUriHandler.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val label = stringResource(R.string.report_add_rest)
     val rest = posted.rest.orEmpty()
     BackHandler(onBack = back)
     Scaffold(
@@ -224,14 +227,15 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
             )
         },
         bottomBar = {
-            Actions(
-                note = stringResource(R.string.report_add_rest_note, posted.repo),
-                cancel = back,
-            ) {
+            ActionBar(note = stringResource(R.string.report_add_rest_note, posted.repo)) {
+                TextButton(onClick = back) { Text(stringResource(R.string.report_cancel)) }
                 Button(onClick = {
-                    clipboard.setText(AnnotatedString(rest))
-                    runCatching { browser.openUri(posted.myIssues) }
-                    done()
+                    // Leave only once copied: leaving first would cancel the copy with this screen's scope.
+                    scope.launch {
+                        clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(label, rest)))
+                        runCatching { browser.openUri(posted.myIssues) }
+                        done()
+                    }
                 }) { ButtonIcon(CopyIcon); Text(stringResource(R.string.report_copy_and_open)) }
             }
         },
@@ -259,7 +263,7 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
 @Composable
 private fun PostedCard(posted: Report, notNow: () -> Unit, addRest: () -> Unit) {
     val lines = posted.rest.orEmpty().lines().size - 1
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+    AppCard(color = MaterialTheme.colorScheme.primaryContainer) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(stringResource(R.string.report_posted_title), style = MaterialTheme.typography.titleMedium)
             Text(
@@ -267,9 +271,9 @@ private fun PostedCard(posted: Report, notNow: () -> Unit, addRest: () -> Unit) 
                 else stringResource(R.string.report_posted_part_cut),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            ButtonRow(Modifier.padding(top = 8.dp)) {
                 TextButton(onClick = notNow) { Text(stringResource(R.string.report_not_now)) }
-                Button(onClick = addRest) { Text(stringResource(R.string.report_add_rest)) }
+                FilledTonalButton(onClick = addRest) { Text(stringResource(R.string.report_add_rest)) }
             }
         }
     }
@@ -305,7 +309,7 @@ private fun <T> Choice(label: String, value: T?, options: List<T>, text: (T) -> 
 /** What goes to GitHub, as it'll read there. */
 @Composable
 private fun Sent(text: String, tall: Boolean = false) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth()) {
         Text(
             text,
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
@@ -323,21 +327,6 @@ private fun Removed() = Row(verticalAlignment = Alignment.CenterVertically) {
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
-}
-
-/** The bottom bar: what happens next, then Cancel and the one action. */
-@Composable
-private fun Actions(note: String, cancel: () -> Unit, action: @Composable () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().imePadding().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
-                TextButton(onClick = cancel) { Text(stringResource(R.string.report_cancel)) }
-
-                action()
-            }
-        }
-    }
 }
 
 /**
@@ -362,12 +351,14 @@ private fun WrappingTopBar(title: String, navigationIcon: @Composable () -> Unit
 /** Back, X or Cancel with something picked or typed. */
 @Composable
 private fun DiscardDialog(onDiscard: () -> Unit, onKeep: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onKeep,
-        title = { Text(stringResource(R.string.report_discard_title)) },
+    DestructiveDialog(
+        icon = Icons.Default.Delete,
+        title = stringResource(R.string.report_discard_title),
+        confirm = stringResource(R.string.report_discard),
+        dismiss = stringResource(R.string.report_keep_editing),
+        onConfirm = onDiscard,
+        onDismiss = onKeep,
         text = { Text(stringResource(R.string.report_discard_text)) },
-        confirmButton = { TextButton(onClick = onDiscard) { Text(stringResource(R.string.report_discard)) } },
-        dismissButton = { TextButton(onClick = onKeep) { Text(stringResource(R.string.report_keep_editing)) } },
     )
 }
 

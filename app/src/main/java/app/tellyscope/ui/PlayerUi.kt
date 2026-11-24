@@ -19,7 +19,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -94,7 +93,7 @@ fun PlayerDialog(p: PlayerFlow, tv: String, actions: PlayerActions) {
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (p.store == PlayerStore.Play) {
                             IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth(), onClick = actions.store)
-                            if (p.download) OutlinedButton(onClick = actions.direct, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
+                            if (p.download) TextButton(onClick = actions.direct, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_DIRECTLY.resolve()) }
                         } else {
                             IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), Modifier.fillMaxWidth(), onClick = actions.download)
                         }
@@ -124,7 +123,7 @@ fun PlayerDialog(p: PlayerFlow, tv: String, actions: PlayerActions) {
                         Text(Copy.STORE_SAFER.resolve())
                         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             IconButtonText(OpenInNew, Copy.GET_FROM_STORE.resolve(), Modifier.fillMaxWidth(), onClick = actions.store)
-                            OutlinedButton(onClick = actions.download, enabled = release != null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
+                            TextButton(onClick = actions.download, enabled = release != null, modifier = Modifier.fillMaxWidth()) { Text(Copy.DOWNLOAD_ANYWAY.resolve()) }
                         }
                     }
                 },

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -125,8 +127,8 @@ val brands = listOf(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun BrandChips(brand: TvBrand, onPick: (TvBrand) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.guide_pick_tv), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Column {
+        SectionHeader(stringResource(R.string.guide_pick_tv))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             brands.forEach { b ->
                 FilterChip(
@@ -170,7 +172,7 @@ fun GuideSteps(brand: TvBrand, step: Int, found: Int, onStep: (Int) -> Unit, fin
                     if (i < step) {
                         val open = i in shown
                         Row(
-                            Modifier.clip(MaterialTheme.shapes.small).clickable { shown = if (open) shown - i else shown + i },
+                            Modifier.heightIn(min = 48.dp).clip(MaterialTheme.shapes.small).clickable { shown = if (open) shown - i else shown + i },
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
@@ -196,7 +198,7 @@ fun GuideSteps(brand: TvBrand, step: Int, found: Int, onStep: (Int) -> Unit, fin
                             i == step && last -> findTvs()
                             i == step -> {
                                 Text(marked(body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Button(onClick = { onStep(i + 1) }, Modifier.padding(top = 12.dp)) { Text(stringResource(R.string.guide_done_next)) }
+                                FilledTonalButton(onClick = { onStep(i + 1) }, Modifier.padding(top = 12.dp)) { Text(stringResource(R.string.guide_done_next)) }
                             }
                             last && found > 0 -> TextButton(
                                 onClick = { onStep(i) },
