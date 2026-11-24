@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -37,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -419,8 +421,10 @@ internal fun AppRow(
     offline: Boolean = false,
     /** The package on the TV's screen; null when the TV didn't say. */
     onScreen: String? = null,
+    /** The package whose row is open. The list shares one, so opening a row closes the one before. */
+    openRow: MutableState<String?> = remember { mutableStateOf(null) },
 ) {
-    var open by rememberSaveable(app.packageName) { mutableStateOf(false) }
+    val open = openRow.value == app.packageName
     // A launcher can be protected and still open, for the way to the Home screen card.
     val launcher = app.answersHome || app.builtInLauncher
     val ram = procs.filter { it.packageName == app.packageName }.sumOf { it.ramMb }
@@ -440,7 +444,7 @@ internal fun AppRow(
             else -> R.string.device_app_not_running
         },
     )
-    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { open = !open }.padding(vertical = 8.dp).alpha(if (offline) 0.38f else 1f)) {
+    Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { openRow.value = if (open) null else app.packageName }.padding(vertical = 8.dp).alpha(if (offline) 0.38f else 1f)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             AppIcon(app, Modifier.alpha(if (app.enabled || offline) 1f else 0.38f))
             Spacer(Modifier.width(12.dp))
@@ -466,6 +470,8 @@ internal fun AppRow(
                 // The label is whatever the app calls itself; the package id is what an action touches.
                 Text(app.packageName, style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (proposed == null) {
+                    // Uninstall has no undo, so it alone is red; Disable can be turned back on and stays tonal.
+                    val red = ButtonDefaults.filledTonalButtonColors(containerColor = MaterialTheme.colorScheme.errorContainer, contentColor = MaterialTheme.colorScheme.error)
                     // At most three: Open and Stop, then one remove button. Uninstall for an app the user
                     // installed, Disable for one the TV came with; Turn on takes Open's place while it's off.
                     // Buttons that don't fit on one line, in a long translation or at large text, wrap to the next.
@@ -474,14 +480,14 @@ internal fun AppRow(
                             if (!app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
                             if (app.enabled && running) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
-                            if (app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            if (app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked, colors = red) { Text(Copy.button(Action.Uninstall).resolve()) }
                             else if (app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
                         }
                     } else if (opens || (launcher && app.removable)) {
                         // Protected, but anything with an icon still opens; the launcher on Home also uninstalls, Home moving first.
                         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
-                            if (launcher && app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            if (launcher && app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked, colors = red) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {

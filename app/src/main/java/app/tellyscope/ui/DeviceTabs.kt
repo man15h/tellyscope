@@ -177,6 +177,8 @@ fun DeviceTabsScreen(
     LaunchedEffect(tab) { onTab(tab) }
     var searching by rememberSaveable { mutableStateOf(false) }
     var appsTab by rememberSaveable { mutableStateOf(AppsTab.Running) }
+    // One app row open at a time, across every list and search.
+    val openRow = rememberSaveable { mutableStateOf<String?>(null) }
     val q = state.query.trim().lowercase()
     val offline = device.state != DeviceState.Online
     // Back from the background, until the TV answers again: Overview keeps its last values, the other tabs wait.
@@ -390,7 +392,7 @@ fun DeviceTabsScreen(
                     }
                     TvTab.Apps -> {
                         fun rows(apps: List<AppInfo>) = items(apps, key = { it.packageName }) { app ->
-                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline, onScreen = ui.snapshot?.onScreen)
+                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline, onScreen = ui.snapshot?.onScreen, openRow = openRow)
                         }
                         // Until the first read lands, an empty list means "not yet", not "none".
                         val loading = ui.appsLoading && !offline
