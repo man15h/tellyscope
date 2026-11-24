@@ -121,6 +121,8 @@ class DeviceLink(
         var retry = false
         // Refusals in a row from a TV that let this phone in before; see the class doc.
         var refused = 0
+        // One quiet reconnect per return from the background; see the Online branch.
+        var quiet = true
         while (true) {
             gate.awaitResumed()
             if (retry) findPort()?.let { port = it }
@@ -144,6 +146,14 @@ class DeviceLink(
                     allowedBefore = true
                     _loggedOutAt.value = null
                     online(r.session)
+                    // Dropped before its first reading since the app came back: the connection went stale
+                    // in the background. A new one at once, still online; offline only if that fails too.
+                    if (!gate.checking.value) quiet = true
+                    else if (quiet) {
+                        quiet = false
+                        retry = false
+                        continue
+                    }
                     _state.value = _state.value.on(DeviceEvent.Lost)
                 }
             }
@@ -159,6 +169,7 @@ class DeviceLink(
             monitorFor(s, gate).stats().collect {
                 _stats.value = it
                 lastSeenMillis = System.currentTimeMillis()
+                gate.checking.value = false
             }
         } catch (e: CancellationException) {
             throw e

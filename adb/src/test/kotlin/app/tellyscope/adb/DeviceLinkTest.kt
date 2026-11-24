@@ -6,6 +6,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -118,6 +119,51 @@ class DeviceLinkTest {
         advanceTimeBy(5_001)
         assertEquals(DeviceState.ONLINE, link.state.value)
         assertEquals(2, sessions.size)
+    }
+
+    @Test fun staleAfterBackgroundReconnectsWithoutGoingOffline() = runTest {
+        // Back from the background, the first read on the idle connection fails: a new one at once, no offline.
+        val sessions = mutableListOf<FakeShell>()
+        lateinit var link: DeviceLink
+        link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ ->
+                if (sessions.size == 1) object : MonitorSource {
+                    override fun stats() = flow<Stats> {
+                        link.gate.checking.value = true
+                        throw IOException("stale")
+                    }
+                } else fakeMonitor(failFirst = false)
+            },
+            open = { _, _ -> ConnectResult.Online(FakeShell().also { sessions += it }) },
+        )
+        val seen = mutableListOf<DeviceState>()
+        backgroundScope.launch { link.state.collect { seen += it } }
+        link.connect(); runCurrent()
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(2, sessions.size)
+        assertTrue(DeviceState.OFFLINE !in seen)
+        assertEquals(false, link.gate.checking.value)
+    }
+
+    @Test fun staleAfterBackgroundGoesOfflineWhenTheNewConnectionFails() = runTest {
+        var calls = 0
+        lateinit var link: DeviceLink
+        link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ ->
+                object : MonitorSource {
+                    override fun stats() = flow<Stats> {
+                        link.gate.checking.value = true
+                        throw IOException("stale")
+                    }
+                }
+            },
+            open = { _, _ -> if (calls++ == 0) ConnectResult.Online(FakeShell()) else ConnectResult.Unreachable("asleep") },
+        )
+        link.connect(); runCurrent()
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        assertEquals(2, calls)
     }
 
     @Test fun lanLostGoesOfflineAtOnce() = runTest {
