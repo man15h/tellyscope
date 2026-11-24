@@ -194,6 +194,12 @@ interface DeviceSource {
      */
     suspend fun pickList(deviceId: String, listId: String?): String?
 
+    /** The TV's apps and lists as last read, saved on this phone; null for a TV never read. Never calls the TV. */
+    suspend fun lastState(deviceId: String): LastState? = null
+
+    /** Saves the TV's [apps] and [lists] for [lastState]; lists null or [Suggestions.Unavailable] keep the ones saved before. */
+    suspend fun saveLastState(deviceId: String, apps: List<AppInfo>, lists: Suggestions?) {}
+
     /** Debloat stops suggesting [packages] on this TV with [hide], or suggests them again without; kept on this phone. */
     suspend fun hideSuggested(deviceId: String, packages: Collection<String>, hide: Boolean)
 
