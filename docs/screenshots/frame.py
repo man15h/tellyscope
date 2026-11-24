@@ -44,13 +44,9 @@ RADIUS = 46
 
 def frame(src: Path) -> Image.Image:
     shot = Image.open(src).convert("RGB")
-    # A sideways shot gets the phone turned sideways: framed upright, then turned, so the camera is on the left.
+    # A sideways shot is turned so the phone stands upright like the others, camera on top.
     if shot.width > shot.height:
-        return upright(shot.transpose(Image.Transpose.ROTATE_270)).transpose(Image.Transpose.ROTATE_90)
-    return upright(shot)
-
-
-def upright(shot: Image.Image) -> Image.Image:
+        shot = shot.transpose(Image.Transpose.ROTATE_270)
     shot = shot.crop((0, 0, shot.width, min(shot.height, SCREEN_DP * DP)))
     shot = shot.resize((WIDTH, shot.height * WIDTH // shot.width), Image.LANCZOS)
 
