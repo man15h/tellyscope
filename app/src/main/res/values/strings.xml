@@ -372,6 +372,7 @@
     <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
     <string name="copy_send_failed_off_wifi">Couldn\'t send %1$s. This phone isn\'t on Wi-Fi.</string>
     <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
+    <string name="copy_deleted">Deleted %1$s from the TV</string>
     <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
     <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
     <string name="copy_cant_read">Couldn\'t read that file on your phone.</string>
@@ -850,6 +851,7 @@
     <string name="vm_report_tv_said">The TV said: %1$s</string>
     <!-- Report a problem: starts the user's details; %1$s app name, %2$s its version (may be empty) -->
     <string name="vm_report_tried_install">Tried to install %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Tried to delete %1$s from the TV</string>
 
     <!-- Snackbar action for another TV that logged out: opens its page -->
     <string name="vm_logged_out_view">View</string>
@@ -1518,8 +1520,16 @@
     <string name="transfers_send_file">Send file</string>
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">To %1$s</string>
-    <string name="transfers_tap_to_save">Tap a file to save it. Tap a video, song or picture to open it on the TV or save it.</string>
+    <string name="transfers_tap_to_save">Tap a file to open it on the TV, save it or delete it.</string>
     <string name="transfers_save">Save to your phone</string>
+    <string name="transfers_delete">Delete on TV</string>
+    <!-- %1$s is the file's name -->
+    <string name="transfers_delete_title">Delete %1$s from the TV?</string>
+    <!-- %1$s is a TV folder (copy_folder_*) -->
+    <string name="transfers_delete_text">It goes from the TV\'s %1$s folder for good.</string>
+    <string name="transfers_delete_button">Delete</string>
+    <string name="transfers_delete_failed">Couldn\'t delete %1$s</string>
+    <string name="transfers_delete_still_there">The file is still on the TV.</string>
     <string name="transfers_reading">Reading the app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Couldn\'t install %1$s</string>

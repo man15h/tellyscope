@@ -284,6 +284,7 @@
     <string name="copy_send_failed">无法发送 %1$s。请检查电视是否仍连接并有足够空间。</string>
     <string name="copy_send_failed_off_wifi">无法发送 %1$s。这部手机没有连接 Wi-Fi。</string>
     <string name="copy_save_failed">无法保存 %1$s。请检查电视是否仍连接，以及手机是否有足够空间。</string>
+    <string name="copy_deleted">已从电视删除 %1$s</string>
     <string name="copy_cancelled_send">已取消。电视上没有留下任何内容。</string>
     <string name="copy_cancelled_save">已取消。没有保存任何内容。</string>
     <string name="copy_cant_read">无法读取手机上的该文件。</string>
@@ -655,6 +656,7 @@
     <string name="vm_tv_didnt_answer_reason">电视没有响应</string>
     <string name="vm_report_tv_said">电视提示：%1$s</string>
     <string name="vm_report_tried_install">尝试安装 %1$s %2$s</string>
+    <string name="vm_report_tried_delete">尝试从电视删除 %1$s</string>
     <string name="vm_logged_out_view">查看</string>
     <string name="data_protected_home_screen">这是你的主屏幕</string>
     <string name="data_protected_system">电视运行需要它</string>
@@ -1175,8 +1177,14 @@
     <string name="transfers_debloat">精简</string>
     <string name="transfers_send_file">发送文件</string>
     <string name="transfers_to_folder">发送到 %1$s</string>
-    <string name="transfers_tap_to_save">点按文件即可保存。点按视频、歌曲或图片，可在电视上打开或保存。</string>
+    <string name="transfers_tap_to_save">点按文件即可在电视上打开、保存或删除。</string>
     <string name="transfers_save">保存到手机</string>
+    <string name="transfers_delete">从电视删除</string>
+    <string name="transfers_delete_title">要从电视删除 %1$s 吗？</string>
+    <string name="transfers_delete_text">它将从电视的 %1$s 文件夹中永久删除。</string>
+    <string name="transfers_delete_button">删除</string>
+    <string name="transfers_delete_failed">无法删除 %1$s</string>
+    <string name="transfers_delete_still_there">文件仍在电视上。</string>
     <string name="transfers_reading">正在读取应用</string>
     <string name="transfers_install_failed">无法安装 %1$s</string>
     <string name="transfers_cant_install">无法安装此文件</string>

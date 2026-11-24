@@ -284,6 +284,7 @@
     <string name="copy_send_failed">%1$s を送信できませんでした。テレビが接続されていて、空き容量があることを確認してください。</string>
     <string name="copy_send_failed_off_wifi">%1$s を送信できませんでした。このスマホは Wi-Fi につながっていません。</string>
     <string name="copy_save_failed">%1$s を保存できませんでした。テレビが接続されていて、スマートフォンに空き容量があることを確認してください。</string>
+    <string name="copy_deleted">%1$s をテレビから削除しました</string>
     <string name="copy_cancelled_send">キャンセルしました。テレビには何も残っていません。</string>
     <string name="copy_cancelled_save">キャンセルしました。何も保存されていません。</string>
     <string name="copy_cant_read">スマートフォン上のそのファイルを読み取れませんでした。</string>
@@ -655,6 +656,7 @@
     <string name="vm_tv_didnt_answer_reason">テレビから応答がありません</string>
     <string name="vm_report_tv_said">テレビからの応答: %1$s</string>
     <string name="vm_report_tried_install">%1$s %2$s のインストールを試みました</string>
+    <string name="vm_report_tried_delete">%1$s をテレビから削除しようとしました</string>
     <string name="vm_logged_out_view">表示</string>
     <string name="data_protected_home_screen">これは現在のホーム画面です</string>
     <string name="data_protected_system">テレビの動作に必要です</string>
@@ -1175,8 +1177,14 @@
     <string name="transfers_debloat">整理</string>
     <string name="transfers_send_file">ファイルを送信</string>
     <string name="transfers_to_folder">送信先: %1$s</string>
-    <string name="transfers_tap_to_save">ファイルをタップすると保存できます。動画、曲、画像をタップすると、テレビで開くか保存できます。</string>
+    <string name="transfers_tap_to_save">ファイルをタップすると、テレビで開く、保存する、削除することができます。</string>
     <string name="transfers_save">スマートフォンに保存</string>
+    <string name="transfers_delete">テレビから削除</string>
+    <string name="transfers_delete_title">%1$s をテレビから削除しますか？</string>
+    <string name="transfers_delete_text">テレビの %1$s フォルダから完全に削除されます。</string>
+    <string name="transfers_delete_button">削除</string>
+    <string name="transfers_delete_failed">%1$s を削除できませんでした</string>
+    <string name="transfers_delete_still_there">ファイルはテレビに残っています。</string>
     <string name="transfers_reading">アプリを読み込んでいます</string>
     <string name="transfers_install_failed">%1$s をインストールできませんでした</string>
     <string name="transfers_cant_install">インストールできません</string>

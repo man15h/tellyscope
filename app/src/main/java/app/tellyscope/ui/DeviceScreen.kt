@@ -109,6 +109,11 @@ data class DeviceActions(
     val pickFile: (TvFolder) -> Unit = {},
     /** Asks where to save [TvFile] on the phone, then copies it. */
     val saveFile: (TvFile) -> Unit = {},
+    /** Delete on TV, once its confirm says yes. */
+    val deleteFile: (TvFile) -> Unit = {},
+    val closeDeleteFailed: () -> Unit = {},
+    /** Report a problem from a failed delete, with what the TV said. */
+    val reportDelete: (DeleteFailed) -> Unit = {},
     val cancelTransfer: () -> Unit = {},
     /** Open on TV in a media file's sheet, and the prompt that offers a player. */
     val player: PlayerActions = PlayerActions(),

@@ -369,6 +369,7 @@
     <string name="copy_send_failed">Não deu para enviar %1$s. Verifique se a TV continua conectada e tem espaço.</string>
     <string name="copy_send_failed_off_wifi">Não deu para enviar %1$s. Este celular não está no Wi-Fi.</string>
     <string name="copy_save_failed">Não deu para salvar %1$s. Verifique se a TV continua conectada e o celular tem espaço.</string>
+    <string name="copy_deleted">%1$s excluído da TV</string>
     <string name="copy_cancelled_send">Cancelado. Nada ficou na TV.</string>
     <string name="copy_cancelled_save">Cancelado. Nada foi salvo.</string>
     <string name="copy_cant_read">Não deu para ler esse arquivo no celular.</string>
@@ -838,6 +839,7 @@
     <string name="vm_report_tv_said">A TV disse: %1$s</string>
     <!-- Report a problem: starts the user's details; %1$s app name, %2$s its version (may be empty) -->
     <string name="vm_report_tried_install">Tentativa de instalar %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Tentativa de excluir %1$s da TV</string>
 
     <!-- Snackbar action for another TV that logged out: opens its page -->
     <string name="vm_logged_out_view">Ver</string>
@@ -1485,8 +1487,14 @@
     <string name="transfers_send_file">Enviar arquivo</string>
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">Para %1$s</string>
-    <string name="transfers_tap_to_save">Toque em um arquivo para salvá-lo. Toque em um vídeo, música ou imagem para abrir na TV ou salvar.</string>
+    <string name="transfers_tap_to_save">Toque em um arquivo para abrir na TV, salvar ou excluir.</string>
     <string name="transfers_save">Salvar no celular</string>
+    <string name="transfers_delete">Excluir da TV</string>
+    <string name="transfers_delete_title">Excluir %1$s da TV?</string>
+    <string name="transfers_delete_text">Ele sai da pasta %1$s da TV para sempre.</string>
+    <string name="transfers_delete_button">Excluir</string>
+    <string name="transfers_delete_failed">Não foi possível excluir %1$s</string>
+    <string name="transfers_delete_still_there">O arquivo continua na TV.</string>
     <string name="transfers_reading">Lendo o app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Não foi possível instalar %1$s</string>

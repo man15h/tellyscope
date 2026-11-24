@@ -1384,6 +1384,9 @@ class AdbDeviceSource(
         busy(deviceId) { Files(session).pull(folder, file, sink, onProgress) }
     }
 
+    override suspend fun deleteFile(deviceId: String, folder: TvFolder, file: TvFile) =
+        busy(deviceId, reread = true) { Files(session(deviceId)).delete(folder, file) }
+
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw UiTextException(UiText(R.string.data_offline, deviceId))
 
