@@ -8,9 +8,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -110,8 +113,9 @@ private fun ModeSheet(pad: RemotePad, pointer: Boolean, onPick: (RemotePad) -> U
                 IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, stringResource(R.string.remote_mode_close)) }
             }
             Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                for (row in MODES.chunked(2)) Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    for (m in row) ModeCard(m, current = m.pad == pad, allowed = m.pad != RemotePad.POINTER || pointer, onClick = { onPick(m.pad) }, Modifier.weight(1f))
+                // Both cards in a row as tall as the taller one, so a long name or line grows the row instead of clipping.
+                for (row in MODES.chunked(2)) Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    for (m in row) ModeCard(m, current = m.pad == pad, allowed = m.pad != RemotePad.POINTER || pointer, onClick = { onPick(m.pad) }, Modifier.weight(1f).fillMaxHeight())
                 }
             }
         }
@@ -124,7 +128,7 @@ private fun ModeCard(mode: Mode, current: Boolean, allowed: Boolean, onClick: ()
     Card(
         onClick = onClick,
         enabled = allowed,
-        modifier = modifier.height(168.dp).semantics { selected = current },
+        modifier = modifier.heightIn(min = 168.dp).semantics { selected = current },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = if (current) c.secondaryContainer else c.surfaceContainer,
