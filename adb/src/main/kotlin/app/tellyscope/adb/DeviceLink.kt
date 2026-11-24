@@ -37,6 +37,9 @@ class DeviceLink(
     private val open: suspend (String, Int) -> ConnectResult = { h, p -> Connector.connect(h, p) },
     knownGood: Boolean = false,
     private val findPort: suspend () -> Int? = { null },
+    /** Back from the background, how often and how many times a stale link reconnects before it shows offline. */
+    private val quietEvery: Duration = 1.seconds,
+    private val quietTries: Int = 10,
 ) {
     @Volatile var port: Int = port
         private set
@@ -121,8 +124,9 @@ class DeviceLink(
         var retry = false
         // Refusals in a row from a TV that let this phone in before; see the class doc.
         var refused = 0
-        // One quiet reconnect per return from the background; see the Online branch.
+        // One quiet window per return from the background, and the tries left in it; see the Online branch.
         var quiet = true
+        var quietLeft = 0
         while (true) {
             gate.awaitResumed()
             if (retry) findPort()?.let { port = it }
@@ -141,17 +145,33 @@ class DeviceLink(
                     _state.value = _state.value.on(DeviceEvent.NeedsPairing)
                     return
                 }
-                is ConnectResult.Unreachable -> _state.value = _state.value.on(DeviceEvent.Unreachable)
+                is ConnectResult.Unreachable -> {
+                    // Android gives the network back a moment after the app is in front: try again soon, still online.
+                    if (quietLeft > 0 && gate.checking.value) {
+                        quietLeft--
+                        delay(quietEvery)
+                        continue
+                    }
+                    _state.value = _state.value.on(DeviceEvent.Unreachable)
+                }
                 is ConnectResult.Online -> {
                     allowedBefore = true
                     _loggedOutAt.value = null
                     online(r.session)
                     // Dropped before its first reading since the app came back: the connection went stale
-                    // in the background. A new one at once, still online; offline only if that fails too.
-                    if (!gate.checking.value) quiet = true
-                    else if (quiet) {
+                    // in the background. A new one at once, still online, then every [quietEvery] up to
+                    // [quietTries] times; offline only if none of them gets a read through.
+                    if (!gate.checking.value) {
+                        quiet = true
+                        quietLeft = 0
+                    } else if (quiet) {
                         quiet = false
+                        quietLeft = quietTries
                         retry = false
+                        continue
+                    } else if (quietLeft > 0) {
+                        quietLeft--
+                        delay(quietEvery)
                         continue
                     }
                     _state.value = _state.value.on(DeviceEvent.Lost)

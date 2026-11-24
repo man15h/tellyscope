@@ -146,7 +146,7 @@ class DeviceLinkTest {
         assertEquals(false, link.gate.checking.value)
     }
 
-    @Test fun staleAfterBackgroundGoesOfflineWhenTheNewConnectionFails() = runTest {
+    @Test fun staleAfterBackgroundGoesOfflineWhenTheNewConnectionsFail() = runTest {
         var calls = 0
         lateinit var link: DeviceLink
         link = DeviceLink(
@@ -162,8 +162,41 @@ class DeviceLinkTest {
             open = { _, _ -> if (calls++ == 0) ConnectResult.Online(FakeShell()) else ConnectResult.Unreachable("asleep") },
         )
         link.connect(); runCurrent()
-        assertEquals(DeviceState.OFFLINE, link.state.value)
+        // The one at once, then ten more a second apart, all still online.
+        assertEquals(DeviceState.ONLINE, link.state.value)
         assertEquals(2, calls)
+        advanceTimeBy(9_001)
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(11, calls)
+        advanceTimeBy(1_000)
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        assertEquals(12, calls)
+    }
+
+    @Test fun staleAfterBackgroundWaitsForTheNetworkToComeBack() = runTest {
+        // Back in front, Android hasn't given the app its network back yet: the first new connections fail.
+        var calls = 0
+        lateinit var link: DeviceLink
+        link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ ->
+                if (calls == 1) object : MonitorSource {
+                    override fun stats() = flow<Stats> {
+                        link.gate.checking.value = true
+                        throw IOException("stale")
+                    }
+                } else fakeMonitor(failFirst = false)
+            },
+            open = { _, _ -> if (calls++ in 1..3) ConnectResult.Unreachable("network blocked") else ConnectResult.Online(FakeShell()) },
+        )
+        val seen = mutableListOf<DeviceState>()
+        backgroundScope.launch { link.state.collect { seen += it } }
+        link.connect(); runCurrent()
+        advanceTimeBy(3_001)
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(5, calls)
+        assertTrue(DeviceState.OFFLINE !in seen)
+        assertEquals(false, link.gate.checking.value)
     }
 
     @Test fun lanLostGoesOfflineAtOnce() = runTest {
