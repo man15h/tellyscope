@@ -168,6 +168,8 @@ data class DeviceUi(
     val player: PlayerFlow? = null,
     /** The TV's debloat list; null while it loads. */
     val lists: Suggestions? = null,
+    /** Debloat's Refresh is fetching the lists again; [lists] stays on screen meanwhile. */
+    val listsRefreshing: Boolean = false,
     /** Private DNS and animation speed; null until read, or when the TV wouldn't say. */
     val tweaks: TvTweaks? = null,
     /** Another device asking the TV for debugging access; null when nothing is asking. */
@@ -368,6 +370,9 @@ data class PlayerFlow(
 ) {
     enum class Step { Ask, Warn, Waiting, Downloading, Installing }
 }
+
+/** How Debloat's Refresh went: a new list on screen, the same one, or none fetched. */
+enum class ListsRefresh { Changed, Same, Failed }
 
 /** Where the TV gets [PLAYER] from: its Play Store, Fire OS's Appstore, or neither. */
 enum class PlayerStore { Play, Appstore, None }
@@ -2319,6 +2324,35 @@ class TellyscopeViewModel(
         _state.update { it.copy(device = it.device.copy(lists = null)) }
         listsJob?.cancel()
         listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
+    }
+
+    /**
+     * Debloat's Refresh: the lists fetched again and this TV's matched afresh. The list on screen
+     * stays until the new one lands; a failed fetch leaves it as it was. Runs in the caller's scope,
+     * so the screen that asked shows how it went.
+     */
+    suspend fun refreshLists(): ListsRefresh? {
+        val id = _state.value.selectedId ?: return null
+        if (_state.value.device.listsRefreshing) return null
+        val before = _state.value.device.lists
+        updateDevice(id) { it.copy(listsRefreshing = true) }
+        try {
+            if (!source.reloadLists()) return ListsRefresh.Failed
+            listsJob?.cancel()
+            val fresh = source.suggestions(id) { shownApps(id) }
+            if (_state.value.selectedId != id) return null
+            showLists(id, fresh)
+            return if (sameList(before, fresh)) ListsRefresh.Same else ListsRefresh.Changed
+        } finally {
+            updateDevice(id) { it.copy(listsRefreshing = false) }
+        }
+    }
+
+    /** Whether a refresh changed nothing the Debloat screen shows: the same groups, or no list either time. */
+    private fun sameList(a: Suggestions?, b: Suggestions): Boolean = when {
+        a is Suggestions.Ready && b is Suggestions.Ready -> a.list.id == b.list.id && a.groups == b.groups
+        a is Suggestions.NoList && b is Suggestions.NoList -> true
+        else -> false
     }
 
     /**

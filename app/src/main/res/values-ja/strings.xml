@@ -774,6 +774,9 @@
     <string name="lists_which_tv">どのテレビですか？</string>
     <string name="lists_debloat">整理</string>
     <string name="lists_back">戻る</string>
+    <string name="lists_refresh">リストを更新</string>
+    <string name="lists_refresh_failed">リストを更新できませんでした。スマートフォンのインターネット接続を確認してください。</string>
+    <string name="lists_up_to_date">リストは最新です</string>
     <string name="lists_use_this">このリストを使用</string>
     <plurals name="lists_disable_apps">
         <item quantity="other">%1$d 個のアプリを無効にする</item>
@@ -966,7 +969,8 @@
     <string name="report_no_browser">ブラウザが開かなかったため、何も投稿されていません。リンクをコピーして、別のデバイスから投稿してください。</string>
     <string name="report_copy_link">リンクをコピー</string>
     <string name="device_as_of">%1$s 時点</string>
-    <string name="device_last_checked">最終確認: %1$s</string>
+    <string name="device_last_seen">最終接続: %1$s</string>
+    <string name="device_last_seen_updating">最終接続: %1$s · 更新中…</string>
     <string name="device_internal_storage">内部ストレージ</string>
     <string name="device_gb_used">%1$s 使用中</string>
     <string name="device_cpu">CPU</string>

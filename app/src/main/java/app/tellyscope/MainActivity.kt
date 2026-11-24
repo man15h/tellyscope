@@ -393,6 +393,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             onHelpAdd = { vm.openReport(ReportKind.NewTv) },
             onRetry = vm::retryLists,
             onSuggestAgain = vm::suggestAgain,
+            onRefresh = vm::refreshLists,
+            refreshing = state.device.listsRefreshing,
         )
     } else {
         DeviceTabsScreen(

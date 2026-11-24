@@ -183,6 +183,8 @@ fun DeviceTabsScreen(
     val offline = device.state != DeviceState.Online
     // Back from the background, until the TV answers again: Overview keeps its last values, the other tabs wait.
     val checking = ui.checking && !offline
+    // When the TV last answered, over Overview's saved stats while it's away or not yet read.
+    val ago = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() }
     // Off Wi-Fi the phone is what's cut off, so the empty tabs say so rather than blame the TV.
     val offWifi = offline && state.offWifi
     val awayIcon = if (offWifi) DeviceIcons.WifiOff else DeviceIcons.Tv
@@ -354,11 +356,14 @@ fun DeviceTabsScreen(
                         val used = snap?.storageUsedGb ?: device.lastKnown?.storageUsedGb
                         val total = snap?.storageTotalGb ?: device.lastKnown?.storageTotalGb
                         if (live != null && checking) {
-                            item { SystemWidget(live.storageUsedGb, live.storageTotalGb, live, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() }, checking = true) }
+                            item { SystemWidget(live.storageUsedGb, live.storageTotalGb, live, seen = ago?.let { stringResource(R.string.device_last_seen_updating, it) }) }
                         } else if (live != null) {
                             item { SystemWidget(live) }
+                        } else if (!offline && ago != null && used != null && total != null) {
+                            // Just opened: the page is the saved copy until the TV's first read lands.
+                            item { SystemWidget(used, total, null, seen = stringResource(R.string.device_last_seen_updating, ago)) }
                         } else if (offline && used != null && total != null) {
-                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() } ?: stringResource(R.string.tabs_last_visit)) }
+                            item { SystemWidget(used, total, null, seen = ago?.let { stringResource(R.string.device_last_seen, it) } ?: stringResource(R.string.device_as_of, stringResource(R.string.tabs_last_visit))) }
                         } else if (offline) {
                             item { Muted(Copy.noStats(device.state).resolve()) }
                         }

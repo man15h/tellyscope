@@ -874,6 +874,9 @@
     <string name="lists_which_tv">¿Qué TV es esta?</string>
     <string name="lists_debloat">Limpiar</string>
     <string name="lists_back">Atrás</string>
+    <string name="lists_refresh">Actualizar la lista</string>
+    <string name="lists_refresh_failed">No se pudo actualizar la lista. Revisa la conexión a internet del teléfono.</string>
+    <string name="lists_up_to_date">La lista está al día</string>
     <string name="lists_use_this">Usar esta lista</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">Desactivar %1$d app</item>
@@ -1083,7 +1086,8 @@
     <string name="report_no_browser">No se abrió ningún navegador, así que no se publicó nada. Copia el enlace para publicarlo desde otro dispositivo.</string>
     <string name="report_copy_link">Copiar enlace</string>
     <string name="device_as_of">Datos de %1$s</string>
-    <string name="device_last_checked">Última comprobación: %1$s</string>
+    <string name="device_last_seen">Vista por última vez %1$s</string>
+    <string name="device_last_seen_updating">Vista por última vez %1$s · actualizando…</string>
     <string name="device_internal_storage">Almacenamiento interno</string>
     <string name="device_gb_used">%1$s usados</string>
     <string name="device_cpu">CPU</string>

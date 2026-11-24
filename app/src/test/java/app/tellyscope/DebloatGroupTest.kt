@@ -2,6 +2,9 @@
 
 package app.tellyscope
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -52,6 +55,17 @@ class DebloatGroupTest {
         // All ticked: unticks them all.
         compose.onNodeWithText("Extras").performClick()
         compose.onNodeWithText("0 of 2").assertExists()
+    }
+
+    @Test fun aRefreshKeepsTheTicksSetByHand() {
+        var shown by mutableStateOf<Suggestions>(lists)
+        compose.setContent { DebloatScreen(shown, {}, { _, _ -> }, {}) }
+        compose.onNodeWithText("a.one").performClick()
+        compose.onNodeWithText("0 of 2").assertExists()
+        // The same list again with an app added: a.one stays unticked, the new one takes the list's tick.
+        shown = lists.copy(groups = listOf(SuggestedGroup("Extras", lists.groups.single().packages + app("a.three", ticked = true))))
+        compose.onNodeWithText("1 of 3").assertExists()
+        compose.onNodeWithText("Disable 1 app").assertExists()
     }
 
     @Test fun theUntickedAppsAreHiddenOnlyWhenTheBoxIsTicked() {

@@ -830,6 +830,9 @@
     <string name="lists_which_tv">Bu hangi TV?</string>
     <string name="lists_debloat">Temizlik</string>
     <string name="lists_back">Geri</string>
+    <string name="lists_refresh">Listeyi yenile</string>
+    <string name="lists_refresh_failed">Liste yenilenemedi. Telefonun internet bağlantısını kontrol edin.</string>
+    <string name="lists_up_to_date">Liste güncel</string>
     <string name="lists_use_this">Bu listeyi kullan</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">%1$d uygulamayı devre dışı bırak</item>
@@ -1033,7 +1036,8 @@
     <string name="report_no_browser">Tarayıcı açılmadı, bu yüzden hiçbir şey gönderilmedi. Başka bir cihazdan göndermek için bağlantıyı kopyalayın.</string>
     <string name="report_copy_link">Bağlantıyı kopyala</string>
     <string name="device_as_of">Son durum: %1$s</string>
-    <string name="device_last_checked">Son kontrol: %1$s</string>
+    <string name="device_last_seen">Son görülme: %1$s</string>
+    <string name="device_last_seen_updating">Son görülme: %1$s · güncelleniyor…</string>
     <string name="device_internal_storage">Dahili depolama</string>
     <string name="device_gb_used">%1$s kullanılıyor</string>
     <string name="device_cpu">CPU</string>

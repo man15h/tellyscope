@@ -774,6 +774,9 @@
     <string name="lists_which_tv">这是哪台电视？</string>
     <string name="lists_debloat">精简</string>
     <string name="lists_back">返回</string>
+    <string name="lists_refresh">刷新列表</string>
+    <string name="lists_refresh_failed">无法刷新列表。请检查手机的网络连接。</string>
+    <string name="lists_up_to_date">列表已是最新</string>
     <string name="lists_use_this">使用此列表</string>
     <plurals name="lists_disable_apps">
         <item quantity="other">停用 %1$d 个应用</item>
@@ -966,7 +969,8 @@
     <string name="report_no_browser">未打开浏览器，因此未发布任何内容。复制链接后可在其他设备上发布。</string>
     <string name="report_copy_link">复制链接</string>
     <string name="device_as_of">截至 %1$s</string>
-    <string name="device_last_checked">上次检查：%1$s</string>
+    <string name="device_last_seen">上次出现：%1$s</string>
+    <string name="device_last_seen_updating">上次出现：%1$s · 正在更新…</string>
     <string name="device_internal_storage">内部存储空间</string>
     <string name="device_gb_used">已使用 %1$s</string>
     <string name="device_cpu">CPU</string>

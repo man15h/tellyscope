@@ -1021,6 +1021,9 @@
     <string name="lists_which_tv">Which TV is this?</string>
     <string name="lists_debloat">Debloat</string>
     <string name="lists_back">Back</string>
+    <string name="lists_refresh">Refresh the list</string>
+    <string name="lists_refresh_failed">Couldn’t refresh the list. Check the phone’s internet.</string>
+    <string name="lists_up_to_date">The list is up to date</string>
     <string name="lists_use_this">Use this list</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">Disable %1$d app</item>
@@ -1254,8 +1257,10 @@
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
     <string name="device_as_of">As of %1$s</string>
-    <!-- %1$s is how long ago, like "25 seconds ago"; shown while the app checks the TV after coming back -->
-    <string name="device_last_checked">Last checked %1$s</string>
+    <!-- %1$s is how long ago, like "2 hours ago"; over the TV's saved stats while it's away -->
+    <string name="device_last_seen">Last seen %1$s</string>
+    <!-- The same, while the TV is online and the saved copy on screen is being replaced by fresh reads -->
+    <string name="device_last_seen_updating">Last seen %1$s · updating…</string>
     <string name="device_internal_storage">Internal storage</string>
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s used</string>
