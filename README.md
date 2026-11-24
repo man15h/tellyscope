@@ -74,11 +74,11 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 - Keep several TVs on one phone, rename them or forget one. They reconnect by themselves.
 - See the TV's free space, CPU, memory and network speed, and what's paired with it or plugged in.
 - See which apps use the CPU, memory and network, with their processes, connections and the data each has used.
-- Turn off the apps your TV came with, and turn them back on any time. Tellyscope matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv), kept in [tellyscope-devices](../../../tellyscope-devices)) and shows every app it will turn off before it does.
+- Turn off the apps your TV came with, and turn them back on any time. Tellyscope matches your TV to one of 330+ tested lists (adapted from [cleanyourtv](https://github.com/Gathin23/cleanyourtv), kept in [tellyscope-devices](../../../tellyscope-devices)) and shows every app it will turn off before it does. If turning an app off breaks something else, Tellyscope says what before you do it.
 - Untick the apps you use, or a whole group from its heading, and it can stop suggesting them. No list for your model? Pick from the maker's lists, or choose apps by hand.
 - Use your own debloat lists instead, from a copy of tellyscope-devices.
 - See what's running and what's on the TV, search for an app, and open or stop it.
-- Uninstall the apps you added yourself. If turning an app off breaks something else, Tellyscope says what before you do it.
+- Uninstall the apps you added yourself.
 - Install apps that aren't in your TV's store, from an APK, split APKs or an `.apks`/`.xapk`/`.apkm` bundle on your phone. It says first whether it's new, an update or an older version.
 - Open the TV's Play Store, or the Appstore on Fire TV, to get apps and app updates.
 - Put a different home screen on the TV (Projectivy, FLauncher, AT4K or Monet) and switch back to the TV's own any time. Only the TV's own launcher is ever turned off, and a launcher's accessibility service turns on only if you say yes.
@@ -107,7 +107,7 @@ Tellyscope talks to your Android TV, Google TV, NVIDIA Shield or Fire TV over Wi
 English, Español, Português (Brasil), Türkçe, 简体中文, 日本語, Русский and हिन्दी.
 
 - Tellyscope follows your phone's language. On Android 13 or newer you can also pick one just for Tellyscope in **Settings → Apps → Tellyscope → Language**.
-- The translations are machine-made. Corrections are welcome as a PR to `app/src/main/res/values-<lang>/strings.xml`.
+- Türkçe and Português (Brasil) were translated by people; the others are machine-made. Corrections are welcome as a PR to `app/src/main/res/values-<lang>/strings.xml`.
 
 ## Safety rules
 
