@@ -160,9 +160,10 @@ class DeviceLinkTest {
                 }
             },
             open = { _, _ -> if (calls++ == 0) ConnectResult.Online(FakeShell()) else ConnectResult.Unreachable("asleep") },
+            clock = testScheduler.timeSource,
         )
         link.connect(); runCurrent()
-        // The one at once, then ten more a second apart, all still online.
+        // The one at once, then one a second for 10 s, all still online.
         assertEquals(DeviceState.ONLINE, link.state.value)
         assertEquals(2, calls)
         advanceTimeBy(9_001)
@@ -171,6 +172,43 @@ class DeviceLinkTest {
         advanceTimeBy(1_000)
         assertEquals(DeviceState.OFFLINE, link.state.value)
         assertEquals(12, calls)
+    }
+
+    @Test fun staleAfterBackgroundGoesOfflineAfterTenSecondsOfSlowTries() = runTest {
+        // A TV turned off while the app was away: every new connection takes its whole 3 s probe to fail.
+        var calls = 0
+        var lookups = 0
+        lateinit var link: DeviceLink
+        link = DeviceLink(
+            "tv", 5555, backgroundScope,
+            monitorFor = { _, _ ->
+                object : MonitorSource {
+                    override fun stats() = flow<Stats> {
+                        link.gate.checking.value = true
+                        throw IOException("stale")
+                    }
+                }
+            },
+            open = { _, _ ->
+                if (calls++ == 0) ConnectResult.Online(FakeShell()) else {
+                    delay(3_000)
+                    ConnectResult.Unreachable("asleep")
+                }
+            },
+            findPort = { lookups++; null },
+            clock = testScheduler.timeSource,
+        )
+        link.connect(); runCurrent()
+        // Tries at 0, 4 and 8 s; the one ending at 11 s is past the window.
+        advanceTimeBy(10_500)
+        assertEquals(DeviceState.ONLINE, link.state.value)
+        assertEquals(4, calls)
+        assertEquals(0, lookups)
+        advanceTimeBy(600)
+        assertEquals(DeviceState.OFFLINE, link.state.value)
+        // Offline, the normal retry looks the port up again.
+        advanceTimeBy(5_000)
+        assertEquals(1, lookups)
     }
 
     @Test fun staleAfterBackgroundWaitsForTheNetworkToComeBack() = runTest {
@@ -188,6 +226,7 @@ class DeviceLinkTest {
                 } else fakeMonitor(failFirst = false)
             },
             open = { _, _ -> if (calls++ in 1..3) ConnectResult.Unreachable("network blocked") else ConnectResult.Online(FakeShell()) },
+            clock = testScheduler.timeSource,
         )
         val seen = mutableListOf<DeviceState>()
         backgroundScope.launch { link.state.collect { seen += it } }
