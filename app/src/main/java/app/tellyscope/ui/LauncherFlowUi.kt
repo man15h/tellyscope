@@ -558,7 +558,7 @@ private fun Yourself(f: FireInstall, label: String, source: String?, openPage: (
 }
 
 /**
- * The bottom of each Fire OS step, for [pkg]: full width, so the confirm reads the same as Download directly's.
+ * The bottom of each Fire OS step, for [pkg]: the buttons at the end, main last, like every other bar ([BarButtons]).
  * While the list fails its check, the download waits for the tick ([TrustRow]). [play]: nothing to download.
  */
 @Composable
