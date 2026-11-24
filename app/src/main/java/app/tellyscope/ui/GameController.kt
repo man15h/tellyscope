@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemGestures
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
@@ -90,6 +91,7 @@ import app.tellyscope.adb.GamepadButton
 import app.tellyscope.adb.GamepadReport
 import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.RemoteKey
+import app.tellyscope.data.RemotePad
 import kotlin.math.roundToInt
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.conflate
@@ -127,14 +129,14 @@ private enum class Arrow(val key: RemoteKey) { UP(RemoteKey.UP), DOWN(RemoteKey.
  * the Remote.
  */
 @Composable
-internal fun GameController(tvName: String, live: Boolean, virtual: Boolean, keyHaptics: Boolean, actions: RemoteActions) {
+internal fun GameController(tvName: String, live: Boolean, virtual: Boolean, pointer: Boolean, keyHaptics: Boolean, actions: RemoteActions) {
     Dialog(
         onDismissRequest = actions.closeController,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
         Sideways()
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surfaceContainerLow) {
-            Controller(tvName, live, virtual, keyHaptics, actions)
+            Controller(tvName, live, virtual, pointer, keyHaptics, actions)
         }
     }
 }
@@ -154,7 +156,7 @@ private fun Sideways() {
 }
 
 @Composable
-private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHaptics: Boolean, actions: RemoteActions) {
+private fun Controller(tvName: String, live: Boolean, virtual: Boolean, pointer: Boolean, keyHaptics: Boolean, actions: RemoteActions) {
     val scope = rememberCoroutineScope()
     var stick by rememberSaveable { mutableStateOf(false) }
     val useStick = stick && virtual
@@ -212,6 +214,9 @@ private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHapti
                 },
                 onDpad = { stick = false; report = report.copy(x = 0, y = 0) },
             )
+            // The Remote's mode button: picking another mode goes back to the Remote in that mode.
+            Spacer(Modifier.width(8.dp))
+            ModeButton(RemotePad.CONTROLLER, pointer, onPick = actions.pad)
         }
         // Clear of the edges a back swipe starts from, so a thumb that slides off a key doesn't go Back.
         BoxWithConstraints(

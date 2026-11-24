@@ -61,6 +61,7 @@ import app.tellyscope.data.AppNames
 import app.tellyscope.data.Device
 import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
+import app.tellyscope.data.RemotePad
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
@@ -1424,6 +1425,33 @@ class ScreenshotTest {
 
     @Test fun remote_menu() = shot("12_remote_menu", screen = true, before = { compose.onNodeWithContentDescription(Copy.MORE.text()).performClick() }) {
         RemoteScreen(remoteState(), RemoteActions())
+    }
+
+    // The mode button beside ⋮ opens the four modes as cards; Pointer grays on a TV that won't take a virtual mouse.
+    private fun noMouseState() = remoteState().let { it.copy(uhid = mapOf(it.selectedId!! to false)) }
+    @Test fun remote_modes() = shot("12_remote_modes", screen = true, before = { compose.onNodeWithContentDescription("Remote mode: D-pad").performClick() }) {
+        RemoteScreen(noMouseState(), RemoteActions())
+    }
+    @Test fun remote_modes_dark() = shot("12_remote_modes", dark = true, screen = true, before = { compose.onNodeWithContentDescription("Remote mode: D-pad").performClick() }) {
+        RemoteScreen(noMouseState(), RemoteActions())
+    }
+    @Test fun remote_modeTip() = shot("12_remote_mode_tip", screen = true) { RemoteScreen(remoteState().copy(modeTip = true), RemoteActions()) }
+
+    @Test fun aModeCardSetsThePad() {
+        var picked: RemotePad? = null
+        compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(noMouseState(), RemoteActions(pad = { picked = it })) } }
+        compose.onNodeWithContentDescription("Remote mode: D-pad").performClick()
+        compose.onNodeWithText("This TV doesn't allow it").assertExists()
+        compose.onNodeWithText("Pointer").performClick()
+        assertEquals(null, picked)
+        compose.onNodeWithText("Touchpad").performClick()
+        assertEquals(RemotePad.TOUCHPAD, picked)
+    }
+
+    @Test fun theModeTipComesBeforeScreenOff() {
+        compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(remoteState().copy(modeTip = true, screenOffTip = true), RemoteActions()) } }
+        compose.onNodeWithText("Switch how you control your TV").assertExists()
+        compose.onNodeWithText(Copy.SCREEN_OFF_TIP.text()).assertDoesNotExist()
     }
 
     @Test fun theEmptyPillOpensThePicker() {

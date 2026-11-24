@@ -483,6 +483,7 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     setDock = vm::setDock,
                     screenOff = vm::setScreenOff,
                     screenOffTipSeen = vm::screenOffTipSeen,
+                    modeTipSeen = vm::modeTipSeen,
                     checkVolume = vm::checkVolume,
                     pad = vm::setPad,
                     closeController = vm::closeController,

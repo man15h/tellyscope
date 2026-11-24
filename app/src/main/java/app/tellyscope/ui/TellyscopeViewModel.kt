@@ -401,6 +401,8 @@ data class UiState(
     val screenOff: Set<String> = emptySet(),
     /** The Remote's Screen off button explains itself, the first time only. */
     val screenOffTip: Boolean = false,
+    /** The Remote's mode button explains itself, the first time only. */
+    val modeTip: Boolean = false,
     /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
     val volumeFixed: Set<String> = emptySet(),
     /** What the Remote shows in the D-pad's place. Per phone, not per TV. */
@@ -603,7 +605,7 @@ class TellyscopeViewModel(
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(checkUpdates = u.enabled, alphaBuild = u.alpha) } }
         }
         keyHaptics?.let { k ->
-            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, pad = k.pad) } }
+            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, modeTip = !k.modeTipSeen, pad = k.pad) } }
         }
         gates?.let { g ->
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(debloatGate = DEBLOAT_GATE !in g.folded()) } }
@@ -2661,6 +2663,11 @@ class TellyscopeViewModel(
     fun screenOffTipSeen() {
         _state.update { it.copy(screenOffTip = false) }
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.screenOffTipSeen = true }
+    }
+
+    fun modeTipSeen() {
+        _state.update { it.copy(modeTip = false) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.modeTipSeen = true }
     }
 
     /**

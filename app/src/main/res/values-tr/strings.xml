@@ -1128,6 +1128,14 @@
     <string name="remote_pointer_tap">Tıklamak için dokunun · Kaydırmak için iki parmak</string>
     <string name="remote_pointer_refused">Bu TV izin vermiyor</string>
     <string name="remote_controller">Oyun kumandası</string>
+    <string name="remote_mode_title">TV\'yi şununla kontrol et</string>
+    <string name="remote_mode_dpad_line">Oklar ve OK, TV kumandanız gibi</string>
+    <string name="remote_mode_touchpad_line">Taşımak için kaydırın, OK için dokunun</string>
+    <string name="remote_mode_pointer_line">TV\'de fare imlecini hareket ettirin</string>
+    <string name="remote_mode_controller_line">Telefonu yan tutarak oyun oynayın</string>
+    <string name="remote_mode_tip">TV\'nizi nasıl kontrol edeceğinizi değiştirin</string>
+    <string name="remote_mode_button">Kumanda modu: %1$s</string>
+    <string name="remote_mode_close">Kapat</string>
     <string name="remote_controller_close">Kumandaya dön</string>
     <string name="remote_controller_stick">Çubuk</string>
     <string name="remote_controller_buttons_only">Bu TV yalnızca düğmeleri alır. Bağlı bir kumanda arayan oyunlar tepki vermeyebilir.</string>
