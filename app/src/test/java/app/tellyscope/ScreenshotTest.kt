@@ -821,7 +821,7 @@ class ScreenshotTest {
         shot("96_whats_new") { whatsNew(opened)() }
         compose.onNodeWithText("Installed").assertExists()
         // The newest section's first heading, whatever kind it opens with.
-        compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name.uppercase())[0].assertExists()
+        compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name)[0].assertExists()
         // A link from the newest section, which is on screen whatever the changelog holds.
         val pr = changelog.first().changes.first { it.pr != null }.pr!!
         compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()

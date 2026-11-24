@@ -32,16 +32,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
@@ -50,11 +47,10 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,7 +60,6 @@ import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ShortNavigationBar
 import androidx.compose.material3.ShortNavigationBarItem
@@ -73,8 +68,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -479,10 +472,7 @@ fun DeviceTabsScreen(
 /** A titled card for a tab's block, not folded: each tab has room for it. */
 @Composable
 private fun Panel(title: String, body: @Composable () -> Unit) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
             body()
@@ -555,9 +545,9 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
                         dot = { if (state.device.access?.warning == true) MenuDot(true, false) },
                     ) { pick(actions.whoHasAccess) }
                 },
-                { MenuRow(Icons.Default.List, Copy.ADVANCED_MONITOR.resolve()) { pick(actions.advanced) } },
+                { MenuRow(Icons.AutoMirrored.Filled.List, Copy.ADVANCED_MONITOR.resolve()) { pick(actions.advanced) } },
             )
-            Text("Tellyscope", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
+            SectionHeader("Tellyscope", Modifier.padding(start = 16.dp))
             SheetGroup(
                 { MenuRow(Icons.Default.Settings, stringResource(R.string.tabs_settings)) { pick(actions.settings) } },
                 { MenuRow(Icons.Default.Share, Copy.SHARE.resolve()) { pick { shareTellyscope(context) } } },
@@ -627,7 +617,8 @@ internal fun MenuBlock(items: @Composable () -> Unit) {
 @Composable
 private fun SearchPill(enabled: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick, enabled = enabled, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        // The same field as the open search: 56 dp, the magnifier where the TextField puts its leading icon.
+        Row(Modifier.heightIn(min = 56.dp).padding(start = 12.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(16.dp))
             Text(stringResource(R.string.tabs_search_apps), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -644,25 +635,14 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
     val focus = remember { FocusRequester() }
     LaunchedEffect(focus) { focus.requestFocus() }
     Column(Modifier.background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.tabs_close_search)) }
-                TextField(
-                    value = query,
-                    onValueChange = onQuery,
-                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier.weight(1f).focusRequester(focus),
-                )
-                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.tabs_clear_search)) }
-            }
-        }
+        SearchField(
+            query, onQuery,
+            placeholder = stringResource(R.string.tabs_search_apps),
+            clear = stringResource(R.string.tabs_clear_search),
+            modifier = Modifier.focusRequester(focus),
+            onClose = onClose,
+            close = stringResource(R.string.tabs_close_search),
+        )
     }
 }
 
@@ -803,7 +783,7 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
 @Composable
 private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit, onRetry: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)) {
             // As tall as a row with a button, so the card keeps its height when the button comes.
             Row(Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -827,11 +807,7 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
                 )
                 when (lists) {
                     null -> Unit
-                    is Suggestions.Unavailable -> OutlinedButton(onClick = onRetry, enabled = !offline) {
-                        Icon(Icons.Default.Refresh, contentDescription = null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.tabs_try_again))
-                    }
+                    is Suggestions.Unavailable -> TryAgainButton(stringResource(R.string.tabs_try_again), onRetry, enabled = !offline)
                     else -> TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
                 }
             }
@@ -870,7 +846,7 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
 @Composable
 private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpdates: () -> Unit) {
     val device = state.selected ?: return
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         StatusRow(
             Icons.Default.Info,
             device.fireOs?.let { stringResource(R.string.tabs_fire_os_version, it) }
@@ -886,7 +862,7 @@ private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpd
 @Composable
 private fun StoreCard(store: AppInfo, offline: Boolean, locked: Boolean, actions: DeviceActions) {
     val name = stringResource(if (store.packageName == AMAZON_APPSTORE) R.string.tabs_store_amazon else R.string.tabs_store_play)
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         if (store.enabled) {
             StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_sub), Copy.button(Action.Open).resolve(), !offline && !locked) {
                 actions.openStore(store.packageName, name)
@@ -905,7 +881,7 @@ private fun StatusRow(icon: ImageVector, title: String, sub: String?, button: St
         headlineContent = { Text(title) },
         supportingContent = sub?.let { { Text(it) } },
         leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        trailingContent = { TextButton(onClick = onClick, enabled = enabled) { Text(button) } },
+        trailingContent = { FilledTonalButton(onClick = onClick, enabled = enabled) { Text(button) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }

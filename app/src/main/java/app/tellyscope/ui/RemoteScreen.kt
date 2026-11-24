@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,15 +36,13 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -52,9 +51,6 @@ import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -63,7 +59,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -78,7 +73,6 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.ripple
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -511,6 +505,7 @@ private fun DPad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, size: 
             val arrow = Modifier.size(80.dp * scale)
             val glyph = Modifier.size(40.dp * scale)
             val tint = MaterialTheme.colorScheme.onSurface
+            // Not mirrored: these keys send the TV's left and right, whatever the phone's language.
             KeySurface(RemoteKey.UP, stringResource(R.string.remote_up), enabled, press, CircleShape, Color.Transparent, arrow.align(Alignment.TopCenter)) {
                 Icon(Icons.Default.KeyboardArrowUp, null, glyph, tint = tint)
             }
@@ -716,7 +711,7 @@ private fun Touchpad(enabled: Boolean, press: suspend (RemoteKey) -> Boolean, mo
     val haptics = LocalKeyHaptics.current
     val c = MaterialTheme.colorScheme
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         color = c.surfaceContainerHigh,
         modifier = modifier.pointerInput(enabled, haptics) {
             if (!enabled) return@pointerInput
@@ -823,7 +818,7 @@ private fun Pointer(enabled: Boolean, hid: (HidDevice?) -> Unit, mouse: suspend 
         }
     }
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = MaterialTheme.shapes.extraLarge,
         color = c.surfaceContainerHigh,
         modifier = modifier.pointerInput(enabled, haptics) {
             if (!enabled) return@pointerInput
@@ -883,15 +878,12 @@ fun RebootDialog(onRestart: () -> Unit, onDismiss: () -> Unit) {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RestartingCard(restart: Restart, now: Long) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-    ) {
+    AppCard(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             LoadingIndicator(Modifier.size(48.dp))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.remote_restarting), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.remote_restarting), style = MaterialTheme.typography.titleMedium)
                 Text(Copy.restarting((now - restart.since) / 60_000).resolve(), style = MaterialTheme.typography.bodyMedium)
             }
         }
@@ -909,8 +901,8 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
     when (restart.phase(now)) {
         Restart.Phase.Waiting -> AlertDialog(
             onDismissRequest = onHide,
-            // Wavy, not the loading indicator: that one is for waits under a few seconds.
-            icon = { CircularWavyProgressIndicator(Modifier.size(48.dp)) },
+            // In the dialog's 24 dp icon slot, where the late and lost glyphs take its place.
+            icon = { LoadingIndicator(Modifier.size(24.dp)) },
             title = { Text(Copy.RESTARTING_TITLE.resolve()) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -918,11 +910,11 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
                     Text(Copy.waitingFor(tvName, now - restart.since).resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 }
             },
-            confirmButton = { TextButton(onClick = onHide) { Text(stringResource(R.string.remote_hide)) } },
+            confirmButton = { Button(onClick = onHide) { Text(stringResource(R.string.remote_hide)) } },
         )
         Restart.Phase.Late -> AlertDialog(
             onDismissRequest = onHide,
-            icon = { StatusShape(RemoteIcons.HourglassTop, c.secondaryContainer, c.onSecondaryContainer) },
+            icon = { Icon(RemoteIcons.HourglassTop, contentDescription = null) },
             title = { Text(Copy.RESTART_LATE_TITLE.resolve()) },
             text = { Text(Copy.RESTART_LATE_TEXT.resolve()) },
             confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
@@ -930,21 +922,12 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
         )
         Restart.Phase.Lost -> AlertDialog(
             onDismissRequest = onStop,
-            icon = { StatusShape(RemoteIcons.LinkOff, c.errorContainer, c.onErrorContainer) },
+            icon = { Icon(RemoteIcons.LinkOff, contentDescription = null, tint = c.error) },
             title = { Text(Copy.restartLost(tvName).resolve()) },
             text = { Text(Copy.RESTART_LOST_TEXT.resolve()) },
             confirmButton = { Button(onClick = onRetry) { Text(stringResource(R.string.remote_retry)) } },
             dismissButton = { TextButton(onClick = onStop) { Text(stringResource(R.string.remote_stop_waiting)) } },
         )
-    }
-}
-
-/** A filled glyph in the cookie the TV header uses, for a state that needs a look rather than a spinner. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun StatusShape(icon: ImageVector, container: Color, content: Color) {
-    Box(Modifier.size(56.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(container), contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(28.dp))
     }
 }
 
@@ -1043,7 +1026,7 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
 @Composable
 private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier.clip(MaterialTheme.shapes.small).clickable(onClickLabel = stringResource(R.string.remote_show_restart), onClick = onClick),
+        Modifier.heightIn(min = 48.dp).clip(MaterialTheme.shapes.small).clickable(onClickLabel = stringResource(R.string.remote_show_restart), onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -1053,7 +1036,7 @@ private fun RestartStatus(late: Boolean, onClick: () -> Unit) {
             LoadingIndicator(Modifier.size(18.dp))
         }
         Text(if (late) Copy.RESTART_LATE_STATUS.resolve() else Copy.RESTARTING_TITLE.resolve(), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
-        Icon(Icons.Default.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
     }
 }
 
@@ -1108,39 +1091,23 @@ private fun OpenAppSheet(tv: String, all: List<AppInfo>, services: List<Streamin
     val q = query.trim()
     val shown = remember(all, q) { all.filter { q.isEmpty() || it.label.contains(q, ignoreCase = true) || it.packageName.contains(q, ignoreCase = true) } }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
+        Column(Modifier.padding(horizontal = PageMargin).padding(bottom = 8.dp)) {
             Text(Copy.OPEN_AN_APP.resolve(), style = MaterialTheme.typography.titleLarge)
             Text(Copy.openAnAppHint(tv).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 8.dp),
-        ) {
-            Row(Modifier.padding(start = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        }
+        SearchField(
+            query, onQuery = { query = it },
+            placeholder = stringResource(R.string.tabs_search_apps),
+            clear = stringResource(R.string.tabs_clear_search),
+            modifier = Modifier.padding(horizontal = PageMargin, vertical = 8.dp),
+        )
         LazyColumn(Modifier.padding(bottom = 16.dp)) {
             if (shown.isEmpty() && q.isNotEmpty()) item {
                 Text(
                     stringResource(R.string.device_nothing_matches, q),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 32.dp, vertical = 16.dp),
+                    modifier = Modifier.padding(horizontal = PageMargin, vertical = 16.dp),
                 )
             }
             items(shown, key = { it.packageName }) { app ->
@@ -1149,7 +1116,7 @@ private fun OpenAppSheet(tv: String, all: List<AppInfo>, services: List<Streamin
                         .fillMaxWidth()
                         .height(SHEET_ROW)
                         .clickable(onClickLabel = Copy.OPEN_ON_TV.resolve()) { onOpen(app) }
-                        .padding(horizontal = 32.dp),
+                        .padding(horizontal = PageMargin),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     services.firstOrNull { app.packageName in it.packages }
@@ -1265,7 +1232,7 @@ private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setD
     var dragY by remember { mutableFloatStateOf(0f) }
     val rowPx = with(LocalDensity.current) { SHEET_ROW.toPx() }
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.padding(horizontal = 32.dp).padding(bottom = 8.dp)) {
+        Column(Modifier.padding(horizontal = PageMargin).padding(bottom = 8.dp)) {
             Text(Copy.REMOTE_BUTTONS.resolve(), style = MaterialTheme.typography.titleLarge)
             Text(Copy.buttonsHint(cap).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -1305,12 +1272,7 @@ private fun ButtonsSheet(dock: List<Docked>, apps: List<AppInfo>, cap: Int, setD
             }
             rest.forEachIndexed { i, s ->
                 if (i == 0 || rest[i - 1].group != s.group) {
-                    Text(
-                        s.group,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 32.dp, end = 32.dp, top = 16.dp, bottom = 4.dp),
-                    )
+                    SectionHeader(s.group, Modifier.padding(horizontal = PageMargin))
                 }
                 key(s.name) { ServiceRow(s, checked = false, enabled = ticked.size < cap, onToggle = { toggle(s) }) }
             }
@@ -1339,7 +1301,8 @@ private fun ServiceRow(
             .height(SHEET_ROW)
             .toggleable(checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
             .alpha(if (enabled) 1f else 0.38f)
-            .padding(start = 20.dp, end = 20.dp),
+            // The checkbox and the drag handle are 48 dp targets round a 24 dp glyph: their glyphs line up with the margin.
+            .padding(horizontal = PageMargin - 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked, onCheckedChange = null, enabled = enabled, modifier = Modifier.size(48.dp))
@@ -1350,7 +1313,7 @@ private fun ServiceRow(
     }
 }
 
-private object RemoteIcons {
+internal object RemoteIcons {
     // Absolute commands only: Compose's path parser misplaces a relative move after a close.
     val TvOff = icon(
         "TvOff",

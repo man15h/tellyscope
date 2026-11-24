@@ -13,13 +13,14 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -87,8 +88,7 @@ fun ActionTiles(actions: DeviceActions, count: Int, todo: Boolean, disabling: Bo
         // Where the file lands is the user's choice, every time, not whatever folder was last shown.
         var choosing by remember { mutableStateOf(false) }
         Box(Modifier.weight(1f).fillMaxHeight()) {
-            @Suppress("DEPRECATION") // the AutoMirrored set isn't in icons-core
-            Tile(Icons.Default.Send, stringResource(R.string.transfers_send_file), { choosing = true }, Modifier.fillMaxSize())
+            Tile(Icons.AutoMirrored.Filled.Send, stringResource(R.string.transfers_send_file), { choosing = true }, Modifier.fillMaxSize())
             DropdownMenu(choosing, onDismissRequest = { choosing = false }) {
                 TvFolder.entries.forEach { f ->
                     DropdownMenuItem(
@@ -161,7 +161,7 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
     when {
         list == null -> Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Center) {
             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-            LoadingIndicator(Modifier.size(32.dp))
+            LoadingIndicator(Modifier.size(48.dp))
         }
         files.error != null -> Muted(files.error.resolve())
         else -> {
@@ -251,7 +251,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                         Text(Copy.installKind(kind, s.installed?.versionName, app?.info?.versionName).resolve(), style = MaterialTheme.typography.bodyMedium)
                         if (kind == InstallKind.DOWNGRADE) {
                             Row(
-                                Modifier.fillMaxWidth().clickable { actions.allowDowngrade(!s.allowDowngrade) },
+                                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { actions.allowDowngrade(!s.allowDowngrade) },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Checkbox(s.allowDowngrade, onCheckedChange = null)

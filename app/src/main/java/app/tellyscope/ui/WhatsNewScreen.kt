@@ -20,11 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -125,12 +122,12 @@ fun WhatsNewScreen(
             items(ahead + releases, key = { it.version }) { r ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     VersionHeading(r, isInstalled = r.version == installed.substringBefore('-'), notInstalled = r in ahead)
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                    AppCard {
                         r.changes.forEachIndexed { i, c ->
                             val kindChanged = i == 0 || r.changes[i - 1].kind != c.kind
                             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surface)
                             if (kindChanged && c.kind != null) KindHeading(c.kind)
-                            ChangeItem(c, openPr, topPadding = if (kindChanged && c.kind != null) 4.dp else 16.dp)
+                            ChangeItem(c, openPr, topPadding = if (kindChanged && c.kind != null) 0.dp else 16.dp)
                         }
                     }
                 }
@@ -148,7 +145,7 @@ private fun VersionHeading(r: Release, isInstalled: Boolean, notInstalled: Boole
             Text(shortDate(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.weight(1f))
-        if (isInstalled) Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+        if (isInstalled) Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
             Text(
                 stringResource(R.string.whats_new_installed),
                 Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -156,7 +153,7 @@ private fun VersionHeading(r: Release, isInstalled: Boolean, notInstalled: Boole
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
-        if (notInstalled) Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
+        if (notInstalled) Surface(shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
             Text(
                 stringResource(R.string.whats_new_not_installed),
                 Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -173,17 +170,15 @@ private fun shortDate(iso: String): String =
 
 @Composable
 private fun KindHeading(kind: Kind) {
-    Text(
+    SectionHeader(
         stringResource(
             when (kind) {
                 Kind.New -> R.string.whats_new_new
                 Kind.Improved -> R.string.whats_new_improved
                 Kind.Fixed -> R.string.whats_new_fixed
             },
-        ).uppercase(),
-        Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
+        ),
+        Modifier.padding(horizontal = 16.dp),
     )
 }
 

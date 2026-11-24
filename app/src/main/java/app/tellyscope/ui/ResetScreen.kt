@@ -3,7 +3,6 @@
 package app.tellyscope.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -28,7 +26,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
@@ -36,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -45,7 +41,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,7 +50,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.Shape
@@ -115,9 +109,8 @@ fun ResetScreen(state: UiState, actions: ResetActions, snackbar: SnackbarHostSta
             )
         },
         bottomBar = {
-            Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            if (plan != null && (plan.changes > 0 || ui.ran)) ActionBar {
                 when {
-                    plan == null || (plan.changes == 0 && !ui.ran) -> Unit
                     ui.running != null -> {
                         if (!ui.stopping) TextButton(onClick = actions.stop) { Text(stringResource(R.string.copy_stop)) }
                         Button(onClick = {}, enabled = false) { Text(Copy.RESETTING.resolve()) }
@@ -140,9 +133,9 @@ fun ResetScreen(state: UiState, actions: ResetActions, snackbar: SnackbarHostSta
     ) { pad ->
         Box(Modifier.fillMaxSize().padding(pad)) {
             when {
-                ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = PageMargin), horizontalAlignment = Alignment.CenterHorizontally) {
                     EmptyState(Icons.Default.Warning, stringResource(R.string.reset_read_failed), ui.error.resolve())
-                    TextButton(onClick = actions.reload) { Text(stringResource(R.string.screen_try_again)) }
+                    TryAgainButton(stringResource(R.string.screen_try_again), actions.reload)
                 }
                 plan == null -> Column(Modifier.fillMaxWidth().padding(top = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     LoadingIndicator(Modifier.size(48.dp))
@@ -151,7 +144,7 @@ fun ResetScreen(state: UiState, actions: ResetActions, snackbar: SnackbarHostSta
                 }
                 // Try again runs on this screen too, so a run in progress comes before the last run's result.
                 ui.running == null && ui.ran -> Result(plan, ui.failed, ui.left)
-                plan.changes == 0 -> Box(Modifier.padding(horizontal = 24.dp)) {
+                plan.changes == 0 -> Box(Modifier.padding(horizontal = PageMargin)) {
                     EmptyState(Icons.Default.Check, Copy.NOTHING_TO_RESET.resolve(), Copy.nothingToReset(plan.ownHome, maker).resolve())
                 }
                 else -> Found(plan, ui.running, ui.progress, ui.stopping, maker)
@@ -168,9 +161,9 @@ private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
         item {
             if (running == null) {
-                Surface(color = c.primaryContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                AppCard(Modifier.fillMaxWidth().padding(bottom = 16.dp), color = c.primaryContainer) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(Copy.resetFound(plan.changes).resolve(), style = MaterialTheme.typography.titleSmall, color = c.onPrimaryContainer)
+                        Text(Copy.resetFound(plan.changes).resolve(), style = MaterialTheme.typography.titleMedium, color = c.onPrimaryContainer)
                         Text(Copy.RESET_FOUND_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onPrimaryContainer)
                     }
                 }
@@ -231,6 +224,7 @@ private fun count(plan: ResetPlan, part: ResetPart) = when (part) {
 }
 
 /** One part of the reset; tapping it, before a run, lists the apps it changes. A setting has no list. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
     val c = MaterialTheme.colorScheme
@@ -257,7 +251,7 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
             Spacer(Modifier.width(16.dp))
             when (status) {
                 null -> if (list) Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = stringResource(if (open) R.string.reset_hide_list else R.string.reset_show_list))
-                Status.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                Status.Running -> LoadingIndicator(Modifier.size(24.dp))
                 Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = stringResource(R.string.screen_waiting), tint = c.onSurfaceVariant)
                 Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = stringResource(R.string.screen_done), tint = c.primary)
             }
@@ -347,24 +341,17 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>, left: ResetPlan?
  * The top of a result, shared with Debloat's: a cookie badge, a check or a warning, the title and
  * what happened. [stopped]: a stop square on the calm badge, as stopping went as asked.
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun ResultHead(ok: Boolean, title: String, text: String, stopped: Boolean = false) {
     val c = MaterialTheme.colorScheme
-    val calm = ok || stopped
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier.size(96.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(if (calm) c.primaryContainer else c.errorContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            val icon = when {
-                stopped -> ResetIcons.Stopped
-                ok -> Icons.Default.Check
-                else -> Icons.Default.Warning
-            }
-            Icon(icon, contentDescription = null, Modifier.size(44.dp), tint = if (calm) c.onPrimaryContainer else c.onErrorContainer)
+        val icon = when {
+            stopped -> ResetIcons.Stopped
+            ok -> Icons.Default.Check
+            else -> Icons.Default.Warning
         }
-        Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 24.dp))
+        StatusHero(if (ok || stopped) HeroTone.Done else HeroTone.Failed, icon)
+        Text(title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 24.dp))
         Text(
             text,
             style = MaterialTheme.typography.bodyMedium,

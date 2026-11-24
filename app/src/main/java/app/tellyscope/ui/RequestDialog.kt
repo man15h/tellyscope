@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -15,7 +16,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -67,7 +67,7 @@ fun RequestDialog(
                 )
                 // No tick-box on the TV's prompt, none here: a tick that can't be applied would mislead.
                 if (request.canAlwaysAllow) Row(
-                    Modifier.fillMaxWidth().toggleable(always, enabled = !busy, role = Role.Checkbox) { always = it },
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(always, enabled = !busy, role = Role.Checkbox) { always = it },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Checkbox(checked = always, onCheckedChange = null, enabled = !busy)
@@ -105,7 +105,7 @@ private fun BehindAlertDialog(busy: Boolean, closeAlert: () -> Unit, dismiss: ()
                 }
             }
         },
-        confirmButton = { FilledTonalButton(onClick = closeAlert, enabled = !busy) { Text(Copy.PRESS_OK.resolve()) } },
+        confirmButton = { Button(onClick = closeAlert, enabled = !busy) { Text(Copy.PRESS_OK.resolve()) } },
         dismissButton = { TextButton(onClick = dismiss, enabled = !busy) { Text(stringResource(R.string.request_close)) } },
     )
 }

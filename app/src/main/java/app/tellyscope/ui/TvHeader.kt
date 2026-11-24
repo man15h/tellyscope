@@ -23,7 +23,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -331,16 +330,14 @@ internal fun PinnedSegments(labels: List<String>, selected: Int, color: Color, i
 }
 
 /**
- * What a list shows when it has nothing to show: a soft circle with an [icon], a [title], and
+ * What a list shows when it has nothing to show: a neutral [StatusHero] with an [icon], a [title], and
  * one [line] under it, in the middle of the page.
  */
 @Composable
 internal fun EmptyState(icon: ImageVector, title: String, line: String) {
     val c = MaterialTheme.colorScheme
     Column(Modifier.fillMaxWidth().padding(top = 96.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.size(56.dp).clip(CircleShape).background(c.surfaceContainerHighest), contentAlignment = Alignment.Center) {
-            Icon(icon, contentDescription = null, Modifier.size(28.dp), tint = c.onSurfaceVariant)
-        }
+        StatusHero(HeroTone.Neutral, icon)
         Spacer(Modifier.height(16.dp))
         Text(title, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))
@@ -348,12 +345,11 @@ internal fun EmptyState(icon: ImageVector, title: String, line: String) {
     }
 }
 
-/** Where [EmptyState] would sit, while the TV's app list is still on its way. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** Where [EmptyState] would sit, while the TV's app list is still on its way: the same hero, waiting. */
 @Composable
 internal fun AppsLoading() {
     Column(Modifier.fillMaxWidth().padding(top = 96.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-        ContainedLoadingIndicator(Modifier.size(56.dp))
+        StatusHero(HeroTone.Waiting, null)
         Spacer(Modifier.height(16.dp))
         Text(Copy.READING_APPS.resolve(), style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Spacer(Modifier.height(4.dp))

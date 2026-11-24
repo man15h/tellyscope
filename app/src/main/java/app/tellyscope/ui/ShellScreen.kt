@@ -2,6 +2,7 @@
 
 package app.tellyscope.ui
 
+import android.content.ClipData
 import android.content.res.Resources
 import android.os.Build
 import androidx.activity.compose.BackHandler
@@ -66,10 +67,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -132,7 +133,7 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
     var back by remember { mutableIntStateOf(-1) }
     val list = rememberLazyListState()
     val focus = remember { FocusRequester() }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val res = LocalContext.current.resources
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -160,11 +161,14 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
             // The whole session, prompts too: long-press only reaches the lines on screen.
             IconButton(onClick = {
                 val text = transcript(res, state, res.getString(R.string.shell_banner, name(device), address))
-                clipboard.setText(AnnotatedString(text))
-                // Android 13 and later show their own preview of what was copied.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                    val n = text.lines().size
-                    scope.launch { snackbar.currentSnackbarData?.dismiss(); snackbar.showSnackbar(res.getQuantityString(R.plurals.shell_copied, n, n)) }
+                scope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(name(device), text)))
+                    // Android 13 and later show their own preview of what was copied.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        val n = text.lines().size
+                        snackbar.currentSnackbarData?.dismiss()
+                        snackbar.showSnackbar(res.getQuantityString(R.plurals.shell_copied, n, n))
+                    }
                 }
             }) { Icon(CopyIcon, stringResource(R.string.shell_copy_all), tint = c.onSurface) }
         }
@@ -223,7 +227,12 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
         SnackbarHost(snackbar)
         // Termux-style keys for what a phone keyboard hides on its symbols page.
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Key(stringResource(R.string.shell_key_paste)) { clipboard.getText()?.text?.let { type(it.trim().replace("\n", "; ")) } }
+            Key(stringResource(R.string.shell_key_paste)) {
+                scope.launch {
+                    val clip = clipboard.getClipEntry()?.clipData?.takeIf { it.itemCount > 0 }
+                    clip?.getItemAt(0)?.text?.toString()?.let { type(it.trim().replace("\n", "; ")) }
+                }
+            }
             Key(stringResource(R.string.shell_key_tab)) { terminal.complete(input.text) { set(it) } }
             Key(stringResource(R.string.shell_key_ctrl_c), stop = state.running) {
                 if (state.running || state.confirming != null) terminal.interrupt() else set("")

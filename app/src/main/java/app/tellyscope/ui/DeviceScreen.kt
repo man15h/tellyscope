@@ -28,15 +28,11 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -169,10 +165,7 @@ internal fun SystemWidget(s: Snapshot) = SystemWidget(s.storageUsedGb, s.storage
 @Composable
 internal fun SystemWidget(usedGb: Double?, totalGb: Double?, live: Snapshot?, asOf: String? = null) {
     val dash = "\u2014"
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-    ) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             if (asOf != null) {
                 Text(stringResource(R.string.device_as_of, asOf), Modifier.padding(bottom = 8.dp), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -275,12 +268,14 @@ fun RenameDialog(current: String, fallback: String, onSave: (String) -> Unit, on
 /** Forgetting only touches this phone; the TV keeps its own list of allowed computers. */
 @Composable
 fun ForgetDialog(name: String, onForget: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.device_forget_title, name)) },
+    DestructiveDialog(
+        icon = RemoteIcons.LinkOff,
+        title = stringResource(R.string.device_forget_title, name),
+        confirm = stringResource(R.string.device_forget),
+        dismiss = stringResource(R.string.device_cancel),
+        onConfirm = onForget,
+        onDismiss = onDismiss,
         text = { Text(stringResource(R.string.device_forget_text)) },
-        confirmButton = { Button(onClick = onForget) { Text(stringResource(R.string.device_forget)) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -298,19 +293,14 @@ internal fun StateDot(state: DeviceState) {
 /** The TV refused (revoked access, a reset, or Deny); retrying stopped so the prompt doesn't nag. */
 @Composable
 internal fun NotAllowedCard(onConnect: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer,
-            contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        ),
-    ) {
+    AppCard(color = MaterialTheme.colorScheme.errorContainer) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             CardTitle(Icons.Default.Warning, stringResource(R.string.device_not_allowed_title))
             Text(
                 stringResource(R.string.device_not_allowed_text),
                 style = MaterialTheme.typography.bodyMedium,
             )
-            Button(onClick = onConnect) { Text(stringResource(R.string.device_connect_again)) }
+            FilledTonalButton(onClick = onConnect) { Text(stringResource(R.string.device_connect_again)) }
             Text(
                 stringResource(R.string.device_not_allowed_hint),
                 style = MaterialTheme.typography.bodySmall,
@@ -324,19 +314,14 @@ private fun CardTitle(icon: androidx.compose.ui.graphics.vector.ImageVector, tex
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.titleSmall)
+        Text(text, style = MaterialTheme.typography.titleMedium)
     }
 }
 
 @Composable
 internal fun OfflineCard(device: Device, now: Long, offWifi: Boolean, onReconnect: () -> Unit) {
     // Material 3 has no warning role; tertiary is the standard stand-in, kept apart from error.
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        ),
-    ) {
+    AppCard(color = MaterialTheme.colorScheme.tertiaryContainer) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 CardTitle(Icons.Default.Info, if (offWifi) Copy.PHONE_OFF_WIFI.resolve() else stringResource(R.string.device_offline))
@@ -396,23 +381,19 @@ internal fun homeLabel(apps: List<AppInfo>, app: AppInfo): String? =
 /** Uninstall has no undo, so it asks in a dialog that names the app, not inline. */
 @Composable
 fun UninstallDialog(app: AppInfo, onUninstall: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error) },
-        title = { Text(Copy.uninstallTitle(app.label).resolve()) },
+    DestructiveDialog(
+        icon = Icons.Default.Delete,
+        title = Copy.uninstallTitle(app.label).resolve(),
+        confirm = Copy.confirm(Action.Uninstall).resolve(),
+        dismiss = stringResource(R.string.device_cancel),
+        onConfirm = onUninstall,
+        onDismiss = onDismiss,
+        confirmEnabled = enabled,
         text = {
             // The launcher on Home: what happens before it goes, in order.
             val what = (app.homeBack?.let { Copy.uninstallHome(app.label, it, app.homeService) } ?: Copy.explain(Action.Uninstall, app.label, app.packageName)).resolve()
             Text(what + if (app.listKeep) "\n\n${Copy.KEEP_WARNING.resolve()}" else "")
         },
-        confirmButton = {
-            Button(
-                onClick = onUninstall,
-                enabled = enabled,
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error, contentColor = MaterialTheme.colorScheme.onError),
-            ) { Text(Copy.confirm(Action.Uninstall).resolve()) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.device_cancel)) } },
     )
 }
 
@@ -455,7 +436,7 @@ internal fun AppRow(
     )
     Column(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).clickable(enabled = changeable) { open = !open }.padding(vertical = 8.dp).alpha(if (offline) 0.38f else 1f)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AppIcon(app, Modifier.alpha(if (app.enabled || offline) 1f else 0.4f))
+            AppIcon(app, Modifier.alpha(if (app.enabled || offline) 1f else 0.38f))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(app.label, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -470,7 +451,7 @@ internal fun AppRow(
                     if (app.enabled && app.protectedReason == null) app.warn?.let { WarnLine(it) }
                 }
             }
-            if (busy && !offline) androidx.compose.material3.LoadingIndicator(Modifier.size(32.dp))
+            if (busy && !offline) androidx.compose.material3.LoadingIndicator(Modifier.size(24.dp))
         }
         // Home switches are asked for in the Home screen card, not here.
         val proposed = pending?.takeIf { it.first == app.packageName }?.second?.takeUnless { it == Action.Home || it == Action.HomeBack }
@@ -483,18 +464,18 @@ internal fun AppRow(
                     // installed, Disable for one the TV came with; Turn on takes Open's place while it's off.
                     // Buttons that don't fit on one line, in a long translation or at large text, wrap to the next.
                     if (app.protectedReason == null) {
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (!app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Enable) }, enabled = !locked) { Text(Copy.button(Action.Enable).resolve()) }
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
-                            if (app.enabled && running) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
-                            if (app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
-                            else if (app.enabled) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
+                            if (app.enabled && running) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Stop) }, enabled = !locked) { Text(Copy.button(Action.Stop).resolve()) }
+                            if (app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            else if (app.enabled) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Disable) }, enabled = !locked) { Text(Copy.button(Action.Disable).resolve()) }
                         }
                     } else if (opens || (launcher && app.removable)) {
                         // Protected, but anything with an icon still opens; the launcher on Home also uninstalls, Home moving first.
-                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (opens) FilledTonalButton(onClick = { actions.open(app.packageName) }, enabled = !locked) { Text(Copy.button(Action.Open).resolve()) }
-                            if (launcher && app.removable) OutlinedButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                            if (launcher && app.removable) FilledTonalButton(onClick = { actions.propose(app.packageName, Action.Uninstall) }, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
                         }
                     }
                     if (launcher) TextButton(onClick = toHomeScreen) {
@@ -511,10 +492,9 @@ internal fun AppRow(
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     if (proposed == Action.Disable) app.warn?.let { Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error) }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed).resolve()) }
+                    ButtonRow {
                         TextButton(onClick = actions.cancel) { Text(stringResource(R.string.device_cancel)) }
-
+                        Button(onClick = actions.confirm, enabled = !locked) { Text(Copy.confirm(proposed).resolve()) }
                     }
                 }
             }
