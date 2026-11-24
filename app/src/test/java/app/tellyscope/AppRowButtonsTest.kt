@@ -1,5 +1,8 @@
 package app.tellyscope
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -89,5 +92,21 @@ class AppRowButtonsTest {
         compose.onNodeWithText("Jellyfin").performClick()
         compose.onNodeWithText(Copy.button(Action.Open).text()).performClick()
         assertEquals(listOf(pkg), opened)
+    }
+
+    @Test fun openingARowClosesTheOneBefore() {
+        val kodi = userApp.copy(packageName = "org.xbmc.kodi", label = "Kodi")
+        compose.setContent {
+            val openRow = remember { mutableStateOf<String?>(null) }
+            Column {
+                AppRow(userApp, emptyList(), null, busy = false, actions = DeviceActions(), onScreen = other, openRow = openRow)
+                AppRow(kodi, emptyList(), null, busy = false, actions = DeviceActions(), onScreen = other, openRow = openRow)
+            }
+        }
+        compose.onNodeWithText("Jellyfin").performClick()
+        compose.onNodeWithText(pkg).assertExists()
+        compose.onNodeWithText("Kodi").performClick()
+        compose.onNodeWithText("org.xbmc.kodi").assertExists()
+        compose.onNodeWithText(pkg).assertDoesNotExist()
     }
 }
