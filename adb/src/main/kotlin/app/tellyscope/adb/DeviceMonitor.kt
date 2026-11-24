@@ -100,6 +100,8 @@ data class StatsProfile(
  * rates. Until a screen sets one, everything is read every 2 s. [paused] is the app in the
  * background: no stats are read and a dropped link doesn't retry until it's false again.
  * [changed] counts the ended changes to apps or storage, so what they touch is read again right after one.
+ * [checking] is true from a pause until the first reading after it: the connection sat idle in the
+ * background and may have gone stale.
  */
 class StatsGate {
     private val running = MutableStateFlow(0)
@@ -109,6 +111,8 @@ class StatsGate {
     val paused = MutableStateFlow(false)
 
     val changed = MutableStateFlow(0)
+
+    val checking = MutableStateFlow(false)
 
     val busy: Boolean get() = running.value > 0
 
@@ -169,6 +173,7 @@ class DeviceMonitor(
         while (true) {
             // Back from the background: CPU % and network speed start from fresh samples, not an average over the pause.
             if (gate.paused.value) {
+                gate.checking.value = true
                 gate.awaitResumed()
                 prev = null
             }
