@@ -13,7 +13,7 @@ last release under `## Unreleased`, and changes nothing else. A release
 renames that heading to its version and date. A pull request into `main`
 fails CI until this file has a section for its version.
 
-## 0.17.0 — 2026-11-21
+## 0.17.0 — 2026-11-24
 
 - **New:** Files has Open on TV, which installs VLC when the TV lacks a player. [#449](../../pull/449)
 - **New:** The Remote can show a pointer on the TV, or act as a game controller. [#443](../../pull/443)
@@ -22,6 +22,10 @@ fails CI until this file has a section for its version.
 - **New:** Brazilian Portuguese support, translated by @mafhper. [#441](../../pull/441)
 - **Improved:** Debloat and Reset TV stay open until they finish, and Stop ends one after the current app. [#439](../../pull/439)
 - **Improved:** The TV gets fewer background requests: network details are read only while Advanced is open. [#431](../../pull/431)
+- **Fixed:** Restore everything puts Home back after Reset TV. [#453](../../pull/453)
+- **Fixed:** Shell's first command after returning to the app no longer fails. [#453](../../pull/453)
+- **Fixed:** On the Play build, pairing with a code no longer fails on Android 16; it now needs Android 12 or newer on the phone. [#452](../../pull/452)
+- **Fixed:** When a home screen switch can't be undone all the way, Tellyscope now says so instead of reporting the old home screen is back. [#448](../../pull/448)
 - **Fixed:** Installs on TVs that won't take an APK streamed to them (some Android 9 sets) now copy the APK over and install from there. [#444](../../pull/444)
 - **Fixed:** The TV menu scrolls all the way to Forget this TV, and Advanced shows the TV's address in full. [#442](../../pull/442)
 - **Fixed:** Shell no longer closes the app on an unexpected error from the TV, and no longer freezes on fast output like logcat. [#433](../../pull/433)
