@@ -439,7 +439,6 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     store = vm::playerFromStore,
                     direct = vm::playerDirect,
                     download = vm::playerDownload,
-                    other = vm::playerOther,
                     close = vm::closePlayer,
                 ),
                 remote = { remote = true },

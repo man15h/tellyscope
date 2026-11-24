@@ -340,8 +340,7 @@ data class FilesUi(
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
 
 /**
- * Open on TV for a video or a song nothing on the TV plays: [PLAYER] is offered ([Step.Ask]), with [other], an app that
- * only opens it, as Open in … anyway. From the Play Store ([store]), Tellyscope opens its page and waits ([Step.Waiting]);
+ * Open on TV for a video or a song nothing on the TV opens: [PLAYER] is offered ([Step.Ask]). From the Play Store ([store]), Tellyscope opens its page and waits ([Step.Waiting]);
  * from the Appstore, the user opens it first. The GitHub build can also download it ([download]): straight away
  * where there's no Play Store, after Download directly's warning ([Step.Warn]) where there is. Once it's in, the file
  * opens in it and the dialog closes. [opened]: the Play Store opened at its page, so the dialog says so.
@@ -354,8 +353,6 @@ data class PlayerFlow(
     val store: PlayerStore,
     val download: Boolean,
     val step: Step = Step.Ask,
-    val other: String? = null,
-    val otherLabel: String? = null,
     val release: PlayerRelease? = null,
     val progress: Progress? = null,
     val opened: Boolean = true,
@@ -1645,8 +1642,10 @@ class TellyscopeViewModel(
                 PLAYER.pkg in found.players -> openIn(id, folder, file, mime, PLAYER.pkg)
                 // The TV's default, or its chooser when it has several.
                 found.players.isNotEmpty() -> openIn(id, folder, file, mime, null)
+                // A gallery or a browser that only opens it still beats a prompt to install a player.
+                found.others.isNotEmpty() -> openIn(id, folder, file, mime, found.others.first())
                 kind == MediaKind.Image -> _notice.value = Copy.nothingOpens(file.name)
-                else -> offerPlayer(id, PlayerFlow(folder, file, kind, mime, PlayerStore.None, download = false, other = found.others.firstOrNull()))
+                else -> offerPlayer(id, PlayerFlow(folder, file, kind, mime, PlayerStore.None, download = false))
             }
         }
     }
@@ -1677,21 +1676,12 @@ class TellyscopeViewModel(
             else -> PlayerStore.None
         }
         val download = playerDownload != null
-        // Nowhere to get it from: the app that only opens it is all there is.
+        // Nowhere to get it from.
         if (store == PlayerStore.None && !download) {
-            if (flow.other != null) openIn(id, flow.folder, flow.file, flow.mime, flow.other) else _notice.value = Copy.nothingOpens(flow.file.name)
+            _notice.value = Copy.nothingOpens(flow.file.name)
             return
         }
-        updateDevice(id) { it.copy(player = flow.copy(store = store, download = download, otherLabel = flow.other?.let(::appLabel))) }
-    }
-
-    /** Open in … anyway: the file in the app that only opens it. */
-    fun playerOther() {
-        val id = _state.value.selectedId ?: return
-        val p = _state.value.device.player ?: return
-        val other = p.other ?: return
-        closePlayer()
-        playerJob = viewModelScope.launch { openIn(id, p.folder, p.file, p.mime, other) }
+        updateDevice(id) { it.copy(player = flow.copy(store = store, download = download)) }
     }
 
     /**

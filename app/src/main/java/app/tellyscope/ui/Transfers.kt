@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -29,14 +30,19 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,8 +64,6 @@ import app.tellyscope.adb.TvFolder
 import app.tellyscope.ui.theme.SmallNumber
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import app.tellyscope.R
 import app.tellyscope.data.media
 import app.tellyscope.data.resolve
@@ -154,10 +158,14 @@ internal val Broom = ImageVector.Builder("Broom", 24.dp, 24.dp, 24f, 24f)
     )
     .build()
 
-/** Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. */
+/**
+ * Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. A video,
+ * a song or a picture opens a sheet with Open on TV and Save; any other file saves straight away.
+ */
 @Composable
 fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
     val list = files.list
+    var picked by remember { mutableStateOf<TvFile?>(null) }
     when {
         list == null -> Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Center) {
             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -166,36 +174,56 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
         files.error != null -> Muted(files.error.resolve())
         else -> {
             list.forEach { f ->
-                val open = if (media(f.name) != null) ({ actions.player.open(f) }) else null
-                FileRow(f, now, open) { actions.saveFile(f) }
+                FileRow(f, now) { if (media(f.name) != null) picked = f else actions.saveFile(f) }
             }
             // Only with files to tap; an empty folder shows its own page instead.
             if (list.isNotEmpty()) Muted(stringResource(R.string.transfers_tap_to_save))
         }
     }
+    picked?.let { f ->
+        MediaSheet(
+            f,
+            onOpen = { picked = null; actions.player.open(f) },
+            onSave = { picked = null; actions.saveFile(f) },
+            onClose = { picked = null },
+        )
+    }
 }
 
-/** [onOpen]: Open on TV, for a video, a song or a picture; other files only save. */
 @Composable
-private fun FileRow(f: TvFile, now: Long, onOpen: (() -> Unit)?, onSave: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onSave).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(f.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
-            Text(
-                "${Copy.bytes(f.size).resolve()} · ${Copy.ago(f.modifiedMillis, now).resolve()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+private fun FileRow(f: TvFile, now: Long, onTap: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onTap).padding(vertical = 8.dp)) {
+        Text(f.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
+        Text(
+            "${Copy.bytes(f.size).resolve()} · ${Copy.ago(f.modifiedMillis, now).resolve()}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** A video, song or picture's name and size, then Open on TV and Save. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MediaSheet(f: TvFile, onOpen: () -> Unit, onSave: () -> Unit, onClose: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Text(f.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.MiddleEllipsis)
+                Text(Copy.bytes(f.size).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            for ((icon, label, onClick) in listOf(
+                Triple(LauncherIcons.Cast, R.string.copy_open_on_tv, onOpen),
+                Triple(LauncherIcons.Download, R.string.transfers_save, onSave),
+            )) {
+                ListItem(
+                    headlineContent = { Text(stringResource(label)) },
+                    leadingContent = { Icon(icon, null) },
+                    modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp),
+                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                )
+            }
         }
-        if (onOpen != null) {
-            // The file's name in what TalkBack says, or every row's button reads the same.
-            val label = Copy.openFile(f.name).resolve()
-            TextButton(onClick = onOpen, modifier = Modifier.semantics { contentDescription = label }) { Text(stringResource(R.string.copy_open_on_tv)) }
-        }
-        TextButton(onClick = onSave) { Text(stringResource(R.string.transfers_save)) }
     }
 }
 

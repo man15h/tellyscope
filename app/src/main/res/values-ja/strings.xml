@@ -337,11 +337,8 @@
     <string name="copy_not_on_tv_fire">%1$s はこのテレビにありません。テレビの Appstore からインストールしてください。</string>
     <string name="copy_player_no_video">テレビに動画プレーヤーがありません</string>
     <string name="copy_player_no_audio">テレビに音楽プレーヤーがありません</string>
-    <string name="copy_player_other_video">%1$s で %2$s を開けますが、動画向けではありません。%3$s ならリモコンで再生でき、インストール後に Tellyscope がファイルを開きます。</string>
-    <string name="copy_player_other_audio">%1$s で %2$s を開けますが、音楽向けではありません。%3$s ならリモコンで再生でき、インストール後に Tellyscope がファイルを開きます。</string>
     <string name="copy_player_nothing_text">テレビには %1$s を開けるアプリがありません。%2$s ならリモコンで再生でき、インストール後に Tellyscope がファイルを開きます。</string>
     <string name="copy_player_about">VideoLAN · 無料のオープンソース</string>
-    <string name="copy_player_open_anyway">それでも %1$s で開く</string>
     <string name="copy_player_install_title">テレビに %1$s をインストール</string>
     <string name="copy_player_store_open">テレビの Play ストアで %1$s のページが開いています。リモコンでインストールしてください。</string>
     <string name="copy_player_waiting">%1$s を待っています… その後 %2$s が開きます</string>
@@ -352,7 +349,6 @@
     <string name="copy_player_opened_in">テレビの %2$s で %1$s を開きました</string>
     <string name="copy_player_cant_open">テレビで %1$s を開けませんでした</string>
     <string name="copy_player_nothing_opens">テレビには %1$s を開けるアプリがありません</string>
-    <string name="copy_player_open_file">%1$s をテレビで開く</string>
     <string name="copy_cant_open">テレビで %1$s を開けませんでした。無効になっている場合は、アプリ画面で有効にしてください。</string>
     <string name="copy_left_dock_one">%1$s がアンインストールされたため、そのボタンをリモコンから削除しました。</string>
     <plurals name="copy_left_dock">
@@ -1173,8 +1169,8 @@
     <string name="transfers_debloat">整理</string>
     <string name="transfers_send_file">ファイルを送信</string>
     <string name="transfers_to_folder">送信先: %1$s</string>
-    <string name="transfers_tap_to_save">ファイルをタップすると、スマートフォンにコピーを保存できます。</string>
-    <string name="transfers_save">保存</string>
+    <string name="transfers_tap_to_save">ファイルをタップすると保存できます。動画、曲、画像をタップすると、テレビで開くか保存できます。</string>
+    <string name="transfers_save">スマートフォンに保存</string>
     <string name="transfers_reading">アプリを読み込んでいます</string>
     <string name="transfers_install_failed">%1$s をインストールできませんでした</string>
     <string name="transfers_cant_install">インストールできません</string>

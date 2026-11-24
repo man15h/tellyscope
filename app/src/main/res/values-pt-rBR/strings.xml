@@ -433,11 +433,8 @@
     <string name="copy_not_on_tv_fire">%1$s não está nesta TV. Instale pela Appstore na TV.</string>
     <string name="copy_player_no_video">Nenhum player de vídeo na TV</string>
     <string name="copy_player_no_audio">Nenhum player de áudio na TV</string>
-    <string name="copy_player_other_video">%1$s consegue abrir %2$s, mas não foi feito para vídeo. O %3$s reproduz com o controle, e o Tellyscope abre o arquivo nele quando estiver instalado.</string>
-    <string name="copy_player_other_audio">%1$s consegue abrir %2$s, mas não foi feito para música. O %3$s reproduz com o controle, e o Tellyscope abre o arquivo nele quando estiver instalado.</string>
     <string name="copy_player_nothing_text">Nada na TV consegue abrir %1$s. O %2$s reproduz com o controle, e o Tellyscope abre o arquivo nele quando estiver instalado.</string>
     <string name="copy_player_about">VideoLAN · livre e de código aberto</string>
-    <string name="copy_player_open_anyway">Abrir no %1$s mesmo assim</string>
     <string name="copy_player_install_title">Instale o %1$s na TV</string>
     <string name="copy_player_store_open">A página do %1$s está aberta na Play Store da TV. Instale com o controle.</string>
     <string name="copy_player_waiting">Aguardando o %1$s… depois %2$s abre</string>
@@ -448,7 +445,6 @@
     <string name="copy_player_opened_in">%1$s aberto na TV no %2$s</string>
     <string name="copy_player_cant_open">Não foi possível abrir %1$s na TV</string>
     <string name="copy_player_nothing_opens">Nada na TV consegue abrir %1$s</string>
-    <string name="copy_player_open_file">Abrir %1$s na TV</string>
     <string name="copy_cant_open">A TV não conseguiu abrir %1$s. Se estiver desativado, ative em Apps.</string>
     <string name="copy_left_dock_one">%1$s foi desinstalado, então o botão saiu do Controle.</string>
     <plurals name="copy_left_dock">
@@ -1483,8 +1479,8 @@
     <string name="transfers_send_file">Enviar arquivo</string>
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">Para %1$s</string>
-    <string name="transfers_tap_to_save">Toque em um arquivo para salvar uma cópia no celular.</string>
-    <string name="transfers_save">Salvar</string>
+    <string name="transfers_tap_to_save">Toque em um arquivo para salvá-lo. Toque em um vídeo, música ou imagem para abrir na TV ou salvar.</string>
+    <string name="transfers_save">Salvar no celular</string>
     <string name="transfers_reading">Lendo o app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Não foi possível instalar %1$s</string>

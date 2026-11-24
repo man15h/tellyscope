@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.boundsInRoot
@@ -222,6 +223,9 @@ private fun Header(state: UiState, modifier: Modifier, onShell: (Offset) -> Unit
             Button(
                 onClick = { onShell(center) },
                 modifier = Modifier.onGloballyPositioned { center = it.boundsInRoot().center },
+                // A terminal's colours: black in the light theme, white in the dark one, where black would vanish into the card.
+                colors = if (c.surface.luminance() < 0.5f) ButtonDefaults.buttonColors(Color.White, Color.Black)
+                else ButtonDefaults.buttonColors(Color.Black, Color.White),
             ) {
                 Icon(TerminalIcon, null, Modifier.size(ButtonDefaults.IconSize))
                 Spacer(Modifier.width(ButtonDefaults.IconSpacing))

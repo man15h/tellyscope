@@ -80,7 +80,7 @@ private fun tv(manufacturer: String, model: String) = Device("tv", ScanHit("tv",
 /** A TV whose apps answer for a file as [answer] says; it records what it was asked to open and install. */
 private class PlayerTv(val device: Device = tv("XGIMI", "Horizon Pro"), val own: List<AppInfo> = listOf(playStore, gallery)) :
     DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
-    var answer = listOf(GALLERY, STUBS)
+    var answer = listOf(STUBS)
     var store = StoreState.InStore
     val opened = mutableListOf<Triple<String, String?, Boolean>>()
     val installs = mutableListOf<ApkInfo>()
@@ -178,7 +178,17 @@ class OpenOnTvTest {
         assertEquals(listOf(Triple(holiday.name, null, false)), tv.opened)
     }
 
-    @Test fun onlyAGalleryOffersVlcWithTheGalleryAnyway() = with(test) {
+    @Test fun aGalleryOpensAVideoWithNoPrompt() = with(test) {
+        val tv = PlayerTv().apply { answer = listOf(GALLERY, STUBS) }
+        val v = vm(tv)
+        v.openFile(holiday)
+        runCurrent()
+        assertEquals(listOf(Triple(holiday.name, GALLERY, false)), tv.opened)
+        assertEquals(Copy.openedFileIn(holiday.name, "Gallery"), v.notice.value)
+        assertNull(v.state.value.device.player)
+    }
+
+    @Test fun nothingThatOpensItOffersVlc() = with(test) {
         val tv = PlayerTv()
         val v = vm(tv)
         v.openFile(holiday)
@@ -187,14 +197,7 @@ class OpenOnTvTest {
         assertEquals(PlayerFlow.Step.Ask, p.step)
         assertEquals(PlayerStore.Play, p.store)
         assertTrue(p.download)
-        assertEquals(GALLERY, p.other)
-        assertEquals("Gallery", p.otherLabel)
         assertTrue(tv.opened.isEmpty())
-
-        v.playerOther()
-        runCurrent()
-        assertEquals(listOf(Triple(holiday.name, GALLERY, false)), tv.opened)
-        assertNull(v.state.value.device.player)
     }
 
     @Test fun nothingButTheStubsOffersVlcAlone() = with(test) {
@@ -204,7 +207,6 @@ class OpenOnTvTest {
         runCurrent()
         val p = v.state.value.device.player!!
         assertEquals(MediaKind.Audio, p.kind)
-        assertNull(p.other)
     }
 
     @Test fun aPictureOpensInTheGallery() = with(test) {
@@ -280,7 +282,7 @@ class OpenOnTvTest {
     }
 
     @Test fun thePlayBuildWithNoStoreOpensTheGallery() = with(test) {
-        val tv = PlayerTv(own = listOf(gallery))
+        val tv = PlayerTv(own = listOf(gallery)).apply { answer = listOf(GALLERY, STUBS) }
         val v = vm(tv, download = null)
         v.openFile(holiday)
         runCurrent()

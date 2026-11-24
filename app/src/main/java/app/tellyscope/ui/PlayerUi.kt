@@ -45,7 +45,7 @@ import app.tellyscope.data.PLAYER_DOWNLOADS
 import app.tellyscope.data.resolve
 
 data class PlayerActions(
-    /** Open on TV in a file's row. */
+    /** Open on TV in a media file's sheet. */
     val open: (TvFile) -> Unit = {},
     /** Get it from Play Store, or Open Appstore: the TV's store, then a wait for the install. */
     val store: () -> Unit = {},
@@ -53,8 +53,6 @@ data class PlayerActions(
     val direct: () -> Unit = {},
     /** Download anyway, or Download and install where there's no Play Store. */
     val download: () -> Unit = {},
-    /** Open in … anyway. */
-    val other: () -> Unit = {},
     val close: () -> Unit = {},
 )
 
@@ -85,11 +83,7 @@ fun PlayerDialog(p: PlayerFlow, tv: String, actions: PlayerActions) {
             title = { Text(Copy.noPlayer(p.kind == MediaKind.Audio).resolve()) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    val other = p.otherLabel
-                    Text(
-                        (if (other != null) Copy.playerOtherText(p.kind == MediaKind.Audio, other, p.file.name, name)
-                        else Copy.playerNothingText(p.file.name, name)).resolve(),
-                    )
+                    Text(Copy.playerNothingText(p.file.name, name).resolve())
                     PlayerRow()
                     // Stacked full width: the labels don't fit side by side.
                     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -99,9 +93,7 @@ fun PlayerDialog(p: PlayerFlow, tv: String, actions: PlayerActions) {
                         } else {
                             IconButtonText(LauncherIcons.Download, Copy.DOWNLOAD_AND_INSTALL.resolve(), Modifier.fillMaxWidth(), onClick = actions.download)
                         }
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            if (other != null) TextButton(onClick = actions.other) { Text(Copy.openAnyway(other).resolve()) } else cancel()
-                        }
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { cancel() }
                     }
                 }
             },

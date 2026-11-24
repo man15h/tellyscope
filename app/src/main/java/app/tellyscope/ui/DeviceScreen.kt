@@ -110,7 +110,7 @@ data class DeviceActions(
     /** Asks where to save [TvFile] on the phone, then copies it. */
     val saveFile: (TvFile) -> Unit = {},
     val cancelTransfer: () -> Unit = {},
-    /** Open on TV in a file's row, and the prompt that offers a player. */
+    /** Open on TV in a media file's sheet, and the prompt that offers a player. */
     val player: PlayerActions = PlayerActions(),
     val remote: () -> Unit = {},
     /** Opens the Debloat flow: pick the TV's list, then review the apps it turns off. */

@@ -438,11 +438,8 @@
     <string name="copy_player_no_video">No video player on the TV</string>
     <string name="copy_player_no_audio">No audio player on the TV</string>
     <!-- %1$s the app that opens it (a gallery or a browser), %2$s the file, %3$s VLC -->
-    <string name="copy_player_other_video">%1$s can open %2$s, but it isn\'t made for video. %3$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
-    <string name="copy_player_other_audio">%1$s can open %2$s, but it isn\'t made for music. %3$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
     <string name="copy_player_nothing_text">Nothing on the TV can open %1$s. %2$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
     <string name="copy_player_about">VideoLAN · free and open source</string>
-    <string name="copy_player_open_anyway">Open in %1$s anyway</string>
     <string name="copy_player_install_title">Install %1$s on the TV</string>
     <string name="copy_player_store_open">%1$s\'s page is open in the Play Store on the TV. Install it with the remote.</string>
     <string name="copy_player_waiting">Waiting for %1$s… then %2$s opens</string>
@@ -454,7 +451,6 @@
     <string name="copy_player_opened_in">Opened %1$s on the TV in %2$s</string>
     <string name="copy_player_cant_open">Couldn\'t open %1$s on the TV</string>
     <string name="copy_player_nothing_opens">Nothing on the TV can open %1$s</string>
-    <string name="copy_player_open_file">Open %1$s on TV</string>
     <string name="copy_cant_open">The TV couldn\'t open %1$s. If it\'s disabled, enable it in Apps.</string>
     <string name="copy_left_dock_one">%1$s was uninstalled, so its button left the Remote.</string>
     <plurals name="copy_left_dock">
@@ -1516,8 +1512,8 @@
     <string name="transfers_send_file">Send file</string>
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">To %1$s</string>
-    <string name="transfers_tap_to_save">Tap a file to save a copy on your phone.</string>
-    <string name="transfers_save">Save</string>
+    <string name="transfers_tap_to_save">Tap a file to save it. Tap a video, song or picture to open it on the TV or save it.</string>
+    <string name="transfers_save">Save in your phone</string>
     <string name="transfers_reading">Reading the app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Couldn\'t install %1$s</string>

@@ -3,12 +3,6 @@
 package app.tellyscope.ui
 
 import android.content.pm.ActivityInfo
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.provider.Settings
-import android.view.Surface as Rotation
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -18,22 +12,27 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -53,7 +52,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,19 +63,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -86,6 +79,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -96,49 +90,38 @@ import app.tellyscope.adb.GamepadButton
 import app.tellyscope.adb.GamepadReport
 import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.RemoteKey
-import kotlin.math.asin
 import kotlin.math.roundToInt
-import kotlin.math.sqrt
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
 
-/** The raised keys' lip, under the face: 3 dp of it shows, and a held key sinks [SINK] onto it. */
-private val LIP = 3.dp
-private val SINK = 2.dp
+/**
+ * The pad's sizes at full size, on a phone with room for them, such as a Pixel 2 XL held sideways. On a
+ * shorter screen every one shrinks by the same share, so the pad keeps its shape. [END] is the round
+ * ends of the pad's body, and [DIMPLE] the dimple and bowl set in them.
+ */
+private val END = 280.dp
+private val DIMPLE = 208.dp
+/** The D-pad: one cross, each of its four arms its own key. */
+private val CROSS = 160.dp
+private val ARM = 52.dp
+/** The face keys, and how far each sits from the middle of the bowl. */
+private val FACE_KEY = 52.dp
+private val FACE_STEP = 54.dp
+private val HOME_KEY = 52.dp
+private val PILL = DpSize(64.dp, 28.dp)
+private val STICK_WELL = 168.dp
+private val STICK_KNOB = 72.dp
 /** Room around each key for the held ring: 2 dp of gap, then 2 dp of ring. */
 private val RING_GAP = 2.dp
 private val RING = 2.dp
-private val SHADOW_BLUR = 8.dp
-private val SHADOW_DROP = 4.dp
-/** The lips from the mockup: under a tonal key, and under A. */
-private val LIP_TONAL = Color(0xFFB6D4D4)
-private val LIP_PRIMARY = Color(0xFF005457)
-
-/** The shadows slide at most this far toward the edge tilted down, all of it at [TILT_FULL_DEG]. */
-private val TILT_SHIFT = 4.dp
-private const val TILT_FULL_DEG = 20f
-/** Each reading moves the smoothed gravity this share of the way to it. */
-private const val TILT_SMOOTHING = 0.2f
-/**
- * The level the tilt is measured from follows the hand this slowly, so the angle the phone is held at
- * reads as flat and only a tilt away from it moves the light.
- */
-private const val TILT_SETTLE = 0.02f
-
-/** The D-pad's arrow keys: across and along their arrow, and the room between their tips. */
-private val ARROW_ACROSS = 56.dp
-private val ARROW_ALONG = 64.dp
-private val ARROW_GAP = 8.dp
-private val FACE_KEY = 56.dp
-private val STICK_WELL = 168.dp
-private val STICK_KNOB = 72.dp
 
 private enum class Arrow(val key: RemoteKey) { UP(RemoteKey.UP), DOWN(RemoteKey.DOWN), LEFT(RemoteKey.LEFT), RIGHT(RemoteKey.RIGHT) }
 
 /**
  * The game controller: the phone held sideways, over the whole screen, with a D-pad or a stick on the
- * left, Select, Start and Home in the middle, and A, B, X and Y on the right. [virtual] when the TV took
+ * left, Home, Select and Start in the middle, and X, Y, A and B on the right, on a pad shaped like an
+ * old Nintendo one. [virtual] when the TV took
  * the virtual gamepad: the TV then sees a real controller, with a stick. Without it the buttons go as
  * gamepad keys, the stick grays out and a line under Home says what that means. ✕ and Back go back to
  * the Remote.
@@ -203,16 +186,13 @@ private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHapti
         held[a] = down
         if (virtual) update() else keys.trySend(a.key.code to down)
     }
-    val tilt = rememberTilt()
     val c = MaterialTheme.colorScheme
-    val dark = c.surface.luminance() < 0.5f
-    // The mockup's lips are for the light theme; in the dark one each is its face, darkened.
-    val tonal = KeyColors(c.secondaryContainer, c.onSecondaryContainer, if (dark) lerp(c.secondaryContainer, Color.Black, 0.4f) else LIP_TONAL)
-    val primary = KeyColors(c.primary, c.onPrimary, if (dark) lerp(c.primary, Color.Black, 0.4f) else LIP_PRIMARY)
-    val raised = Raised(tilt, keyHaptics, live)
+    val tonal = KeyColors(c.secondaryContainer, c.onSecondaryContainer)
+    val primary = KeyColors(c.primary, c.onPrimary)
+    val pad = PadKeys(keyHaptics, live)
 
-    Column(Modifier.fillMaxSize().safeDrawingPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.fillMaxSize().safeDrawingPadding().padding(vertical = 8.dp)) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = actions.closeController) { Icon(Icons.Default.Close, stringResource(R.string.remote_controller_close)) }
             Text(
                 "$tvName · ${stringResource(R.string.remote_controller)}",
@@ -233,43 +213,70 @@ private fun Controller(tvName: String, live: Boolean, virtual: Boolean, keyHapti
                 onDpad = { stick = false; report = report.copy(x = 0, y = 0) },
             )
         }
-        Row(
-            Modifier.weight(1f).fillMaxWidth().alpha(if (live) 1f else 0.38f),
-            verticalAlignment = Alignment.CenterVertically,
+        // Clear of the edges a back swipe starts from, so a thumb that slides off a key doesn't go Back.
+        BoxWithConstraints(
+            Modifier.weight(1f).fillMaxWidth()
+                .windowInsetsPadding(WindowInsets.systemGestures.only(WindowInsetsSides.Horizontal))
+                .padding(horizontal = 8.dp, vertical = 8.dp)
+                .alpha(if (live) 1f else 0.38f),
+            contentAlignment = Alignment.Center,
         ) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                if (useStick) Stick(live, tilt) { x, y -> report = report.copy(x = x, y = y) }
-                else ArrowPad(raised, tonal, ::arrow)
-            }
-            Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    for ((b, label) in listOf(GamepadButton.SELECT to R.string.remote_select, GamepadButton.START to R.string.remote_start)) {
-                        val text = stringResource(label)
-                        RaisedKey(raised, text, RoundedCornerShape(50), tonal, DpSize(80.dp, 36.dp), onKey = { button(b, it) }) {
-                            Text(text, style = MaterialTheme.typography.labelLarge)
-                        }
+            val scale = minOf(1f, maxHeight / END, maxWidth / (END * 2.6f))
+            fun Dp.s() = this * scale
+            Body(END.s(), Modifier.fillMaxWidth().height(END.s()))
+            Row(Modifier.fillMaxWidth().height(END.s()), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(END.s()), contentAlignment = Alignment.Center) {
+                    Box(Modifier.size(DIMPLE.s()).background(c.surfaceContainerHigh, CircleShape), contentAlignment = Alignment.Center) {
+                        if (useStick) Stick(live, STICK_WELL.s(), STICK_KNOB.s()) { x, y -> report = report.copy(x = x, y = y) }
+                        else Cross(pad, tonal, CROSS.s(), ARM.s(), ::arrow)
                     }
                 }
-                Spacer(Modifier.height(20.dp))
-                // Home leaves the game on the TV, as the Remote's Home does.
-                RaisedKey(raised, stringResource(R.string.remote_home), CircleShape, tonal, DpSize(52.dp, 52.dp), onKey = { down ->
-                    if (down) scope.launch { actions.press(RemoteKey.HOME) }
-                }) { Icon(Icons.Outlined.Home, null) }
-                if (!virtual) {
-                    Spacer(Modifier.height(16.dp))
-                    Text(
-                        stringResource(R.string.remote_controller_buttons_only),
-                        Modifier.widthIn(max = 260.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = c.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Home leaves the game on the TV, as the Remote's Home does.
+                    PadKey(pad, stringResource(R.string.remote_home), CircleShape, tonal, DpSize(HOME_KEY.s(), HOME_KEY.s()), onKey = { down ->
+                        if (down) scope.launch { actions.press(RemoteKey.HOME) }
+                    }) { Icon(Icons.Outlined.Home, null) }
+                    Spacer(Modifier.height(24.dp.s()))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp.s())) {
+                        for ((b, label) in listOf(GamepadButton.SELECT to R.string.remote_select, GamepadButton.START to R.string.remote_start)) {
+                            val text = stringResource(label)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                // Slanted, as on the old Nintendo pad.
+                                PadKey(pad, text, RoundedCornerShape(50), tonal, DpSize(PILL.width.s(), PILL.height.s()), Modifier.rotate(-25f), onKey = { button(b, it) }) {}
+                                Text(text, Modifier.padding(top = 4.dp), style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant)
+                            }
+                        }
+                    }
+                    if (!virtual) {
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            stringResource(R.string.remote_controller_buttons_only),
+                            Modifier.widthIn(max = 240.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+                Box(Modifier.size(END.s()), contentAlignment = Alignment.Center) {
+                    FaceButtons(pad, tonal, primary, DIMPLE.s(), FACE_KEY.s(), FACE_STEP.s(), ::button)
                 }
             }
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                FaceButtons(raised, tonal, primary, ::button)
-            }
         }
+    }
+}
+
+/**
+ * The pad's body behind the keys: a round end on each side, as wide as the pad is tall, joined by a
+ * narrower band.
+ */
+@Composable
+private fun Body(end: Dp, modifier: Modifier) {
+    val color = MaterialTheme.colorScheme.surfaceContainer
+    Box(modifier) {
+        Box(Modifier.align(Alignment.Center).fillMaxWidth().padding(horizontal = end / 2).height(end * 0.72f).background(color))
+        Box(Modifier.align(Alignment.CenterStart).size(end).background(color, CircleShape))
+        Box(Modifier.align(Alignment.CenterEnd).size(end).background(color, CircleShape))
     }
 }
 
@@ -305,42 +312,64 @@ private fun StickSwitch(stick: Boolean, stickAllowed: Boolean, onStick: () -> Un
 
 private data class Choice(val on: Boolean, val label: Int, val allowed: Boolean, val pick: () -> Unit)
 
-/** A raised key's face, label and lip colours. */
-private data class KeyColors(val face: Color, val content: Color, val lip: Color)
+/** A key's face and label colours. */
+private data class KeyColors(val face: Color, val content: Color)
 
-/** What every raised key shares: the tilt its shadow follows, whether a press vibrates, and whether the TV is there. */
-private class Raised(val tilt: State<Offset>, val haptics: Boolean, val enabled: Boolean)
+/** What every key on the pad shares: whether a press vibrates, and whether the TV is there. */
+private class PadKeys(val haptics: Boolean, val enabled: Boolean)
 
-/** Y on top, X and B either side, A at the bottom in the primary colour, as on most pads. */
+/**
+ * X on top, Y on the left, A on the right in the primary colour and B at the bottom, in a round bowl, as
+ * on the old Nintendo pad. Y and X sit on one slanted rail, B and A on another.
+ */
 @Composable
-private fun FaceButtons(raised: Raised, tonal: KeyColors, primary: KeyColors, button: (GamepadButton, Boolean) -> Unit) {
-    val step = FACE_KEY + 4.dp
-    Box(Modifier.size(step * 3)) {
+private fun FaceButtons(pad: PadKeys, tonal: KeyColors, primary: KeyColors, bowl: Dp, key: Dp, step: Dp, button: (GamepadButton, Boolean) -> Unit) {
+    val c = MaterialTheme.colorScheme
+    Box(Modifier.size(bowl).background(c.surfaceContainerHigh, CircleShape), contentAlignment = Alignment.Center) {
+        // Each rail runs between the middles of its two keys, rising to the right.
+        val rail = Modifier.size(step * 1.414f + key, key + 8.dp).rotate(-45f).background(c.surfaceContainerHighest, RoundedCornerShape(50))
+        Box(Modifier.offset(-step / 2, -step / 2).then(rail))
+        Box(Modifier.offset(step / 2, step / 2).then(rail))
         for ((b, at) in listOf(
-            GamepadButton.Y to Alignment.TopCenter,
-            GamepadButton.X to Alignment.CenterStart,
-            GamepadButton.B to Alignment.CenterEnd,
-            GamepadButton.A to Alignment.BottomCenter,
+            GamepadButton.X to Offset(0f, -1f),
+            GamepadButton.Y to Offset(-1f, 0f),
+            GamepadButton.A to Offset(1f, 0f),
+            GamepadButton.B to Offset(0f, 1f),
         )) {
-            RaisedKey(raised, b.name, CircleShape, if (b == GamepadButton.A) primary else tonal, DpSize(FACE_KEY, FACE_KEY), Modifier.align(at), onKey = { button(b, it) }) {
+            PadKey(
+                pad, b.name, CircleShape, if (b == GamepadButton.A) primary else tonal, DpSize(key, key),
+                Modifier.offset(step * at.x, step * at.y), onKey = { button(b, it) },
+            ) {
                 Text(b.name, style = MaterialTheme.typography.titleMedium)
             }
         }
     }
 }
 
-/** Four arrow-tip keys pointing at the middle, with nothing behind them. */
+/** The D-pad: a cross whose four arms are each a key, around a middle that isn't one. */
 @Composable
-private fun ArrowPad(raised: Raised, colors: KeyColors, arrow: (Arrow, Boolean) -> Unit) {
-    Box(Modifier.size(ARROW_ALONG * 2 + ARROW_GAP + (RING_GAP + RING) * 2)) {
+private fun Cross(pad: PadKeys, colors: KeyColors, cross: Dp, arm: Dp, arrow: (Arrow, Boolean) -> Unit) {
+    val reach = (cross - arm) / 2
+    val corner = arm * 0.16f
+    Box(Modifier.size(cross + (RING_GAP + RING) * 2), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(arm).background(colors.face)) {
+            Box(Modifier.align(Alignment.Center).size(arm * 0.2f).background(colors.content.copy(alpha = 0.12f), CircleShape))
+        }
         for ((a, at) in listOf(
-            Arrow.UP to Alignment.TopCenter,
-            Arrow.DOWN to Alignment.BottomCenter,
-            Arrow.LEFT to Alignment.CenterStart,
-            Arrow.RIGHT to Alignment.CenterEnd,
+            Arrow.UP to Offset(0f, -1f),
+            Arrow.DOWN to Offset(0f, 1f),
+            Arrow.LEFT to Offset(-1f, 0f),
+            Arrow.RIGHT to Offset(1f, 0f),
         )) {
             val upright = a == Arrow.UP || a == Arrow.DOWN
-            val size = if (upright) DpSize(ARROW_ACROSS, ARROW_ALONG) else DpSize(ARROW_ALONG, ARROW_ACROSS)
+            val size = if (upright) DpSize(arm, reach) else DpSize(reach, arm)
+            // Only the arm's outer end is rounded; its inner end meets the middle square.
+            val shape = when (a) {
+                Arrow.UP -> RoundedCornerShape(topStart = corner, topEnd = corner)
+                Arrow.DOWN -> RoundedCornerShape(bottomStart = corner, bottomEnd = corner)
+                Arrow.LEFT -> RoundedCornerShape(topStart = corner, bottomStart = corner)
+                Arrow.RIGHT -> RoundedCornerShape(topEnd = corner, bottomEnd = corner)
+            }
             val label = stringResource(
                 when (a) {
                     Arrow.UP -> R.string.remote_up
@@ -349,68 +378,28 @@ private fun ArrowPad(raised: Raised, colors: KeyColors, arrow: (Arrow, Boolean) 
                     Arrow.RIGHT -> R.string.remote_right
                 },
             )
-            RaisedKey(raised, label, arrowShape(a), colors, size, Modifier.align(at), onKey = { arrow(a, it) }) {
+            val shift = (arm + reach) / 2
+            PadKey(pad, label, shape, colors, size, Modifier.offset(shift * at.x, shift * at.y), onKey = { arrow(a, it) }) {
                 val glyph = when (a) {
                     Arrow.UP -> Icons.Default.KeyboardArrowUp
                     Arrow.DOWN -> Icons.Default.KeyboardArrowDown
                     Arrow.LEFT -> Icons.Default.KeyboardArrowLeft
                     Arrow.RIGHT -> Icons.Default.KeyboardArrowRight
                 }
-                // Toward the key's outer end, clear of the tip.
-                val nudge = 6.dp
-                val outward = when (a) {
-                    Arrow.UP -> Modifier.offset(y = -nudge)
-                    Arrow.DOWN -> Modifier.offset(y = nudge)
-                    Arrow.LEFT -> Modifier.offset(x = -nudge)
-                    Arrow.RIGHT -> Modifier.offset(x = nudge)
-                }
-                Icon(glyph, null, outward)
+                Icon(glyph, null)
             }
         }
     }
 }
 
 /**
- * A key square at its outer end, with small rounded corners, and coming to a right-angled point at the
- * end that faces the middle of the pad.
- */
-private fun arrowShape(a: Arrow): Shape = GenericShape { size, _ ->
-    val upright = a == Arrow.UP || a == Arrow.DOWN
-    val across = if (upright) size.width else size.height
-    val along = if (upright) size.height else size.width
-    val r = across * 0.12f
-    // u runs across the key, v from its outer end to the tip.
-    fun at(u: Float, v: Float): Offset = when (a) {
-        Arrow.UP -> Offset(u, v)
-        Arrow.DOWN -> Offset(u, along - v)
-        Arrow.LEFT -> Offset(v, u)
-        Arrow.RIGHT -> Offset(along - v, u)
-    }
-    fun line(u: Float, v: Float) = at(u, v).let { lineTo(it.x, it.y) }
-    fun corner(cu: Float, cv: Float, u: Float, v: Float) {
-        val c = at(cu, cv)
-        val p = at(u, v)
-        quadraticTo(c.x, c.y, p.x, p.y)
-    }
-    at(0f, r).let { moveTo(it.x, it.y) }
-    corner(0f, 0f, r, 0f)
-    line(across - r, 0f)
-    corner(across, 0f, across, r)
-    line(across, along - across / 2)
-    line(across / 2, along)
-    line(0f, along - across / 2)
-    close()
-}
-
-/**
- * One raised key: a face on a darker lip, with a soft shadow that follows the phone's tilt and a light
- * fading down the top of the face. Held, it sinks onto its lip and a ring shows around it. [size] is the
- * face; the key takes room for the ring around it and the lip under it. [onKey] gets true as a finger
- * goes down and false as it lifts, so holding a key holds the button on the TV.
+ * One key on the pad, flat in the Remote's colours. Held, a ring shows around it. [size] is the face;
+ * the key takes room for the ring around it. [onKey] gets true as a finger goes down and false as it
+ * lifts, so holding a key holds the button on the TV.
  */
 @Composable
-private fun RaisedKey(
-    raised: Raised,
+private fun PadKey(
+    pad: PadKeys,
     label: String,
     shape: Shape,
     colors: KeyColors,
@@ -425,45 +414,29 @@ private fun RaisedKey(
     val ringColor = MaterialTheme.colorScheme.primary
     Box(
         modifier
-            .size(size.width + room * 2, size.height + room * 2 + LIP)
+            .size(size.width + room * 2, size.height + room * 2)
             .semantics {
                 role = Role.Button
                 contentDescription = label
-                if (raised.enabled) onClick { onKey(true); onKey(false); true }
+                if (pad.enabled) onClick { onKey(true); onKey(false); true }
             }
-            .pointerInput(raised.enabled, raised.haptics) {
-                if (!raised.enabled) return@pointerInput
+            .pointerInput(pad.enabled, pad.haptics) {
+                if (!pad.enabled) return@pointerInput
                 awaitEachGesture {
                     awaitFirstDown().consume()
                     down = true
-                    if (raised.haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    if (pad.haptics) haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                     onKey(true)
                     waitForUpOrCancellation()?.consume()
                     down = false
                     onKey(false)
                 }
             },
+        contentAlignment = Alignment.Center,
     ) {
-        val face = Modifier.size(size.width, size.height)
-        // The shadow, cast by the key at rest; drawn on its own so the sink doesn't move it.
-        Box(
-            face.offset(room, room).dropShadow(shape) {
-                val t = raised.tilt.value
-                radius = SHADOW_BLUR.toPx()
-                color = Color.Black.copy(alpha = 0.10f)
-                offset = Offset(t.x, SHADOW_DROP.toPx() + t.y)
-            },
-        )
-        Box(face.offset(room, room + LIP).background(colors.lip, shape))
-        val sunk = if (down) SINK else 0.dp
         // The ring is the key's own shape at the ring's size, so it keeps [RING_GAP] clear of the face.
-        if (down) Box(Modifier.offset(0.dp, sunk).size(size.width + room * 2, size.height + room * 2).border(RING, ringColor, shape))
-        Box(
-            face.offset(room, room + sunk)
-                .background(colors.face, shape)
-                .background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.15f), 0.5f to Color.Transparent), shape),
-            contentAlignment = Alignment.Center,
-        ) {
+        if (down) Box(Modifier.fillMaxSize().border(RING, ringColor, shape))
+        Box(Modifier.size(size.width, size.height).background(colors.face, shape), contentAlignment = Alignment.Center) {
             CompositionLocalProvider(LocalContentColor provides colors.content) { content() }
         }
     }
@@ -474,15 +447,15 @@ private fun RaisedKey(
  * to the middle on lift. [onMove] gets X and Y from -127 to 127, down and right positive.
  */
 @Composable
-private fun Stick(enabled: Boolean, tilt: State<Offset>, onMove: (Int, Int) -> Unit) {
+private fun Stick(enabled: Boolean, well: Dp, knobSize: Dp, onMove: (Int, Int) -> Unit) {
     val c = MaterialTheme.colorScheme
     var knob by remember { mutableStateOf(Offset.Zero) }
     val density = LocalDensity.current
-    val reach = with(density) { ((STICK_WELL - STICK_KNOB) / 2).toPx() }
+    val reach = with(density) { ((well - knobSize) / 2).toPx() }
     Box(
-        Modifier.size(STICK_WELL)
+        Modifier.size(well)
             .background(c.surfaceContainerHighest, CircleShape)
-            .pointerInput(enabled) {
+            .pointerInput(enabled, reach) {
                 if (!enabled) return@pointerInput
                 val centre = Offset(size.width / 2f, size.height / 2f)
                 awaitEachGesture {
@@ -509,74 +482,8 @@ private fun Stick(enabled: Boolean, tilt: State<Offset>, onMove: (Int, Int) -> U
     ) {
         Box(
             Modifier.offset { IntOffset(knob.x.roundToInt(), knob.y.roundToInt()) }
-                .size(STICK_KNOB)
-                .dropShadow(CircleShape) {
-                    val t = tilt.value
-                    radius = SHADOW_BLUR.toPx()
-                    color = Color.Black.copy(alpha = 0.10f)
-                    offset = Offset(t.x, SHADOW_DROP.toPx() + t.y)
-                }
-                .background(c.primary, CircleShape)
-                .background(Brush.verticalGradient(0f to Color.White.copy(alpha = 0.15f), 0.5f to Color.Transparent), CircleShape),
+                .size(knobSize)
+                .background(c.primary, CircleShape),
         )
     }
-}
-
-/**
- * Where the keys' shadows sit beyond their drop, in px, from how the phone is tilted: toward the edge
- * tilted down, [TILT_SHIFT] at most. Listens to the gravity sensor, or the accelerometer where there is
- * none, only while on screen. Stays still with Remove animations on, or with neither sensor.
- */
-@Composable
-private fun rememberTilt(): State<Offset> {
-    val context = LocalContext.current
-    val view = LocalView.current
-    val shift = with(LocalDensity.current) { TILT_SHIFT.toPx() }
-    val tilt = remember { mutableStateOf(Offset.Zero) }
-    val still = remember { Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f }
-    DisposableEffect(still, shift) {
-        val sensors = context.getSystemService(SensorManager::class.java)
-        val sensor = sensors?.getDefaultSensor(Sensor.TYPE_GRAVITY) ?: sensors?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
-        if (still || sensors == null || sensor == null) return@DisposableEffect onDispose {}
-        var now: Offset? = null
-        var level: Offset? = null
-        val listener = object : SensorEventListener {
-            override fun onSensorChanged(e: SensorEvent) {
-                val g = screenTilt(e.values[0], e.values[1], e.values[2], view.display?.rotation ?: Rotation.ROTATION_0)
-                val n = now?.let { it + (g - it) * TILT_SMOOTHING } ?: g
-                val l = level?.let { it + (n - it) * TILT_SETTLE } ?: n
-                now = n
-                level = l
-                val d = n - l
-                tilt.value = Offset(
-                    (d.x / TILT_FULL_DEG).coerceIn(-1f, 1f) * shift,
-                    (d.y / TILT_FULL_DEG).coerceIn(-1f, 1f) * shift,
-                )
-            }
-
-            override fun onAccuracyChanged(s: Sensor?, accuracy: Int) {}
-        }
-        sensors.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_UI)
-        onDispose { sensors.unregisterListener(listener) }
-    }
-    return tilt
-}
-
-/**
- * How far, in degrees, the screen's right edge (x) and its bottom edge (y) are tilted down, from a
- * gravity reading [x], [y], [z] in the phone's own axes and the screen's [rotation]. The reading points
- * up, away from the ground, so the edge tilted down is the one it points away from.
- */
-internal fun screenTilt(x: Float, y: Float, z: Float, rotation: Int): Offset {
-    // The reading on the screen's axes, x right and y up, as the screen is turned.
-    val (sx, sy) = when (rotation) {
-        Rotation.ROTATION_90 -> -y to x
-        Rotation.ROTATION_180 -> -x to -y
-        Rotation.ROTATION_270 -> y to -x
-        else -> x to y
-    }
-    val g = sqrt(x * x + y * y + z * z).takeIf { it > 0f } ?: return Offset.Zero
-    fun deg(v: Float) = Math.toDegrees(asin((v / g).coerceIn(-1f, 1f).toDouble())).toFloat()
-    // Pointing right means the left edge is down; pointing up (toward the top) means the bottom is down.
-    return Offset(-deg(sx), deg(sy))
 }

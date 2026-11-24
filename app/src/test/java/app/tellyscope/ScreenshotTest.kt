@@ -1955,25 +1955,23 @@ class ScreenshotTest {
         step: PlayerFlow.Step = PlayerFlow.Step.Ask,
         store: PlayerStore = PlayerStore.Play,
         download: Boolean = true,
-        gallery: Boolean = true,
         progress: Progress? = null,
     ) = PlayerFlow(
         TvFolder.DOWNLOAD, TvFile("holiday-2025.mp4", 774_400_000, 0L), MediaKind.Video, "video/mp4", store, download, step,
-        other = "com.android.gallery3d".takeIf { gallery }, otherLabel = "Gallery".takeIf { gallery }, release = vlc, progress = progress,
+        release = vlc, progress = progress,
     )
     private fun player(name: String, p: PlayerFlow, dark: Boolean) = shot(name, dark, screen = true) { PlayerDialog(p, "Projector", PlayerActions()) }
-    @Test fun player_gallery() = player("36_player_gallery", playerFlow(), false)
-    @Test fun player_gallery_dark() = player("36_player_gallery", playerFlow(), true)
-    @Test fun player_nothing() = player("36_player_nothing", playerFlow(gallery = false), false)
-    @Test fun player_no_store() = player("36_player_no_store", playerFlow(store = PlayerStore.None, gallery = false), false)
+    @Test fun player_nothing() = player("36_player_nothing", playerFlow(), false)
+    @Test fun player_nothing_dark() = player("36_player_nothing", playerFlow(), true)
+    @Test fun player_no_store() = player("36_player_no_store", playerFlow(store = PlayerStore.None), false)
     @Test fun player_store_waiting() = player("36_player_store_waiting", playerFlow(PlayerFlow.Step.Waiting), false)
     @Test fun player_warn() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), false)
     @Test fun player_warn_dark() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), true)
     @Test fun player_downloading() = player("36_player_downloading", playerFlow(PlayerFlow.Step.Downloading, progress = Progress(21_600_000, 47_073_346)), false)
     @Test fun player_installing() = player("36_player_installing", playerFlow(PlayerFlow.Step.Installing), false)
-    @Test fun player_appstore() = player("36_player_appstore", playerFlow(store = PlayerStore.Appstore, download = false, gallery = false), false)
+    @Test fun player_appstore() = player("36_player_appstore", playerFlow(store = PlayerStore.Appstore, download = false), false)
     @Test fun player_appstore_waiting() =
-        player("36_player_appstore_waiting", playerFlow(PlayerFlow.Step.Waiting, store = PlayerStore.Appstore, download = false, gallery = false), false)
+        player("36_player_appstore_waiting", playerFlow(PlayerFlow.Step.Waiting, store = PlayerStore.Appstore, download = false), false)
 
     private fun accessScreen(name: String, dark: Boolean, removal: Removal?) {
         val state = accessState(removal)
