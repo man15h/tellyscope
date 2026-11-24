@@ -218,6 +218,8 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
     val scope = rememberCoroutineScope()
     val label = stringResource(R.string.report_add_rest)
     val rest = posted.rest.orEmpty()
+    // Set on the first tap, so a second one while the copy runs can't open the browser twice.
+    var copying by remember { mutableStateOf(false) }
     BackHandler(onBack = back)
     Scaffold(
         topBar = {
@@ -229,8 +231,9 @@ fun AddRestScreen(posted: Report, back: () -> Unit, done: () -> Unit) {
         bottomBar = {
             ActionBar(note = stringResource(R.string.report_add_rest_note, posted.repo)) {
                 TextButton(onClick = back) { Text(stringResource(R.string.report_cancel)) }
-                Button(onClick = {
+                Button(enabled = !copying, onClick = {
                     // Leave only once copied: leaving first would cancel the copy with this screen's scope.
+                    copying = true
                     scope.launch {
                         clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(label, rest)))
                         runCatching { browser.openUri(posted.myIssues) }

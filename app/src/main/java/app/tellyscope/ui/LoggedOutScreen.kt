@@ -70,7 +70,7 @@ fun LoggedOutScreen(device: Device, loggedOutAt: Long, now: Long, onConnect: () 
                 Text(Copy.loggedOutAt(loggedOutAt, now).resolve(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SectionHeader(stringResource(R.string.logged_out_causes_title))
+                SectionHeader(stringResource(R.string.logged_out_causes_title), padded = false)
                 Copy.LOGGED_OUT_CAUSES.forEach { Text(stringResource(R.string.logged_out_cause, it.resolve()), style = MaterialTheme.typography.bodyMedium) }
             }
         }

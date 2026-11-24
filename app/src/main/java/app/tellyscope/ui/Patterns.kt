@@ -46,7 +46,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 // One style per pattern, used on every screen: section headers, cards, status heroes, bottom
@@ -55,10 +57,13 @@ import androidx.compose.ui.unit.dp
 /** The side margin of every screen: M3's compact margin. */
 internal val PageMargin = 16.dp
 
-/** A section's header: titleSmall in primary, sentence case, 16 dp above and 8 dp below. */
+/**
+ * A section's header: titleSmall in primary, sentence case, 16 dp above and 8 dp below. [padded] is
+ * false inside a parent whose spacedBy already makes the gaps, so the two don't add up.
+ */
 @Composable
-internal fun SectionHeader(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier.padding(top = 16.dp, bottom = 8.dp), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+internal fun SectionHeader(text: String, modifier: Modifier = Modifier, padded: Boolean = true) {
+    Text(text, if (padded) modifier.padding(top = 16.dp, bottom = 8.dp) else modifier, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
 }
 
 /**
@@ -150,7 +155,7 @@ internal fun DestructiveDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(icon, contentDescription = null, tint = c.error) },
-        title = { Text(title) },
+        title = { Text(title, textAlign = TextAlign.Center) },
         text = text,
         confirmButton = {
             Button(onClick = onConfirm, enabled = confirmEnabled, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) { Text(confirm) }
@@ -163,11 +168,13 @@ internal fun DestructiveDialog(
  * Search: the M3 search bar's input field, 56 dp, a full pill in surfaceContainerHigh, with the
  * magnifier at the start and a clear button once something is typed. It never expands, because the
  * results are the list underneath. Where the field takes the place of the top bar, [onClose] puts
- * ← at the start instead, so there is still a way out on screen.
+ * ← at the start instead, so there is still a way out on screen. The Search key hides the keyboard
+ * unless [onSearch] does something else.
  */
 @Composable
-internal fun SearchField(query: String, onQuery: (String) -> Unit, placeholder: String, clear: String, modifier: Modifier = Modifier, onSearch: () -> Unit = {}, onClose: (() -> Unit)? = null, close: String? = null) {
+internal fun SearchField(query: String, onQuery: (String) -> Unit, placeholder: String, clear: String, modifier: Modifier = Modifier, onSearch: (() -> Unit)? = null, onClose: (() -> Unit)? = null, close: String? = null) {
     val container = MaterialTheme.colorScheme.surfaceContainerHigh
+    val keyboard = LocalSoftwareKeyboardController.current
     TextField(
         value = query,
         onValueChange = onQuery,
@@ -183,7 +190,7 @@ internal fun SearchField(query: String, onQuery: (String) -> Unit, placeholder: 
         singleLine = true,
         shape = SearchBarDefaults.inputFieldShape,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { onSearch() }),
+        keyboardActions = KeyboardActions(onSearch = { if (onSearch != null) onSearch() else keyboard?.hide() }),
         colors = TextFieldDefaults.colors(
             focusedContainerColor = container,
             unfocusedContainerColor = container,

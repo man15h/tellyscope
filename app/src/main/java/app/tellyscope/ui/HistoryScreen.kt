@@ -39,7 +39,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -144,13 +143,15 @@ internal fun HistoryList(
                     Text(Copy.PUT_BACK_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     for (line in Copy.restoreLines(restore)) Text(line.resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.size(8.dp))
-                    FilledTonalButton(onClick = { confirming = true }, enabled = !busy) {
-                        if (restoring) {
-                            LoadingIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.width(8.dp))
-                            Text(stringResource(R.string.history_restoring))
-                        } else {
-                            Text(stringResource(R.string.history_restore_all, off))
+                    ButtonRow {
+                        FilledTonalButton(onClick = { confirming = true }, enabled = !busy) {
+                            if (restoring) {
+                                LoadingIndicator(Modifier.size(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.history_restoring))
+                            } else {
+                                Text(stringResource(R.string.history_restore_all, off))
+                            }
                         }
                     }
                 }
@@ -168,16 +169,16 @@ internal fun HistoryList(
                     }
                     when {
                         // Same button as Undo, switched off: the row keeps its shape and reads as done.
-                        h.undoneAt != null -> TextButton(
+                        h.undoneAt != null -> FilledTonalButton(
                             onClick = {},
                             enabled = false,
-                            colors = ButtonDefaults.textButtonColors(disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                            colors = ButtonDefaults.filledTonalButtonColors(disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null, Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
                             Text(stringResource(R.string.history_undone))
                         }
-                        h.undo != null -> TextButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo).resolve()) }
+                        h.undo != null -> FilledTonalButton(onClick = { if (h.undo == Action.Disable) disabling = h else onUndo(h) }, enabled = !busy) { Text(Copy.undo(h.undo).resolve()) }
                     }
                 }
             }
