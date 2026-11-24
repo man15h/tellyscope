@@ -15,7 +15,7 @@ fails CI until this file has a section for its version.
 
 ## 0.17.0 — 2026-11-25
 
-- **New:** In Files, tapping a video, song or picture offers Open on TV, which uses the TV's player or gallery and installs VLC only when neither can. [#449](../../pull/449), [#462](../../pull/462)
+- **New:** In Files, tapping a video, song or picture offers Open on TV, which uses the TV's player, gallery or browser and installs VLC only when none can. [#449](../../pull/449), [#462](../../pull/462)
 - **New:** A mode button beside ⋮ switches the Remote between D-pad, Touchpad, a pointer on the TV and a classic game controller. [#443](../../pull/443), [#462](../../pull/462), [#463](../../pull/463)
 - **New:** Shell output can be selected and copied, apps that take something with them show what breaks wherever they can be disabled, and Debloat can stop suggesting the apps you leave unticked. [#437](../../pull/437)
 - **New:** Turkish support, translated by @Dikistutmaz-Sabri. [#436](../../pull/436)
