@@ -293,6 +293,7 @@
     <string name="copy_send_failed">%1$s gönderilemedi. TV\'nin hâlâ bağlı olduğunu ve yer olduğunu kontrol edin.</string>
     <string name="copy_send_failed_off_wifi">%1$s gönderilemedi. Bu telefon Wi-Fi\'ye bağlı değil.</string>
     <string name="copy_save_failed">%1$s kaydedilemedi. TV\'nin hâlâ bağlı olduğunu ve telefonda yer olduğunu kontrol edin.</string>
+    <string name="copy_deleted">%1$s TV\'den silindi</string>
     <string name="copy_cancelled_send">İptal edildi. TV\'de hiçbir şey bırakılmadı.</string>
     <string name="copy_cancelled_save">İptal edildi. Hiçbir şey kaydedilmedi.</string>
     <string name="copy_cant_read">Telefonunuzdaki o dosya okunamadı.</string>
@@ -705,6 +706,7 @@
     <string name="vm_tv_didnt_answer_reason">TV yanıt vermedi</string>
     <string name="vm_report_tv_said">TV\'nin yanıtı: %1$s</string>
     <string name="vm_report_tried_install">%1$s %2$s yüklenmeye çalışıldı</string>
+    <string name="vm_report_tried_delete">%1$s TV\'den silinmeye çalışıldı</string>
     <string name="vm_logged_out_view">Görüntüle</string>
     <string name="data_protected_home_screen">bu sizin ana ekranınız</string>
     <string name="data_protected_system">TV\'nin çalışması için gerekli</string>
@@ -1244,8 +1246,14 @@
     <string name="transfers_debloat">Temizlik</string>
     <string name="transfers_send_file">Dosya gönder</string>
     <string name="transfers_to_folder">Hedef: %1$s</string>
-    <string name="transfers_tap_to_save">Kaydetmek için bir dosyaya dokunun. TV\'de açmak veya kaydetmek için bir videoya, şarkıya ya da resme dokunun.</string>
+    <string name="transfers_tap_to_save">Bir dosyayı TV\'de açmak, kaydetmek veya silmek için ona dokunun.</string>
     <string name="transfers_save">Telefonunuza kaydet</string>
+    <string name="transfers_delete">TV\'den sil</string>
+    <string name="transfers_delete_title">%1$s TV\'den silinsin mi?</string>
+    <string name="transfers_delete_text">TV\'nin %1$s klasöründen kalıcı olarak silinir.</string>
+    <string name="transfers_delete_button">Sil</string>
+    <string name="transfers_delete_failed">%1$s silinemedi</string>
+    <string name="transfers_delete_still_there">Dosya hâlâ TV\'de.</string>
     <string name="transfers_reading">Uygulama okunuyor</string>
     <string name="transfers_install_failed">%1$s yüklenemedi</string>
     <string name="transfers_cant_install">Bu yüklenemiyor</string>

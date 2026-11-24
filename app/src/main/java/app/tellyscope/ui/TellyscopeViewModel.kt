@@ -335,7 +335,12 @@ data class FilesUi(
     /** Null while loading. */
     val list: List<TvFile>? = null,
     val error: UiText? = null,
+    /** A Delete on TV that didn't work, until its dialog closes. */
+    val deleteFailed: DeleteFailed? = null,
 )
+
+/** [detail]: the TV's own words, untranslated. */
+data class DeleteFailed(val name: String, val detail: String?)
 
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
 
@@ -1900,6 +1905,31 @@ class TellyscopeViewModel(
             }
         }
     }
+
+    /** Delete on TV, after its confirm. The row goes when it worked; otherwise the failed dialog shows what the TV said. */
+    fun deleteFile(file: TvFile) {
+        val id = _state.value.selectedId ?: return
+        val folder = _state.value.device.files.folder
+        viewModelScope.launch {
+            try {
+                source.deleteFile(id, folder, file)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                updateFiles(folder) { it.copy(deleteFailed = DeleteFailed(file.name, e.message)) }
+                return@launch
+            }
+            updateFiles(folder) { ui -> ui.copy(list = ui.list?.filterNot { it.name == file.name }) }
+            _notice.value = Copy.deleted(file.name)
+        }
+    }
+
+    /** OK, or Report a problem, on the failed delete. */
+    fun closeDeleteFailed() = updateFiles(_state.value.device.files.folder) { it.copy(deleteFailed = null) }
+
+    /** Only while [folder] is still the one on show: another folder's list has nothing to change. */
+    private fun updateFiles(folder: TvFolder, f: (FilesUi) -> FilesUi) =
+        _state.update { s -> if (s.device.files.folder == folder) s.copy(device = s.device.copy(files = f(s.device.files))) else s }
 
     /** Only the dialog's Cancel button calls this. */
     fun cancelTransfer() {

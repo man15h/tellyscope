@@ -311,6 +311,7 @@
     <string name="copy_send_failed">Не удалось отправить %1$s. Убедитесь, что телевизор подключен и на нем есть место.</string>
     <string name="copy_send_failed_off_wifi">Не удалось отправить %1$s. Этот телефон не подключён к Wi-Fi.</string>
     <string name="copy_save_failed">Не удалось сохранить %1$s. Убедитесь, что телевизор подключен и на телефоне есть место.</string>
+    <string name="copy_deleted">%1$s удален с телевизора</string>
     <string name="copy_cancelled_send">Отменено. На телевизоре ничего не осталось.</string>
     <string name="copy_cancelled_save">Отменено. Ничего не сохранено.</string>
     <string name="copy_cant_read">Не удалось прочитать этот файл на телефоне.</string>
@@ -787,6 +788,7 @@
     <string name="vm_tv_didnt_answer_reason">телевизор не ответил</string>
     <string name="vm_report_tv_said">Ответ телевизора: %1$s</string>
     <string name="vm_report_tried_install">Попытка установить %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Попытка удалить %1$s с телевизора</string>
     <string name="vm_logged_out_view">Подробнее</string>
     <string name="data_protected_home_screen">это ваш главный экран</string>
     <string name="data_protected_system">без этого телевизор не работает</string>
@@ -1364,8 +1366,14 @@
     <string name="transfers_debloat">Очистка</string>
     <string name="transfers_send_file">Отправить файл</string>
     <string name="transfers_to_folder">В %1$s</string>
-    <string name="transfers_tap_to_save">Нажмите на файл, чтобы сохранить его. Нажмите на видео, песню или изображение, чтобы открыть на телевизоре или сохранить.</string>
+    <string name="transfers_tap_to_save">Нажмите на файл, чтобы открыть его на телевизоре, сохранить или удалить.</string>
     <string name="transfers_save">Сохранить на телефоне</string>
+    <string name="transfers_delete">Удалить с телевизора</string>
+    <string name="transfers_delete_title">Удалить %1$s с телевизора?</string>
+    <string name="transfers_delete_text">Файл будет удален из папки %1$s на телевизоре навсегда.</string>
+    <string name="transfers_delete_button">Удалить</string>
+    <string name="transfers_delete_failed">Не удалось удалить %1$s</string>
+    <string name="transfers_delete_still_there">Файл остался на телевизоре.</string>
     <string name="transfers_reading">Читаем приложение</string>
     <string name="transfers_install_failed">Не удалось установить %1$s</string>
     <string name="transfers_cant_install">Невозможно установить</string>

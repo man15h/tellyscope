@@ -293,6 +293,7 @@
     <string name="copy_send_failed">%1$s नहीं भेजा जा सका। देखें कि TV अब भी कनेक्ट है और उसमें जगह है।</string>
     <string name="copy_send_failed_off_wifi">%1$s नहीं भेजा जा सका। यह फ़ोन Wi-Fi पर नहीं है।</string>
     <string name="copy_save_failed">%1$s सेव नहीं हो सका। देखें कि TV अब भी कनेक्ट है और फ़ोन में जगह है।</string>
+    <string name="copy_deleted">%1$s TV से मिटा दी गई</string>
     <string name="copy_cancelled_send">रद्द किया गया। TV पर कुछ नहीं छोड़ा गया।</string>
     <string name="copy_cancelled_save">रद्द किया गया। कुछ भी सेव नहीं हुआ।</string>
     <string name="copy_cant_read">आपके फ़ोन पर वह फ़ाइल पढ़ी नहीं जा सकी।</string>
@@ -699,6 +700,7 @@
     <string name="vm_tv_didnt_answer_reason">TV ने जवाब नहीं दिया</string>
     <string name="vm_report_tv_said">TV ने कहा: %1$s</string>
     <string name="vm_report_tried_install">%1$s %2$s इंस्टॉल करने की कोशिश की</string>
+    <string name="vm_report_tried_delete">%1$s को TV से मिटाने की कोशिश की</string>
     <string name="vm_logged_out_view">देखें</string>
     <string name="data_protected_home_screen">यह आपकी होम स्क्रीन है</string>
     <string name="data_protected_system">TV को चलने के लिए इसकी ज़रूरत है</string>
@@ -1238,8 +1240,14 @@
     <string name="transfers_debloat">डीब्लोट करें</string>
     <string name="transfers_send_file">फ़ाइल भेजें</string>
     <string name="transfers_to_folder">%1$s में</string>
-    <string name="transfers_tap_to_save">किसी फ़ाइल को सेव करने के लिए उस पर टैप करें। वीडियो, गाने या तस्वीर पर टैप करके उसे टीवी पर खोलें या सेव करें।</string>
+    <string name="transfers_tap_to_save">किसी फ़ाइल पर टैप करके उसे TV पर खोलें, सेव करें या मिटाएं।</string>
     <string name="transfers_save">अपने फ़ोन में सेव करें</string>
+    <string name="transfers_delete">TV से मिटाएं</string>
+    <string name="transfers_delete_title">%1$s को TV से मिटाएं?</string>
+    <string name="transfers_delete_text">यह TV के %1$s फ़ोल्डर से हमेशा के लिए हट जाएगी।</string>
+    <string name="transfers_delete_button">मिटाएं</string>
+    <string name="transfers_delete_failed">%1$s मिटाई नहीं जा सकी</string>
+    <string name="transfers_delete_still_there">फ़ाइल अब भी TV पर है।</string>
     <string name="transfers_reading">ऐप पढ़ा जा रहा है</string>
     <string name="transfers_install_failed">%1$s इंस्टॉल नहीं हो सका</string>
     <string name="transfers_cant_install">इसे इंस्टॉल नहीं किया जा सकता</string>

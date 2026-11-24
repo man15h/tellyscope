@@ -159,6 +159,9 @@ interface DeviceSource {
 
     suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit)
 
+    /** Deletes [file] from [folder] on the TV; throws with what the TV said when it didn't. */
+    suspend fun deleteFile(deviceId: String, folder: TvFolder, file: TvFile)
+
     /** The packages that open [file] in [folder] as [mime], in the TV's order; stubs and all, as the TV says. */
     suspend fun fileHandlers(deviceId: String, folder: TvFolder, file: TvFile, mime: String): List<String> = emptyList()
 

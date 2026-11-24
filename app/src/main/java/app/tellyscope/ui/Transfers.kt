@@ -22,11 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -159,13 +161,14 @@ internal val Broom = ImageVector.Builder("Broom", 24.dp, 24.dp, 24f, 24f)
     .build()
 
 /**
- * Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. A video,
- * a song or a picture opens a sheet with Open on TV and Save; any other file saves straight away.
+ * Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. Every file
+ * opens a sheet with Save and Delete on TV; a video, a song or a picture also gets Open on TV.
  */
 @Composable
 fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
     val list = files.list
     var picked by remember { mutableStateOf<TvFile?>(null) }
+    var deleting by remember { mutableStateOf<TvFile?>(null) }
     when {
         list == null -> Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Center) {
             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -174,20 +177,25 @@ fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
         files.error != null -> Muted(files.error.resolve())
         else -> {
             list.forEach { f ->
-                FileRow(f, now) { if (media(f.name) != null) picked = f else actions.saveFile(f) }
+                FileRow(f, now) { picked = f }
             }
             // Only with files to tap; an empty folder shows its own page instead.
             if (list.isNotEmpty()) Muted(stringResource(R.string.transfers_tap_to_save))
         }
     }
     picked?.let { f ->
-        MediaSheet(
+        FileSheet(
             f,
-            onOpen = { picked = null; actions.player.open(f) },
+            onOpen = if (media(f.name) != null) ({ picked = null; actions.player.open(f) }) else null,
             onSave = { picked = null; actions.saveFile(f) },
+            onDelete = { picked = null; deleting = f },
             onClose = { picked = null },
         )
     }
+    deleting?.let { f ->
+        DeleteDialog(f, files.folder, onDelete = { deleting = null; actions.deleteFile(f) }, onCancel = { deleting = null })
+    }
+    files.deleteFailed?.let { DeleteFailedDialog(it, actions) }
 }
 
 @Composable
@@ -202,29 +210,70 @@ private fun FileRow(f: TvFile, now: Long, onTap: () -> Unit) {
     }
 }
 
-/** A video, song or picture's name and size, then Open on TV and Save. */
+/** A file's name and size, then Open on TV ([onOpen] null: nothing on the TV opens it), Save and Delete on TV. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MediaSheet(f: TvFile, onOpen: () -> Unit, onSave: () -> Unit, onClose: () -> Unit) {
+private fun FileSheet(f: TvFile, onOpen: (() -> Unit)?, onSave: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
     ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
         Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
             Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
                 Text(f.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.MiddleEllipsis)
                 Text(Copy.bytes(f.size).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            for ((icon, label, onClick) in listOf(
-                Triple(LauncherIcons.Cast, R.string.copy_open_on_tv, onOpen),
-                Triple(LauncherIcons.Download, R.string.transfers_save, onSave),
-            )) {
-                ListItem(
-                    headlineContent = { Text(stringResource(label)) },
-                    leadingContent = { Icon(icon, null) },
-                    modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp),
-                    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                )
-            }
+            onOpen?.let { SheetItem(LauncherIcons.Cast, R.string.copy_open_on_tv, it) }
+            SheetItem(LauncherIcons.Download, R.string.transfers_save, onSave)
+            // Red, as it can't be taken back: the TV keeps no trash.
+            SheetItem(Icons.Default.Delete, R.string.transfers_delete, onDelete, tint = MaterialTheme.colorScheme.error)
         }
     }
+}
+
+@Composable
+private fun SheetItem(icon: ImageVector, label: Int, onClick: () -> Unit, tint: Color? = null) {
+    ListItem(
+        headlineContent = { Text(stringResource(label)) },
+        leadingContent = { Icon(icon, null) },
+        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp),
+        colors = if (tint == null) ListItemDefaults.colors(containerColor = Color.Transparent)
+        else ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = tint, leadingIconColor = tint),
+    )
+}
+
+/** Delete on TV's confirm: Cancel as a text button, Delete filled in the error colour. */
+@Composable
+private fun DeleteDialog(f: TvFile, folder: TvFolder, onDelete: () -> Unit, onCancel: () -> Unit) {
+    val c = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.transfers_delete_title, f.name)) },
+        text = { Text(stringResource(R.string.transfers_delete_text, Copy.folder(folder).resolve()), style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = {
+            Button(onClick = onDelete, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) {
+                Text(stringResource(R.string.transfers_delete_button))
+            }
+        },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.transfers_cancel)) } },
+    )
+}
+
+/** Laid out like a failed install: what didn't happen, then the TV's own words. */
+@Composable
+private fun DeleteFailedDialog(d: DeleteFailed, actions: DeviceActions) {
+    AlertDialog(
+        onDismissRequest = actions.closeDeleteFailed,
+        icon = { Icon(Icons.Default.Warning, null) },
+        title = { Text(stringResource(R.string.transfers_delete_failed, d.name)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.transfers_delete_still_there), style = MaterialTheme.typography.bodyMedium)
+                d.detail?.takeIf { it.isNotBlank() }?.let {
+                    Text(stringResource(R.string.transfers_tv_said, it), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        },
+        confirmButton = { Button(onClick = actions.closeDeleteFailed) { Text(stringResource(R.string.transfers_ok)) } },
+        dismissButton = { TextButton(onClick = { actions.reportDelete(d) }) { Text(stringResource(R.string.transfers_report)) } },
+    )
 }
 
 @Composable

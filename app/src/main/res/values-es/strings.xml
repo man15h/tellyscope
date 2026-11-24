@@ -302,6 +302,7 @@
     <string name="copy_send_failed">No se pudo enviar %1$s. Comprueba que la TV siga conectada y tenga espacio.</string>
     <string name="copy_send_failed_off_wifi">No se pudo enviar %1$s. Este teléfono no está en Wi-Fi.</string>
     <string name="copy_save_failed">No se pudo guardar %1$s. Comprueba que la TV siga conectada y que el teléfono tenga espacio.</string>
+    <string name="copy_deleted">%1$s eliminado de la TV</string>
     <string name="copy_cancelled_send">Cancelado. No quedó nada en la TV.</string>
     <string name="copy_cancelled_save">Cancelado. No se guardó nada.</string>
     <string name="copy_cant_read">No se pudo leer ese archivo en tu teléfono.</string>
@@ -743,6 +744,7 @@
     <string name="vm_tv_didnt_answer_reason">la TV no respondió</string>
     <string name="vm_report_tv_said">La TV dijo: %1$s</string>
     <string name="vm_report_tried_install">Intenté instalar %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Intenté eliminar %1$s de la TV</string>
     <string name="vm_logged_out_view">Ver</string>
     <string name="data_protected_home_screen">es tu pantalla de inicio</string>
     <string name="data_protected_system">la TV la necesita para funcionar</string>
@@ -1296,8 +1298,14 @@
     <string name="transfers_debloat">Limpiar</string>
     <string name="transfers_send_file">Enviar archivo</string>
     <string name="transfers_to_folder">A %1$s</string>
-    <string name="transfers_tap_to_save">Toca un archivo para guardarlo. Toca un vídeo, una canción o una imagen para abrirlo en la TV o guardarlo.</string>
+    <string name="transfers_tap_to_save">Toca un archivo para abrirlo en la TV, guardarlo o eliminarlo.</string>
     <string name="transfers_save">Guardar en tu teléfono</string>
+    <string name="transfers_delete">Eliminar de la TV</string>
+    <string name="transfers_delete_title">¿Eliminar %1$s de la TV?</string>
+    <string name="transfers_delete_text">Se borra de la carpeta %1$s de la TV para siempre.</string>
+    <string name="transfers_delete_button">Eliminar</string>
+    <string name="transfers_delete_failed">No se pudo eliminar %1$s</string>
+    <string name="transfers_delete_still_there">El archivo sigue en la TV.</string>
     <string name="transfers_reading">Leyendo la app</string>
     <string name="transfers_install_failed">No se pudo instalar %1$s</string>
     <string name="transfers_cant_install">No se puede instalar</string>

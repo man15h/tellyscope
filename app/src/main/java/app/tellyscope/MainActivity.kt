@@ -433,6 +433,12 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 folder = vm::folder,
                 pickFile = { folder -> vm.folder(folder); pickFile.launch(arrayOf("*/*")) },
                 saveFile = { f -> vm.saving(f); saveFile.launch(f.name) },
+                deleteFile = vm::deleteFile,
+                closeDeleteFailed = vm::closeDeleteFailed,
+                reportDelete = { d ->
+                    vm.closeDeleteFailed()
+                    vm.openReport(ReportKind.Problem, res.getString(R.string.vm_report_tried_delete, d.name), d.detail)
+                },
                 cancelTransfer = vm::cancelTransfer,
                 player = PlayerActions(
                     open = vm::openFile,

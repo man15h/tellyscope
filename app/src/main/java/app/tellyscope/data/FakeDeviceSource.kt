@@ -359,6 +359,12 @@ class FakeDeviceSource(
         sink.flush()
     }
 
+    override suspend fun deleteFile(deviceId: String, folder: TvFolder, file: TvFile) {
+        delay(300)
+        files(deviceId, folder)
+        tvFiles.getValue(folder).removeAll { it.name == file.name }
+    }
+
     private val baseFiles get() = listOf(
         TvFile("holiday-2025.mp4", 812_000_000, clock() - 3 * 86_400_000L),
         TvFile("projectivy-backup.plbackup", 48_200, clock() - 26 * 3_600_000L),
