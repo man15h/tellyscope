@@ -1060,6 +1060,14 @@
     <string name="remote_pointer_tap">タップでクリック · 2 本指でスクロール</string>
     <string name="remote_pointer_refused">このテレビでは使えません</string>
     <string name="remote_controller">ゲームコントローラー</string>
+    <string name="remote_mode_title">テレビの操作方法</string>
+    <string name="remote_mode_dpad_line">矢印とOK、テレビのリモコンと同じ</string>
+    <string name="remote_mode_touchpad_line">スワイプで移動、タップでOK</string>
+    <string name="remote_mode_pointer_line">テレビでマウスポインターを動かす</string>
+    <string name="remote_mode_controller_line">スマホを横にしてゲームをプレイ</string>
+    <string name="remote_mode_tip">テレビの操作方法を切り替えられます</string>
+    <string name="remote_mode_button">リモコンのモード: %1$s</string>
+    <string name="remote_mode_close">閉じる</string>
     <string name="remote_controller_close">リモコンに戻る</string>
     <string name="remote_controller_stick">スティック</string>
     <string name="remote_controller_buttons_only">このテレビはボタンだけを受け付けます。接続されたコントローラーを探すゲームは反応しないことがあります。</string>

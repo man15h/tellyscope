@@ -1347,6 +1347,14 @@
     <string name="remote_pointer_tap">Toque para clicar · Dois dedos para rolar</string>
     <string name="remote_pointer_refused">Esta TV não permite</string>
     <string name="remote_controller">Controle de jogo</string>
+    <string name="remote_mode_title">Controlar a TV com</string>
+    <string name="remote_mode_dpad_line">Setas e OK, como o controle da sua TV</string>
+    <string name="remote_mode_touchpad_line">Deslize para mover, toque para OK</string>
+    <string name="remote_mode_pointer_line">Mova um ponteiro de mouse na TV</string>
+    <string name="remote_mode_controller_line">Jogue com o celular deitado</string>
+    <string name="remote_mode_tip">Mude como você controla a TV</string>
+    <string name="remote_mode_button">Modo do controle: %1$s</string>
+    <string name="remote_mode_close">Fechar</string>
     <string name="remote_controller_close">Voltar ao Controle</string>
     <string name="remote_controller_stick">Analógico</string>
     <string name="remote_controller_buttons_only">Esta TV aceita só os botões. Jogos que procuram um controle conectado podem não responder.</string>

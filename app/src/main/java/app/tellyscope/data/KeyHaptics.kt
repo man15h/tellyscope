@@ -7,7 +7,7 @@ import java.util.Properties
 
 /**
  * The Remote's own settings, kept in [file]: whether a key press vibrates (on until the user turns
- * it off), whether the Screen off tip has been shown, and which [RemotePad] takes the D-pad's place.
+ * it off), whether the Screen off and mode tips have been shown, and which [RemotePad] takes the D-pad's place.
  */
 /** What sits in the D-pad's place on the Remote; [key] is how it's kept, none for the D-pad. */
 enum class RemotePad(val key: String?) {
@@ -30,6 +30,11 @@ class KeyHaptics(private val file: File) {
     var screenOffTipSeen: Boolean
         get() = props().getProperty("screenOffTip") == "seen"
         set(seen) = store { if (seen) setProperty("screenOffTip", "seen") else remove("screenOffTip") }
+
+    @get:Synchronized @set:Synchronized
+    var modeTipSeen: Boolean
+        get() = props().getProperty("modeTip") == "seen"
+        set(seen) = store { if (seen) setProperty("modeTip", "seen") else remove("modeTip") }
 
     @get:Synchronized @set:Synchronized
     var pad: RemotePad

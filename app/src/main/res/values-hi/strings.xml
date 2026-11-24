@@ -1122,6 +1122,14 @@
     <string name="remote_pointer_tap">क्लिक के लिए टैप करें · स्क्रॉल के लिए दो उंगलियाँ</string>
     <string name="remote_pointer_refused">यह TV इसकी अनुमति नहीं देता</string>
     <string name="remote_controller">गेम कंट्रोलर</string>
+    <string name="remote_mode_title">TV को इससे चलाएँ</string>
+    <string name="remote_mode_dpad_line">तीर और OK, आपके TV के रिमोट जैसे</string>
+    <string name="remote_mode_touchpad_line">हिलाने के लिए स्वाइप करें, OK के लिए टैप करें</string>
+    <string name="remote_mode_pointer_line">TV पर माउस पॉइंटर चलाएँ</string>
+    <string name="remote_mode_controller_line">फ़ोन को आड़ा रखकर गेम खेलें</string>
+    <string name="remote_mode_tip">बदलें कि आप TV को कैसे चलाते हैं</string>
+    <string name="remote_mode_button">रिमोट मोड: %1$s</string>
+    <string name="remote_mode_close">बंद करें</string>
     <string name="remote_controller_close">रिमोट पर वापस</string>
     <string name="remote_controller_stick">स्टिक</string>
     <string name="remote_controller_buttons_only">यह TV सिर्फ़ बटन लेता है। जो गेम जुड़ा हुआ कंट्रोलर ढूँढते हैं, वे शायद जवाब न दें।</string>

@@ -39,7 +39,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -117,7 +116,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -194,6 +192,8 @@ data class RemoteActions(
     val screenOff: (Boolean) -> Unit = {},
     /** The first-visit tip on Screen off was shown. */
     val screenOffTipSeen: () -> Unit = {},
+    /** The first-visit tip on the mode button was tapped away. */
+    val modeTipSeen: () -> Unit = {},
     /** Read whether the TV's volume is fixed over HDMI, into [UiState.volumeFixed]. */
     val checkVolume: () -> Unit = {},
     /** What goes in the D-pad's place, kept for this phone. */
@@ -310,7 +310,7 @@ fun RemoteScreen(
         else -> state.pad
     }
     if (pad == RemotePad.CONTROLLER) {
-        GameController(name(device), live, uhid == true, state.keyHaptics, actions)
+        GameController(name(device), live, uhid == true, uhid != false, state.keyHaptics, actions)
         return
     }
     if (editing) ButtonsSheet(state.device.dock, state.device.apps, cap, actions.setDock, onDismiss = { editing = false })
@@ -350,7 +350,11 @@ fun RemoteScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 RemoteHeader(state, device, restart, screenOff, onRestartTap = { hidden = null }) {
-                    HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip, actions, pad = if (talkBack) null else pad, pointer = uhid != false, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                    // The mode button, left out while TalkBack keeps the D-pad. Its tip comes first, then Screen off's.
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (!talkBack) ModeButton(pad, pointer = uhid != false, onPick = actions.pad, tip = state.modeTip, onTipSeen = actions.modeTipSeen)
+                        HeaderMenu(screenControl, screenOff, live, showTip = state.screenOffTip && (talkBack || !state.modeTip), actions, onRestart = { confirmReboot = true }, onButtons = { editing = true })
+                    }
                 }
                 CompositionLocalProvider(LocalKeyHaptics provides state.keyHaptics) { Column(
                     Modifier.weight(1f).alpha(if (live) 1f else 0.38f),
@@ -937,7 +941,7 @@ private fun RestartDialog(restart: Restart, now: Long, tvName: String, onHide: (
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, pad: RemotePad?, pointer: Boolean, onRestart: () -> Unit, onButtons: () -> Unit) {
+private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, showTip: Boolean, actions: RemoteActions, onRestart: () -> Unit, onButtons: () -> Unit) {
     var open by remember { mutableStateOf(false) }
     val tip = rememberTooltipState(isPersistent = true)
     LaunchedEffect(showTip, screenControl) {
@@ -984,33 +988,6 @@ private fun HeaderMenu(screenControl: Boolean, off: Boolean, live: Boolean, show
                 enabled = live,
                 onClick = { open = false; onRestart() },
             )
-            // What goes in the D-pad's place, the current one checked; left out while TalkBack keeps the D-pad.
-            // Pointer grays out, with the reason under it, on a TV that won't take a virtual mouse.
-            if (pad != null) {
-                HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                val modes = listOf(
-                    Triple(RemotePad.DPAD, R.string.remote_dpad, RemoteIcons.Gamepad),
-                    Triple(RemotePad.TOUCHPAD, R.string.remote_touchpad, RemoteIcons.TouchApp),
-                    Triple(RemotePad.POINTER, R.string.remote_pointer, AccessIcons.Mouse),
-                    Triple(RemotePad.CONTROLLER, R.string.remote_controller, AccessIcons.Controller),
-                )
-                for ((mode, label, glyph) in modes) {
-                    val allowed = mode != RemotePad.POINTER || pointer
-                    DropdownMenuItem(
-                        text = {
-                            Column {
-                                Text(stringResource(label))
-                                if (!allowed) Text(stringResource(R.string.remote_pointer_refused), style = MaterialTheme.typography.bodySmall)
-                            }
-                        },
-                        leadingIcon = { Icon(glyph, null) },
-                        trailingIcon = { if (pad == mode) Icon(Icons.Default.Check, null) },
-                        enabled = allowed,
-                        modifier = Modifier.semantics { selected = pad == mode },
-                        onClick = { open = false; actions.pad(mode) },
-                    )
-                }
-            }
             HorizontalDivider(Modifier.padding(vertical = 4.dp))
             DropdownMenuItem(
                 text = { Text(Copy.REMOTE_BUTTONS.resolve()) },
