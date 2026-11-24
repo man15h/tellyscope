@@ -16,6 +16,7 @@ fails CI until this file has a section for its version.
 ## 0.17.0 — 2026-11-25
 
 - **New:** In Files, tapping a video, song or picture offers Open on TV, which uses the TV's player, gallery or browser and installs VLC only when none can. [#449](../../pull/449), [#462](../../pull/462)
+- **New:** In Files, every file offers Delete on TV, after asking first. [#467](../../pull/467)
 - **New:** A mode button beside ⋮ switches the Remote between D-pad, Touchpad, a pointer on the TV and a classic game controller. [#443](../../pull/443), [#462](../../pull/462), [#463](../../pull/463)
 - **New:** Shell output can be selected and copied, apps that take something with them show what breaks wherever they can be disabled, and Debloat can stop suggesting the apps you leave unticked. [#437](../../pull/437)
 - **New:** Turkish support, translated by @Dikistutmaz-Sabri. [#436](../../pull/436)
@@ -23,6 +24,8 @@ fails CI until this file has a section for its version.
 - **Improved:** Every screen now uses the same Material 3 style for headers, cards, buttons, confirmations, bottom bars, status pictures, search and margins. [#460](../../pull/460), [#461](../../pull/461)
 - **Improved:** Debloat and Reset TV stay open until they finish, and Stop ends one after the current app. [#439](../../pull/439)
 - **Improved:** The TV gets fewer background requests: network details are read only while Advanced is open. [#431](../../pull/431)
+- **Fixed:** Switching back to the app no longer shows the TV offline and the lists' Try again for a few seconds; the last state stays up while the app checks the TV. [#468](../../pull/468)
+- **Fixed:** What's new and the update dialog show every PR link on a line instead of raw text for all but the last. [#466](../../pull/466)
 - **Fixed:** Restore everything puts Home back after Reset TV. [#453](../../pull/453)
 - **Fixed:** Shell's first command after returning to the app no longer fails. [#453](../../pull/453)
 - **Fixed:** On the Play build, pairing with a code no longer fails on Android 16; it now needs Android 12 or newer on the phone. [#452](../../pull/452)
