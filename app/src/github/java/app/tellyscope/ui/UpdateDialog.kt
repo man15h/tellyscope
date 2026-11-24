@@ -77,7 +77,7 @@ internal fun dialogNotes(body: String, more: String, max: Int = 12): String {
     return (if (lines.size > max) lines.take(max) + more else lines).joinToString("\n")
 }
 
-private val PR_LINK = Regex("""\s*\[#\d+]\([^)]*\)\s*$""")
+private val PR_LINK = Regex("""(?:,?\s*\[#\d+]\([^)]*\))+\s*$""")
 
 /** Each `**…**` pair becomes bold, stars removed; an unmatched `**` is dropped. */
 internal fun boldSpans(text: String): AnnotatedString = buildAnnotatedString {

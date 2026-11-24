@@ -209,6 +209,10 @@ class UpdateCheckTest {
         assertEquals("- **Fixed:** one thing.", dialogNotes("- **Fixed:** one thing. [#9](../../pull/9)\n\n### Commits since v1\n\n- x (abc)", MORE))
     }
 
+    @Test fun `every PR link at a line's end is dropped`() {
+        assertEquals("- **New:** two things.", dialogNotes("- **New:** two things. [#9](../../pull/9), [#10](../../pull/10)", MORE))
+    }
+
     @Test fun `New is bold with the stars gone`() {
         val first = boldSpans(dialogNotes(prodBody, MORE)).let { it.subSequence(0, it.text.indexOf('\n')) }
         assertEquals("- New: A new app icon: a telescope with a TV screen for a lens.", first.text)

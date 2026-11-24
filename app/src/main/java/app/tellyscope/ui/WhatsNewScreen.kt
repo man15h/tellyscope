@@ -183,21 +183,23 @@ private fun KindHeading(kind: Kind) {
 }
 
 /**
- * One change and its indented points. Its #PR opens the pull request on the main repo. The link's tap
- * target is 48 dp tall and runs to the end of its line, so it overlaps plain text but never another
- * link; it stays inside this item's 16 dp padding.
+ * One change and its indented points. Each #PR opens its pull request on the main repo. A link's tap
+ * target is 48 dp tall and runs to the next link on its line, or to the line's end, so it overlaps
+ * plain text but never another link; it stays inside this item's 16 dp padding.
  */
 @Composable
 private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
     val link = MaterialTheme.colorScheme.primary
-    val text = remember(c, link) {
+    val (text, starts) = remember(c, link) {
+        val starts = mutableListOf<Int>()
         buildAnnotatedString {
             append(c.text)
-            if (c.pr != null) {
-                append(' ')
-                withStyle(SpanStyle(color = link)) { append("#${c.pr}") }
+            c.prs.forEachIndexed { i, pr ->
+                append(if (i == 0) " " else ", ")
+                starts += length
+                withStyle(SpanStyle(color = link)) { append("#$pr") }
             }
-        }
+        } to starts.toList()
     }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val density = LocalDensity.current
@@ -213,18 +215,20 @@ private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
             }
         }
         val l = layout
-        if (c.pr != null && l != null) {
-            val start = text.length - "#${c.pr}".length
+        if (l != null) c.prs.forEachIndexed { i, pr ->
+            val start = starts[i]
             val line = l.getLineForOffset(start)
             val left = l.getHorizontalPosition(start, usePrimaryDirection = true)
+            val right = starts.getOrNull(i + 1)?.takeIf { l.getLineForOffset(it) == line }
+                ?.let { l.getHorizontalPosition(it, usePrimaryDirection = true) } ?: l.size.width.toFloat()
             val middle = (l.getLineTop(line) + l.getLineBottom(line)) / 2
             with(density) {
                 val target = 48.dp.toPx()
                 Box(
                     Modifier
                         .offset { IntOffset((16.dp.toPx() + left).roundToInt(), (topPadding.toPx() + middle - target / 2).roundToInt().coerceAtLeast(0)) }
-                        .size(width = (l.size.width - left).toDp(), height = 48.dp)
-                        .clickable(role = Role.Button, onClickLabel = "#${c.pr}") { openPr(c.pr) },
+                        .size(width = (right - left).toDp(), height = 48.dp)
+                        .clickable(role = Role.Button, onClickLabel = "#$pr") { openPr(pr) },
                 )
             }
         }

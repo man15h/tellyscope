@@ -17,13 +17,14 @@ object Changelog {
 
     enum class Kind { New, Improved, Fixed }
 
-    /** One change. [pr] is the pull request it links to, if any; [details] are its indented points. */
-    data class Change(val kind: Kind?, val text: String, val pr: Int?, val details: List<String> = emptyList())
+    /** One change. [prs] are the pull requests it links to, in the line's order; [details] are its indented points. */
+    data class Change(val kind: Kind?, val text: String, val prs: List<Int>, val details: List<String> = emptyList())
 
     data class Release(val version: String, val date: String?, val changes: List<Change>)
 
     private val HEADING = Regex("""^## (.+?)(?: — (.+))?$""")
-    private val ITEM = Regex("""^- (?:\*\*(\w+):\*\* )?(.*?)(?: \[#(\d+)]\([^)]*\))?$""")
+    private val ITEM = Regex("""^- (?:\*\*(\w+):\*\* )?(.*?)((?:,? \[#\d+]\([^)]*\))*)$""")
+    private val PR = Regex("""\[#(\d+)]""")
     private val DETAIL = Regex("""^\s+- (.*)$""")
 
     fun parse(markdown: String): List<Release> {
@@ -43,7 +44,8 @@ object Changelog {
                 heading == null -> {}
                 d != null -> changes.removeLastOrNull()?.let { changes += it.copy(details = it.details + d.groupValues[1]) }
                 i != null -> changes += Change(
-                    Kind.entries.firstOrNull { it.name == i.groupValues[1] }, i.groupValues[2], i.groupValues[3].toIntOrNull(),
+                    Kind.entries.firstOrNull { it.name == i.groupValues[1] }, i.groupValues[2],
+                    PR.findAll(i.groupValues[3]).map { it.groupValues[1].toInt() }.toList(),
                 )
             }
         }

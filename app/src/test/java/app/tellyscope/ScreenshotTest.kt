@@ -824,7 +824,7 @@ class ScreenshotTest {
         // The newest section's first heading, whatever kind it opens with.
         compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name)[0].assertExists()
         // A link from the newest section, which is on screen whatever the changelog holds.
-        val pr = changelog.first().changes.first { it.pr != null }.pr!!
+        val pr = changelog.first().changes.first { it.prs.isNotEmpty() }.prs.first()
         compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()
         assertEquals(listOf(Changelog.pullUrl(pr)), opened)
     }
