@@ -1060,14 +1060,12 @@
     <string name="remote_pointer_tap">轻点即点击 · 双指滚动</string>
     <string name="remote_pointer_refused">这台电视不允许</string>
     <string name="remote_controller">游戏手柄</string>
-    <string name="remote_mode_title">用这种方式控制电视</string>
     <string name="remote_mode_dpad_line">方向键和确定，和电视遥控器一样</string>
     <string name="remote_mode_touchpad_line">滑动移动，轻点确定</string>
     <string name="remote_mode_pointer_line">在电视上移动鼠标指针</string>
     <string name="remote_mode_controller_line">横握手机玩游戏</string>
     <string name="remote_mode_tip">切换控制电视的方式</string>
     <string name="remote_mode_button">遥控模式：%1$s</string>
-    <string name="remote_mode_close">关闭</string>
     <string name="remote_controller_close">返回遥控器</string>
     <string name="remote_controller_stick">摇杆</string>
     <string name="remote_controller_buttons_only">这台电视只接收按键。寻找已连接手柄的游戏可能没有反应。</string>

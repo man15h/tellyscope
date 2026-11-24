@@ -1380,14 +1380,12 @@
     <string name="remote_pointer_tap">Tap to click · Two fingers to scroll</string>
     <string name="remote_pointer_refused">This TV doesn\'t allow it</string>
     <string name="remote_controller">Game controller</string>
-    <string name="remote_mode_title">Control the TV with</string>
     <string name="remote_mode_dpad_line">Arrows and OK, like your TV\'s remote</string>
     <string name="remote_mode_touchpad_line">Swipe to move, tap for OK</string>
     <string name="remote_mode_pointer_line">Move a mouse pointer on the TV</string>
     <string name="remote_mode_controller_line">Play games with the phone sideways</string>
     <string name="remote_mode_tip">Switch how you control your TV</string>
     <string name="remote_mode_button">Remote mode: %1$s</string>
-    <string name="remote_mode_close">Close</string>
     <string name="remote_controller_close">Back to the Remote</string>
     <string name="remote_controller_stick">Stick</string>
     <string name="remote_controller_buttons_only">This TV takes the buttons only. Games that look for a connected controller may not react.</string>

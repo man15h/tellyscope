@@ -1427,7 +1427,7 @@ class ScreenshotTest {
         RemoteScreen(remoteState(), RemoteActions())
     }
 
-    // The mode button beside ⋮ opens the four modes as cards; Pointer grays on a TV that won't take a virtual mouse.
+    // The mode button beside ⋮ opens the four modes in a menu; Pointer grays on a TV that won't take a virtual mouse.
     private fun noMouseState() = remoteState().let { it.copy(uhid = mapOf(it.selectedId!! to false)) }
     @Test fun remote_modes() = shot("12_remote_modes", screen = true, before = { compose.onNodeWithContentDescription("Remote mode: D-pad").performClick() }) {
         RemoteScreen(noMouseState(), RemoteActions())
@@ -1437,7 +1437,7 @@ class ScreenshotTest {
     }
     @Test fun remote_modeTip() = shot("12_remote_mode_tip", screen = true) { RemoteScreen(remoteState().copy(modeTip = true), RemoteActions()) }
 
-    @Test fun aModeCardSetsThePad() {
+    @Test fun aModeRowSetsThePad() {
         var picked: RemotePad? = null
         compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(noMouseState(), RemoteActions(pad = { picked = it })) } }
         compose.onNodeWithContentDescription("Remote mode: D-pad").performClick()

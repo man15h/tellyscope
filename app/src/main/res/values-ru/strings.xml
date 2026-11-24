@@ -1246,14 +1246,12 @@
     <string name="remote_pointer_tap">Коснитесь для щелчка · Двумя пальцами прокрутка</string>
     <string name="remote_pointer_refused">Этот телевизор не позволяет</string>
     <string name="remote_controller">Геймпад</string>
-    <string name="remote_mode_title">Управлять телевизором</string>
     <string name="remote_mode_dpad_line">Стрелки и OK, как на пульте телевизора</string>
     <string name="remote_mode_touchpad_line">Проведите для перемещения, коснитесь для OK</string>
     <string name="remote_mode_pointer_line">Двигайте указатель мыши на телевизоре</string>
     <string name="remote_mode_controller_line">Играйте, повернув телефон горизонтально</string>
     <string name="remote_mode_tip">Выберите, как управлять телевизором</string>
     <string name="remote_mode_button">Режим пульта: %1$s</string>
-    <string name="remote_mode_close">Закрыть</string>
     <string name="remote_controller_close">Назад к пульту</string>
     <string name="remote_controller_stick">Стик</string>
     <string name="remote_controller_buttons_only">Этот телевизор принимает только кнопки. Игры, которые ищут подключённый геймпад, могут не реагировать.</string>
