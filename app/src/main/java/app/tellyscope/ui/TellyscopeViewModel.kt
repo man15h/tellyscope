@@ -546,9 +546,14 @@ class TellyscopeViewModel(
 
     /** Last stats per TV, so an offline page shows where it stood instead of blanks. Lives as long as the app. */
     private val lastSnapshot = mutableMapOf<String, Snapshot>()
-    /** Each TV's app list and debloat list as last shown, so switching back shows them while fresh reads replace them. */
+    /**
+     * Each TV's app list and debloat list as last shown, so its page opens on them while fresh reads replace them.
+     * Saved on the phone too ([saveLast]), so a launch starts from them, offline or not.
+     */
     private val lastApps = mutableMapOf<String, List<AppInfo>>()
     private val lastLists = mutableMapOf<String, Suggestions>()
+    /** One save at a time, each taking the page as it is then, so an older one never lands last. */
+    private val saving = Mutex()
 
     /** Keys go out one at a time, in the order pressed. */
     private val keys = Mutex()
@@ -607,6 +612,13 @@ class TellyscopeViewModel(
             // Remembered TVs open straight to their page (offline until they answer).
             val known = source.known()
             val lists = runCatching { source.listSource() }.getOrNull()
+            // Read before the first page opens, so it shows the TV as last seen instead of loading.
+            known.forEach { d ->
+                runCatching { source.lastState(d.id) }.getOrNull()?.let { last ->
+                    if (last.apps.isNotEmpty()) lastApps.putIfAbsent(d.id, last.apps)
+                    last.lists?.let { lastLists.putIfAbsent(d.id, it) }
+                }
+            }
             _state.update { it.copy(devices = known, listSource = lists) }
             if (_state.value.selectedId == null) known.firstOrNull()?.let { select(it.id) }
         }
@@ -910,8 +922,6 @@ class TellyscopeViewModel(
             if (s.device.apps.isNotEmpty()) lastApps[old] = s.device.apps
             s.device.lists?.let { lastLists[old] = it }
         }
-        // Only an online TV gets its old lists back: the offline card stays as it was.
-        val online = _state.value.devices.firstOrNull { it.id == id }?.state == DeviceState.Online
         // A removal survives the reconnect it causes; the TV coming back reselects it. So does the
         // install dialog: the link drops behind the file picker, and its return reselected the TV
         // a few seconds after the dialog opened, closing it (#290).
@@ -919,8 +929,9 @@ class TellyscopeViewModel(
             val same = it.selectedId == id
             val removal = it.device.removal.takeIf { _ -> same }
             val sideload = it.device.sideload.takeIf { _ -> same }
-            val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
-            val lists = if (online) id?.let(lastLists::get) else null
+            // Offline too: the page shows what the TV had when last seen, greyed, rather than nothing.
+            val apps = id?.let(lastApps::get).orEmpty()
+            val lists = id?.let(lastLists::get)
             it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload), query = "")
         }
         val device = _state.value.selected ?: return
@@ -977,6 +988,7 @@ class TellyscopeViewModel(
                     throw e
                 }
                 updateDevice(id) { it.copy(apps = read, appsLoading = false) }
+                saveLast(id)
                 apps.complete(read)
                 pruneDock(id, read)
                 val tweaks = source.tweaks(id)
@@ -2017,6 +2029,17 @@ class TellyscopeViewModel(
         _state.update { s ->
             if (s.selectedId != id) s
             else s.copy(device = s.device.copy(lists = lists, apps = s.device.apps.map { it.copy(listKeep = it.packageName in keep) }))
+        }
+        saveLast(id)
+    }
+
+    /** Saves [id]'s apps and lists as its page shows them, for the next launch; nothing before its apps are read. */
+    private fun saveLast(id: String) {
+        viewModelScope.launch {
+            saving.withLock {
+                val d = _state.value.takeIf { it.selectedId == id }?.device?.takeIf { it.apps.isNotEmpty() } ?: return@withLock
+                runCatching { source.saveLastState(id, d.apps, d.lists) }
+            }
         }
     }
 

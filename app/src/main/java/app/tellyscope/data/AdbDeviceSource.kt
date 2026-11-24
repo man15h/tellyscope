@@ -141,6 +141,7 @@ class AdbDeviceSource(
     private val keyHelpers = ConcurrentHashMap<String, KeyHelper>()
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
     private val appNames = AppNames(File(appContext.filesDir, "app-names"))
+    private val lastStates = LastStateBook(File(appContext.filesDir, "last-state")) { it.text() }
     private val lists = DeviceLists(File(appContext.filesDir, "lists"), fetch)
     /** `data/`'s launcher, app name and streaming lists; never the user's source. */
     private val data = DeviceLists(File(appContext.filesDir, "data"), DATA_BASE, DATA_KEYS, fetch)
@@ -291,6 +292,7 @@ class AdbDeviceSource(
         services.remove(deviceId)
         restoring -= deviceId
         if (saved.remove(deviceId) != null) persist()
+        keys[deviceId]?.let { tv -> withContext(Dispatchers.IO) { lastStates.forget(tv) } }
     }
 
     /**
@@ -1082,10 +1084,20 @@ class AdbDeviceSource(
 
     override suspend fun listSource(): String? = lists.custom()
 
+    // By the saved key alone: a TV that hasn't answered since launch has no link to ask.
+    override suspend fun lastState(deviceId: String): LastState? =
+        keys[deviceId]?.let { tv -> withContext(Dispatchers.IO) { lastStates.load(tv) } }
+
+    override suspend fun saveLastState(deviceId: String, apps: List<AppInfo>, lists: Suggestions?) {
+        val tv = keys[deviceId] ?: return
+        withContext(Dispatchers.IO) { lastStates.save(tv, apps, lists) }
+    }
+
     override suspend fun setListSource(url: String?) {
         // Runs with the switch itself, so a Cancel that lands while it's saved can't skip it.
         val result = lists.setSource(url) {
             keep.clear() // the old source's keep entries
+            lastStates.dropLists()
             scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
         }
         when (result) {
