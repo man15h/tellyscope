@@ -13,7 +13,32 @@ last release under `## Unreleased`, and changes nothing else. A release
 renames that heading to its version and date. A pull request into `main`
 fails CI until this file has a section for its version.
 
-## Unreleased
+## 0.17.0 — 2026-11-25
+
+- **New:** In Files, tapping a video, song or picture offers Open on TV, which uses the TV's player, gallery or browser and installs VLC only when none can, and every file offers Delete on TV, after asking first. [#449](../../pull/449), [#462](../../pull/462), [#467](../../pull/467)
+- **New:** A mode button beside ⋮ switches the Remote between D-pad, Touchpad, a pointer on the TV and a classic game controller. [#443](../../pull/443), [#462](../../pull/462), [#463](../../pull/463)
+- **New:** Shell output can be selected and copied, apps that take something with them show what breaks wherever they can be disabled, and Debloat can stop suggesting the apps you leave unticked. [#437](../../pull/437)
+- **New:** Turkish support, translated by @Dikistutmaz-Sabri. [#436](../../pull/436)
+- **New:** Brazilian Portuguese support, translated by @mafhper. [#441](../../pull/441)
+- **Improved:** Every screen now uses the same Material 3 style for headers, cards, buttons, confirmations, bottom bars, status pictures, search and margins. [#460](../../pull/460), [#461](../../pull/461)
+- **Improved:** Debloat and Reset TV stay open until they finish, and Stop ends one after the current app. [#439](../../pull/439)
+- **Improved:** The TV gets fewer background requests: network details are read only while Advanced is open. [#431](../../pull/431)
+- **Improved:** Reopening the app shows your TV's apps and debloat list straight away, then updates them, and Debloat has a Refresh button. [#473](../../pull/473)
+- **Improved:** The project page on GitHub explains every feature, with screenshots. [#464](../../pull/464)
+- **Fixed:** Switching back to the app no longer shows the TV offline and the lists' Try again for a few seconds; the last state stays up while the app checks the TV. [#468](../../pull/468), [#470](../../pull/470)
+- **Fixed:** What's new and the update dialog show every PR link on a line instead of raw text for all but the last. [#466](../../pull/466)
+- **Fixed:** Restore everything puts Home back after Reset TV. [#453](../../pull/453)
+- **Fixed:** Shell's first command after returning to the app no longer fails. [#453](../../pull/453)
+- **Fixed:** On the Play build, pairing with a code no longer fails on Android 16; it now needs Android 12 or newer on the phone. [#452](../../pull/452)
+- **Fixed:** When a home screen switch can't be undone all the way, Tellyscope now says so instead of reporting the old home screen is back. [#448](../../pull/448)
+- **Fixed:** Installs on TVs that won't take an APK streamed to them (some Android 9 sets) now copy the APK over and install from there. [#444](../../pull/444)
+- **Fixed:** The TV menu scrolls all the way to Forget this TV, and Advanced shows the TV's address in full. [#442](../../pull/442)
+- **Fixed:** Shell no longer closes the app on an unexpected error from the TV, and no longer freezes on fast output like logcat. [#433](../../pull/433)
+- **Fixed:** Debloat lists show loading and failed states with Try again, Restore everything and Reset name what didn't go back, History says why a row has no Undo, the own-lists dialog checks the address before closing, Report a problem asks before discarding, one name per action (Disable/Enable, Restore, Memory, Restart TV), and long text wraps at large font sizes. [#432](../../pull/432), [#435](../../pull/435)
+- **Fixed:** Tapping the TV you're on, or the TV reconnecting, no longer cancels a Debloat or Reset that's running. [#393](../../pull/393)
+- **Fixed:** Add your TV lets you reopen finished steps and no longer skips ahead by itself. [#430](../../pull/430)
+- **Fixed:** TVs stay connected while the app is in the background. [#428](../../pull/428)
+- **Fixed:** A tampered list index can no longer pass the signature check or block later list updates. [#427](../../pull/427)
 
 ## 0.16.0 — 2026-11-06
 

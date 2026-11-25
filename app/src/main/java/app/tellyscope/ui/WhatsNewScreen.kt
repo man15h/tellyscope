@@ -20,11 +20,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -125,12 +122,12 @@ fun WhatsNewScreen(
             items(ahead + releases, key = { it.version }) { r ->
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     VersionHeading(r, isInstalled = r.version == installed.substringBefore('-'), notInstalled = r in ahead)
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                    AppCard {
                         r.changes.forEachIndexed { i, c ->
                             val kindChanged = i == 0 || r.changes[i - 1].kind != c.kind
                             if (i > 0) HorizontalDivider(color = MaterialTheme.colorScheme.surface)
                             if (kindChanged && c.kind != null) KindHeading(c.kind)
-                            ChangeItem(c, openPr, topPadding = if (kindChanged && c.kind != null) 4.dp else 16.dp)
+                            ChangeItem(c, openPr, topPadding = if (kindChanged && c.kind != null) 0.dp else 16.dp)
                         }
                     }
                 }
@@ -148,7 +145,7 @@ private fun VersionHeading(r: Release, isInstalled: Boolean, notInstalled: Boole
             Text(shortDate(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Spacer(Modifier.weight(1f))
-        if (isInstalled) Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+        if (isInstalled) Surface(shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.secondaryContainer) {
             Text(
                 stringResource(R.string.whats_new_installed),
                 Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -156,7 +153,7 @@ private fun VersionHeading(r: Release, isInstalled: Boolean, notInstalled: Boole
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
             )
         }
-        if (notInstalled) Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
+        if (notInstalled) Surface(shape = MaterialTheme.shapes.small, border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)) {
             Text(
                 stringResource(R.string.whats_new_not_installed),
                 Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
@@ -173,36 +170,37 @@ private fun shortDate(iso: String): String =
 
 @Composable
 private fun KindHeading(kind: Kind) {
-    Text(
+    SectionHeader(
         stringResource(
             when (kind) {
                 Kind.New -> R.string.whats_new_new
                 Kind.Improved -> R.string.whats_new_improved
                 Kind.Fixed -> R.string.whats_new_fixed
             },
-        ).uppercase(),
-        Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp),
-        style = MaterialTheme.typography.labelMedium,
-        color = MaterialTheme.colorScheme.primary,
+        ),
+        Modifier.padding(horizontal = 16.dp),
     )
 }
 
 /**
- * One change and its indented points. Its #PR opens the pull request on the main repo. The link's tap
- * target is 48 dp tall and runs to the end of its line, so it overlaps plain text but never another
- * link; it stays inside this item's 16 dp padding.
+ * One change and its indented points. Each #PR opens its pull request on the main repo. A link's tap
+ * target is 48 dp tall and runs to the next link on its line, or to the line's end, so it overlaps
+ * plain text but never another link; it stays inside this item's 16 dp padding. Where the links wrap,
+ * the two targets meet at the line boundary instead, so neither reaches over the other's row.
  */
 @Composable
 private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
     val link = MaterialTheme.colorScheme.primary
-    val text = remember(c, link) {
+    val (text, starts) = remember(c, link) {
+        val starts = mutableListOf<Int>()
         buildAnnotatedString {
             append(c.text)
-            if (c.pr != null) {
-                append(' ')
-                withStyle(SpanStyle(color = link)) { append("#${c.pr}") }
+            c.prs.forEachIndexed { i, pr ->
+                append(if (i == 0) " " else ", ")
+                starts += length
+                withStyle(SpanStyle(color = link)) { append("#$pr") }
             }
-        }
+        } to starts.toList()
     }
     var layout by remember { mutableStateOf<TextLayoutResult?>(null) }
     val density = LocalDensity.current
@@ -218,18 +216,25 @@ private fun ChangeItem(c: Change, openPr: (Int) -> Unit, topPadding: Dp) {
             }
         }
         val l = layout
-        if (c.pr != null && l != null) {
-            val start = text.length - "#${c.pr}".length
+        if (l != null) c.prs.forEachIndexed { i, pr ->
+            val start = starts[i]
             val line = l.getLineForOffset(start)
             val left = l.getHorizontalPosition(start, usePrimaryDirection = true)
+            val right = starts.getOrNull(i + 1)?.takeIf { l.getLineForOffset(it) == line }
+                ?.let { l.getHorizontalPosition(it, usePrimaryDirection = true) } ?: l.size.width.toFloat()
             val middle = (l.getLineTop(line) + l.getLineBottom(line)) / 2
+            val wrapsFrom = l.getLineForOffset(starts.first()) != line
+            val wrapsTo = l.getLineForOffset(starts.last()) != line
             with(density) {
                 val target = 48.dp.toPx()
+                val top = (if (wrapsFrom) l.getLineTop(line) else middle - target / 2) + topPadding.toPx()
+                val bottom = (if (wrapsTo) l.getLineBottom(line) else middle + target / 2) + topPadding.toPx()
+                val y = top.coerceAtLeast(0f)
                 Box(
                     Modifier
-                        .offset { IntOffset((16.dp.toPx() + left).roundToInt(), (topPadding.toPx() + middle - target / 2).roundToInt().coerceAtLeast(0)) }
-                        .size(width = (l.size.width - left).toDp(), height = 48.dp)
-                        .clickable(role = Role.Button, onClickLabel = "#${c.pr}") { openPr(c.pr) },
+                        .offset { IntOffset((16.dp.toPx() + left).roundToInt(), y.roundToInt()) }
+                        .size(width = (right - left).toDp(), height = (bottom - y).toDp())
+                        .clickable(role = Role.Button, onClickLabel = "#$pr") { openPr(pr) },
                 )
             }
         }

@@ -132,4 +132,28 @@ class FilesTest {
     @Test fun quotingSurvivesApostrophes() {
         assertEquals("'it'\\''s.mp4'", shellQuote("it's.mp4"))
     }
+
+    @Test fun deleteRemovesThatFileOnly() = runTest {
+        val sh = FakeShell()
+        Files(sh).delete(TvFolder.DOWNLOAD, TvFile("it's.apk", 1, 0))
+        assertEquals(listOf("rm '/sdcard/Download/it'\\''s.apk'"), sh.ran)
+    }
+
+    @Test fun deleteFailsWithTheTvsWords() = runTest {
+        val said = "rm: /sdcard/Download/a.apk: Permission denied"
+        val sh = FakeShell(answers = mapOf("rm " to ShellResult(said, 1)))
+        val e = assertFailsWith<IOException> { Files(sh).delete(TvFolder.DOWNLOAD, TvFile("a.apk", 1, 0)) }
+        assertEquals(said, e.message)
+    }
+
+    @Test fun deleteFailsOnAnyOutputEvenWithExitZero() = runTest {
+        val sh = FakeShell(answers = mapOf("rm " to ShellResult("rm: a.apk: Read-only file system\n", 0)))
+        assertFailsWith<IOException> { Files(sh).delete(TvFolder.DOWNLOAD, TvFile("a.apk", 1, 0)) }
+    }
+
+    @Test fun deleteRefusesAPath() = runTest {
+        val sh = FakeShell()
+        assertFailsWith<IllegalArgumentException> { Files(sh).delete(TvFolder.DOWNLOAD, TvFile("../x", 1, 0)) }
+        assertTrue(sh.ran.isEmpty())
+    }
 }

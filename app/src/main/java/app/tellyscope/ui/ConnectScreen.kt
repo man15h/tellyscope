@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,7 +35,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -44,7 +42,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -89,11 +86,7 @@ fun ConnectScreen(
             )
         },
         bottomBar = {
-            Row(
-                Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            ActionBar {
                 when (row) {
                     RowState.NotAllowed, is RowState.Unreachable -> {
                         TextButton(onClick = onBack) { Text(stringResource(R.string.connect_back_to_tvs)) }
@@ -119,7 +112,7 @@ fun ConnectScreen(
         },
     ) { pad ->
         Column(
-            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 8.dp),
+            Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -146,7 +139,7 @@ fun ConnectScreen(
                     row.detail?.let { Details(listOf(stringResource(R.string.connect_from_tv) to it)) }
                 }
                 RowState.NotAllowed -> {
-                    ProblemIcon(Icons.Default.Warning)
+                    StatusHero(HeroTone.Failed, Icons.Default.Warning)
                     Text(stringResource(R.string.connect_no_answer), style = MaterialTheme.typography.headlineMedium)
                     Text(
                         stringResource(R.string.connect_not_accepted),
@@ -184,7 +177,7 @@ fun ConnectScreen(
                     }
                     TvPrompt(phoneKey)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        LoadingIndicator(Modifier.size(32.dp))
+                        LoadingIndicator(Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(
                             stringResource(R.string.connect_waiting, ((now - row.since) / 1000).coerceAtLeast(0)),
@@ -196,7 +189,7 @@ fun ConnectScreen(
                 // Reachable but refusing is No answer above; this is a TV that didn't answer at all.
                 is RowState.Unreachable, RowState.WaitingForWifi -> {
                     val offWifi = row != RowState.Unreachable(offWifi = false)
-                    ProblemIcon(if (offWifi) DeviceIcons.WifiOff else Icons.Default.Warning)
+                    StatusHero(HeroTone.Failed, if (offWifi) DeviceIcons.WifiOff else Icons.Default.Warning)
                     Text(stringResource(R.string.connect_cant_reach), style = MaterialTheme.typography.headlineMedium)
                     Text(
                         stringResource(
@@ -211,7 +204,7 @@ fun ConnectScreen(
                     )
                     if (offWifi) FilledTonalButton(onClick = onOpenWifi) { Text(stringResource(R.string.scan_open_wifi)) }
                     if (row == RowState.WaitingForWifi) Row(verticalAlignment = Alignment.CenterVertically) {
-                        LoadingIndicator(Modifier.size(32.dp))
+                        LoadingIndicator(Modifier.size(24.dp))
                         Spacer(Modifier.width(12.dp))
                         Text(stringResource(R.string.connect_waiting_wifi), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -231,30 +224,17 @@ fun ConnectScreen(
     }
 }
 
-/** The round error badge heading No answer and Can't reach the TV. */
-@Composable
-private fun ProblemIcon(icon: ImageVector) {
-    Surface(Modifier.size(64.dp), shape = CircleShape, color = MaterialTheme.colorScheme.errorContainer) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(icon, null, Modifier.size(32.dp), tint = MaterialTheme.colorScheme.onErrorContainer)
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** Reaching the TV: the waiting hero, in the slot No answer and Can't reach the TV put theirs. */
 @Composable
 private fun Connecting() {
+    StatusHero(HeroTone.Waiting, null)
     Text(stringResource(R.string.connect_connecting), style = MaterialTheme.typography.headlineMedium)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        LoadingIndicator(Modifier.size(48.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(stringResource(R.string.connect_reaching), style = MaterialTheme.typography.bodyLarge)
-    }
+    Text(stringResource(R.string.connect_reaching), style = MaterialTheme.typography.bodyLarge)
 }
 
 @Composable
 private fun InfoBox(content: @Composable () -> Unit) {
-    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium, color = MaterialTheme.colorScheme.surfaceContainerHigh) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) { content() }
     }
 }
@@ -274,7 +254,7 @@ private fun TvPrompt(key: String?) {
             contentAlignment = Alignment.Center,
         ) {
             Column(
-                Modifier.fillMaxWidth(0.84f).background(Color(0xFF1C2222), RoundedCornerShape(12.dp)).padding(horizontal = 14.dp, vertical = 12.dp),
+                Modifier.fillMaxWidth(0.84f).background(Color(0xFF1C2222), MaterialTheme.shapes.medium).padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(stringResource(R.string.connect_tv_allow_title), color = Color.White, style = MaterialTheme.typography.titleSmall)

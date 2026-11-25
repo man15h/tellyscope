@@ -4,13 +4,13 @@ package app.tellyscope
 
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.RemotePad
 import app.tellyscope.ui.repeatWhileStill
 import app.tellyscope.ui.swipeKey
 import java.io.File
 import kotlinx.coroutines.test.currentTime
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -45,12 +45,18 @@ class TouchpadTest {
 
     @Test fun theModeIsKeptForThePhoneAndTheDpadIsTheDefault() {
         val file = File(dir.root, "remote.properties")
-        assertFalse(KeyHaptics(file).touchpad)
-        KeyHaptics(file).touchpad = true
-        assertTrue(KeyHaptics(file).touchpad)
+        assertEquals(RemotePad.DPAD, KeyHaptics(file).pad)
+        for (pad in RemotePad.entries) {
+            KeyHaptics(file).pad = pad
+            assertEquals(pad, KeyHaptics(file).pad)
+        }
         // The other settings in the same file are left alone.
         assertTrue(KeyHaptics(file).on)
-        KeyHaptics(file).touchpad = false
-        assertFalse(KeyHaptics(file).touchpad)
+    }
+
+    @Test fun aTouchpadKeptBeforePointerCameStillReadsAsTheTouchpad() {
+        val file = File(dir.root, "remote.properties")
+        file.writeText("pad=touchpad\n")
+        assertEquals(RemotePad.TOUCHPAD, KeyHaptics(file).pad)
     }
 }

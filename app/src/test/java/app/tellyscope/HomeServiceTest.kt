@@ -141,7 +141,7 @@ class HomeServiceTest {
         val text = Copy.explainLeave("Google TV Home", off = true, "Projectivy Launcher", currentService = true, service = false).text()
         inDialog(text).assertExists()
         assertTrue("turns off Projectivy Launcher's accessibility service" in text)
-        assertTrue("turns Google TV Home back on" in text)
+        assertTrue("enables Google TV Home again" in text)
         inDialog(Copy.MAKE_HOME.text()).performClick()
         assertTrue(confirmed)
     }

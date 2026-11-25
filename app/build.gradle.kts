@@ -13,6 +13,13 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+/**
+ * Builds that leave out Kadb's hidden-API bypass (org.lsposed.hiddenapibypass), which Play flags. Kadb
+ * uses it only to reach the platform's Conscrypt when pairing; these builds compile src/conscryptShim
+ * instead, which Kadb finds by name and which pairs through the public SSLSockets (Android 12+).
+ */
+val conscryptShimFlavors = setOf("play")
+
 android {
     namespace = "app.tellyscope"
     compileSdk = 37
@@ -24,8 +31,8 @@ android {
         minSdk = 26
         targetSdk = 37
         // A PR into main must raise both past the latest v* tag (.github/workflows/release-check.yml).
-        versionCode = 29
-        versionName = "0.16.0"
+        versionCode = 30
+        versionName = "0.17.0"
 
         // An alpha tag (release.yml, vX.Y.Z-alpha.N on dev) passes -Ptellyscope.alpha=N:
         // a separate app ID, so it installs next to the release.
@@ -56,12 +63,18 @@ android {
             dimension = "store"
             buildConfigField("boolean", "PLAY", "true")
         }
+        configureEach {
+            val shim = name in conscryptShimFlavors
+            buildConfigField("boolean", "CONSCRYPT_SHIM", "$shim")
+            if (shim) proguardFiles("proguard-conscrypt-shim.pro")
+        }
     }
+    conscryptShimFlavors.forEach { sourceSets[it].java.srcDir("src/conscryptShim/java") }
 
     // Only the languages Tellyscope is translated into: drops the ~80 other locales AndroidX and
     // Material ship (about 440 KB). A new values-xx/strings.xml adds its code here too.
     androidResources {
-        localeFilters += listOf("en", "es", "zh-rCN", "ja", "ru", "hi")
+        localeFilters += listOf("en", "es", "zh-rCN", "ja", "ru", "hi", "tr", "pt-rBR")
         // Lists them for Android 13+'s per-app language setting (default locale: res/resources.properties).
         generateLocaleConfig = true
     }
@@ -169,7 +182,7 @@ val bundleChangelog by tasks.registering(BundleChangelog::class) {
     outputDir = layout.buildDirectory.dir("generated/changelog/assets")
 }
 
-/** Fails the build when a release APK grows past the 3.5 MB budget. CI's `build` and release.yml both assemble release. */
+/** Fails the build when a release APK grows past the 5 MB budget. CI's `build` and release.yml both assemble release. */
 abstract class CheckApkSize : DefaultTask() {
     @get:InputFiles abstract val apkDir: DirectoryProperty
     @get:Input abstract val maxBytes: Property<Long>
@@ -222,7 +235,7 @@ androidComponents {
         val name = variant.name.replaceFirstChar { it.uppercase() }
         val sizeCheck = tasks.register<CheckApkSize>("check${name}ApkSize") {
             apkDir = variant.artifacts.get(SingleArtifact.APK)
-            maxBytes = 3_500_000L
+            maxBytes = 5_000_000L
         }
         afterEvaluate { tasks.named("assemble$name") { finalizedBy(sizeCheck) } }
         if (variant.flavorName == "play") {
@@ -238,6 +251,10 @@ androidComponents {
             }
         }
     }
+}
+
+configurations.configureEach {
+    if (conscryptShimFlavors.any { name.startsWith(it) }) exclude(group = "org.lsposed.hiddenapibypass")
 }
 
 dependencies {

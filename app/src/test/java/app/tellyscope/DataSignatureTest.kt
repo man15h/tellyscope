@@ -111,6 +111,27 @@ class DataSignatureTest {
         assertFalse(lists(tmp.newFolder(), Served(serving(reserialised))).verified())
     }
 
+    /**
+     * Line 2 isn't signed. Rewritten to close the object early with its own version and lists, then reopen an array so
+     * it still ends `],`, it fails, what it carries is never read, and its version never becomes the floor.
+     */
+    @Test fun aRewrittenSigsLineFails() = runTest {
+        val genuine = signed(version = 2026110301)
+        val lines = genuine.getValue("index.json").decodeToString().split("\n").toMutableList()
+        val evil = """{"schema":1,"launchers":[{"package":"com.evil.home","name":"Evil","about":"x"}]}""".toByteArray()
+        lines[1] = lines[1].removeSuffix(",") + """, "schema": 1, "version": 2099010101, "lists": """ +
+            """{"launchers": {"file": "evil.json", "sha256": "${sha256(evil)}"}}}, "x": [],"""
+        val forged = lines.joinToString("\n").toByteArray()
+        assertFalse(verifyIndex(forged, keys))
+        val dir = tmp.newFolder()
+        val lists = lists(dir, Served(genuine + ("index.json" to forged) + ("evil.json" to evil)))
+        assertFalse(lists.verified())
+        assertEquals(2026110301L, lists.index()?.version)
+        assertEquals(launchers.decodeToString(), lists.shared("launchers"))
+        // A new process: the genuine index, a version below the forged one, still passes.
+        assertTrue(lists(dir, Served(genuine)).verified())
+    }
+
     /** A tag the app doesn't know is skipped, so a later algorithm can sign alongside `p256`, but never stands in for it. */
     @Test fun anUnknownTagIsSkipped() = runTest {
         val index = index(2026110301)

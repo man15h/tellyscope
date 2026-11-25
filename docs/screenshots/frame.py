@@ -27,9 +27,9 @@ SHOTS = {
     "tweaks": "29_readme_tweaks",
     "home": "30_readme_home",
     "this-tv": "31_readme_this_tv",
-    "cpu": "32_readme_cpu",
-    "ram": "33_readme_ram",
-    "network": "34_readme_network",
+    "who-has-access": "95_who_has_access",
+    "controller": "37_readme_controller",
+    "open-or-save": "38_readme_media_sheet",
     "shell": "35_readme_shell",
 }
 
@@ -44,6 +44,9 @@ RADIUS = 46
 
 def frame(src: Path) -> Image.Image:
     shot = Image.open(src).convert("RGB")
+    # A sideways shot is turned so the phone stands upright like the others, camera on top.
+    if shot.width > shot.height:
+        shot = shot.transpose(Image.Transpose.ROTATE_270)
     shot = shot.crop((0, 0, shot.width, min(shot.height, SCREEN_DP * DP)))
     shot = shot.resize((WIDTH, shot.height * WIDTH // shot.width), Image.LANCZOS)
 

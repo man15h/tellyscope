@@ -111,6 +111,74 @@ class TvShellTest {
         assertEquals(ShellEnd.Lost, sh.run("ls") {})
     }
 
+    @Test fun anAdbErrorEndsTheCommandInsteadOfThrowing() = runBlocking {
+        val bad = object : ShellChannel {
+            var closed = false
+            override fun read(): ShellPacket = throw IllegalStateException("bad packet")
+            override fun write(bytes: ByteArray) {}
+            override fun close() { closed = true }
+        }
+        val good = FakeChannel { listOf(out("hi\n"), marker(0, "/")) }
+        val channels = ArrayDeque(listOf(bad, good))
+        val sh = TvShell(FakeShell()) { channels.removeFirst() }
+        assertEquals(ShellEnd.Failed("bad packet"), sh.run("ls") {})
+        // The broken shell is dropped: the next command opens a new one.
+        assertEquals(ShellEnd.Done(0), sh.run("echo hi") {})
+        repeat(100) { if (!bad.closed) Thread.sleep(10) }
+        assertTrue(bad.closed)
+    }
+
+    /** Works until [dead], then fails the way a shell on a dropped link does; [answered] frames come back first. */
+    private class DyingChannel(val reply: (String) -> List<ShellPacket>, val answered: Int = 0) : ShellChannel {
+        val written = mutableListOf<String>()
+        private val frames = ArrayDeque<ShellPacket>()
+        var dead = false
+        private var left = 0
+
+        override fun read(): ShellPacket {
+            if (dead && left-- <= 0) throw IllegalStateException("closed")
+            return frames.removeFirst()
+        }
+
+        override fun write(bytes: ByteArray) {
+            written += String(bytes)
+            if (dead && answered == 0) throw IllegalStateException("closed")
+            frames.addAll(reply(String(bytes)))
+            if (dead) left = answered
+        }
+
+        override fun close() {}
+    }
+
+    @Test fun aShellThatDiedInTheBackgroundRunsTheCommandInANewOne() = runBlocking {
+        val first = DyingChannel({ listOf(marker(0, "/sdcard")) })
+        val second = FakeChannel { listOf(out("uid=2000\n"), marker(0, "/sdcard")) }
+        val channels = ArrayDeque(listOf<ShellChannel>(first, second))
+        val sh = TvShell(FakeShell()) { channels.removeFirst() }
+        sh.run("cd /sdcard") {}
+        first.dead = true
+        val printed = StringBuilder()
+        assertEquals(ShellEnd.Done(0), sh.run("id") { printed.append(it.text) })
+        assertEquals("uid=2000\n", printed.toString())
+        assertTrue(second.written.single().startsWith("cd '/sdcard' 2>/dev/null\n{ id\n}"))
+    }
+
+    @Test fun aShellThatDiesAfterTheTvAnsweredDoesNotRunItAgain() = runBlocking {
+        val first = DyingChannel({ listOf(out("package:a\n"), marker(0, "/")) }, answered = 1)
+        val second = FakeChannel { listOf(marker(0, "/")) }
+        val channels = ArrayDeque(listOf<ShellChannel>(first, second))
+        val sh = TvShell(FakeShell()) { channels.removeFirst() }
+        sh.run("true") {}
+        first.dead = true
+        assertEquals(ShellEnd.Failed("closed"), sh.run("pm list packages") {})
+        assertTrue(second.written.isEmpty())
+    }
+
+    @Test fun anAdbErrorOpeningTheShellSaysWhat() = runBlocking {
+        val sh = TvShell(FakeShell()) { throw IllegalStateException() }
+        assertEquals(ShellEnd.Failed("IllegalStateException"), sh.run("ls") {})
+    }
+
     @Test fun pastedAdbShellIsDropped() {
         assertEquals(ShellLine.Run("pm list packages -d", dropped = true), ShellInput.parse("adb shell pm list packages -d"))
         assertEquals(ShellLine.Run("getprop", dropped = true), ShellInput.parse("  adb -s 192.0.2.1:5555 shell getprop"))

@@ -7,13 +7,13 @@
     <!-- App actions: button, confirm, explanation, result -->
     <string name="copy_button_stop">Stop</string>
     <string name="copy_button_disable">Disable</string>
-    <string name="copy_button_enable">Turn on</string>
+    <string name="copy_button_enable">Enable</string>
     <string name="copy_button_open">Open</string>
     <string name="copy_button_uninstall">Uninstall</string>
 
     <string name="copy_confirm_stop">Yes, stop it</string>
     <string name="copy_confirm_disable">Yes, disable it</string>
-    <string name="copy_confirm_enable">Yes, turn it on</string>
+    <string name="copy_confirm_enable">Yes, enable it</string>
     <string name="copy_confirm_open">Yes, open it</string>
     <string name="copy_confirm_uninstall">Yes, uninstall it</string>
     <string name="copy_confirm_home">Yes, switch home screen</string>
@@ -21,14 +21,14 @@
 
     <!-- %1$s is the app's label, %2$s its package id -->
     <string name="copy_explain_stop">Stops %1$s (%2$s) until you open it again.</string>
-    <string name="copy_explain_disable">Hides %1$s (%2$s) and stops it running. Nothing is deleted; you can turn it back on here.</string>
-    <string name="copy_explain_enable">Turns %1$s (%2$s) back on.</string>
+    <string name="copy_explain_disable">Disables %1$s (%2$s) and stops it running. Nothing is deleted; you can enable it again here.</string>
+    <string name="copy_explain_enable">Enables %1$s (%2$s) again.</string>
     <string name="copy_explain_open">Opens %1$s (%2$s) on the TV.</string>
     <string name="copy_explain_uninstall">Removes %1$s (%2$s) and everything saved in it. This can\'t be undone; to get it back, install it again.</string>
 
     <string name="copy_done_stop">Stopped %1$s</string>
     <string name="copy_done_disable">Disabled %1$s</string>
-    <string name="copy_done_enable">Turned on %1$s</string>
+    <string name="copy_done_enable">Enabled %1$s</string>
     <string name="copy_done_open">Opened %1$s</string>
     <string name="copy_done_uninstall">Uninstalled %1$s</string>
     <string name="copy_done_clear_caches">Cleared %1$s</string>
@@ -47,7 +47,7 @@
     <string name="copy_no_default">No default: pick one below.</string>
     <string name="copy_added">Added</string>
     <string name="copy_built_in">Built into the TV</string>
-    <string name="copy_built_in_off">Built into the TV · turned off</string>
+    <string name="copy_built_in_off">Built into the TV · disabled</string>
     <string name="copy_current">Current</string>
     <string name="copy_make_home">Make Home</string>
     <string name="copy_change_home">Change home screen</string>
@@ -56,15 +56,15 @@
     <string name="copy_make_home_title">Make %1$s the home screen?</string>
 
     <!-- explainReplace paragraphs; %1$s the new launcher, %2$s the TV's built-in one -->
-    <string name="copy_explain_replace_opens">Home opens %1$s. To stop the TV switching back by itself, Tellyscope turns off %2$s, the TV\'s built-in launcher.</string>
-    <string name="copy_explain_replace_only">That\'s the only launcher it ever turns off. Launchers you added stay on, so you can switch between them any time.</string>
-    <string name="copy_explain_replace_undo">Undo in History turns %1$s back on.</string>
-    <!-- %1$s is the Google TV launcher being turned off -->
+    <string name="copy_explain_replace_opens">Home opens %1$s. To stop the TV switching back by itself, Tellyscope disables %2$s, the TV\'s built-in launcher.</string>
+    <string name="copy_explain_replace_only">That\'s the only launcher it ever disables. Launchers you added stay enabled, so you can switch between them any time.</string>
+    <string name="copy_explain_replace_undo">Undo in History enables %1$s again.</string>
+    <!-- %1$s is the Google TV launcher being disabled -->
     <string name="copy_google_features">Some Google TV features, like the Apps row and the Live tab, are part of %1$s and go away with it.</string>
     <string name="copy_next_service">Next, you choose whether to turn on its accessibility service.</string>
 
     <!-- explainLeave; %1$s the launcher Home switches to, the other arg the current one -->
-    <string name="copy_explain_leave_turns_on">Tellyscope turns %1$s back on and makes it open when you press Home.</string>
+    <string name="copy_explain_leave_turns_on">Tellyscope enables %1$s again and makes it open when you press Home.</string>
     <string name="copy_explain_leave_makes">Tellyscope makes %1$s open when you press Home.</string>
     <string name="copy_explain_leave_service">It also turns off %1$s\'s accessibility service, which would otherwise take Home straight back.</string>
     <string name="copy_explain_leave_stays">%1$s stays installed and on, so you can make it Home again any time.</string>
@@ -72,10 +72,10 @@
     <string name="copy_explain_leave_undo_service">Undo in History makes %1$s Home again and turns its service back on.</string>
 
     <!-- %1$s (%2$s) the new launcher and its package, %3$s (%4$s) the one it replaces -->
-    <string name="copy_explain_home">Makes %1$s (%2$s) open when you press Home, then disables %3$s (%4$s) so the TV can\'t switch back by itself. Undo in History turns %3$s back on and makes it Home again.</string>
+    <string name="copy_explain_home">Makes %1$s (%2$s) open when you press Home, then disables %3$s (%4$s) so the TV can\'t switch back by itself. Undo in History enables %3$s again and makes it Home again.</string>
     <!-- Fire OS: %1$s (%2$s) the launcher and its package, %3$s Amazon's launcher; copy_next_service follows -->
-    <string name="copy_explain_fire_home">Makes Home open %1$s (%2$s) through its accessibility service. Fire OS won\'t let %3$s be turned off or replaced, so it stays on and nothing else changes. Undo in History turns the service off.</string>
-    <string name="copy_explain_first_home">Makes %1$s (%2$s) open when you press Home. The TV has no default home screen now, and nothing else is turned off.</string>
+    <string name="copy_explain_fire_home">Makes Home open %1$s (%2$s) through its accessibility service. Fire OS won\'t let %3$s be disabled or replaced, so it stays enabled and nothing else changes. Undo in History turns the service off.</string>
+    <string name="copy_explain_first_home">Makes %1$s (%2$s) open when you press Home. The TV has no default home screen now, and nothing else is disabled.</string>
 
     <string name="copy_service_title">Turn on %1$s\'s accessibility service?</string>
     <!-- %1$s the launcher, %2$s the one Home may open without its service -->
@@ -257,7 +257,7 @@
     <string name="copy_uninstall_title">Uninstall %1$s?</string>
     <!-- Uninstalling the launcher on Home: paragraphs; %1$s the launcher, the numbers are step numbers -->
     <string name="copy_uninstall_home_intro">%1$s is your home screen. Before removing it, Tellyscope:</string>
-    <string name="copy_uninstall_home_back">1. Makes %1$s the home screen again, turning it back on if it\'s off.</string>
+    <string name="copy_uninstall_home_back">1. Makes %1$s the home screen again, enabling it if it\'s disabled.</string>
     <string name="copy_uninstall_home_service">2. Turns off %1$s\'s accessibility service.</string>
     <string name="copy_uninstall_home_remove">%1$d. Uninstalls it, with everything saved in it. This can\'t be undone.</string>
     <string name="copy_uninstall_home_fails">If a step fails, Tellyscope stops there, says which one, and doesn\'t uninstall.</string>
@@ -266,10 +266,10 @@
     <string name="copy_system_why">Needed by the TV · can\'t be changed</string>
 
     <!-- Debloat with nothing left -->
-    <string name="copy_gate_title">Everything on the list is off</string>
-    <string name="copy_gate_done">All the apps the cleanyourtv list suggests for this TV are already off.</string>
+    <string name="copy_gate_title">Everything on the list is disabled</string>
+    <string name="copy_gate_done">All the apps the cleanyourtv list suggests for this TV are already disabled.</string>
     <string name="copy_gate_launcher">To trim it further, switch to a minimal home screen. It replaces the TV\'s own, with its ads and suggestions.</string>
-    <string name="copy_gate_apps">You can still choose, app by app, what to keep or turn off in Apps.</string>
+    <string name="copy_gate_apps">You can still choose, app by app, what to keep or disable in Apps.</string>
     <string name="copy_go_to_apps">Go to Apps</string>
     <string name="copy_dont_show_again">Don\'t show again</string>
 
@@ -372,6 +372,7 @@
     <string name="copy_send_failed">Couldn\'t send %1$s. Check the TV is still connected and has space.</string>
     <string name="copy_send_failed_off_wifi">Couldn\'t send %1$s. This phone isn\'t on Wi-Fi.</string>
     <string name="copy_save_failed">Couldn\'t save %1$s. Check the TV is still connected and the phone has space.</string>
+    <string name="copy_deleted">Deleted %1$s from the TV</string>
     <string name="copy_cancelled_send">Cancelled. Nothing was left on the TV.</string>
     <string name="copy_cancelled_save">Cancelled. Nothing was saved.</string>
     <string name="copy_cant_read">Couldn\'t read that file on your phone.</string>
@@ -433,7 +434,25 @@
     <string name="copy_more">More options</string>
     <string name="copy_buttons_hint">Pick up to %1$d. Drag to set the order. To pick another, untick one first.</string>
     <string name="copy_not_on_tv">%1$s isn\'t on this TV. Install it from the Play Store on the TV.</string>
-    <string name="copy_cant_open">The TV couldn\'t open %1$s. If it\'s turned off, turn it on in Apps.</string>
+    <string name="copy_not_on_tv_fire">%1$s isn\'t on this TV. Install it from the Appstore on the TV.</string>
+    <!-- Open on TV in the Files tab, and VLC offered when nothing on the TV plays the file. %1$s the file's name, or VLC; see each -->
+    <string name="copy_player_no_video">No video player on the TV</string>
+    <string name="copy_player_no_audio">No audio player on the TV</string>
+    <!-- %1$s the file, %2$s VLC -->
+    <string name="copy_player_nothing_text">Nothing on the TV can open %1$s. %2$s plays it with the remote, and Tellyscope opens the file in it once it\'s installed.</string>
+    <string name="copy_player_about">VideoLAN · free and open source</string>
+    <string name="copy_player_install_title">Install %1$s on the TV</string>
+    <string name="copy_player_store_open">%1$s\'s page is open in the Play Store on the TV. Install it with the remote.</string>
+    <string name="copy_player_waiting">Waiting for %1$s… then %2$s opens</string>
+    <string name="copy_player_open_appstore">Open Appstore</string>
+    <string name="copy_player_downloading">Downloading %1$s</string>
+    <!-- %1$s and %2$s are sizes, %3$s where it downloads from, like videolan.org -->
+    <string name="copy_player_progress">%1$s of %2$s · from %3$s</string>
+    <string name="copy_player_opened">Opened %1$s on the TV</string>
+    <string name="copy_player_opened_in">Opened %1$s on the TV in %2$s</string>
+    <string name="copy_player_cant_open">Couldn\'t open %1$s on the TV</string>
+    <string name="copy_player_nothing_opens">Nothing on the TV can open %1$s</string>
+    <string name="copy_cant_open">The TV couldn\'t open %1$s. If it\'s disabled, enable it in Apps.</string>
     <string name="copy_left_dock_one">%1$s was uninstalled, so its button left the Remote.</string>
     <plurals name="copy_left_dock">
         <item quantity="one">%1$d app was uninstalled, so its button left the Remote.</item>
@@ -506,10 +525,10 @@
     </plurals>
     <string name="copy_reset_found_text">Your apps\' data and sign-ins stay. Nothing has changed yet.</string>
     <plurals name="copy_turn_on_apps">
-        <item quantity="one">Turn on %1$d app</item>
-        <item quantity="other">Turn on %1$d apps</item>
+        <item quantity="one">Enable %1$d app</item>
+        <item quantity="other">Enable %1$d apps</item>
     </plurals>
-    <string name="copy_turn_on_text">Preinstalled apps turned off by hand, from any phone or tool</string>
+    <string name="copy_turn_on_text">Preinstalled apps disabled by hand, from any phone or tool</string>
     <plurals name="copy_bring_back_apps">
         <item quantity="one">Bring back %1$d app</item>
         <item quantity="other">Bring back %1$d apps</item>
@@ -529,18 +548,18 @@
     <string name="copy_animation_scale">%1$s×</string>
     <!-- %2$s is the TV's brand, or copy_the_maker -->
     <plurals name="copy_reset_leaves_off">
-        <item quantity="one">%1$d app %2$s shipped switched off stay off.</item>
-        <item quantity="other">%1$d apps %2$s shipped switched off stay off.</item>
+        <item quantity="one">%1$d app %2$s shipped disabled stays disabled.</item>
+        <item quantity="other">%1$d apps %2$s shipped disabled stay disabled.</item>
     </plurals>
     <string name="copy_reset_leaves">Apps and launchers you installed stay installed.</string>
     <string name="copy_the_maker">the maker</string>
     <string name="copy_nothing_to_reset_title">Nothing to reset</string>
-    <string name="copy_nothing_to_reset_on">Every preinstalled app is on.</string>
-    <string name="copy_nothing_to_reset_on_home">Every preinstalled app is on, and %1$s is the home screen.</string>
+    <string name="copy_nothing_to_reset_on">Every preinstalled app is enabled.</string>
+    <string name="copy_nothing_to_reset_on_home">Every preinstalled app is enabled, and %1$s is the home screen.</string>
     <!-- %1$s is the TV's brand, or copy_the_maker -->
-    <string name="copy_nothing_to_reset_maker">Apps %1$s shipped switched off stay off.</string>
+    <string name="copy_nothing_to_reset_maker">Apps %1$s shipped disabled stay disabled.</string>
     <!-- Reset progress: done of total -->
-    <string name="copy_resetting_turn_on">Turning on apps: %1$d of %2$d.</string>
+    <string name="copy_resetting_turn_on">Enabling apps: %1$d of %2$d.</string>
     <string name="copy_resetting_bring_back">Bringing back apps: %1$d of %2$d.</string>
     <string name="copy_resetting_home">Making %1$s the home screen.</string>
     <string name="copy_resetting_dns">Putting Private DNS back to Automatic.</string>
@@ -570,13 +589,13 @@
         <item quantity="other">%1$d steps didn\'t work. Everything else is back to how it shipped. Nothing was lost.</item>
     </plurals>
     <plurals name="copy_turned_on_all">
-        <item quantity="one">Turned on %1$d app</item>
-        <item quantity="other">Turned on %1$d apps</item>
+        <item quantity="one">Enabled %1$d app</item>
+        <item quantity="other">Enabled %1$d apps</item>
     </plurals>
     <!-- %1$d done of %2$d apps -->
     <plurals name="copy_turned_on_some">
-        <item quantity="one">Turned on %1$d of %2$d app</item>
-        <item quantity="other">Turned on %1$d of %2$d apps</item>
+        <item quantity="one">Enabled %1$d of %2$d app</item>
+        <item quantity="other">Enabled %1$d of %2$d apps</item>
     </plurals>
     <plurals name="copy_brought_back_all">
         <item quantity="one">Brought back %1$d app</item>
@@ -598,25 +617,81 @@
     <string name="copy_try_again">Try again</string>
 
     <!-- Debloat -->
-    <string name="copy_disabling_apps">Turning off apps: %1$d of %2$d. Keep the TV on and connected.</string>
+    <string name="copy_disabling_apps">Disabling apps: %1$d of %2$d. Keep the TV on and connected.</string>
     <string name="copy_disabling">Disabling…</string>
-    <string name="copy_disabling_note">Nothing is deleted. Turn any back on from History.</string>
+    <string name="copy_disabling_note">Nothing is deleted. Enable any again from History.</string>
     <string name="copy_debloat_done">Debloat done</string>
     <string name="copy_debloat_partly">Debloat partly done</string>
     <string name="copy_debloat_result_text">Nothing was deleted; undo any of them from History.</string>
     <plurals name="copy_turned_off_all">
-        <item quantity="one">Turned off %1$d app</item>
-        <item quantity="other">Turned off %1$d apps</item>
+        <item quantity="one">Disabled %1$d app</item>
+        <item quantity="other">Disabled %1$d apps</item>
     </plurals>
     <plurals name="copy_turned_off_some">
-        <item quantity="one">Turned off %1$d of %2$d app</item>
-        <item quantity="other">Turned off %1$d of %2$d apps</item>
+        <item quantity="one">Disabled %1$d of %2$d app</item>
+        <item quantity="other">Disabled %1$d of %2$d apps</item>
     </plurals>
     <string name="copy_still_on">%1$s is still on</string>
 
+    <!-- Debloat and Reset TV while they run: Back is held, and Stop lets the running step finish. -->
+    <string name="copy_debloat_still_running">Debloat is still running. You can leave when it\'s done.</string>
+    <string name="copy_reset_still_running">Reset is still running. You can leave when it\'s done.</string>
+    <!-- %1$s is the name of the app being disabled. -->
+    <string name="copy_stopping_after">Stopping after %1$s…</string>
+    <string name="copy_stopping_after_app">Stopping after this app…</string>
+    <string name="copy_stopping_after_step">Stopping after this step…</string>
+    <string name="copy_debloat_stopped">Debloat stopped</string>
+    <!-- %1$s is the last app it got to. Followed by copy_debloat_result_text. -->
+    <string name="copy_debloat_stopped_text">You stopped it after %1$s.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d app not changed</item>
+        <item quantity="other">%1$d apps not changed</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Disable the other app</item>
+        <item quantity="other">Disable the other %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Reset stopped</string>
+    <!-- Followed by copy_reset_kept_data. -->
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">You stopped it after %1$d app.</item>
+        <item quantity="other">You stopped it after %1$d apps.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">You stopped it partway.</string>
+    <string name="copy_not_done">Not done</string>
+    <!-- The copy_left_* parts list what copy_not_done is, joined with commas. -->
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d app to enable</item>
+        <item quantity="other">%1$d apps to enable</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d to bring back</item>
+        <item quantity="other">%1$d to bring back</item>
+    </plurals>
+    <string name="copy_left_home">the home screen</string>
+    <string name="copy_left_dns">Private DNS</string>
+    <string name="copy_left_animations">animation speed</string>
+    <string name="copy_finish_reset">Finish the reset</string>
+
     <plurals name="copy_to_put_back">
-        <item quantity="one">%1$d change to put back</item>
-        <item quantity="other">%1$d changes to put back</item>
+        <item quantity="one">%1$d change to restore</item>
+        <item quantity="other">%1$d changes to restore</item>
+    </plurals>
+    <!-- Restore everything dialog. The count is every change it tried. -->
+    <plurals name="copy_restored_title">
+        <item quantity="one">Restored %1$d of %2$d change</item>
+        <item quantity="other">Restored %1$d of %2$d changes</item>
+    </plurals>
+    <!-- The count is how many didn't go back; one line for each follows. -->
+    <plurals name="copy_restored_left">
+        <item quantity="one">This one is still as Tellyscope left it:</item>
+        <item quantity="other">These %1$d are still as Tellyscope left them:</item>
+    </plurals>
+    <string name="copy_restored_hint">Undo each one from its row in History, or restore again later.</string>
+    <!-- After the first few lines of a list; the count is the lines not shown. -->
+    <plurals name="copy_and_more">
+        <item quantity="one">and %1$d more</item>
+        <item quantity="other">and %1$d more</item>
     </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="one">%1$d change Tellyscope made is still in place</item>
@@ -624,12 +699,12 @@
     </plurals>
     <string name="copy_put_back_text">Restore everything puts this TV back as it was before Tellyscope\'s first change:</string>
     <plurals name="copy_restore_on">
-        <item quantity="one">Turns %1$d app back on</item>
-        <item quantity="other">Turns %1$d apps back on</item>
+        <item quantity="one">Enables %1$d app again</item>
+        <item quantity="other">Enables %1$d apps again</item>
     </plurals>
     <plurals name="copy_restore_off">
-        <item quantity="one">Turns %1$d app off again</item>
-        <item quantity="other">Turns %1$d apps off again</item>
+        <item quantity="one">Disables %1$d app again</item>
+        <item quantity="other">Disables %1$d apps again</item>
     </plurals>
     <plurals name="copy_restore_remove">
         <item quantity="one">Removes %1$d app Reset TV brought back</item>
@@ -715,7 +790,7 @@
     <string name="copy_still_text">Tellyscope still sees %1$s on %2$s. It may have connected again straight away. Turn it off or unplug it from the network, then try again.</string>
     <string name="copy_still_open_text">Tellyscope still sees %1$s on %2$s. Its access is gone, but the TV keeps a connection open until it ends. Restart the TV to end it.</string>
     <string name="copy_check_again">Check again</string>
-    <string name="copy_restart_tv">Restart the TV</string>
+    <string name="copy_restart_tv">Restart TV</string>
     <string name="copy_restarting_to_check">Restarting the TV…</string>
     <!-- %1$s is an IP address -->
     <string name="copy_connection_from">a connection from %1$s</string>
@@ -749,20 +824,20 @@
 
     <!-- Scan screen: a TV's code row and Add by IP -->
     <string name="vm_still_wants_code">The TV still wants a code. Check the number on screen and try again.</string>
+    <string name="vm_pair_needs_android_12">Pairing with a code needs Android 12 or newer on this phone. A TV that\'s already paired still connects.</string>
     <string name="vm_not_an_ip">That doesn\'t look like an IP address. It should look like four numbers with dots, like the one in your TV\'s network settings.</string>
     <string name="vm_bad_port">The port after the colon should be a number from 1 to 65535, like 5555.</string>
 
     <!-- Snackbar when an action failed and the TV gave no reason -->
     <string name="vm_didnt_work">That didn\'t work.</string>
-    <string name="vm_nothing_to_put_back">Nothing to put back.</string>
+    <string name="vm_nothing_to_put_back">Nothing to restore.</string>
+    <!-- %1$s is the list that failed; %2$s the one still shown. -->
+    <string name="vm_list_not_loaded">Couldn\'t load the %1$s list. Still on %2$s.</string>
+    <!-- %1$s is the list that failed, when the TV had no list before. -->
+    <string name="vm_pick_not_loaded">Couldn\'t load the %1$s list.</string>
     <plurals name="vm_put_back">
-        <item quantity="one">Put back %1$d change.</item>
-        <item quantity="other">Put back %1$d changes.</item>
-    </plurals>
-    <!-- The count is what didn't go back. %4$s names the first of them; %5$s is a lowercase reason. -->
-    <plurals name="vm_put_back_partly">
-        <item quantity="one">Put back %1$d of %2$d. %4$s didn\'t go back: %5$s</item>
-        <item quantity="other">Put back %1$d of %2$d. %3$d didn\'t go back, %4$s among them: %5$s</item>
+        <item quantity="one">Restored %1$d change.</item>
+        <item quantity="other">Restored %1$d changes.</item>
     </plurals>
 
     <!-- A reason shown mid-sentence after an app's name, so lower case -->
@@ -776,6 +851,7 @@
     <string name="vm_report_tv_said">The TV said: %1$s</string>
     <!-- Report a problem: starts the user's details; %1$s app name, %2$s its version (may be empty) -->
     <string name="vm_report_tried_install">Tried to install %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Tried to delete %1$s from the TV</string>
 
     <!-- Snackbar action for another TV that logged out: opens its page -->
     <string name="vm_logged_out_view">View</string>
@@ -793,12 +869,12 @@
     <string name="data_protected_updates">the TV gets its updates through this</string>
     <string name="data_protected_unknown_home">this TV didn\'t say which app is its home screen, so Tellyscope won\'t change anything</string>
     <string name="data_protected_came_with_tv">it came with the TV, so it can only be disabled</string>
-    <string name="data_protected_disabled_by_tv">the TV turned this off itself, so it can\'t be turned back on from here</string>
+    <string name="data_protected_disabled_by_tv">the TV disabled this itself, so it can\'t be enabled from here</string>
 
     <!-- Errors below are lowercase reasons: the app capitalises them when shown on their own. %1$s is an app name. -->
     <string name="data_failed_stop">the TV wouldn\'t stop %1$s</string>
-    <string name="data_failed_disable">the TV wouldn\'t turn %1$s off</string>
-    <string name="data_failed_enable">the TV wouldn\'t turn %1$s on</string>
+    <string name="data_failed_disable">the TV wouldn\'t disable %1$s</string>
+    <string name="data_failed_enable">the TV wouldn\'t enable %1$s</string>
     <string name="data_failed_open">the TV wouldn\'t open %1$s</string>
     <string name="data_failed_uninstall">the TV wouldn\'t uninstall %1$s</string>
     <string name="data_tv_refused">the TV refused</string>
@@ -812,7 +888,7 @@
     <string name="data_fire_service_not_on">the TV didn\'t turn on %1$s\'s accessibility service, so nothing changed</string>
     <string name="data_fire_service_not_off">the TV didn\'t turn off %1$s\'s accessibility service, so nothing changed</string>
     <string name="data_service_not_off">switched back, but %1$s\'s accessibility service is still on. Turn it off in the TV\'s Settings → Accessibility</string>
-    <string name="data_home_not_back">turned %1$s back on, but the TV kept the other home screen. Press Home on the remote to pick %1$s</string>
+    <string name="data_home_not_back">enabled %1$s again, but the TV kept the other home screen. Press Home on the remote to pick %1$s</string>
     <!-- %2$s is why: the old launcher didn't close or the new one didn't open, in the TV's words. -->
     <string name="data_not_shown">%1$s is Home now, but %2$s</string>
     <string name="data_no_home_to_switch_back">there\'s no home screen to switch back to</string>
@@ -831,11 +907,11 @@
     <!-- An app name, then why that app's step failed. -->
     <string name="data_app_reason">%1$s: %2$s</string>
     <!-- %1$s is a lowercase reason. -->
-    <string name="data_reset_undo_service_left">put back every change, but %1$s</string>
+    <string name="data_reset_undo_service_left">restored every change, but %1$s</string>
     <!-- %1$d of %2$d changes; %3$s is the first reason, capitalised. -->
     <plurals name="data_reset_undo_partial">
-        <item quantity="one">put back %1$d of %2$d change. %3$s. Undo again tries the rest</item>
-        <item quantity="other">put back %1$d of %2$d changes. %3$s. Undo again tries the rest</item>
+        <item quantity="one">restored %1$d of %2$d change. %3$s. Undo again tries the rest</item>
+        <item quantity="other">restored %1$d of %2$d changes. %3$s. Undo again tries the rest</item>
     </plurals>
 
     <string name="data_tweak_refused">the TV didn\'t accept the change</string>
@@ -854,7 +930,7 @@
     <!-- History lines, saved with the entry in the language of the moment. -->
     <string name="data_history_service_off">Turned off %1$s\'s accessibility service</string>
     <string name="data_history_service_on">Turned on %1$s\'s accessibility service</string>
-    <string name="data_history_reset_undone">Put back what Reset TV changed</string>
+    <string name="data_history_reset_undone">Restored what Reset TV changed</string>
     <plurals name="data_history_reset">
         <item quantity="one">Reset TV · %1$d change</item>
         <item quantity="other">Reset TV · %1$d changes</item>
@@ -898,15 +974,19 @@
     <!-- %1$s is the name of a debloat list, usually the TV model -->
     <string name="tabs_suggested_none">Nothing from the %1$s list is on this TV</string>
     <plurals name="tabs_suggested_all_off">
-        <item quantity="one">The suggested app is off</item>
-        <item quantity="other">All %1$d suggested apps are off</item>
+        <item quantity="one">The suggested app is disabled</item>
+        <item quantity="other">All %1$d suggested apps are disabled</item>
     </plurals>
     <!-- %1$d apps off out of %2$d suggested; picked by %2$d -->
     <plurals name="tabs_suggested_some_off">
-        <item quantity="one">%1$d of %2$d suggested apps are off</item>
-        <item quantity="other">%1$d of %2$d suggested apps are off</item>
+        <item quantity="one">%1$d of %2$d suggested apps are disabled</item>
+        <item quantity="other">%1$d of %2$d suggested apps are disabled</item>
     </plurals>
     <string name="tabs_suggested_no_list">No list for this TV yet</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d not suggested</item>
+        <item quantity="other">%1$d not suggested</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">Couldn\'t load the device lists</string>
     <string name="tabs_suggested_offline">Connect to the TV to see its suggestions</string>
     <string name="tabs_suggested_loading">Looking up this TV\'s list…</string>
@@ -914,11 +994,12 @@
     <!-- Bold, followed by tabs_came_back_on -->
     <string name="tabs_action_required">Action required:</string>
     <plurals name="tabs_came_back_on">
-        <item quantity="one">%1$d app came back on</item>
-        <item quantity="other">%1$d apps came back on</item>
+        <item quantity="one">%1$d app is enabled again</item>
+        <item quantity="other">%1$d apps are enabled again</item>
     </plurals>
-    <string name="tabs_note_unavailable">Check the phone\'s internet and open this TV again.</string>
-    <string name="tabs_note_no_list">Tap Debloat to pick the apps to turn off by hand.</string>
+    <string name="tabs_note_unavailable">Check the phone\'s internet.</string>
+    <string name="tabs_try_again">Try again</string>
+    <string name="tabs_note_no_list">Tap Debloat to pick the apps to disable by hand.</string>
     <!-- %1$s is a TV maker, like XGIMI -->
     <string name="tabs_note_by_maker">No list for this exact model, so these come from %1$s\'s other TVs.</string>
     <string name="tabs_note_gate">Debloat now opens Apps for one-off changes.</string>
@@ -940,6 +1021,9 @@
     <string name="lists_which_tv">Which TV is this?</string>
     <string name="lists_debloat">Debloat</string>
     <string name="lists_back">Back</string>
+    <string name="lists_refresh">Refresh the list</string>
+    <string name="lists_refresh_failed">Couldn’t refresh the list. Check the phone’s internet.</string>
+    <string name="lists_up_to_date">The list is up to date</string>
     <string name="lists_use_this">Use this list</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">Disable %1$d app</item>
@@ -949,7 +1033,9 @@
     <string name="lists_clear_search">Clear search</string>
     <!-- %1$s is what the user searched for -->
     <string name="lists_no_match">No list for “%1$s”. Pick the closest model.</string>
-    <string name="lists_unavailable">Couldn\'t load that list. Check the phone\'s internet and try again.</string>
+    <string name="lists_failed">Couldn\'t load the list</string>
+    <string name="lists_failed_hint">Check the phone\'s internet and try again.</string>
+    <string name="lists_try_again">Try again</string>
     <string name="lists_loading">Loading the list…</string>
     <string name="lists_this_tv">This TV</string>
     <string name="lists_match_none">No list for this TV or its maker yet</string>
@@ -960,10 +1046,10 @@
     <string name="lists_match_other_android">This model\'s list, tested on %1$s, not this TV\'s Android</string>
     <string name="lists_match_no_android">This model\'s list, with no Android it was tested on</string>
     <!-- lists_intro_* are followed by lists_intro_undo in the same paragraph -->
-    <string name="lists_intro_by_hand">Tick the apps to turn off. Apps the TV needs to run aren\'t shown.</string>
-    <string name="lists_intro_ticked">These apps will be turned off. Untick any you use.</string>
+    <string name="lists_intro_by_hand">Tick the apps to disable. Apps the TV needs to run aren\'t shown.</string>
+    <string name="lists_intro_ticked">These apps will be disabled. Untick any you use.</string>
     <string name="lists_intro_unticked">Nothing is ticked: tick only the apps you know you don\'t use.</string>
-    <string name="lists_intro_undo">Nothing is deleted, and History can turn each one back on.</string>
+    <string name="lists_intro_undo">Nothing is deleted, and History can enable each one again.</string>
     <!-- %1$s is where the user's own list comes from, like a GitHub repository -->
     <string name="lists_custom_source">This list comes from %1$s, not tellyscope-devices.</string>
     <string name="lists_all_needed">Every app left on is one the TV needs.</string>
@@ -979,9 +1065,20 @@
         <item quantity="one">Disable %1$d app?</item>
         <item quantity="other">Disable %1$d apps?</item>
     </plurals>
-    <string name="lists_disable_text">Each one is hidden and stops running. Nothing is deleted; every one shows in History, where you can turn it back on.</string>
+    <string name="lists_disable_text">Each one is disabled and stops running. Nothing is deleted; every one shows in History, where you can enable it again.</string>
     <string name="lists_disable_yes">Yes, disable them</string>
     <string name="lists_cancel">Cancel</string>
+    <string name="lists_dont_suggest_one">Don\'t suggest %1$s again</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">Don\'t suggest the %1$d unticked app again</item>
+        <item quantity="other">Don\'t suggest the %1$d unticked apps again</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d of these may break something on the TV.</item>
+        <item quantity="other">%1$d of these may break something on the TV.</item>
+    </plurals>
+    <string name="lists_not_suggested">Not suggested (%1$d)</string>
+    <string name="lists_suggest_again">Suggest again</string>
     <string name="lists_about_title">About Tellyscope</string>
     <string name="lists_about_version">Version %1$s</string>
     <string name="lists_about_website">Website</string>
@@ -998,7 +1095,7 @@
     <string name="advanced_loading">Loading stats…</string>
     <string name="advanced_network">Network</string>
     <string name="advanced_cpu">CPU</string>
-    <string name="advanced_ram">RAM</string>
+    <string name="advanced_ram">Memory</string>
     <!-- How long the TV has been on, like "2d 4h" -->
     <string name="advanced_on_for">On for</string>
     <string name="advanced_screen">Screen</string>
@@ -1099,6 +1196,12 @@
     <string name="shell_full_screen">%1$s needs a full-screen terminal. It isn\'t supported here.</string>
     <string name="shell_dropped_prefix">(dropped \"adb shell\")</string>
     <string name="shell_lost">Lost the TV before the command finished. It may have run only partly.</string>
+    <string name="shell_failed">Shell error: %1$s. The command may have run only partly. The next one starts a new shell.</string>
+    <string name="shell_copy_all">Copy all</string>
+    <plurals name="shell_copied">
+        <item quantity="one">Copied %1$d line</item>
+        <item quantity="other">Copied %1$d lines</item>
+    </plurals>
 
     <!-- ReportScreen.kt: Report a problem, Help add this TV -->
     <string name="report_title_new_tv">Help add this TV</string>
@@ -1144,26 +1247,33 @@
     <string name="report_choose_one">Choose one</string>
     <string name="report_removed_first">Removed first: serial numbers, IP addresses, ADB keys and fingerprints.</string>
     <string name="report_cancel">Cancel</string>
+    <string name="report_discard_title">Discard this report?</string>
+    <string name="report_discard_text">What you picked and typed is lost.</string>
+    <string name="report_discard">Discard</string>
+    <string name="report_keep_editing">Keep editing</string>
+    <string name="report_no_browser">No browser opened, so nothing was posted. Copy the link to post it from another device.</string>
+    <string name="report_copy_link">Copy link</string>
 
     <!-- DeviceScreen.kt -->
     <!-- %1$s is how long ago, like "5 minutes ago", or tabs_last_visit -->
     <string name="device_as_of">As of %1$s</string>
+    <!-- %1$s is how long ago, like "2 hours ago"; over the TV's saved stats while it's away -->
+    <string name="device_last_seen">Last seen %1$s</string>
+    <!-- The same, while the TV is online and the saved copy on screen is being replaced by fresh reads -->
+    <string name="device_last_seen_updating">Last seen %1$s · updating…</string>
     <string name="device_internal_storage">Internal storage</string>
     <!-- %1$s is like "12.3 of 32 GB" -->
     <string name="device_gb_used">%1$s used</string>
     <string name="device_cpu">CPU</string>
-    <string name="device_ram">RAM</string>
+    <string name="device_ram">Memory</string>
     <string name="device_network">Network</string>
     <string name="device_percent">%1$d%%</string>
     <!-- %1$s is an app name -->
     <string name="device_disable_title">Disable %1$s?</string>
     <string name="device_cancel">Cancel</string>
-    <plurals name="device_restore_title">
-        <item quantity="one">Put back %1$d change?</item>
-        <item quantity="other">Put back %1$d changes?</item>
-    </plurals>
+    <string name="device_restore_title">Restore everything?</string>
     <string name="device_restore_text">This TV goes back to how it was before Tellyscope\'s first change:</string>
-    <string name="device_restore_button">Put back</string>
+    <string name="device_restore_button">Restore</string>
     <string name="device_rename_title">Rename this TV</string>
     <string name="device_rename_text">Only this phone sees the name. Nothing on the TV changes.</string>
     <string name="device_save">Save</string>
@@ -1222,7 +1332,14 @@
     <string name="guide_unlock_done">Developer options unlocked</string>
     <string name="guide_find_title">Find your TV</string>
     <string name="guide_done_next">Done, next</string>
-    <string name="guide_back">Back</string>
+    <!-- Screen-reader names for the arrow on a finished step: opens its instructions again -->
+    <string name="guide_show_step">Show this step</string>
+    <string name="guide_hide_step">Hide this step</string>
+    <!-- On the last step while the user is still on an earlier one: the scan found a TV -->
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV found, skip ahead</item>
+        <item quantity="other">%1$d TVs found, skip ahead</item>
+    </plurals>
     <string name="guide_done">Done</string>
     <string name="guide_tip_same_wifi">Keep the phone and the TV on the same Wi-Fi. Guest networks often keep devices apart.</string>
     <string name="guide_tip_debugging_off">Debugging switched itself off? Some TVs reset it after a restart. Turn it back on and this screen finds the TV again.</string>
@@ -1267,6 +1384,22 @@
     <string name="remote_touchpad">Touchpad</string>
     <string name="remote_touchpad_swipe">Swipe to move</string>
     <string name="remote_touchpad_tap">Tap for OK</string>
+    <string name="remote_pointer">Pointer</string>
+    <string name="remote_pointer_drag">Drag to move the pointer</string>
+    <string name="remote_pointer_tap">Tap to click · Two fingers to scroll</string>
+    <string name="remote_pointer_refused">This TV doesn\'t allow it</string>
+    <string name="remote_controller">Game controller</string>
+    <string name="remote_mode_dpad_line">Arrows and OK, like your TV\'s remote</string>
+    <string name="remote_mode_touchpad_line">Swipe to move, tap for OK</string>
+    <string name="remote_mode_pointer_line">Move a mouse pointer on the TV</string>
+    <string name="remote_mode_controller_line">Play games with the phone sideways</string>
+    <string name="remote_mode_tip">Switch how you control your TV</string>
+    <string name="remote_mode_button">Remote mode: %1$s</string>
+    <string name="remote_controller_close">Back to the Remote</string>
+    <string name="remote_controller_stick">Stick</string>
+    <string name="remote_controller_buttons_only">This TV takes the buttons only. Games that look for a connected controller may not react.</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">Back</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">Menu</string>
@@ -1278,12 +1411,12 @@
     <string name="remote_type_label">Type on the TV</string>
     <string name="remote_send">Send to the TV</string>
     <!-- Confirms restarting the TV -->
-    <string name="remote_restart">Restart</string>
+    <string name="remote_restart">Restart TV</string>
     <string name="remote_cancel">Cancel</string>
     <string name="remote_restarting">Restarting</string>
     <string name="remote_hide">Hide</string>
     <string name="remote_retry">Retry</string>
-    <string name="remote_close">Close</string>
+    <string name="remote_stop_waiting">Stop waiting</string>
     <!-- TalkBack click label on the header line while a TV restarts -->
     <string name="remote_show_restart">Show the restart</string>
     <!-- TalkBack actions that reorder a remote button -->
@@ -1321,7 +1454,7 @@
     <string name="whats_new_update">Update</string>
     <string name="whats_new_not_installed">Not installed</string>
     <string name="whats_new_newer_failed">Couldn’t load newer versions.</string>
-    <string name="settings_advanced">Advanced</string>
+    <string name="settings_advanced">Debloat lists</string>
     <!-- Heading: how to change where the debloat lists come from -->
     <string name="settings_change">Change</string>
     <string name="settings_change_text">Paste the HTTPS raw folder that holds index.json, e.g. raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
@@ -1332,6 +1465,7 @@
     <string name="settings_open_cleanyourtv">Open cleanyourtv on GitHub</string>
     <string name="settings_source_title">Where the lists come from</string>
     <string name="settings_source_text">To use your own lists, fork tellyscope-devices, edit it, and paste the address of the folder that holds index.json, like https://raw.githubusercontent.com/you/tellyscope-devices/main/. Protected apps stay protected whatever a list says.</string>
+    <string name="settings_checking">Checking…</string>
     <string name="settings_use_lists">Use these lists</string>
     <string name="settings_reset">Reset to default</string>
     <string name="settings_cancel">Cancel</string>
@@ -1393,8 +1527,16 @@
     <string name="transfers_send_file">Send file</string>
     <!-- Menu item: send a file to this folder on the TV; %1$s is the folder's name -->
     <string name="transfers_to_folder">To %1$s</string>
-    <string name="transfers_tap_to_save">Tap a file to save a copy on your phone.</string>
-    <string name="transfers_save">Save</string>
+    <string name="transfers_tap_to_save">Tap a file to open it on the TV, save it or delete it.</string>
+    <string name="transfers_save">Save to your phone</string>
+    <string name="transfers_delete">Delete on TV</string>
+    <!-- %1$s is the file's name -->
+    <string name="transfers_delete_title">Delete %1$s from the TV?</string>
+    <!-- %1$s is a TV folder (copy_folder_*) -->
+    <string name="transfers_delete_text">It goes from the TV\'s %1$s folder for good.</string>
+    <string name="transfers_delete_button">Delete</string>
+    <string name="transfers_delete_failed">Couldn\'t delete %1$s</string>
+    <string name="transfers_delete_still_there">The file is still on the TV.</string>
     <string name="transfers_reading">Reading the app</string>
     <!-- %1$s is the app's name -->
     <string name="transfers_install_failed">Couldn\'t install %1$s</string>
@@ -1482,8 +1624,14 @@
 
     <!-- History -->
     <string name="history_empty_title">Nothing changed yet</string>
-    <string name="history_empty_text">Anything you stop, disable or turn on shows up here, with a way to undo it.</string>
-    <string name="history_restoring">Putting back…</string>
+    <string name="history_empty_text">Anything you stop, disable or enable shows up here, with a way to undo it.</string>
+    <string name="history_restoring">Restoring…</string>
+    <string name="history_ok">OK</string>
+    <string name="history_no_undo_caches">Nothing to undo: apps fill their caches again</string>
+    <string name="history_no_undo_uninstall">Can\'t undo: install it again from the Play Store</string>
+    <string name="history_no_undo_uninstall_fire">Can\'t undo: install it again from the Appstore</string>
+    <string name="history_no_undo_later">Can\'t undo: Home changed after this</string>
+    <string name="history_no_undo">Can\'t undo this one</string>
     <!-- Button; the number is how many changes Restore puts back. -->
     <string name="history_restore_all">Restore everything (%1$d)</string>
     <string name="history_undone">Undone</string>
@@ -1491,7 +1639,7 @@
     <!-- Debloat run -->
     <string name="debloat_title">Debloat</string>
     <!-- Screen-reader label for an app the TV refused to turn off. -->
-    <string name="debloat_failed">Didn\'t turn off</string>
+    <string name="debloat_failed">Didn\'t disable</string>
 
     <!-- Logged out -->
     <string name="logged_out_back_to_tvs">Back to TVs</string>
@@ -1520,7 +1668,7 @@
     <!-- Welcome -->
     <string name="welcome_skip">Skip</string>
     <string name="welcome_title">Welcome to Tellyscope</string>
-    <string name="welcome_text">See what\'s running on your Android TV, and turn off the apps you don\'t need. All from your phone, over Wi-Fi.</string>
+    <string name="welcome_text">See what\'s running on your Android TV, and disable the apps you don\'t need. All from your phone, over Wi-Fi.</string>
     <string name="welcome_step_1">Turn on debugging on your TV. The next screen shows how for your brand.</string>
     <string name="welcome_step_2">Tellyscope finds the TV on your Wi-Fi.</string>
     <string name="welcome_step_3">Type the code the TV shows, or choose Allow when it asks.</string>

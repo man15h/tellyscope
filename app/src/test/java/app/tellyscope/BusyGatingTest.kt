@@ -68,7 +68,7 @@ class BusyGatingTest {
     @Test fun restoreKeepsItsOwnLabel() {
         val history = listOf(HistoryEntry(1, "tv", 0L, Action.Disable, pkg, "Example", Action.Enable, null))
         compose.setContent { HistoryList(history, 0L, onUndo = {}, restore = RestoreSummary(turnOn = 1), restoring = true) }
-        compose.onNodeWithText("Putting back…").assertIsNotEnabled()
+        compose.onNodeWithText("Restoring…").assertIsNotEnabled()
         compose.onNodeWithText(Copy.undo(Action.Enable).text()).assertIsNotEnabled()
     }
 
@@ -88,7 +88,7 @@ class BusyGatingTest {
 
     @Test fun debloatWaitsWhileTheTvIsBusy() {
         // A Disable started on the Apps tab is still running when Debloat opens.
-        compose.setContent { DebloatScreen(lists, {}, {}, {}, busy = true) }
+        compose.setContent { DebloatScreen(lists, {}, { _, _ -> }, {}, busy = true) }
         compose.onNodeWithText("Disable 1 app").assertIsNotEnabled()
     }
 
@@ -99,7 +99,7 @@ class BusyGatingTest {
     }
 
     @Test fun idleDebloatStillWorks() {
-        compose.setContent { DebloatScreen(lists, {}, {}, {}) }
+        compose.setContent { DebloatScreen(lists, {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 1 app").assertIsEnabled()
     }
 }

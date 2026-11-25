@@ -10,8 +10,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.TimeSource
 
 /**
  * One device's connection lifecycle: connect, stream stats while online, reconnect on its own
@@ -37,6 +39,11 @@ class DeviceLink(
     private val open: suspend (String, Int) -> ConnectResult = { h, p -> Connector.connect(h, p) },
     knownGood: Boolean = false,
     private val findPort: suspend () -> Int? = { null },
+    /** Back from the background, how often and for how long a stale link reconnects before it shows offline. */
+    private val quietEvery: Duration = 1.seconds,
+    private val quietFor: Duration = 10.seconds,
+    /** Times the quiet window; tests pass the test scheduler's clock. */
+    private val clock: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ) {
     @Volatile var port: Int = port
         private set
@@ -95,7 +102,7 @@ class DeviceLink(
 
     /**
      * The phone left the network, so an online TV is out of reach now, though a read on the old
-     * connection can take its socket timeout to fail. Offline at once; the loop retries as usual.
+     * connection waits for the stats ping to fail. Offline at once; the loop retries as usual.
      */
     fun lanLost() {
         if (_state.value != DeviceState.ONLINE) return
@@ -121,9 +128,14 @@ class DeviceLink(
         var retry = false
         // Refusals in a row from a TV that let this phone in before; see the class doc.
         var refused = 0
+        // One quiet window per return from the background, and when it ends; see the Online branch.
+        var quiet = true
+        var quietUntil: ComparableTimeMark? = null
+        val inWindow = { quietUntil?.hasNotPassedNow() == true && gate.checking.value }
         while (true) {
             gate.awaitResumed()
-            if (retry) findPort()?.let { port = it }
+            // In the window the port was right seconds ago; a TV that really moved is found after offline.
+            if (retry && !inWindow()) findPort()?.let { port = it }
             retry = true
             val r = open(host, port)
             refused = if (r is ConnectResult.NotAllowed && allowedBefore) refused + 1 else 0
@@ -139,11 +151,33 @@ class DeviceLink(
                     _state.value = _state.value.on(DeviceEvent.NeedsPairing)
                     return
                 }
-                is ConnectResult.Unreachable -> _state.value = _state.value.on(DeviceEvent.Unreachable)
+                is ConnectResult.Unreachable -> {
+                    // Android gives the network back a moment after the app is in front: try again soon, still online.
+                    if (inWindow()) {
+                        delay(quietEvery)
+                        continue
+                    }
+                    _state.value = _state.value.on(DeviceEvent.Unreachable)
+                }
                 is ConnectResult.Online -> {
                     allowedBefore = true
                     _loggedOutAt.value = null
                     online(r.session)
+                    // Dropped before its first reading since the app came back: the connection went stale
+                    // in the background. A new one at once, still online, then every [quietEvery] for
+                    // [quietFor]; offline only if none of them gets a read through in that time.
+                    if (!gate.checking.value) {
+                        quiet = true
+                        quietUntil = null
+                    } else if (quiet) {
+                        quiet = false
+                        quietUntil = clock.markNow() + quietFor
+                        retry = false
+                        continue
+                    } else if (inWindow()) {
+                        delay(quietEvery)
+                        continue
+                    }
                     _state.value = _state.value.on(DeviceEvent.Lost)
                 }
             }
@@ -159,6 +193,7 @@ class DeviceLink(
             monitorFor(s, gate).stats().collect {
                 _stats.value = it
                 lastSeenMillis = System.currentTimeMillis()
+                gate.checking.value = false
             }
         } catch (e: CancellationException) {
             throw e

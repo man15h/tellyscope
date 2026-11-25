@@ -13,7 +13,7 @@
     <string name="copy_confirm_home">是，切换主屏幕</string>
     <string name="copy_confirm_home_back">是，切换回去</string>
     <string name="copy_explain_stop">停止 %1$s（%2$s），直到你再次打开它。</string>
-    <string name="copy_explain_disable">隐藏 %1$s（%2$s）并停止其运行。不会删除任何内容，你可以在这里重新启用。</string>
+    <string name="copy_explain_disable">停用 %1$s（%2$s）并停止其运行。不会删除任何内容，你可以在这里重新启用。</string>
     <string name="copy_explain_enable">重新启用 %1$s（%2$s）。</string>
     <string name="copy_explain_open">在电视上打开 %1$s（%2$s）。</string>
     <string name="copy_explain_uninstall">移除 %1$s（%2$s）及其保存的所有内容。此操作无法撤消；如需恢复，请重新安装。</string>
@@ -284,6 +284,7 @@
     <string name="copy_send_failed">无法发送 %1$s。请检查电视是否仍连接并有足够空间。</string>
     <string name="copy_send_failed_off_wifi">无法发送 %1$s。这部手机没有连接 Wi-Fi。</string>
     <string name="copy_save_failed">无法保存 %1$s。请检查电视是否仍连接，以及手机是否有足够空间。</string>
+    <string name="copy_deleted">已从电视删除 %1$s</string>
     <string name="copy_cancelled_send">已取消。电视上没有留下任何内容。</string>
     <string name="copy_cancelled_save">已取消。没有保存任何内容。</string>
     <string name="copy_cant_read">无法读取手机上的该文件。</string>
@@ -334,6 +335,21 @@
     <string name="copy_more">更多选项</string>
     <string name="copy_buttons_hint">最多选择 %1$d 个。拖动可调整顺序。如需选择其他项，请先取消勾选一个。</string>
     <string name="copy_not_on_tv">此电视上没有 %1$s。请在电视上的 Play 商店中安装。</string>
+    <string name="copy_not_on_tv_fire">此电视上没有 %1$s。请在电视上的 Appstore 中安装。</string>
+    <string name="copy_player_no_video">电视上没有视频播放器</string>
+    <string name="copy_player_no_audio">电视上没有音频播放器</string>
+    <string name="copy_player_nothing_text">电视上没有应用能打开 %1$s。%2$s 可用遥控器播放，安装后 Tellyscope 会用它打开该文件。</string>
+    <string name="copy_player_about">VideoLAN · 免费开源</string>
+    <string name="copy_player_install_title">在电视上安装 %1$s</string>
+    <string name="copy_player_store_open">电视上已打开 Play 商店中 %1$s 的页面。请用遥控器安装。</string>
+    <string name="copy_player_waiting">正在等待 %1$s… 然后打开 %2$s</string>
+    <string name="copy_player_open_appstore">打开 Appstore</string>
+    <string name="copy_player_downloading">正在下载 %1$s</string>
+    <string name="copy_player_progress">%1$s / %2$s · 来自 %3$s</string>
+    <string name="copy_player_opened">已在电视上打开 %1$s</string>
+    <string name="copy_player_opened_in">已在电视上用 %2$s 打开 %1$s</string>
+    <string name="copy_player_cant_open">无法在电视上打开 %1$s</string>
+    <string name="copy_player_nothing_opens">电视上没有应用能打开 %1$s</string>
     <string name="copy_cant_open">电视无法打开 %1$s。如果它已停用，请在“应用”中启用。</string>
     <string name="copy_left_dock_one">%1$s 已被卸载，因此其按钮已从遥控器中移除。</string>
     <plurals name="copy_left_dock">
@@ -478,8 +494,47 @@
         <item quantity="other">已停用 %1$d 个应用（共 %2$d 个）</item>
     </plurals>
     <string name="copy_still_on">%1$s 仍处于启用状态</string>
+    <string name="copy_debloat_still_running">精简仍在进行。完成后才能离开。</string>
+    <string name="copy_reset_still_running">重置仍在进行。完成后才能离开。</string>
+    <string name="copy_stopping_after">将在 %1$s 之后停止…</string>
+    <string name="copy_stopping_after_app">将在这个应用之后停止…</string>
+    <string name="copy_stopping_after_step">将在这一步之后停止…</string>
+    <string name="copy_debloat_stopped">精简已停止</string>
+    <string name="copy_debloat_stopped_text">你在 %1$s 之后停止了它。</string>
+    <plurals name="copy_not_changed">
+        <item quantity="other">%1$d 个应用未更改</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="other">停用其余 %1$d 个</item>
+    </plurals>
+    <string name="copy_reset_stopped">重置已停止</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="other">你在 %1$d 个应用之后停止了它。</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">你在中途停止了它。</string>
+    <string name="copy_not_done">未完成</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="other">%1$d 个应用待启用</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="other">%1$d 个待恢复</item>
+    </plurals>
+    <string name="copy_left_home">主屏幕</string>
+    <string name="copy_left_dns">私人 DNS</string>
+    <string name="copy_left_animations">动画速度</string>
+    <string name="copy_finish_reset">完成重置</string>
     <plurals name="copy_to_put_back">
         <item quantity="other">%1$d 处更改待恢复</item>
+    </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="other">已恢复 %1$d 处更改（共 %2$d 处）</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="other">以下 %1$d 项仍保持 Tellyscope 更改后的状态：</item>
+    </plurals>
+    <string name="copy_restored_hint">可在“历史记录”中逐行撤消，或稍后再次恢复。</string>
+    <plurals name="copy_and_more">
+        <item quantity="other">以及另外 %1$d 项</item>
     </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="other">Tellyscope 做出的 %1$d 处更改仍然有效</item>
@@ -586,21 +641,22 @@
     <string name="copy_peripheral_free">可用 %1$s</string>
     <string name="copy_peripheral_bluetooth">蓝牙 · %1$s</string>
     <string name="vm_still_wants_code">电视仍需要代码。请核对屏幕上的数字，然后重试。</string>
+    <string name="vm_pair_needs_android_12">使用代码配对需要此手机运行 Android 12 或更高版本。已配对的电视仍可连接。</string>
     <string name="vm_not_an_ip">这看起来不像 IP 地址。它应该是用点分隔的四组数字，就像电视网络设置中显示的那样。</string>
     <string name="vm_bad_port">冒号后的端口应为 1 到 65535 之间的数字，例如 5555。</string>
     <string name="vm_didnt_work">操作未成功。</string>
     <string name="vm_nothing_to_put_back">没有需要恢复的内容。</string>
+    <string name="vm_list_not_loaded">无法加载 %1$s 的列表。仍使用 %2$s。</string>
+    <string name="vm_pick_not_loaded">无法加载 %1$s 的列表。</string>
     <plurals name="vm_put_back">
         <item quantity="other">已恢复 %1$d 处更改。</item>
-    </plurals>
-    <plurals name="vm_put_back_partly">
-        <item quantity="other">已恢复 %2$d 处更改中的 %1$d 处。%3$d 处未能恢复，其中 %4$s：%5$s</item>
     </plurals>
     <string name="vm_tv_refused">电视拒绝了</string>
     <string name="vm_tv_didnt_answer">电视没有响应。</string>
     <string name="vm_tv_didnt_answer_reason">电视没有响应</string>
     <string name="vm_report_tv_said">电视提示：%1$s</string>
     <string name="vm_report_tried_install">尝试安装 %1$s %2$s</string>
+    <string name="vm_report_tried_delete">尝试从电视删除 %1$s</string>
     <string name="vm_logged_out_view">查看</string>
     <string name="data_protected_home_screen">这是你的主屏幕</string>
     <string name="data_protected_system">电视运行需要它</string>
@@ -692,6 +748,9 @@
         <item quantity="other">%1$d 个推荐应用已停用（共 %2$d 个）</item>
     </plurals>
     <string name="tabs_suggested_no_list">暂无此电视的列表</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="other">%1$d 个不再建议</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">无法加载设备列表</string>
     <string name="tabs_suggested_offline">连接到电视即可查看建议</string>
     <string name="tabs_suggested_loading">正在查找此电视的列表…</string>
@@ -700,7 +759,8 @@
     <plurals name="tabs_came_back_on">
         <item quantity="other">%1$d 个应用已重新启用</item>
     </plurals>
-    <string name="tabs_note_unavailable">请检查手机的网络连接，然后重新打开此电视。</string>
+    <string name="tabs_note_unavailable">请检查手机的网络连接。</string>
+    <string name="tabs_try_again">重试</string>
     <string name="tabs_note_no_list">点按“精简”即可手动选择要停用的应用。</string>
     <string name="tabs_note_by_maker">没有这个具体型号的列表，因此这些来自 %1$s 的其他电视。</string>
     <string name="tabs_note_gate">“精简”现在会打开“应用”，供你逐个更改。</string>
@@ -714,6 +774,9 @@
     <string name="lists_which_tv">这是哪台电视？</string>
     <string name="lists_debloat">精简</string>
     <string name="lists_back">返回</string>
+    <string name="lists_refresh">刷新列表</string>
+    <string name="lists_refresh_failed">无法刷新列表。请检查手机的网络连接。</string>
+    <string name="lists_up_to_date">列表已是最新</string>
     <string name="lists_use_this">使用此列表</string>
     <plurals name="lists_disable_apps">
         <item quantity="other">停用 %1$d 个应用</item>
@@ -721,7 +784,9 @@
     <string name="lists_brand_or_model">品牌或型号</string>
     <string name="lists_clear_search">清除搜索内容</string>
     <string name="lists_no_match">没有“%1$s”的列表。请选择最接近的型号。</string>
-    <string name="lists_unavailable">无法加载该列表。请检查手机的网络连接，然后重试。</string>
+    <string name="lists_failed">无法加载列表</string>
+    <string name="lists_failed_hint">请检查手机的网络连接，然后重试。</string>
+    <string name="lists_try_again">重试</string>
     <string name="lists_loading">正在加载列表…</string>
     <string name="lists_this_tv">此电视</string>
     <string name="lists_match_none">暂无此电视或其制造商的列表</string>
@@ -745,9 +810,18 @@
     <plurals name="lists_disable_apps_confirm">
         <item quantity="other">要停用 %1$d 个应用吗？</item>
     </plurals>
-    <string name="lists_disable_text">每个应用都会被隐藏并停止运行。不会删除任何内容；每一项都会显示在“历史记录”中，你可以在那里重新启用。</string>
+    <string name="lists_disable_text">每个应用都会被停用并停止运行。不会删除任何内容；每一项都会显示在“历史记录”中，你可以在那里重新启用。</string>
     <string name="lists_disable_yes">是，停用</string>
     <string name="lists_cancel">取消</string>
+    <string name="lists_dont_suggest_one">不再建议停用 %1$s</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="other">不再建议停用这 %1$d 个未勾选的应用</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="other">其中 %1$d 个可能会让电视的某些功能失效。</item>
+    </plurals>
+    <string name="lists_not_suggested">不再建议（%1$d）</string>
+    <string name="lists_suggest_again">重新建议</string>
     <string name="lists_about_title">关于 Tellyscope</string>
     <string name="lists_about_version">版本 %1$s</string>
     <string name="lists_about_website">网站</string>
@@ -761,7 +835,7 @@
     <string name="advanced_loading">正在加载统计信息…</string>
     <string name="advanced_network">网络</string>
     <string name="advanced_cpu">CPU</string>
-    <string name="advanced_ram">RAM</string>
+    <string name="advanced_ram">内存</string>
     <string name="advanced_on_for">已开机</string>
     <string name="advanced_screen">屏幕</string>
     <string name="advanced_screen_on">开启</string>
@@ -844,6 +918,11 @@
     <string name="shell_full_screen">%1$s 需要全屏终端，这里不支持。</string>
     <string name="shell_dropped_prefix">（已去掉“adb shell”）</string>
     <string name="shell_lost">命令完成前与电视断开连接。它可能只运行了一部分。</string>
+    <string name="shell_failed">Shell 出错：%1$s。命令可能只运行了一部分。下一条命令会打开新的 shell。</string>
+    <string name="shell_copy_all">全部复制</string>
+    <plurals name="shell_copied">
+        <item quantity="other">已复制 %1$d 行</item>
+    </plurals>
     <string name="report_title_new_tv">帮忙添加这台电视</string>
     <string name="report_title_problem">报告问题</string>
     <string name="report_subtitle_new_tv">在 GitHub 上打开 cleanyourtv 的“My TV”表单</string>
@@ -883,18 +962,24 @@
     <string name="report_choose_one">选择一项</string>
     <string name="report_removed_first">已预先移除：序列号、IP 地址、ADB 密钥和指纹。</string>
     <string name="report_cancel">取消</string>
+    <string name="report_discard_title">要舍弃此报告吗？</string>
+    <string name="report_discard_text">你选择和输入的内容将会丢失。</string>
+    <string name="report_discard">舍弃</string>
+    <string name="report_keep_editing">继续编辑</string>
+    <string name="report_no_browser">未打开浏览器，因此未发布任何内容。复制链接后可在其他设备上发布。</string>
+    <string name="report_copy_link">复制链接</string>
     <string name="device_as_of">截至 %1$s</string>
+    <string name="device_last_seen">上次出现：%1$s</string>
+    <string name="device_last_seen_updating">上次出现：%1$s · 正在更新…</string>
     <string name="device_internal_storage">内部存储空间</string>
     <string name="device_gb_used">已使用 %1$s</string>
     <string name="device_cpu">CPU</string>
-    <string name="device_ram">RAM</string>
+    <string name="device_ram">内存</string>
     <string name="device_network">网络</string>
     <string name="device_percent">%1$d%%</string>
     <string name="device_disable_title">要停用 %1$s 吗？</string>
     <string name="device_cancel">取消</string>
-    <plurals name="device_restore_title">
-        <item quantity="other">要恢复 %1$d 处更改吗？</item>
-    </plurals>
+    <string name="device_restore_title">要全部恢复吗？</string>
     <string name="device_restore_text">此电视将恢复到 Tellyscope 首次更改之前的状态：</string>
     <string name="device_restore_button">恢复</string>
     <string name="device_rename_title">重命名此电视</string>
@@ -942,7 +1027,11 @@
     <string name="guide_unlock_done">开发者选项已解锁</string>
     <string name="guide_find_title">查找你的电视</string>
     <string name="guide_done_next">完成，下一步</string>
-    <string name="guide_back">返回</string>
+    <string name="guide_show_step">显示此步骤</string>
+    <string name="guide_hide_step">隐藏此步骤</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="other">找到 %1$d 台电视，跳到下一步</item>
+    </plurals>
     <string name="guide_done">完成</string>
     <string name="guide_tip_same_wifi">请让手机和电视连接同一 Wi-Fi。访客网络通常会隔离设备。</string>
     <string name="guide_tip_debugging_off">调试自己关闭了？部分电视重启后会将其重置。重新开启后，此界面会再次找到电视。</string>
@@ -973,6 +1062,22 @@
     <string name="remote_touchpad">触控板</string>
     <string name="remote_touchpad_swipe">滑动以移动</string>
     <string name="remote_touchpad_tap">轻点即确定</string>
+    <string name="remote_pointer">指针</string>
+    <string name="remote_pointer_drag">拖动以移动指针</string>
+    <string name="remote_pointer_tap">轻点即点击 · 双指滚动</string>
+    <string name="remote_pointer_refused">这台电视不允许</string>
+    <string name="remote_controller">游戏手柄</string>
+    <string name="remote_mode_dpad_line">方向键和确定，和电视遥控器一样</string>
+    <string name="remote_mode_touchpad_line">滑动移动，轻点确定</string>
+    <string name="remote_mode_pointer_line">在电视上移动鼠标指针</string>
+    <string name="remote_mode_controller_line">横握手机玩游戏</string>
+    <string name="remote_mode_tip">切换控制电视的方式</string>
+    <string name="remote_mode_button">遥控模式：%1$s</string>
+    <string name="remote_controller_close">返回遥控器</string>
+    <string name="remote_controller_stick">摇杆</string>
+    <string name="remote_controller_buttons_only">这台电视只接收按键。寻找已连接手柄的游戏可能没有反应。</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">返回</string>
     <string name="remote_home">主页</string>
     <string name="remote_menu">菜单</string>
@@ -983,12 +1088,12 @@
     <string name="remote_ok">确定</string>
     <string name="remote_type_label">在电视上输入</string>
     <string name="remote_send">发送到电视</string>
-    <string name="remote_restart">重启</string>
+    <string name="remote_restart">重启电视</string>
     <string name="remote_cancel">取消</string>
     <string name="remote_restarting">正在重启</string>
     <string name="remote_hide">隐藏</string>
     <string name="remote_retry">重试</string>
-    <string name="remote_close">关闭</string>
+    <string name="remote_stop_waiting">停止等待</string>
     <string name="remote_show_restart">显示重启状态</string>
     <string name="remote_move_up">上移</string>
     <string name="remote_move_down">下移</string>
@@ -1019,7 +1124,7 @@
     <string name="whats_new_update">更新</string>
     <string name="whats_new_not_installed">未安装</string>
     <string name="whats_new_newer_failed">无法加载更新的版本。</string>
-    <string name="settings_advanced">高级</string>
+    <string name="settings_advanced">精简列表</string>
     <string name="settings_change">更改</string>
     <string name="settings_change_text">粘贴包含 index.json 的 HTTPS 原始文件夹地址，例如 raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
     <string name="settings_own_lists_guide">如何使用自己的列表</string>
@@ -1028,6 +1133,7 @@
     <string name="settings_open_cleanyourtv">在 GitHub 上打开 cleanyourtv</string>
     <string name="settings_source_title">列表的来源</string>
     <string name="settings_source_text">如需使用自己的列表，请 fork tellyscope-devices 并进行编辑，然后粘贴包含 index.json 的文件夹地址，例如 https://raw.githubusercontent.com/you/tellyscope-devices/main/。无论列表内容如何，受保护的应用始终受到保护。</string>
+    <string name="settings_checking">正在检查…</string>
     <string name="settings_use_lists">使用这些列表</string>
     <string name="settings_reset">恢复默认设置</string>
     <string name="settings_cancel">取消</string>
@@ -1076,8 +1182,14 @@
     <string name="transfers_debloat">精简</string>
     <string name="transfers_send_file">发送文件</string>
     <string name="transfers_to_folder">发送到 %1$s</string>
-    <string name="transfers_tap_to_save">点按文件即可在手机上保存副本。</string>
-    <string name="transfers_save">保存</string>
+    <string name="transfers_tap_to_save">点按文件即可在电视上打开、保存或删除。</string>
+    <string name="transfers_save">保存到手机</string>
+    <string name="transfers_delete">从电视删除</string>
+    <string name="transfers_delete_title">要从电视删除 %1$s 吗？</string>
+    <string name="transfers_delete_text">它将从电视的 %1$s 文件夹中永久删除。</string>
+    <string name="transfers_delete_button">删除</string>
+    <string name="transfers_delete_failed">无法删除 %1$s</string>
+    <string name="transfers_delete_still_there">文件仍在电视上。</string>
     <string name="transfers_reading">正在读取应用</string>
     <string name="transfers_install_failed">无法安装 %1$s</string>
     <string name="transfers_cant_install">无法安装此文件</string>
@@ -1140,6 +1252,12 @@
     <string name="history_empty_title">尚未进行任何更改</string>
     <string name="history_empty_text">你停止、停用或启用的任何应用都会显示在这里，并可撤消。</string>
     <string name="history_restoring">正在恢复…</string>
+    <string name="history_ok">确定</string>
+    <string name="history_no_undo_caches">无需撤消：应用会重新生成缓存</string>
+    <string name="history_no_undo_uninstall">无法撤消：请从 Play 商店重新安装</string>
+    <string name="history_no_undo_uninstall_fire">无法撤消：请从 Appstore 重新安装</string>
+    <string name="history_no_undo_later">无法撤消：此后主页已更改</string>
+    <string name="history_no_undo">此项无法撤消</string>
     <string name="history_restore_all">全部恢复（%1$d）</string>
     <string name="history_undone">已撤消</string>
     <string name="debloat_title">精简</string>

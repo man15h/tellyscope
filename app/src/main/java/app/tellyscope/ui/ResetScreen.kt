@@ -2,7 +2,7 @@
 
 package app.tellyscope.ui
 
-import androidx.compose.foundation.background
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,30 +26,30 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.Shape
@@ -59,6 +58,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.tellyscope.R
 import app.tellyscope.data.Device
@@ -69,6 +69,7 @@ import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
 import app.tellyscope.data.UiText
 import app.tellyscope.data.resolve
+import kotlinx.coroutines.launch
 
 /** What Reset TV's screen can do, for MainActivity to wire to the view model. */
 data class ResetActions(
@@ -76,43 +77,50 @@ data class ResetActions(
     val retry: () -> Unit = {},
     val reload: () -> Unit = {},
     val back: () -> Unit = {},
+    val stop: () -> Unit = {},
 )
 
 /**
  * Reset TV to how it shipped: what it found on the TV first, with nothing changed yet, then its
- * progress, then what changed or what didn't work. Opened from ⋮.
+ * progress, then what changed or what didn't work. Opened from ⋮. While it runs there's no way
+ * back, only Stop: leaving would cut the run off partway.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun ResetScreen(state: UiState, actions: ResetActions) {
+fun ResetScreen(state: UiState, actions: ResetActions, snackbar: SnackbarHostState = remember { SnackbarHostState() }) {
     val device = state.selected ?: return
     val ui = state.device.reset ?: return
     val plan = ui.plan
     val maker = makerOf(device)
+    RunBackHandler(ui.running != null, snackbar, Copy.RESET_STILL_RUNNING, actions.back)
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
             TopAppBar(
                 title = {
                     Column {
                         Text(Copy.RESET_TV.resolve())
-                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(name(device), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back_to_tv)) }
+                    if (ui.running == null) IconButton(onClick = actions.back) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.screen_back_to_tv)) }
                 },
             )
         },
         bottomBar = {
-            Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+            if (plan != null && (plan.changes > 0 || ui.ran)) ActionBar {
                 when {
-                    plan == null || (plan.changes == 0 && !ui.ran) -> Unit
-                    ui.running != null -> Button(onClick = {}, enabled = false) { Text(Copy.RESETTING.resolve()) }
+                    ui.running != null -> {
+                        if (!ui.stopping) TextButton(onClick = actions.stop) { Text(stringResource(R.string.copy_stop)) }
+                        Button(onClick = {}, enabled = false) { Text(Copy.RESETTING.resolve()) }
+                    }
                     ui.ran -> {
-                        if (ui.failed.isEmpty()) Button(onClick = actions.back) { Text(stringResource(R.string.screen_done)) }
+                        if (ui.failed.isEmpty() && ui.left == null) Button(onClick = actions.back) { Text(stringResource(R.string.screen_done)) }
                         else {
                             TextButton(onClick = actions.back) { Text(stringResource(R.string.screen_done)) }
-                            Button(onClick = actions.retry) { Text(Copy.tryAgain(ui.failed.singleOrNull()?.app?.label).resolve()) }
+                            val again = if (ui.left != null) Copy.FINISH_RESET else Copy.tryAgain(ui.failed.singleOrNull()?.app?.label)
+                            Button(onClick = actions.retry) { Text(again.resolve()) }
                         }
                     }
                     else -> {
@@ -125,9 +133,9 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
     ) { pad ->
         Box(Modifier.fillMaxSize().padding(pad)) {
             when {
-                ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                ui.error != null -> Column(Modifier.fillMaxWidth().padding(horizontal = PageMargin), horizontalAlignment = Alignment.CenterHorizontally) {
                     EmptyState(Icons.Default.Warning, stringResource(R.string.reset_read_failed), ui.error.resolve())
-                    TextButton(onClick = actions.reload) { Text(stringResource(R.string.screen_try_again)) }
+                    TryAgainButton(stringResource(R.string.screen_try_again), actions.reload)
                 }
                 plan == null -> Column(Modifier.fillMaxWidth().padding(top = 96.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     LoadingIndicator(Modifier.size(48.dp))
@@ -135,11 +143,11 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
                     Text(stringResource(R.string.reset_reading), style = MaterialTheme.typography.titleSmall)
                 }
                 // Try again runs on this screen too, so a run in progress comes before the last run's result.
-                ui.running == null && ui.ran -> Result(plan, ui.failed)
-                plan.changes == 0 -> Box(Modifier.padding(horizontal = 24.dp)) {
+                ui.running == null && ui.ran -> Result(plan, ui.failed, ui.left)
+                plan.changes == 0 -> Box(Modifier.padding(horizontal = PageMargin)) {
                     EmptyState(Icons.Default.Check, Copy.NOTHING_TO_RESET.resolve(), Copy.nothingToReset(plan.ownHome, maker).resolve())
                 }
-                else -> Found(plan, ui.running, ui.progress, maker)
+                else -> Found(plan, ui.running, ui.progress, ui.stopping, maker)
             }
         }
     }
@@ -147,24 +155,30 @@ fun ResetScreen(state: UiState, actions: ResetActions) {
 
 /** What the TV has, before and while the reset runs: one section per part, then what stays. */
 @Composable
-private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?, maker: String?) {
+private fun Found(plan: ResetPlan, running: ResetPlan?, progress: ResetProgress?, stopping: Boolean, maker: String?) {
     val c = MaterialTheme.colorScheme
     val parts = ResetPart.entries.filter { count(plan, it) > 0 }
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp)) {
         item {
             if (running == null) {
-                Surface(color = c.primaryContainer, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                AppCard(Modifier.fillMaxWidth().padding(bottom = 16.dp), color = c.primaryContainer) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(Copy.resetFound(plan.changes).resolve(), style = MaterialTheme.typography.titleSmall, color = c.onPrimaryContainer)
+                        Text(Copy.resetFound(plan.changes).resolve(), style = MaterialTheme.typography.titleMedium, color = c.onPrimaryContainer)
                         Text(Copy.RESET_FOUND_TEXT.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onPrimaryContainer)
                     }
                 }
             } else {
                 val total = running.changes.coerceAtLeast(1)
                 val done = progress?.let { p -> ResetPart.entries.filter { it < p.part }.sumOf { count(running, it) } + p.done } ?: 0
-                LinearProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                LinearWavyProgressIndicator(progress = { done.toFloat() / total }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                // After Stop, its line says the run ends once this step is done, in place of the count.
+                val line = when {
+                    stopping -> Copy.resetStopping(progress?.part)
+                    progress != null -> Copy.resetting(progress, plan.home?.toLabel)
+                    else -> Copy.RESETTING
+                }
                 Text(
-                    progress?.let { Copy.resetting(it, plan.home?.toLabel).resolve() } ?: Copy.RESETTING.resolve(),
+                    line.resolve(),
                     style = MaterialTheme.typography.bodyMedium,
                     color = c.onSurfaceVariant,
                     modifier = Modifier.padding(top = 12.dp, bottom = 16.dp),
@@ -210,6 +224,7 @@ private fun count(plan: ResetPlan, part: ResetPart) = when (part) {
 }
 
 /** One part of the reset; tapping it, before a run, lists the apps it changes. A setting has no list. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
     val c = MaterialTheme.colorScheme
@@ -236,7 +251,7 @@ private fun Section(plan: ResetPlan, part: ResetPart, status: Status?) {
             Spacer(Modifier.width(16.dp))
             when (status) {
                 null -> if (list) Icon(if (open) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = stringResource(if (open) R.string.reset_hide_list else R.string.reset_show_list))
-                Status.Running -> CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                Status.Running -> LoadingIndicator(Modifier.size(24.dp))
                 Status.Waiting -> Icon(ResetIcons.Waiting, contentDescription = stringResource(R.string.screen_waiting), tint = c.onSurfaceVariant)
                 Status.Done -> Icon(HistoryIcons.TurnedOn, contentDescription = stringResource(R.string.screen_done), tint = c.primary)
             }
@@ -270,21 +285,34 @@ private fun AppList(apps: List<ResetApp>) {
 
 private const val SHOWN = 7
 
-/** After a run: a cookie badge, what changed, and per part what worked, with the first failure's reason. */
+/**
+ * After a run: a cookie badge, what changed, and per part what worked, with each app that didn't and why.
+ * Stopped, the parts it never reached are left out of those rows and [left] lists them in one last row.
+ */
 @Composable
-private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
-    val ok = failed.isEmpty()
+private fun Result(plan: ResetPlan, failed: List<ResetFailure>, left: ResetPlan?) {
+    val ok = failed.isEmpty() && left == null
+    val rest = left ?: ResetPlan()
     fun failures(part: ResetPart) = failed.filter { it.part == part }
-    val on = plan.turnOn.size - failures(ResetPart.TurnOn).size
-    val back = plan.bringBack.size - failures(ResetPart.BringBack).size
-    val home = plan.home?.takeIf { failures(ResetPart.Home).isEmpty() }
-    val dns = plan.dns != null && failures(ResetPart.Dns).isEmpty()
-    val animations = plan.animations != null && failures(ResetPart.Animations).isEmpty()
+    val on = plan.turnOn.size - failures(ResetPart.TurnOn).size - rest.turnOn.size
+    val back = plan.bringBack.size - failures(ResetPart.BringBack).size - rest.bringBack.size
+    val home = plan.home?.takeIf { failures(ResetPart.Home).isEmpty() && rest.home == null }
+    val dns = plan.dns != null && failures(ResetPart.Dns).isEmpty() && rest.dns == null
+    val animations = plan.animations != null && failures(ResetPart.Animations).isEmpty() && rest.animations == null
     LazyColumn(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 32.dp, bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         item {
-            ResultHead(ok, if (ok) Copy.RESET_DONE.resolve() else Copy.RESET_PARTLY.resolve(), if (ok) Copy.resetDoneText(on + back, home?.toLabel, dns, animations).resolve() else Copy.resetPartlyText(failed.size).resolve())
+            when {
+                left != null -> {
+                    val apps = plan.turnOn.size + plan.bringBack.size - rest.turnOn.size - rest.bringBack.size
+                    ResultHead(false, Copy.RESET_STOPPED.resolve(), Copy.resetStoppedText(apps).resolve(), stopped = true)
+                }
+                ok -> ResultHead(true, Copy.RESET_DONE.resolve(), Copy.resetDoneText(on + back, home?.toLabel, dns, animations).resolve())
+                else -> ResultHead(false, Copy.RESET_PARTLY.resolve(), Copy.resetPartlyText(failed.size).resolve())
+            }
         }
-        val rows = ResetPart.entries.filter { count(plan, it) > 0 }
+        // A part Stop kept it from starting has nothing to say yet.
+        val rows = ResetPart.entries.filter { count(plan, it) > 0 && count(rest, it) < count(plan, it) }
+        val shown = rows.size + if (left != null) 1 else 0
         itemsIndexed(rows) { i, part ->
             val miss = failures(part)
             val line = when (part) {
@@ -295,29 +323,35 @@ private fun Result(plan: ResetPlan, failed: List<ResetFailure>) {
                 ResetPart.Dns -> (if (miss.isEmpty()) Copy.DNS_AUTOMATIC else Copy.dnsStill(Copy.dnsWas(plan.dns!!))).resolve()
                 ResetPart.Animations -> (if (miss.isEmpty()) Copy.ANIMATIONS_NORMAL else Copy.animationsStill(Copy.animationsWas(plan.animations!!))).resolve()
             }
-            val why = miss.firstOrNull()?.let { f ->
+            // An app's part names each app that failed, three at most; Home and the settings have one reason.
+            val reasons = miss.map { f ->
                 val reason = UiText.Capitalized(f.reason).resolve().trimEnd('.')
-                f.app?.takeIf { f.part != ResetPart.Home }?.let { stringResource(R.string.result_reason_app, it.label, reason) }
-                    ?: stringResource(R.string.result_reason, reason)
+                f.app?.takeIf { f.part != ResetPart.Home }?.let { UiText(R.string.result_reason_app, it.label, reason) }
+                    ?: UiText(R.string.result_reason, reason)
             }
-            ResultRow(line, why, groupShape(i, rows.size))
+            val apps = part == ResetPart.TurnOn || part == ResetPart.BringBack
+            val why = if (reasons.isEmpty()) null else Copy.firstFew(if (apps) reasons else reasons.take(1)).map { it.resolve() }.joinToString("\n")
+            ResultRow(line, why, groupShape(i, shown))
         }
+        if (left != null) item { ResultRow(Copy.NOT_DONE.resolve(), Copy.resetLeft(left).resolve(), groupShape(rows.size, shown), left = true) }
     }
 }
 
-/** The top of a result, shared with Debloat's: a cookie badge, a check or a warning, the title and what happened. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/**
+ * The top of a result, shared with Debloat's: a cookie badge, a check or a warning, the title and
+ * what happened. [stopped]: a stop square on the calm badge, as stopping went as asked.
+ */
 @Composable
-internal fun ResultHead(ok: Boolean, title: String, text: String) {
+internal fun ResultHead(ok: Boolean, title: String, text: String, stopped: Boolean = false) {
     val c = MaterialTheme.colorScheme
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            Modifier.size(96.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(if (ok) c.primaryContainer else c.errorContainer),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(if (ok) Icons.Default.Check else Icons.Default.Warning, contentDescription = null, Modifier.size(44.dp), tint = if (ok) c.onPrimaryContainer else c.onErrorContainer)
+        val icon = when {
+            stopped -> ResetIcons.Stopped
+            ok -> Icons.Default.Check
+            else -> Icons.Default.Warning
         }
-        Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 24.dp))
+        StatusHero(if (ok || stopped) HeroTone.Done else HeroTone.Failed, icon)
+        Text(title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 24.dp))
         Text(
             text,
             style = MaterialTheme.typography.bodyMedium,
@@ -328,20 +362,37 @@ internal fun ResultHead(ok: Boolean, title: String, text: String) {
     }
 }
 
-/** One grouped row of a result: what worked, or what didn't with [why] in red under it. */
+/**
+ * One grouped row of a result: what worked, or what didn't with [why] in red under it. [left]: what
+ * Stop kept the run from, [why] listing it in plain grey, as nothing went wrong.
+ */
 @Composable
-internal fun ResultRow(line: String, why: String?, shape: Shape) {
+internal fun ResultRow(line: String, why: String?, shape: Shape, left: Boolean = false) {
     val c = MaterialTheme.colorScheme
     Surface(color = c.surfaceContainerLow, shape = shape, modifier = Modifier.fillMaxWidth().padding(bottom = 2.dp)) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (why == null) Icon(HistoryIcons.TurnedOn, contentDescription = null, tint = c.primary)
-            else Icon(Icons.Default.Warning, contentDescription = null, tint = c.error)
+            when {
+                left -> Icon(ResetIcons.NotDone, contentDescription = null, tint = c.onSurfaceVariant)
+                why == null -> Icon(HistoryIcons.TurnedOn, contentDescription = null, tint = c.primary)
+                else -> Icon(Icons.Default.Warning, contentDescription = null, tint = c.error)
+            }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
                 Text(line, style = MaterialTheme.typography.bodyLarge)
-                if (why != null) Text(why, style = MaterialTheme.typography.bodyMedium, color = c.error)
+                if (why != null) Text(why, style = MaterialTheme.typography.bodyMedium, color = if (left) c.onSurfaceVariant else c.error)
             }
         }
+    }
+}
+
+/** Back on a run's screen: while [running] it stays put and [message] says why, once; after, it's [back]. */
+@Composable
+internal fun RunBackHandler(running: Boolean, snackbar: SnackbarHostState, message: UiText, back: () -> Unit) {
+    val scope = rememberCoroutineScope()
+    val text = message.resolve()
+    BackHandler {
+        if (!running) back()
+        else if (snackbar.currentSnackbarData == null) scope.launch { snackbar.showSnackbar(text) }
     }
 }
 
@@ -358,6 +409,14 @@ internal object ResetIcons {
         "Animations",
         "M16.5 6.5A5.5 5.5 0 1 0 16.5 17.5A5.5 5.5 0 1 0 16.5 6.5ZM16.5 8.5A3.5 3.5 0 1 1 16.5 15.5A3.5 3.5 0 1 1 16.5 8.5Z" +
             "M7 9.5A2.5 2.5 0 1 0 7 14.5A2.5 2.5 0 1 0 7 9.5ZM2 10.5A1.5 1.5 0 1 0 2 13.5A1.5 1.5 0 1 0 2 10.5Z",
+    )
+    // A square outline, after Material's stop_circle without the ring: the run stopped as asked.
+    val Stopped = icon("Stopped", "M6 6H18V18H6ZM8 8V16H16V8Z")
+    // A ring with a bar across, after Material's do_not_disturb_on: a step the run didn't get to.
+    val NotDone = icon(
+        "NotDone",
+        "M12 2A10 10 0 1 0 12 22A10 10 0 1 0 12 2ZM12 4A8 8 0 1 1 12 20A8 8 0 1 1 12 4Z" +
+            "M7 11H17V13H7Z",
     )
     val Waiting = icon(
         "Waiting",

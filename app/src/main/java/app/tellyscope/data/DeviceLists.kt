@@ -6,6 +6,7 @@ import app.tellyscope.BuildConfig
 import app.tellyscope.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -135,14 +136,25 @@ data class DeviceList(
     val groups: List<ListGroup>,
 )
 
-data class Suggested(val pkg: String, val label: String, val note: String?, val optional: Boolean, val ticked: Boolean)
+data class Suggested(
+    val pkg: String,
+    val label: String,
+    val note: String?,
+    val optional: Boolean,
+    val ticked: Boolean,
+    /** What turning it off breaks ([AppInfo.warn]). */
+    val warn: String? = null,
+)
 
 data class SuggestedGroup(val title: String, val packages: List<Suggested>)
 
 /** What the Overview's list card shows. */
 sealed interface Suggestions {
-    /** No index (offline and nothing cached), or the chosen list failed its checksum. */
-    data object Unavailable : Suggestions
+    /**
+     * No index (offline and nothing cached), or the chosen list failed its checksum. [devices] is
+     * every list when the index did load, for "Not this TV?".
+     */
+    data class Unavailable(val devices: List<ListEntry> = emptyList()) : Suggestions
 
     /** No list for this TV's model or maker, and none was picked: clean up by hand in Apps. */
     data class NoList(val commit: String?, val devices: List<ListEntry>) : Suggestions
@@ -157,6 +169,8 @@ sealed interface Suggestions {
         val devices: List<ListEntry>,
         /** [list] is [merge] of the maker's lists, as no list fits this model. */
         val byMaker: Boolean = false,
+        /** Apps on [list] the user asked not to see again on this TV, left out of [groups]; each can come back. */
+        val hidden: List<Suggested> = emptyList(),
     ) : Suggestions {
         val sdkMatches get() = sdk != null && sdk == list.sdk
     }
@@ -248,21 +262,33 @@ fun parseList(text: String, id: String): DeviceList? = try {
 
 /**
  * The list cut down to this TV: only apps it actually has, still on, and not protected (built in
- * or by the list's keep), and never one of the TV's own launchers. Pre-ticked only for
- * non-optional entries on a TV with the SDK the list was tested on. Groups with the same title become one, and an app shows once, in its first group,
+ * or by the list's keep), and never one of the TV's own launchers or one in [hidden]. Pre-ticked only for
+ * non-optional entries with no warning, on a TV with the SDK the list was tested on. Groups with the same title become one, and an app shows once, in its first group,
  * since the screen keys rows by title and package.
  */
-fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?): List<SuggestedGroup> {
+fun suggest(list: DeviceList, apps: List<AppInfo>, sdk: Int?, hidden: Set<String> = emptySet()): List<SuggestedGroup> {
     val installed = apps.associateBy { it.packageName }
     val tick = sdk != null && sdk == list.sdk
     val seen = mutableSetOf<String>()
     return list.groups.groupBy { it.title }.map { (title, gs) ->
         SuggestedGroup(title, gs.flatMap { it.packages }.mapNotNull { p ->
-            val app = installed[p.pkg]?.takeIf { it.enabled && it.protectedReason == null && !it.builtInLauncher && p.pkg !in list.keep }
-            app?.takeIf { seen.add(p.pkg) }?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional) }
+            offered(list, installed, p.pkg)?.takeIf { p.pkg !in hidden && seen.add(p.pkg) }
+                ?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = tick && !p.optional && it.warn == null, it.warn) }
         })
     }.filter { it.packages.isNotEmpty() }
 }
+
+/** The apps [suggest] leaves out for [hidden] alone, in the list's order: Debloat's "Not suggested". */
+fun notSuggested(list: DeviceList, apps: List<AppInfo>, hidden: Set<String>): List<Suggested> {
+    val installed = apps.associateBy { it.packageName }
+    return list.groups.flatMap { it.packages }.distinctBy { it.pkg }.filter { it.pkg in hidden }.mapNotNull { p ->
+        offered(list, installed, p.pkg)?.let { Suggested(p.pkg, it.label, p.note, p.optional, ticked = false, it.warn) }
+    }
+}
+
+/** [pkg] when this TV has it, on, and Tellyscope may offer to turn it off. */
+private fun offered(list: DeviceList, installed: Map<String, AppInfo>, pkg: String): AppInfo? =
+    installed[pkg]?.takeIf { it.enabled && it.protectedReason == null && !it.builtInLauncher && pkg !in list.keep }
 
 /**
  * Fetches and caches the index, device files, lists and logos under [dir], from [default] or the
@@ -283,6 +309,7 @@ class DeviceLists(
     private val lock = Mutex()
     private var index: ListIndex? = null
     private val picks = File(dir, "picks.tsv")
+    private val hiddenFile = File(dir, "hidden.tsv")
     private val sourceFile = File(dir, "source.txt")
     /** The newest signed [ListIndex.version] seen: an older index, even one signed, is never [ListIndex.signed] again. */
     private val floorFile = File(dir, "version.txt")
@@ -298,16 +325,17 @@ class DeviceLists(
      * Points the lists at [url], or back at [default] with null. The new source must answer
      * with a schema 1 index first; otherwise nothing changes. The cached lists are dropped, so
      * nothing from the old source lingers; picks stay, and a pick the new source lacks falls
-     * back to matching.
+     * back to matching. Once the new source has answered, a cancel no longer stops the switch:
+     * the files, the stored address and [index] change together, and [switched] runs with them.
      */
-    suspend fun setSource(url: String?): SourceResult = lock.withLock {
+    suspend fun setSource(url: String?, switched: () -> Unit = {}): SourceResult = lock.withLock {
         val next = if (url == null) default else normalize(url) ?: return@withLock SourceResult.NotHttps
         val text = attempt { fetch(next + "index.json") }?.decodeToString()
         // Going back to the default always works, offline too: its lists load once online.
         if (text == null && url != null) return@withLock SourceResult.Unreachable
         val parsed = text?.let(::parseIndex)
         if (text != null && parsed == null) return@withLock SourceResult.NotAList
-        withContext(Dispatchers.IO) {
+        withContext(NonCancellable + Dispatchers.IO) {
             File(dir, "index.json").delete()
             File(dir, "devices").deleteRecursively()
             File(dir, "lists").deleteRecursively()
@@ -317,8 +345,9 @@ class DeviceLists(
             synchronized(this@DeviceLists) {
                 if (next == default) sourceFile.delete() else sourceFile.writeText(next)
             }
+            index = parsed
+            switched()
         }
-        index = parsed
         SourceResult.Ok
     }
 
@@ -340,6 +369,16 @@ class DeviceLists(
                 else -> fresh.also { save(bytes, it); index = it }
             }
         }
+    }
+
+    /**
+     * Refresh: forgets the index read this launch and fetches it again. False when the fetch didn't
+     * give one to keep (offline, or the signature check above), and [index] goes on with the cached copy.
+     */
+    suspend fun reload(): Boolean {
+        lock.withLock { index = null }
+        index()
+        return lock.withLock { index != null }
     }
 
     /** One index, read once, and the lists it names: whether they pass ([verified]) and what they hold ([shared]) can't come from two. */
@@ -369,10 +408,13 @@ class DeviceLists(
     /** [verified] from the cache alone ([cachedSnapshot]). */
     suspend fun cachedVerified(): Boolean = cachedSnapshot().verified()
 
-    /** [bytes] read as an index; [ListIndex.signed] when its signature line ([verifyIndex]) passes and the version is no lower than [floor]. */
+    /**
+     * [bytes] read as an index; with [keys], only the bytes its signatures cover ([signedBytes]). [ListIndex.signed]
+     * when its signature line ([verifyIndex]) passes and the version is no lower than [floor].
+     */
     private fun checked(bytes: ByteArray): ListIndex? {
-        val parsed = parseIndex(bytes.decodeToString()) ?: return null
-        val keys = keys ?: return parsed
+        val keys = keys ?: return parseIndex(bytes.decodeToString())
+        val parsed = parseIndex(signedBytes(bytes).decodeToString()) ?: return null
         val version = parsed.version ?: return parsed
         return parsed.copy(signed = version >= floor() && verifyIndex(bytes, keys))
     }
@@ -450,10 +492,11 @@ class DeviceLists(
     @Synchronized
     fun picked(key: String): String? = readPicks()[key]
 
+    /** Picks list [id] for [key], or with null goes back to the list that matches. */
     @Synchronized
-    fun pick(key: String, id: String) {
+    fun pick(key: String, id: String?) {
         dir.mkdirs()
-        val all = readPicks() + (key to id)
+        val all = if (id == null) readPicks() - key else readPicks() + (key to id)
         val tmp = File(dir, "picks.tsv.tmp")
         tmp.writeText(all.entries.joinToString("") { (k, v) -> "$k\t$v\n" })
         tmp.renameTo(picks)
@@ -461,6 +504,27 @@ class DeviceLists(
 
     private fun readPicks(): Map<String, String> = if (!picks.exists()) emptyMap() else
         picks.readLines().mapNotNull { l -> l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1] } }.toMap()
+
+    /** The apps the user asked Debloat not to suggest again on the TV [key], whichever list it uses. Kept on this phone only. */
+    @Synchronized
+    fun hidden(key: String): Set<String> = readHidden()[key].orEmpty()
+
+    /** Stops suggesting [pkgs] on [key] with [hide], or suggests them again without. */
+    @Synchronized
+    fun hide(key: String, pkgs: Collection<String>, hide: Boolean) {
+        dir.mkdirs()
+        val all = readHidden()
+        val now = all[key].orEmpty().let { if (hide) it + pkgs.filter(PACKAGE::matches) else it - pkgs.toSet() }
+        val next = if (now.isEmpty()) all - key else all + (key to now)
+        val tmp = File(dir, "hidden.tsv.tmp")
+        tmp.writeText(next.entries.joinToString("") { (k, v) -> "$k\t${v.sorted().joinToString(",")}\n" })
+        tmp.renameTo(hiddenFile)
+    }
+
+    private fun readHidden(): Map<String, Set<String>> = if (!hiddenFile.exists()) emptyMap() else
+        hiddenFile.readLines().mapNotNull { l ->
+            l.split('\t').takeIf { it.size == 2 }?.let { it[0] to it[1].split(',').filter(PACKAGE::matches).toSet() }
+        }.toMap()
 
     private suspend fun <T> attempt(block: suspend () -> T): T? = try {
         block()

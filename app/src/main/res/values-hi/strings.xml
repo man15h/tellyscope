@@ -13,7 +13,7 @@
     <string name="copy_confirm_home">हां, होम स्क्रीन बदलें</string>
     <string name="copy_confirm_home_back">हां, वापस बदलें</string>
     <string name="copy_explain_stop">%1$s (%2$s) को तब तक रोकता है, जब तक आप उसे फिर से नहीं खोलते।</string>
-    <string name="copy_explain_disable">%1$s (%2$s) को छिपाता है और उसका चलना बंद करता है। कुछ भी मिटाया नहीं जाता; आप इसे यहां से फिर चालू कर सकते हैं।</string>
+    <string name="copy_explain_disable">%1$s (%2$s) को बंद करता है और उसका चलना रोकता है। कुछ भी मिटाया नहीं जाता; आप इसे यहां से फिर चालू कर सकते हैं।</string>
     <string name="copy_explain_enable">%1$s (%2$s) को फिर से चालू करता है।</string>
     <string name="copy_explain_open">TV पर %1$s (%2$s) खोलता है।</string>
     <string name="copy_explain_uninstall">%1$s (%2$s) और उसमें सेव की गई हर चीज़ हटा देता है। इसे पहले जैसा नहीं किया जा सकता; वापस पाने के लिए इसे फिर से इंस्टॉल करें।</string>
@@ -293,6 +293,7 @@
     <string name="copy_send_failed">%1$s नहीं भेजा जा सका। देखें कि TV अब भी कनेक्ट है और उसमें जगह है।</string>
     <string name="copy_send_failed_off_wifi">%1$s नहीं भेजा जा सका। यह फ़ोन Wi-Fi पर नहीं है।</string>
     <string name="copy_save_failed">%1$s सेव नहीं हो सका। देखें कि TV अब भी कनेक्ट है और फ़ोन में जगह है।</string>
+    <string name="copy_deleted">%1$s TV से मिटा दी गई</string>
     <string name="copy_cancelled_send">रद्द किया गया। TV पर कुछ नहीं छोड़ा गया।</string>
     <string name="copy_cancelled_save">रद्द किया गया। कुछ भी सेव नहीं हुआ।</string>
     <string name="copy_cant_read">आपके फ़ोन पर वह फ़ाइल पढ़ी नहीं जा सकी।</string>
@@ -344,6 +345,21 @@
     <string name="copy_more">ज़्यादा विकल्प</string>
     <string name="copy_buttons_hint">ज़्यादा से ज़्यादा %1$d चुनें। क्रम बदलने के लिए खींचें। कोई दूसरा चुनने के लिए पहले किसी एक से टिक हटाएं।</string>
     <string name="copy_not_on_tv">%1$s इस TV पर नहीं है। इसे TV पर Play Store से इंस्टॉल करें।</string>
+    <string name="copy_not_on_tv_fire">%1$s इस TV पर नहीं है। इसे TV पर Appstore से इंस्टॉल करें।</string>
+    <string name="copy_player_no_video">TV पर कोई वीडियो प्लेयर नहीं है</string>
+    <string name="copy_player_no_audio">TV पर कोई ऑडियो प्लेयर नहीं है</string>
+    <string name="copy_player_nothing_text">TV पर कुछ भी %1$s को नहीं खोल सकता। %2$s इसे रिमोट से चलाता है, और इंस्टॉल होते ही Tellyscope फ़ाइल उसमें खोल देगा।</string>
+    <string name="copy_player_about">VideoLAN · मुफ़्त और ओपन सोर्स</string>
+    <string name="copy_player_install_title">TV पर %1$s इंस्टॉल करें</string>
+    <string name="copy_player_store_open">TV पर Play Store में %1$s का पेज खुला है। इसे रिमोट से इंस्टॉल करें।</string>
+    <string name="copy_player_waiting">%1$s का इंतज़ार है… फिर %2$s खुलेगी</string>
+    <string name="copy_player_open_appstore">Appstore खोलें</string>
+    <string name="copy_player_downloading">%1$s डाउनलोड हो रहा है</string>
+    <string name="copy_player_progress">%2$s में से %1$s · %3$s से</string>
+    <string name="copy_player_opened">%1$s TV पर खोली गई</string>
+    <string name="copy_player_opened_in">%1$s TV पर %2$s में खोली गई</string>
+    <string name="copy_player_cant_open">%1$s TV पर नहीं खुल सकी</string>
+    <string name="copy_player_nothing_opens">TV पर कुछ भी %1$s को नहीं खोल सकता</string>
     <string name="copy_cant_open">TV, %1$s को खोल नहीं सका। अगर यह बंद है, तो इसे ऐप्स में चालू करें।</string>
     <string name="copy_left_dock_one">%1$s अनइंस्टॉल हो गया, इसलिए उसका बटन रिमोट से हट गया।</string>
     <plurals name="copy_left_dock">
@@ -503,9 +519,56 @@
         <item quantity="other">%2$d में से %1$d ऐप बंद किए</item>
     </plurals>
     <string name="copy_still_on">%1$s अब भी चालू है</string>
+    <string name="copy_debloat_still_running">डीब्लोट अभी चल रहा है। पूरा होने पर आप बाहर जा सकते हैं।</string>
+    <string name="copy_reset_still_running">रीसेट अभी चल रहा है। पूरा होने पर आप बाहर जा सकते हैं।</string>
+    <string name="copy_stopping_after">%1$s के बाद रोका जा रहा है…</string>
+    <string name="copy_stopping_after_app">इस ऐप के बाद रोका जा रहा है…</string>
+    <string name="copy_stopping_after_step">इस चरण के बाद रोका जा रहा है…</string>
+    <string name="copy_debloat_stopped">डीब्लोट रोका गया</string>
+    <string name="copy_debloat_stopped_text">आपने इसे %1$s के बाद रोका।</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d ऐप नहीं बदला</item>
+        <item quantity="other">%1$d ऐप नहीं बदले</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">बाकी %1$d ऐप बंद करें</item>
+        <item quantity="other">बाकी %1$d बंद करें</item>
+    </plurals>
+    <string name="copy_reset_stopped">रीसेट रोका गया</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">आपने इसे %1$d ऐप के बाद रोका।</item>
+        <item quantity="other">आपने इसे %1$d ऐप के बाद रोका।</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">आपने इसे बीच में रोका।</string>
+    <string name="copy_not_done">नहीं हुआ</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d ऐप चालू करना है</item>
+        <item quantity="other">%1$d ऐप चालू करने हैं</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d वापस लाना है</item>
+        <item quantity="other">%1$d वापस लाने हैं</item>
+    </plurals>
+    <string name="copy_left_home">होम स्क्रीन</string>
+    <string name="copy_left_dns">निजी DNS</string>
+    <string name="copy_left_animations">ऐनिमेशन की स्पीड</string>
+    <string name="copy_finish_reset">रीसेट पूरा करें</string>
     <plurals name="copy_to_put_back">
-        <item quantity="one">%1$d बदलाव वापस करना है</item>
-        <item quantity="other">%1$d बदलाव वापस करने हैं</item>
+        <item quantity="one">%1$d बदलाव रीस्टोर करना है</item>
+        <item quantity="other">%1$d बदलाव रीस्टोर करने हैं</item>
+    </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="one">%2$d में से %1$d बदलाव रीस्टोर किए</item>
+        <item quantity="other">%2$d में से %1$d बदलाव रीस्टोर किए</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="one">ये %1$d अब भी वैसे ही हैं जैसे Tellyscope ने छोड़े थे:</item>
+        <item quantity="other">ये %1$d अब भी वैसे ही हैं जैसे Tellyscope ने छोड़े थे:</item>
+    </plurals>
+    <string name="copy_restored_hint">हर एक को इतिहास में उसकी पंक्ति से पहले जैसा करें, या बाद में फिर से रीस्टोर करें।</string>
+    <plurals name="copy_and_more">
+        <item quantity="one">और %1$d</item>
+        <item quantity="other">और %1$d</item>
     </plurals>
     <plurals name="copy_put_back_title">
         <item quantity="one">Tellyscope का किया %1$d बदलाव अब भी लागू है</item>
@@ -621,23 +684,23 @@
     <string name="copy_peripheral_free">%1$s खाली</string>
     <string name="copy_peripheral_bluetooth">ब्लूटूथ · %1$s</string>
     <string name="vm_still_wants_code">TV अब भी कोड मांग रहा है। स्क्रीन पर दिख रहा नंबर देखें और फिर से कोशिश करें।</string>
+    <string name="vm_pair_needs_android_12">कोड से पेयर करने के लिए इस फ़ोन पर Android 12 या उससे नया चाहिए। पहले से पेयर किया गया TV अब भी कनेक्ट होता है।</string>
     <string name="vm_not_an_ip">यह IP पता नहीं लगता। इसमें बिंदुओं से अलग चार संख्याएं होनी चाहिए, जैसा आपके TV की नेटवर्क सेटिंग्स में दिखता है।</string>
     <string name="vm_bad_port">कोलन के बाद का पोर्ट 1 से 65535 के बीच की कोई संख्या होनी चाहिए, जैसे 5555.</string>
     <string name="vm_didnt_work">यह काम नहीं किया।</string>
-    <string name="vm_nothing_to_put_back">पहले जैसा करने के लिए कुछ नहीं है।</string>
+    <string name="vm_nothing_to_put_back">रीस्टोर करने के लिए कुछ नहीं है।</string>
+    <string name="vm_list_not_loaded">%1$s की सूची लोड नहीं हो सकी। अभी %2$s की सूची ही है।</string>
+    <string name="vm_pick_not_loaded">%1$s की सूची लोड नहीं हो सकी।</string>
     <plurals name="vm_put_back">
-        <item quantity="one">%1$d बदलाव वापस किया।</item>
-        <item quantity="other">%1$d बदलाव वापस किए।</item>
-    </plurals>
-    <plurals name="vm_put_back_partly">
-        <item quantity="one">%2$d में से %1$d बदलाव वापस किए। %4$s वापस नहीं हुआ: %5$s</item>
-        <item quantity="other">%2$d में से %1$d बदलाव वापस किए। %3$d वापस नहीं हुए, इनमें %4$s: %5$s</item>
+        <item quantity="one">%1$d बदलाव रीस्टोर किया।</item>
+        <item quantity="other">%1$d बदलाव रीस्टोर किए।</item>
     </plurals>
     <string name="vm_tv_refused">TV ने मना कर दिया</string>
     <string name="vm_tv_didnt_answer">TV ने जवाब नहीं दिया।</string>
     <string name="vm_tv_didnt_answer_reason">TV ने जवाब नहीं दिया</string>
     <string name="vm_report_tv_said">TV ने कहा: %1$s</string>
     <string name="vm_report_tried_install">%1$s %2$s इंस्टॉल करने की कोशिश की</string>
+    <string name="vm_report_tried_delete">%1$s को TV से मिटाने की कोशिश की</string>
     <string name="vm_logged_out_view">देखें</string>
     <string name="data_protected_home_screen">यह आपकी होम स्क्रीन है</string>
     <string name="data_protected_system">TV को चलने के लिए इसकी ज़रूरत है</string>
@@ -676,10 +739,10 @@
     <string name="data_reset_already_undone">वह रीसेट पहले ही वापस लिया जा चुका है</string>
     <string name="data_reset_tv_kept_home">TV ने %1$s को होम स्क्रीन बनाए रखा</string>
     <string name="data_app_reason">%1$s: %2$s</string>
-    <string name="data_reset_undo_service_left">हर बदलाव वापस कर दिया, लेकिन %1$s</string>
+    <string name="data_reset_undo_service_left">हर बदलाव रीस्टोर कर दिया, लेकिन %1$s</string>
     <plurals name="data_reset_undo_partial">
-        <item quantity="one">%2$d में से %1$d बदलाव वापस किया। %3$s. फिर से पहले जैसा करें दबाने पर बाकी की कोशिश होगी</item>
-        <item quantity="other">%2$d में से %1$d बदलाव वापस किए। %3$s. फिर से पहले जैसा करें दबाने पर बाकी की कोशिश होगी</item>
+        <item quantity="one">%2$d में से %1$d बदलाव रीस्टोर किया। %3$s. फिर से पहले जैसा करें दबाने पर बाकी की कोशिश होगी</item>
+        <item quantity="other">%2$d में से %1$d बदलाव रीस्टोर किए। %3$s. फिर से पहले जैसा करें दबाने पर बाकी की कोशिश होगी</item>
     </plurals>
     <string name="data_tweak_refused">TV ने बदलाव स्वीकार नहीं किया</string>
     <string name="data_dns_too_old">निजी DNS के लिए Android 9 या उसके बाद का वर्शन चाहिए, और यह TV उससे पुराना है</string>
@@ -691,7 +754,7 @@
     <string name="data_app_names_system">Android सिस्टम</string>
     <string name="data_history_service_off">%1$s की सुलभता सेवा बंद की</string>
     <string name="data_history_service_on">%1$s की सुलभता सेवा चालू की</string>
-    <string name="data_history_reset_undone">TV रीसेट से हुए बदलाव वापस किए</string>
+    <string name="data_history_reset_undone">TV रीसेट से हुए बदलाव रीस्टोर किए</string>
     <plurals name="data_history_reset">
         <item quantity="one">TV रीसेट · %1$d बदलाव</item>
         <item quantity="other">TV रीसेट · %1$d बदलाव</item>
@@ -733,6 +796,10 @@
         <item quantity="other">सुझाए गए %2$d ऐप में से %1$d बंद हैं</item>
     </plurals>
     <string name="tabs_suggested_no_list">इस TV के लिए अभी कोई सूची नहीं है</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d सुझाव में नहीं</item>
+        <item quantity="other">%1$d सुझाव में नहीं</item>
+    </plurals>
     <string name="tabs_suggested_unavailable">डिवाइस सूचियां लोड नहीं हो सकीं</string>
     <string name="tabs_suggested_offline">TV के सुझाव देखने के लिए उससे कनेक्ट करें</string>
     <string name="tabs_suggested_loading">इस TV की सूची ढूंढी जा रही है…</string>
@@ -742,7 +809,8 @@
         <item quantity="one">%1$d ऐप फिर से चालू हो गया</item>
         <item quantity="other">%1$d ऐप फिर से चालू हो गए</item>
     </plurals>
-    <string name="tabs_note_unavailable">फ़ोन का इंटरनेट जांचें और इस TV को फिर से खोलें।</string>
+    <string name="tabs_note_unavailable">फ़ोन का इंटरनेट जांचें।</string>
+    <string name="tabs_try_again">फिर से कोशिश करें</string>
     <string name="tabs_note_no_list">बंद करने वाले ऐप खुद चुनने के लिए डीब्लोट पर टैप करें।</string>
     <string name="tabs_note_by_maker">इस मॉडल के लिए कोई सूची नहीं है, इसलिए ये %1$s के दूसरे TV से लिए गए हैं।</string>
     <string name="tabs_note_gate">एक-एक ऐप बदलने के लिए डीब्लोट अब ऐप खोलता है।</string>
@@ -756,6 +824,9 @@
     <string name="lists_which_tv">यह कौन सा TV है?</string>
     <string name="lists_debloat">डीब्लोट</string>
     <string name="lists_back">वापस जाएं</string>
+    <string name="lists_refresh">सूची रीफ़्रेश करें</string>
+    <string name="lists_refresh_failed">सूची रीफ़्रेश नहीं हो सकी। फ़ोन का इंटरनेट जाँचें।</string>
+    <string name="lists_up_to_date">सूची अप टू डेट है</string>
     <string name="lists_use_this">यह सूची इस्तेमाल करें</string>
     <plurals name="lists_disable_apps">
         <item quantity="one">%1$d ऐप बंद करें</item>
@@ -764,7 +835,9 @@
     <string name="lists_brand_or_model">ब्रैंड या मॉडल</string>
     <string name="lists_clear_search">खोज मिटाएं</string>
     <string name="lists_no_match">“%1$s” के लिए कोई सूची नहीं है। सबसे मिलता-जुलता मॉडल चुनें।</string>
-    <string name="lists_unavailable">वह सूची लोड नहीं हो सकी। फ़ोन का इंटरनेट जांचें और फिर से कोशिश करें।</string>
+    <string name="lists_failed">सूची लोड नहीं हो सकी</string>
+    <string name="lists_failed_hint">फ़ोन का इंटरनेट जांचें और फिर से कोशिश करें।</string>
+    <string name="lists_try_again">फिर से कोशिश करें</string>
     <string name="lists_loading">सूची लोड हो रही है…</string>
     <string name="lists_this_tv">यह TV</string>
     <string name="lists_match_none">इस TV या इसकी कंपनी के लिए अभी कोई सूची नहीं है</string>
@@ -789,9 +862,20 @@
         <item quantity="one">%1$d ऐप बंद करें?</item>
         <item quantity="other">%1$d ऐप बंद करें?</item>
     </plurals>
-    <string name="lists_disable_text">हर ऐप छिप जाएगा और चलना बंद कर देगा। कुछ भी मिटाया नहीं जाता; हर ऐप इतिहास में दिखेगा, जहां से आप उसे फिर से चालू कर सकते हैं।</string>
+    <string name="lists_disable_text">हर ऐप बंद हो जाएगा और उसका चलना रुक जाएगा। कुछ भी मिटाया नहीं जाता; हर ऐप इतिहास में दिखेगा, जहां से आप उसे फिर से चालू कर सकते हैं।</string>
     <string name="lists_disable_yes">हां, बंद करें</string>
     <string name="lists_cancel">रद्द करें</string>
+    <string name="lists_dont_suggest_one">%1$s को फिर से सुझाव में न दिखाएं</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">बिना टिक वाले %1$d ऐप को फिर से सुझाव में न दिखाएं</item>
+        <item quantity="other">बिना टिक वाले %1$d ऐप को फिर से सुझाव में न दिखाएं</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">इनमें से %1$d से टीवी में कुछ काम करना बंद हो सकता है।</item>
+        <item quantity="other">इनमें से %1$d से टीवी में कुछ काम करना बंद हो सकता है।</item>
+    </plurals>
+    <string name="lists_not_suggested">सुझाव में नहीं (%1$d)</string>
+    <string name="lists_suggest_again">फिर से सुझाएं</string>
     <string name="lists_about_title">Tellyscope के बारे में</string>
     <string name="lists_about_version">वर्शन %1$s</string>
     <string name="lists_about_website">वेबसाइट</string>
@@ -805,7 +889,7 @@
     <string name="advanced_loading">आंकड़े लोड हो रहे हैं…</string>
     <string name="advanced_network">नेटवर्क</string>
     <string name="advanced_cpu">CPU</string>
-    <string name="advanced_ram">RAM</string>
+    <string name="advanced_ram">मेमोरी</string>
     <string name="advanced_on_for">कितनी देर से चालू</string>
     <string name="advanced_screen">स्क्रीन</string>
     <string name="advanced_screen_on">चालू</string>
@@ -893,6 +977,12 @@
     <string name="shell_full_screen">%1$s को फ़ुल-स्क्रीन टर्मिनल चाहिए। यह यहाँ काम नहीं करता।</string>
     <string name="shell_dropped_prefix">(\"adb shell\" हटाया)</string>
     <string name="shell_lost">कमांड पूरी होने से पहले TV से कनेक्शन टूट गया। हो सकता है वह सिर्फ़ आधी चली हो।</string>
+    <string name="shell_failed">शेल में गड़बड़ी: %1$s। हो सकता है कमांड सिर्फ़ आधी चली हो। अगली कमांड नया शेल खोलेगी।</string>
+    <string name="shell_copy_all">सब कॉपी करें</string>
+    <plurals name="shell_copied">
+        <item quantity="one">%1$d लाइन कॉपी की गई</item>
+        <item quantity="other">%1$d लाइनें कॉपी की गईं</item>
+    </plurals>
     <string name="report_title_new_tv">इस TV को जोड़ने में मदद करें</string>
     <string name="report_title_problem">समस्या की शिकायत करें</string>
     <string name="report_subtitle_new_tv">GitHub पर cleanyourtv का “My TV” फ़ॉर्म खोलता है</string>
@@ -933,21 +1023,26 @@
     <string name="report_choose_one">कोई एक चुनें</string>
     <string name="report_removed_first">पहले ही हटा दिए गए: सीरियल नंबर, IP पते, ADB कुंजियां और फ़िंगरप्रिंट।</string>
     <string name="report_cancel">रद्द करें</string>
+    <string name="report_discard_title">यह रिपोर्ट हटा दें?</string>
+    <string name="report_discard_text">आपने जो चुना और लिखा, वह मिट जाएगा।</string>
+    <string name="report_discard">हटाएं</string>
+    <string name="report_keep_editing">लिखना जारी रखें</string>
+    <string name="report_no_browser">कोई ब्राउज़र नहीं खुला, इसलिए कुछ भी पोस्ट नहीं हुआ। किसी दूसरे डिवाइस से पोस्ट करने के लिए लिंक कॉपी करें।</string>
+    <string name="report_copy_link">लिंक कॉपी करें</string>
     <string name="device_as_of">%1$s तक</string>
+    <string name="device_last_seen">आखिरी बार देखा गया: %1$s</string>
+    <string name="device_last_seen_updating">आखिरी बार देखा गया: %1$s · अपडेट हो रहा है…</string>
     <string name="device_internal_storage">इंटरनल स्टोरेज</string>
     <string name="device_gb_used">%1$s इस्तेमाल हुआ</string>
     <string name="device_cpu">CPU</string>
-    <string name="device_ram">RAM</string>
+    <string name="device_ram">मेमोरी</string>
     <string name="device_network">नेटवर्क</string>
     <string name="device_percent">%1$d%%</string>
     <string name="device_disable_title">%1$s बंद करें?</string>
     <string name="device_cancel">रद्द करें</string>
-    <plurals name="device_restore_title">
-        <item quantity="one">%1$d बदलाव वापस करें?</item>
-        <item quantity="other">%1$d बदलाव वापस करें?</item>
-    </plurals>
+    <string name="device_restore_title">सब कुछ रीस्टोर करें?</string>
     <string name="device_restore_text">यह TV वैसा हो जाएगा जैसा Tellyscope के पहले बदलाव से पहले था:</string>
-    <string name="device_restore_button">वापस करें</string>
+    <string name="device_restore_button">रीस्टोर करें</string>
     <string name="device_rename_title">इस TV का नाम बदलें</string>
     <string name="device_rename_text">यह नाम सिर्फ़ इस फ़ोन पर दिखेगा। TV पर कुछ नहीं बदलेगा।</string>
     <string name="device_save">सेव करें</string>
@@ -993,7 +1088,12 @@
     <string name="guide_unlock_done">डेवलपर के लिए सेटिंग अनलॉक हो गईं</string>
     <string name="guide_find_title">अपना TV ढूंढें</string>
     <string name="guide_done_next">हो गया, आगे बढ़ें</string>
-    <string name="guide_back">वापस जाएं</string>
+    <string name="guide_show_step">यह चरण दिखाएं</string>
+    <string name="guide_hide_step">यह चरण छिपाएं</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">%1$d TV मिला, आगे बढ़ें</item>
+        <item quantity="other">%1$d TV मिले, आगे बढ़ें</item>
+    </plurals>
     <string name="guide_done">हो गया</string>
     <string name="guide_tip_same_wifi">फ़ोन और TV को एक ही Wi-Fi पर रखें। गेस्ट नेटवर्क अक्सर डिवाइसों को एक-दूसरे से अलग रखते हैं।</string>
     <string name="guide_tip_debugging_off">डीबगिंग अपने-आप बंद हो गई? कुछ TV रीस्टार्ट के बाद इसे रीसेट कर देते हैं। इसे फिर से चालू करें, यह स्क्रीन TV को फिर से ढूंढ लेगी।</string>
@@ -1024,6 +1124,22 @@
     <string name="remote_touchpad">टचपैड</string>
     <string name="remote_touchpad_swipe">हिलाने के लिए स्वाइप करें</string>
     <string name="remote_touchpad_tap">OK के लिए टैप करें</string>
+    <string name="remote_pointer">पॉइंटर</string>
+    <string name="remote_pointer_drag">पॉइंटर हिलाने के लिए खींचें</string>
+    <string name="remote_pointer_tap">क्लिक के लिए टैप करें · स्क्रॉल के लिए दो उंगलियाँ</string>
+    <string name="remote_pointer_refused">यह TV इसकी अनुमति नहीं देता</string>
+    <string name="remote_controller">गेम कंट्रोलर</string>
+    <string name="remote_mode_dpad_line">तीर और OK, आपके TV के रिमोट जैसे</string>
+    <string name="remote_mode_touchpad_line">हिलाने के लिए स्वाइप करें, OK के लिए टैप करें</string>
+    <string name="remote_mode_pointer_line">TV पर माउस पॉइंटर चलाएँ</string>
+    <string name="remote_mode_controller_line">फ़ोन को आड़ा रखकर गेम खेलें</string>
+    <string name="remote_mode_tip">बदलें कि आप TV को कैसे चलाते हैं</string>
+    <string name="remote_mode_button">रिमोट मोड: %1$s</string>
+    <string name="remote_controller_close">रिमोट पर वापस</string>
+    <string name="remote_controller_stick">स्टिक</string>
+    <string name="remote_controller_buttons_only">यह TV सिर्फ़ बटन लेता है। जो गेम जुड़ा हुआ कंट्रोलर ढूँढते हैं, वे शायद जवाब न दें।</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
     <string name="remote_back">वापस जाएं</string>
     <string name="remote_home">Home</string>
     <string name="remote_menu">मेन्यू</string>
@@ -1034,12 +1150,12 @@
     <string name="remote_ok">OK</string>
     <string name="remote_type_label">TV पर टाइप करें</string>
     <string name="remote_send">TV पर भेजें</string>
-    <string name="remote_restart">रीस्टार्ट करें</string>
+    <string name="remote_restart">TV रीस्टार्ट करें</string>
     <string name="remote_cancel">रद्द करें</string>
     <string name="remote_restarting">रीस्टार्ट हो रहा है</string>
     <string name="remote_hide">छिपाएं</string>
     <string name="remote_retry">फिर से कोशिश करें</string>
-    <string name="remote_close">बंद करें</string>
+    <string name="remote_stop_waiting">इंतज़ार बंद करें</string>
     <string name="remote_show_restart">रीस्टार्ट की स्थिति दिखाएं</string>
     <string name="remote_move_up">ऊपर ले जाएं</string>
     <string name="remote_move_down">नीचे ले जाएं</string>
@@ -1070,7 +1186,7 @@
     <string name="whats_new_update">अपडेट करें</string>
     <string name="whats_new_not_installed">इंस्टॉल नहीं है</string>
     <string name="whats_new_newer_failed">नए वर्शन लोड नहीं हो सके।</string>
-    <string name="settings_advanced">बेहतर सेटिंग</string>
+    <string name="settings_advanced">डीब्लोट सूचियां</string>
     <string name="settings_change">बदलें</string>
     <string name="settings_change_text">वह HTTPS raw फ़ोल्डर पेस्ट करें जिसमें index.json है, जैसे raw.githubusercontent.com/&lt;you&gt;/tellyscope-devices/main/</string>
     <string name="settings_own_lists_guide">अपनी सूचियां कैसे इस्तेमाल करें</string>
@@ -1079,6 +1195,7 @@
     <string name="settings_open_cleanyourtv">GitHub पर cleanyourtv खोलें</string>
     <string name="settings_source_title">सूचियां कहां से आती हैं</string>
     <string name="settings_source_text">अपनी सूचियां इस्तेमाल करने के लिए, tellyscope-devices को fork करें, उसमें बदलाव करें, और उस फ़ोल्डर का पता पेस्ट करें जिसमें index.json है, जैसे https://raw.githubusercontent.com/you/tellyscope-devices/main/. सूची में कुछ भी लिखा हो, सुरक्षित ऐप सुरक्षित ही रहते हैं।</string>
+    <string name="settings_checking">जांच हो रही है…</string>
     <string name="settings_use_lists">ये सूचियां इस्तेमाल करें</string>
     <string name="settings_reset">डिफ़ॉल्ट पर रीसेट करें</string>
     <string name="settings_cancel">रद्द करें</string>
@@ -1128,8 +1245,14 @@
     <string name="transfers_debloat">डीब्लोट करें</string>
     <string name="transfers_send_file">फ़ाइल भेजें</string>
     <string name="transfers_to_folder">%1$s में</string>
-    <string name="transfers_tap_to_save">फ़ाइल की कॉपी अपने फ़ोन में सेव करने के लिए उस पर टैप करें।</string>
-    <string name="transfers_save">सेव करें</string>
+    <string name="transfers_tap_to_save">किसी फ़ाइल पर टैप करके उसे TV पर खोलें, सेव करें या मिटाएं।</string>
+    <string name="transfers_save">अपने फ़ोन में सेव करें</string>
+    <string name="transfers_delete">TV से मिटाएं</string>
+    <string name="transfers_delete_title">%1$s को TV से मिटाएं?</string>
+    <string name="transfers_delete_text">यह TV के %1$s फ़ोल्डर से हमेशा के लिए हट जाएगी।</string>
+    <string name="transfers_delete_button">मिटाएं</string>
+    <string name="transfers_delete_failed">%1$s मिटाई नहीं जा सकी</string>
+    <string name="transfers_delete_still_there">फ़ाइल अब भी TV पर है।</string>
     <string name="transfers_reading">ऐप पढ़ा जा रहा है</string>
     <string name="transfers_install_failed">%1$s इंस्टॉल नहीं हो सका</string>
     <string name="transfers_cant_install">इसे इंस्टॉल नहीं किया जा सकता</string>
@@ -1192,8 +1315,14 @@
     <string name="launcher_ok">OK</string>
     <string name="history_empty_title">अभी तक कुछ नहीं बदला</string>
     <string name="history_empty_text">आप जो भी ऐप रोकेंगे, बंद करेंगे या चालू करेंगे, वह यहां दिखेगा, और उसे पहले जैसा करने का विकल्प भी।</string>
-    <string name="history_restoring">पहले जैसा कर रहे हैं…</string>
-    <string name="history_restore_all">सब कुछ पहले जैसा करें (%1$d)</string>
+    <string name="history_restoring">रीस्टोर कर रहे हैं…</string>
+    <string name="history_ok">ठीक है</string>
+    <string name="history_no_undo_caches">पहले जैसा करने को कुछ नहीं: ऐप्स अपना कैश फिर से भर लेते हैं</string>
+    <string name="history_no_undo_uninstall">पहले जैसा नहीं हो सकता: इसे Play Store से फिर से इंस्टॉल करें</string>
+    <string name="history_no_undo_uninstall_fire">पहले जैसा नहीं हो सकता: इसे Appstore से फिर से इंस्टॉल करें</string>
+    <string name="history_no_undo_later">पहले जैसा नहीं हो सकता: इसके बाद Home बदल गया</string>
+    <string name="history_no_undo">इसे पहले जैसा नहीं किया जा सकता</string>
+    <string name="history_restore_all">सब कुछ रीस्टोर करें (%1$d)</string>
     <string name="history_undone">पहले जैसा कर दिया</string>
     <string name="debloat_title">डीब्लोट</string>
     <string name="debloat_failed">बंद नहीं हुआ</string>

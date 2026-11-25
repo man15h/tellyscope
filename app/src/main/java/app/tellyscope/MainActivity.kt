@@ -12,6 +12,7 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -70,6 +71,7 @@ import app.tellyscope.ui.LauncherScreen
 import app.tellyscope.ui.LocalNow
 import app.tellyscope.ui.LoggedOutScreen
 import app.tellyscope.ui.PermissionScreen
+import app.tellyscope.ui.PlayerActions
 import app.tellyscope.ui.RemoteActions
 import app.tellyscope.ui.RemoteScreen
 import app.tellyscope.ui.ReportKind
@@ -233,8 +235,14 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
     Snackbars(snackbar, vm.done, vm.notice, vm::doneShown, vm::noticeShown) { vm.undo(it.entry, it.deviceId) }
     LoggedOutSnackbars(snackbar, { state.devices }, { state.selectedId }, onView = vm::select)
 
-    // A newly connected TV becomes the selection; leave the add flow then, not on tap.
-    LaunchedEffect(state.selectedId) { adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null }
+    // A newly connected TV becomes the selection; leave the add flow then, not on tap. The TV last acted on is
+    // saved, so a rotation (the game controller's) doesn't read as a new selection and close what's open.
+    var shownId by rememberSaveable { mutableStateOf(state.selectedId) }
+    LaunchedEffect(state.selectedId) {
+        if (state.selectedId == shownId) return@LaunchedEffect
+        shownId = state.selectedId
+        adding = false; remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false; rejoinId = null
+    }
     // Logged out mid-screen: the page takes over, and the TV comes back on Overview once allowed again.
     val loggedOutAt = state.selected?.loggedOutAt
     LaunchedEffect(loggedOutAt) { if (loggedOutAt != null) { remote = false; advanced = false; history = false; resetting = false; debloat = false; settings = false; whatsNew = false; access = false } }
@@ -309,14 +317,14 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             vm.historyOpened()
             onDispose { vm.historyOpened() }
         }
-        HistoryScreen(state, onUndo = vm::undo, onRestoreAll = vm::restoreAll, back = { history = false }, snackbar = snackbar)
+        HistoryScreen(state, onUndo = vm::undo, onRestoreAll = vm::restoreAll, back = { history = false }, snackbar = snackbar, onRestoredSeen = vm::restoredShown)
     } else if (resetting && state.device.reset != null) {
         val close = { vm.closeReset(); resetting = false }
-        // Leaving mid-run only closes the screen; the run goes on, and History has it when done.
-        BackHandler(onBack = close)
+        // The screen holds Back while the reset runs: Stop is the way out of it.
         ResetScreen(
             state,
-            ResetActions(reset = { vm.runReset() }, retry = { vm.runReset(retry = true) }, reload = vm::openReset, back = close),
+            ResetActions(reset = { vm.runReset() }, retry = { vm.runReset(retry = true) }, reload = vm::openReset, back = close, stop = vm::stopReset),
+            snackbar = snackbar,
         )
     } else if (access || state.device.removal != null) {
         // A removal started from the warning opens this screen too, and back steps out of it first.
@@ -340,6 +348,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             onWhatsNew = { whatsNew = true },
             back = { settings = false },
             snackbar = snackbar,
+            sourceCheck = state.sourceCheck,
+            onCancelSource = vm::cancelListSource,
         )
     } else if (state.device.launcher != null) {
         BackHandler { vm.closeLauncherFlow() }
@@ -365,8 +375,8 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             play = BuildConfig.PLAY,
         )
     } else if (debloat && state.device.debloat != null) {
-        // Leaving mid-run only closes the screen; the run goes on, and History has each app.
-        DebloatRunScreen(state.device.debloat!!, back = { vm.closeDebloat(); debloat = false }, retry = vm::retryDebloat)
+        // The screen holds Back while the run goes: Stop is the way out of it.
+        DebloatRunScreen(state.device.debloat!!, back = { vm.closeDebloat(); debloat = false }, retry = vm::retryDebloat, stop = vm::stopDebloat, snackbar = snackbar)
     } else if (debloat) {
         // Its own back handler closes the list search before leaving.
         DebloatScreen(
@@ -381,6 +391,10 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
             tvApps = state.device.apps,
             busy = state.device.busy != null,
             onHelpAdd = { vm.openReport(ReportKind.NewTv) },
+            onRetry = vm::retryLists,
+            onSuggestAgain = vm::suggestAgain,
+            onRefresh = vm::refreshLists,
+            refreshing = state.device.listsRefreshing,
         )
     } else {
         DeviceTabsScreen(
@@ -421,10 +435,24 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                 folder = vm::folder,
                 pickFile = { folder -> vm.folder(folder); pickFile.launch(arrayOf("*/*")) },
                 saveFile = { f -> vm.saving(f); saveFile.launch(f.name) },
+                deleteFile = vm::deleteFile,
+                closeDeleteFailed = vm::closeDeleteFailed,
+                reportDelete = { d ->
+                    vm.closeDeleteFailed()
+                    vm.openReport(ReportKind.Problem, res.getString(R.string.vm_report_tried_delete, d.name), d.detail)
+                },
                 cancelTransfer = vm::cancelTransfer,
+                player = PlayerActions(
+                    open = vm::openFile,
+                    store = vm::playerFromStore,
+                    direct = vm::playerDirect,
+                    download = vm::playerDownload,
+                    close = vm::closePlayer,
+                ),
                 remote = { remote = true },
                 // A run that finished while Debloat was closed is done with.
                 debloat = { vm.closeDebloat(); debloat = true },
+                retryLists = vm::retryLists,
                 advanced = { advanced = true },
                 history = { history = true },
                 reset = { vm.openReset(); resetting = true },
@@ -446,7 +474,9 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
         )
         // A sheet over the TV's page, so the page stays where it was underneath; Back or a drag closes it.
         if (remote) {
-            DisposableEffect(Unit) { onDispose { vm.closeRemote() } }
+            // Not when only rotating: the Remote comes straight back, with the TV's picture still off.
+            val activity = LocalActivity.current
+            DisposableEffect(Unit) { onDispose { if (activity?.isChangingConfigurations != true) vm.closeRemote() } }
             RemoteScreen(
                 state = state,
                 snackbar = snackbar,
@@ -461,8 +491,15 @@ fun TellyscopeApp(vm: TellyscopeViewModel) {
                     setDock = vm::setDock,
                     screenOff = vm::setScreenOff,
                     screenOffTipSeen = vm::screenOffTipSeen,
+                    modeTipSeen = vm::modeTipSeen,
                     checkVolume = vm::checkVolume,
-                    touchpad = vm::setTouchpad,
+                    pad = vm::setPad,
+                    closeController = vm::closeController,
+                    checkUhid = vm::checkUhid,
+                    hid = vm::hid,
+                    mouse = vm::mouse,
+                    gamepad = vm::gamepad,
+                    gamepadKey = vm::gamepadKey,
                 ),
             )
         }

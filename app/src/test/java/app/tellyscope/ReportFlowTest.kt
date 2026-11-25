@@ -6,15 +6,20 @@ import androidx.lifecycle.viewModelScope
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.Reports
 import app.tellyscope.adb.TvFacts
+import app.tellyscope.data.Action
+import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.AppInfo
 import app.tellyscope.data.Device
 import app.tellyscope.data.DeviceSource
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.Docked
 import app.tellyscope.data.FakeDeviceSource
+import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.ScanKind
 import app.tellyscope.data.Snapshot
+import app.tellyscope.data.UiText
+import app.tellyscope.data.UiTextException
 import app.tellyscope.ui.Copy
 import app.tellyscope.ui.ReportKind
 import app.tellyscope.ui.TellyscopeViewModel
@@ -36,6 +41,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
+/** Actions.HOME_NOT_BACK, which is internal to :adb. */
+private const val HOME_NOT_BACK = "Home didn't open it, and didn't go back to the old home screen either. Make that one the home screen again before the TV restarts"
+
 /** One TV called Projector on wireless debugging; its state and its read are set by the test. */
 private class ReportTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenario.Empty, clock = { 0L }) {
     var state = DeviceState.Online
@@ -51,6 +59,10 @@ private class ReportTv : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scena
     override suspend fun apps(deviceId: String) = emptyList<AppInfo>()
     override suspend fun launch(deviceId: String, packageName: String) = false
     override suspend fun facts(deviceId: String) = if (readable) facts else throw java.io.IOException("gone")
+    // A Home switch fails with Home left on the setup app; any other change is refused, the way the setup-wizard lock refuses one.
+    override suspend fun act(deviceId: String, action: Action, packageName: String, undoing: Long?): HistoryEntry =
+        if (action == Action.Home) throw ActionFailed(UiText.Raw(HOME_NOT_BACK), "Home opens com.google.android.tungsten.setupwraith/.MainActivity, not com.google.android.tvlauncher/.MainActivity")
+        else throw UiTextException(UiText.Raw("the TV may get stuck on restart without it"))
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -93,6 +105,34 @@ class ReportFlowTest {
         val r = vm.state.value.report!!
         assertEquals("Tried to install Kodi", r.details)
         assertEquals(listOf("00:00:00 " + Copy.cantOpen("Kodi").text(), "The TV said: INSTALL_FAILED_UPDATE_INCOMPATIBLE"), r.log!!.text().lines().map { it.replaceFirst(Regex("^\\d\\d:\\d\\d:\\d\\d"), "00:00:00") })
+    }
+
+    @Test fun aRefusalInTheLogNamesTheApp() = with(test) {
+        start()
+        vm.propose("com.google.android.tungsten.setupwraith", Action.Disable)
+        vm.confirm()
+        runCurrent()
+        vm.openReport(ReportKind.Problem)
+        val r = vm.state.value.report!!
+        // Logged once, with the app; the snackbar itself says only why.
+        assertEquals(listOf("00:00:00 Disable com.google.android.tungsten.setupwraith: The TV may get stuck on restart without it"), r.log!!.text().lines().map { it.replaceFirst(Regex("^\\d\\d:\\d\\d:\\d\\d"), "00:00:00") })
+        assertEquals("The TV may get stuck on restart without it", vm.notice.value!!.text())
+    }
+
+    @Test fun aFailureInTheLogKeepsItsDetails() = with(test) {
+        start()
+        vm.propose("com.spocky.projengmenu", Action.Home)
+        vm.confirm()
+        runCurrent()
+        vm.openReport(ReportKind.Problem)
+        val r = vm.state.value.report!!
+        assertEquals(
+            listOf(
+                "00:00:00 Home com.spocky.projengmenu: $HOME_NOT_BACK",
+                "00:00:00 Home opens com.google.android.tungsten.setupwraith/.MainActivity, not com.google.android.tvlauncher/.MainActivity",
+            ),
+            r.log!!.text().lines().map { it.replaceFirst(Regex("^\\d\\d:\\d\\d:\\d\\d"), "00:00:00") },
+        )
     }
 
     @Test fun withNoTvOnlineItSaysItCouldNotConnect() = with(test) {

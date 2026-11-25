@@ -27,17 +27,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -47,16 +47,16 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -68,8 +68,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -179,8 +177,14 @@ fun DeviceTabsScreen(
     LaunchedEffect(tab) { onTab(tab) }
     var searching by rememberSaveable { mutableStateOf(false) }
     var appsTab by rememberSaveable { mutableStateOf(AppsTab.Running) }
+    // One app row open at a time, across every list and search.
+    val openRow = rememberSaveable { mutableStateOf<String?>(null) }
     val q = state.query.trim().lowercase()
     val offline = device.state != DeviceState.Online
+    // Back from the background, until the TV answers again: Overview keeps its last values, the other tabs wait.
+    val checking = ui.checking && !offline
+    // When the TV last answered, over Overview's saved stats while it's away or not yet read.
+    val ago = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() }
     // Off Wi-Fi the phone is what's cut off, so the empty tabs say so rather than blame the TV.
     val offWifi = offline && state.offWifi
     val awayIcon = if (offWifi) DeviceIcons.WifiOff else DeviceIcons.Tv
@@ -351,10 +355,15 @@ fun DeviceTabsScreen(
                         // Away, storage is the last one seen, this session's or the saved one after a restart.
                         val used = snap?.storageUsedGb ?: device.lastKnown?.storageUsedGb
                         val total = snap?.storageTotalGb ?: device.lastKnown?.storageTotalGb
-                        if (live != null) {
+                        if (live != null && checking) {
+                            item { SystemWidget(live.storageUsedGb, live.storageTotalGb, live, seen = ago?.let { stringResource(R.string.device_last_seen_updating, it) }) }
+                        } else if (live != null) {
                             item { SystemWidget(live) }
+                        } else if (!offline && ago != null && used != null && total != null) {
+                            // Just opened: the page is the saved copy until the TV's first read lands.
+                            item { SystemWidget(used, total, null, seen = stringResource(R.string.device_last_seen_updating, ago)) }
                         } else if (offline && used != null && total != null) {
-                            item { SystemWidget(used, total, null, asOf = device.lastSeen?.let { Copy.ago(it, state.clock()).resolve() } ?: stringResource(R.string.tabs_last_visit)) }
+                            item { SystemWidget(used, total, null, seen = ago?.let { stringResource(R.string.device_last_seen, it) } ?: stringResource(R.string.device_as_of, stringResource(R.string.tabs_last_visit))) }
                         } else if (offline) {
                             item { Muted(Copy.noStats(device.state).resolve()) }
                         }
@@ -366,12 +375,14 @@ fun DeviceTabsScreen(
                                     todo = debloat.todo,
                                     disabling = ui.busy == DISABLING,
                                     // With nothing left on the list, Debloat leads to the apps for one-off changes,
-                                    // through a gate that says so until the user turns it off.
+                                    // through a gate that says so until the user turns it off. A list that didn't
+                                    // load opens Debloat, which offers Try again.
                                     onDebloat = when {
-                                        debloat.todo -> actions.debloat
+                                        debloat.todo || ui.lists is Suggestions.Unavailable -> actions.debloat
                                         state.debloatGate && ui.lists is Suggestions.Ready -> ({ gate = true })
                                         else -> ({ tab = TvTab.Apps })
                                     },
+                                    loading = ui.lists == null,
                                 )
                             }
                             // A better home screen is a suggestion, so it sits with the actions rather than among the apps.
@@ -380,21 +391,24 @@ fun DeviceTabsScreen(
                             }
                         }
                         // The list, what's plugged in, and Android.
-                        item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history) }
+                        item { SuggestedCard(ui.lists, debloat, offline, onChanges = actions.history, onRetry = actions.retryLists) }
                         ui.peripherals?.takeIf { !offline }?.let { p -> item(key = "connectedDevices") { ConnectedDevicesCard(p) } }
                         item { AndroidCard(state, snap, offline, onUpdates = actions.checkUpdates) }
                     }
                     TvTab.Apps -> {
                         fun rows(apps: List<AppInfo>) = items(apps, key = { it.packageName }) { app ->
-                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline, onScreen = ui.snapshot?.onScreen)
+                            AppRow(app, procs, ui.pending, ui.busy == app.packageName, actions, locked = ui.busy != null, toHomeScreen = { if (searching) closeSearch(); tab = TvTab.Tweaks }, offline = offline, onScreen = ui.snapshot?.onScreen, openRow = openRow)
                         }
                         // Until the first read lands, an empty list means "not yet", not "none".
                         val loading = ui.appsLoading && !offline
                         if (searching) {
                             // One flat list of every matching app, whichever button it sits under; each row says
                             // whether it's running, off or protected.
-                            if (found.isEmpty()) item { if (loading) AppsLoading() else EmptyLine(q) }
-                            rows(found)
+                            if (checking) item { AppsLoading(Copy.CHECKING) }
+                            else {
+                                if (found.isEmpty()) item { if (loading) AppsLoading() else EmptyLine(q) }
+                                rows(found)
+                            }
                         } else {
                             tvStore(device, ui.apps)?.let { store -> item(key = "store") { StoreCard(store, offline, locked = ui.busy != null, actions) } }
                             stickyHeader(key = "appsTabs") {
@@ -404,7 +418,8 @@ fun DeviceTabsScreen(
                                     below = { SearchPill(enabled = !offline) { searching = true } },
                                 ) { appsTab = AppsTab.entries[it] }
                             }
-                            if (split != null) {
+                            if (checking) item { AppsLoading(Copy.CHECKING) }
+                            else if (split != null) {
                                 if (split.apps.isEmpty() && split.system.isEmpty()) item {
                                     // Away, the TV can't say what it has, rather than it has nothing.
                                     when {
@@ -433,12 +448,13 @@ fun DeviceTabsScreen(
                         // Pinned under the bar once the hero has folded into it, like the Apps tabs.
                         stickyHeader(key = "folders") {
                             PinnedSegments(TvFolder.entries.map { Copy.folder(it).resolve() }, ui.files.folder.ordinal, lerp(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceContainer, collapse), inset = 16.dp) {
-                                if (!offline) actions.folder(TvFolder.entries[it])
+                                if (!offline && !checking) actions.folder(TvFolder.entries[it])
                             }
                         }
                         val folder = ui.files.folder
                         when {
                             offline -> item { EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else stringResource(R.string.tabs_files_offline)) }
+                            checking -> item { AppsLoading(Copy.CHECKING) }
                             ui.files.error == null && ui.files.list?.isEmpty() == true -> item {
                                 EmptyState(
                                     if (folder == TvFolder.MOVIES) TileIcons.Movie else TabIcons.Folder,
@@ -451,6 +467,7 @@ fun DeviceTabsScreen(
                     }
                     TvTab.Tweaks -> {
                         if (offline) item { EmptyState(awayIcon, awayTitle, if (offWifi) Copy.OFF_WIFI_LINE.resolve() else stringResource(R.string.tabs_tweaks_offline)) }
+                        else if (checking) item { AppsLoading(Copy.CHECKING) }
                         else {
                             if (homeLaunchers(ui.apps).isNotEmpty()) item { Panel(Copy.HOME_SCREEN.resolve()) { HomeScreenBlock(ui, actions, fire) } }
                             item { Panel(Copy.TWEAKS.resolve()) { TweaksBlock(ui, actions) } }
@@ -462,6 +479,7 @@ fun DeviceTabsScreen(
             if (!offline) ui.request?.let { RequestDialog(it, ui.busy == ANSWERING, actions.answerRequest, actions.dismissRequest, actions.closeAlert) }
             ui.sideload?.let { SideloadDialog(it, actions) }
             ui.transfer?.let { TransferDialog(it, actions.cancelTransfer) }
+            ui.player?.let { PlayerDialog(it, name(device), actions.player) }
         }
         // Over everything, so the cookie and name can pass from the list into the bar.
         if (!searching) HeroMorphOverlay(device, morph) { collapse }
@@ -471,10 +489,7 @@ fun DeviceTabsScreen(
 /** A titled card for a tab's block, not folded: each tab has room for it. */
 @Composable
 private fun Panel(title: String, body: @Composable () -> Unit) {
-    Card(
-        Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
-    ) {
+    AppCard(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
             body()
@@ -524,7 +539,8 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
     // The sheet slides away before what was picked opens.
     val pick = { then: () -> Unit -> scope.launch { sheet.hide() }.invokeOnCompletion { open = false; then() } }
     ModalBottomSheet(onDismissRequest = { open = false }, sheetState = sheet) {
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        // Taller than a short screen, so it scrolls: else the sheet only drags and Forget stays cut off.
+        Column(Modifier.verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
             Row(Modifier.padding(start = 4.dp, bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Cookie(device, 48.dp)
                 Spacer(Modifier.width(16.dp))
@@ -546,9 +562,9 @@ private fun AppMenu(state: UiState, actions: DeviceActions) {
                         dot = { if (state.device.access?.warning == true) MenuDot(true, false) },
                     ) { pick(actions.whoHasAccess) }
                 },
-                { MenuRow(Icons.Default.List, Copy.ADVANCED_MONITOR.resolve()) { pick(actions.advanced) } },
+                { MenuRow(Icons.AutoMirrored.Filled.List, Copy.ADVANCED_MONITOR.resolve()) { pick(actions.advanced) } },
             )
-            Text("Tellyscope", style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp))
+            SectionHeader("Tellyscope", Modifier.padding(start = 16.dp))
             SheetGroup(
                 { MenuRow(Icons.Default.Settings, stringResource(R.string.tabs_settings)) { pick(actions.settings) } },
                 { MenuRow(Icons.Default.Share, Copy.SHARE.resolve()) { pick { shareTellyscope(context) } } },
@@ -618,7 +634,8 @@ internal fun MenuBlock(items: @Composable () -> Unit) {
 @Composable
 private fun SearchPill(enabled: Boolean, onClick: () -> Unit) {
     Surface(onClick = onClick, enabled = enabled, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        // The same field as the open search: 56 dp, the magnifier where the TextField puts its leading icon.
+        Row(Modifier.heightIn(min = 56.dp).padding(start = 12.dp, end = 16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(16.dp))
             Text(stringResource(R.string.tabs_search_apps), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -635,25 +652,14 @@ private fun SearchHeader(query: String, onQuery: (String) -> Unit, onClose: () -
     val focus = remember { FocusRequester() }
     LaunchedEffect(focus) { focus.requestFocus() }
     Column(Modifier.background(MaterialTheme.colorScheme.surface).statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp)) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.tabs_close_search)) }
-                TextField(
-                    value = query,
-                    onValueChange = onQuery,
-                    placeholder = { Text(stringResource(R.string.tabs_search_apps)) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                    ),
-                    modifier = Modifier.weight(1f).focusRequester(focus),
-                )
-                if (query.isNotEmpty()) IconButton(onClick = { onQuery("") }) { Icon(Icons.Default.Close, contentDescription = stringResource(R.string.tabs_clear_search)) }
-            }
-        }
+        SearchField(
+            query, onQuery,
+            placeholder = stringResource(R.string.tabs_search_apps),
+            clear = stringResource(R.string.tabs_clear_search),
+            modifier = Modifier.focusRequester(focus),
+            onClose = onClose,
+            close = stringResource(R.string.tabs_close_search),
+        )
     }
 }
 
@@ -671,6 +677,8 @@ internal data class DebloatState(
     val todo: Boolean,
     /** Of [total], the ones off right now, however they were turned off. */
     val off: Int = 0,
+    /** Apps on the list the user asked not to see again, left out of the rest. */
+    val hidden: Int = 0,
 )
 
 /**
@@ -710,12 +718,13 @@ internal fun debloatState(ui: DeviceUi): DebloatState {
     val ours = ui.history.filter { it.action == Action.Disable && it.undoneAt == null }.map { it.packageName }.toSet()
     val back = ui.apps.filter { it.enabled && it.packageName in ours }.map { it.packageName }.toSet()
     val ready = ui.lists as? Suggestions.Ready
-    val listed = ready?.list?.let { l -> l.groups.flatMap { g -> g.packages.map { it.pkg } }.filter { it !in l.keep }.toSet() }.orEmpty()
+    val hidden = ready?.hidden.orEmpty().map { it.pkg }.toSet()
+    val listed = ready?.list?.let { l -> l.groups.flatMap { g -> g.packages.map { it.pkg } }.filter { it !in l.keep && it !in hidden }.toSet() }.orEmpty()
     val candidates = ui.apps.filter { it.packageName in listed && (!it.enabled || it.protectedReason == null) }
     val on = candidates.filter { it.enabled }.map { it.packageName }.toSet()
     val count = (on + back).size
     val off = candidates.count { !it.enabled }
-    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off)
+    return DebloatState(candidates.size, on.size, back.size, count, count > 0 || ui.lists is Suggestions.NoList, off, hidden.size)
 }
 
 /**
@@ -783,15 +792,22 @@ private fun RemoteButton(enabled: Boolean, onClick: () -> Unit, modifier: Modifi
 }
 
 /**
- * The list in one line of plain text, with See changes beside it. When apps Tellyscope turned off
- * are on again, one red line says so; the Debloat tile above carries the count and the fix.
+ * The list in one line of plain text, with See changes beside it once the list has loaded: a
+ * loader while it loads, Try again when it didn't. When apps Tellyscope turned off are on again,
+ * one red line says so; the Debloat tile above carries the count and the fix.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit) {
+private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean, onChanges: () -> Unit, onRetry: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    Card(colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // As tall as a row with a button, so the card keeps its height when the button comes.
+            Row(Modifier.heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (lists == null && !offline) {
+                    LoadingIndicator(Modifier.size(24.dp))
+                    Spacer(Modifier.width(12.dp))
+                }
                 Text(
                     when (lists) {
                         is Suggestions.Ready -> when {
@@ -800,13 +816,20 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
                             else -> pluralStringResource(R.plurals.tabs_suggested_some_off, d.total, d.total - d.on, d.total)
                         }
                         is Suggestions.NoList -> stringResource(R.string.tabs_suggested_no_list)
-                        Suggestions.Unavailable -> stringResource(R.string.tabs_suggested_unavailable)
+                        is Suggestions.Unavailable -> stringResource(R.string.tabs_suggested_unavailable)
                         null -> stringResource(if (offline) R.string.tabs_suggested_offline else R.string.tabs_suggested_loading)
                     },
                     Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
+                when (lists) {
+                    null -> Unit
+                    is Suggestions.Unavailable -> TryAgainButton(stringResource(R.string.tabs_try_again), onRetry, enabled = !offline)
+                    else -> TextButton(onClick = onChanges) { Text(stringResource(R.string.tabs_see_changes)) }
+                }
+            }
+            if (lists is Suggestions.Ready && d.hidden > 0) {
+                Text(pluralStringResource(R.plurals.tabs_not_suggested, d.hidden, d.hidden), Modifier.padding(end = 8.dp), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
             }
             if (d.back > 0) {
                 val required = stringResource(R.string.tabs_action_required)
@@ -840,7 +863,7 @@ private fun SuggestedCard(lists: Suggestions?, d: DebloatState, offline: Boolean
 @Composable
 private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpdates: () -> Unit) {
     val device = state.selected ?: return
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         StatusRow(
             Icons.Default.Info,
             device.fireOs?.let { stringResource(R.string.tabs_fire_os_version, it) }
@@ -856,7 +879,7 @@ private fun AndroidCard(state: UiState, snap: Snapshot?, offline: Boolean, onUpd
 @Composable
 private fun StoreCard(store: AppInfo, offline: Boolean, locked: Boolean, actions: DeviceActions) {
     val name = stringResource(if (store.packageName == AMAZON_APPSTORE) R.string.tabs_store_amazon else R.string.tabs_store_play)
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow), shape = MaterialTheme.shapes.large) {
+    AppCard {
         if (store.enabled) {
             StatusRow(TileIcons.Store, name, stringResource(R.string.tabs_store_sub), Copy.button(Action.Open).resolve(), !offline && !locked) {
                 actions.openStore(store.packageName, name)
@@ -875,7 +898,7 @@ private fun StatusRow(icon: ImageVector, title: String, sub: String?, button: St
         headlineContent = { Text(title) },
         supportingContent = sub?.let { { Text(it) } },
         leadingContent = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-        trailingContent = { TextButton(onClick = onClick, enabled = enabled) { Text(button) } },
+        trailingContent = { FilledTonalButton(onClick = onClick, enabled = enabled) { Text(button) } },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     )
 }

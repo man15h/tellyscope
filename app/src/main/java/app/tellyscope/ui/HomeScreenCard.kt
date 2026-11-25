@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -71,12 +71,13 @@ internal fun homeMove(app: AppInfo, current: AppInfo?): Action? = when {
  * the one place to change it. Make Home asks first; only the TV's own launcher is ever turned off.
  * [fire]: Fire OS ([fireInstall]), where Change home screen opens the list's Fire OS launchers ([fireLaunchers]), installed without a Play Store.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false) {
     val launchers = homeLaunchers(ui.apps)
     val current = launchers.firstOrNull { it.home }
     val locked = ui.busy != null
-    if (launchers.any { it.packageName == ui.busy }) LinearProgressIndicator(Modifier.fillMaxWidth())
+    if (launchers.any { it.packageName == ui.busy }) LinearWavyProgressIndicator(Modifier.fillMaxWidth())
     if (current != null) {
         Text(Copy.opensOnHome(current.label).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
     } else {
@@ -117,7 +118,7 @@ fun HomeScreenBlock(ui: DeviceUi, actions: DeviceActions, fire: Boolean = false)
 /** Material 3 has no banner; a tonal surface stands in, as for the other notes. */
 @Composable
 private fun NoDefaultBanner() {
-    Surface(color = MaterialTheme.colorScheme.secondaryContainer, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth(), color = MaterialTheme.colorScheme.secondaryContainer) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(HubIcons.InfoOutline, contentDescription = null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSecondaryContainer)
             Spacer(Modifier.width(8.dp))
@@ -138,7 +139,7 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
     }
     Column {
         Row {
-            AppIcon(app, Modifier.alpha(if (app.enabled) 1f else 0.4f))
+            AppIcon(app, Modifier.alpha(if (app.enabled) 1f else 0.38f))
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 // The chip the picker shows on it too; the name gives way first.
@@ -163,13 +164,13 @@ private fun LauncherRow(app: AppInfo, move: Action?, locked: Boolean, onMove: (A
                 }
             }
         }
-        // One action row for every launcher, so Uninstall lines up whether or not Make Home sits beside it.
+        // One action row for every launcher, end-aligned, Uninstall beside the main action.
         val serviceOn = app.home && app.homeServiceOff
         if (move != null || serviceOn || app.removable) {
-            Row(Modifier.padding(start = 52.dp, top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (move != null) FilledTonalButton(onClick = { onMove(move) }, enabled = !locked) { Text(Copy.MAKE_HOME.resolve()) }
-                if (serviceOn) FilledTonalButton(onClick = { turningOn = true }, enabled = !locked) { Text(Copy.TURN_ON.resolve()) }
+            ButtonRow(Modifier.padding(start = 52.dp, top = 8.dp)) {
                 if (app.removable) TextButton(onClick = onUninstall, enabled = !locked) { Text(Copy.button(Action.Uninstall).resolve()) }
+                if (serviceOn) FilledTonalButton(onClick = { turningOn = true }, enabled = !locked) { Text(Copy.TURN_ON.resolve()) }
+                if (move != null) FilledTonalButton(onClick = { onMove(move) }, enabled = !locked) { Text(Copy.MAKE_HOME.resolve()) }
             }
         }
     }

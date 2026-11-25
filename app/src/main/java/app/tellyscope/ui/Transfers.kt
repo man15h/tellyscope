@@ -6,32 +6,45 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -53,6 +67,7 @@ import app.tellyscope.ui.theme.SmallNumber
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import app.tellyscope.R
+import app.tellyscope.data.media
 import app.tellyscope.data.resolve
 
 /**
@@ -67,18 +82,19 @@ internal val Sticky = DialogProperties(dismissOnBackPress = false, dismissOnClic
  * neighbours and [onDebloat] leads somewhere quieter.
  */
 @Composable
-fun ActionTiles(actions: DeviceActions, count: Int, todo: Boolean, disabling: Boolean, onDebloat: () -> Unit) {
-    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Tile(Icons.Default.Add, stringResource(R.string.transfers_install_app), actions.pickApp, Modifier.weight(1f))
+fun ActionTiles(actions: DeviceActions, count: Int, todo: Boolean, disabling: Boolean, onDebloat: () -> Unit, loading: Boolean = false) {
+    // A label that wraps makes its tile taller, and the others match it.
+    Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Tile(Icons.Default.Add, stringResource(R.string.transfers_install_app), actions.pickApp, Modifier.weight(1f).fillMaxHeight())
+        // Greyed while the list loads, so it can't open something else in the meantime.
         Tile(
-            Broom, if (disabling) stringResource(R.string.transfers_disabling) else stringResource(R.string.transfers_debloat), onDebloat, Modifier.weight(1f),
-            enabled = !disabling, primary = todo, badge = count.takeIf { todo && it > 0 },
+            Broom, if (disabling) stringResource(R.string.transfers_disabling) else stringResource(R.string.transfers_debloat), onDebloat, Modifier.weight(1f).fillMaxHeight(),
+            enabled = !disabling && !loading, primary = todo, badge = count.takeIf { todo && it > 0 },
         )
         // Where the file lands is the user's choice, every time, not whatever folder was last shown.
         var choosing by remember { mutableStateOf(false) }
-        Box(Modifier.weight(1f)) {
-            @Suppress("DEPRECATION") // the AutoMirrored set isn't in icons-core
-            Tile(Icons.Default.Send, stringResource(R.string.transfers_send_file), { choosing = true }, Modifier.fillMaxWidth())
+        Box(Modifier.weight(1f).fillMaxHeight()) {
+            Tile(Icons.AutoMirrored.Filled.Send, stringResource(R.string.transfers_send_file), { choosing = true }, Modifier.fillMaxSize())
             DropdownMenu(choosing, onDismissRequest = { choosing = false }) {
                 TvFolder.entries.forEach { f ->
                     DropdownMenuItem(
@@ -120,14 +136,14 @@ private fun Tile(
         },
     ) {
         Column(
-            Modifier.padding(vertical = 20.dp, horizontal = 4.dp),
+            Modifier.fillMaxSize().padding(vertical = 20.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
         ) {
             BadgedBox(badge = { if (badge != null) Badge { Text(badge.toString()) } }) {
                 Icon(icon, contentDescription = null, Modifier.size(28.dp))
             }
-            Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+            Text(label, style = MaterialTheme.typography.labelLarge, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -144,40 +160,121 @@ internal val Broom = ImageVector.Builder("Broom", 24.dp, 24.dp, 24f, 24f)
     )
     .build()
 
-/** Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. */
+/**
+ * Body of the Files tab, under its folder tabs: the folder's files, each one tap from the phone. Every file
+ * opens a sheet with Save and Delete on TV; a video, a song or a picture also gets Open on TV.
+ */
 @Composable
 fun FilesBlock(files: FilesUi, now: Long, actions: DeviceActions) {
     val list = files.list
+    var picked by remember { mutableStateOf<TvFile?>(null) }
+    var deleting by remember { mutableStateOf<TvFile?>(null) }
     when {
         list == null -> Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.Center) {
             @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-            LoadingIndicator(Modifier.size(32.dp))
+            LoadingIndicator(Modifier.size(48.dp))
         }
         files.error != null -> Muted(files.error.resolve())
         else -> {
-            list.forEach { f -> FileRow(f, now) { actions.saveFile(f) } }
+            list.forEach { f ->
+                FileRow(f, now) { picked = f }
+            }
             // Only with files to tap; an empty folder shows its own page instead.
             if (list.isNotEmpty()) Muted(stringResource(R.string.transfers_tap_to_save))
+        }
+    }
+    picked?.let { f ->
+        FileSheet(
+            f,
+            onOpen = if (media(f.name) != null) ({ picked = null; actions.player.open(f) }) else null,
+            onSave = { picked = null; actions.saveFile(f) },
+            onDelete = { picked = null; deleting = f },
+            onClose = { picked = null },
+        )
+    }
+    deleting?.let { f ->
+        DeleteDialog(f, files.folder, onDelete = { deleting = null; actions.deleteFile(f) }, onCancel = { deleting = null })
+    }
+    files.deleteFailed?.let { DeleteFailedDialog(it, actions) }
+}
+
+@Composable
+private fun FileRow(f: TvFile, now: Long, onTap: () -> Unit) {
+    Column(Modifier.fillMaxWidth().clickable(onClick = onTap).padding(vertical = 8.dp)) {
+        Text(f.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
+        Text(
+            "${Copy.bytes(f.size).resolve()} · ${Copy.ago(f.modifiedMillis, now).resolve()}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+/** A file's name and size, then Open on TV ([onOpen] null: nothing on the TV opens it), Save and Delete on TV. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FileSheet(f: TvFile, onOpen: (() -> Unit)?, onSave: () -> Unit, onDelete: () -> Unit, onClose: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onClose, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+            Column(Modifier.padding(horizontal = 24.dp, vertical = 8.dp)) {
+                Text(f.name, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.MiddleEllipsis)
+                Text(Copy.bytes(f.size).resolve(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            onOpen?.let { SheetItem(LauncherIcons.Cast, R.string.copy_open_on_tv, it) }
+            SheetItem(LauncherIcons.Download, R.string.transfers_save, onSave)
+            // Red, as it can't be taken back: the TV keeps no trash.
+            SheetItem(Icons.Default.Delete, R.string.transfers_delete, onDelete, tint = MaterialTheme.colorScheme.error)
         }
     }
 }
 
 @Composable
-private fun FileRow(f: TvFile, now: Long, onSave: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clickable(onClick = onSave).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(f.name, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.MiddleEllipsis)
-            Text(
-                "${Copy.bytes(f.size).resolve()} · ${Copy.ago(f.modifiedMillis, now).resolve()}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        TextButton(onClick = onSave) { Text(stringResource(R.string.transfers_save)) }
-    }
+private fun SheetItem(icon: ImageVector, label: Int, onClick: () -> Unit, tint: Color? = null) {
+    ListItem(
+        headlineContent = { Text(stringResource(label)) },
+        leadingContent = { Icon(icon, null) },
+        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp),
+        colors = if (tint == null) ListItemDefaults.colors(containerColor = Color.Transparent)
+        else ListItemDefaults.colors(containerColor = Color.Transparent, headlineColor = tint, leadingIconColor = tint),
+    )
+}
+
+/** Delete on TV's confirm: Cancel as a text button, Delete filled in the error colour. */
+@Composable
+private fun DeleteDialog(f: TvFile, folder: TvFolder, onDelete: () -> Unit, onCancel: () -> Unit) {
+    val c = MaterialTheme.colorScheme
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(stringResource(R.string.transfers_delete_title, f.name)) },
+        text = { Text(stringResource(R.string.transfers_delete_text, Copy.folder(folder).resolve()), style = MaterialTheme.typography.bodyMedium) },
+        confirmButton = {
+            Button(onClick = onDelete, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) {
+                Text(stringResource(R.string.transfers_delete_button))
+            }
+        },
+        dismissButton = { TextButton(onClick = onCancel) { Text(stringResource(R.string.transfers_cancel)) } },
+    )
+}
+
+/** Laid out like a failed install: what didn't happen, then the TV's own words. */
+@Composable
+private fun DeleteFailedDialog(d: DeleteFailed, actions: DeviceActions) {
+    AlertDialog(
+        onDismissRequest = actions.closeDeleteFailed,
+        icon = { Icon(Icons.Default.Warning, null) },
+        title = { Text(stringResource(R.string.transfers_delete_failed, d.name)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.transfers_delete_still_there), style = MaterialTheme.typography.bodyMedium)
+                d.why?.let { Text(it.resolve(), style = MaterialTheme.typography.bodyMedium) }
+                d.detail?.takeIf { it.isNotBlank() }?.let {
+                    Text(stringResource(R.string.transfers_tv_said, it), style = SmallNumber, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 4, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        },
+        confirmButton = { Button(onClick = actions.closeDeleteFailed) { Text(stringResource(R.string.transfers_ok)) } },
+        dismissButton = { TextButton(onClick = { actions.reportDelete(d) }) { Text(stringResource(R.string.transfers_report)) } },
+    )
 }
 
 @Composable
@@ -232,7 +329,7 @@ fun SideloadDialog(s: SideloadUi, actions: DeviceActions) {
                         Text(Copy.installKind(kind, s.installed?.versionName, app?.info?.versionName).resolve(), style = MaterialTheme.typography.bodyMedium)
                         if (kind == InstallKind.DOWNGRADE) {
                             Row(
-                                Modifier.fillMaxWidth().clickable { actions.allowDowngrade(!s.allowDowngrade) },
+                                Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable { actions.allowDowngrade(!s.allowDowngrade) },
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Checkbox(s.allowDowngrade, onCheckedChange = null)

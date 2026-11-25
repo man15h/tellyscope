@@ -5,6 +5,8 @@ package app.tellyscope.data
 import app.tellyscope.adb.StatsProfile
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.ConnectionRequest
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
 import app.tellyscope.adb.Peripheral
@@ -18,6 +20,7 @@ import app.tellyscope.adb.TvShell
 import app.tellyscope.adb.UpdateScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
 import okio.Sink
 import okio.Source
 import java.io.File
@@ -41,6 +44,9 @@ interface DeviceSource {
      * that couldn't be downloaded at launch (the phone offline, nothing cached) arrive without a restart.
      */
     suspend fun refreshListsOnNetwork() {}
+
+    /** Debloat's Refresh: the list source's index fetched again; false when it couldn't be, and the saved one stays. */
+    suspend fun reloadLists(): Boolean = true
 
     /** Whether the phone is on Wi-Fi or Ethernet right now, VPN or not. */
     fun onLan(): Boolean = true
@@ -84,6 +90,12 @@ interface DeviceSource {
      */
     fun pause(paused: Boolean) {}
 
+    /**
+     * True from the return to the foreground until [deviceId] answers a fresh read, or stops being online:
+     * its connection sat idle in the background, so what it last said may be out of date.
+     */
+    fun checking(deviceId: String): Flow<Boolean> = flowOf(false)
+
     suspend fun apps(deviceId: String): List<AppInfo>
 
     suspend fun network(deviceId: String): NetworkInfo
@@ -103,7 +115,7 @@ interface DeviceSource {
     /** Puts away the TV page's card about [packageName]'s service being off, until the next switch. */
     suspend fun dismissServiceNote(deviceId: String, packageName: String) {}
 
-    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from `launchers.json`; false when it didn't open. */
+    /** Opens the Play Store on the TV at [packageName]'s page, a launcher from `launchers.json` or [PLAYER]; false when it didn't open. */
     suspend fun openStore(deviceId: String, packageName: String): Boolean = false
 
     /** Whether [packageName] is installed yet, and if not, whether the Store is still on screen. */
@@ -130,11 +142,12 @@ interface DeviceSource {
     suspend fun resetPlan(deviceId: String): ResetPlan = ResetPlan()
 
     /**
-     * Runs [plan], reporting each step to [onProgress], and goes on past a step that fails. All of
-     * it is one History entry; a retry ([into], that entry's id) adds to it. Returns the entry's id,
-     * null when nothing changed, and what failed.
+     * Runs [plan], reporting each step to [onProgress], and goes on past a step that fails. Once
+     * [stop] says so it starts no further step: the one running finishes. All of it is one History
+     * entry; a retry ([into], that entry's id) adds to it. Returns the entry's id, null when nothing
+     * changed, and what failed.
      */
-    suspend fun reset(deviceId: String, plan: ResetPlan, into: Long? = null, onProgress: (ResetProgress) -> Unit = {}): Pair<Long?, List<ResetFailure>> = null to emptyList()
+    suspend fun reset(deviceId: String, plan: ResetPlan, into: Long? = null, stop: () -> Boolean = { false }, onProgress: (ResetProgress) -> Unit = {}): Pair<Long?, List<ResetFailure>> = null to emptyList()
 
     /** The version of [packageName] on the TV, or null when it isn't installed. */
     suspend fun installed(deviceId: String, packageName: String): InstalledVersion?
@@ -156,6 +169,21 @@ interface DeviceSource {
 
     suspend fun pull(deviceId: String, folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit)
 
+    /** Deletes [file] from [folder] on the TV; throws with what the TV said when it didn't. */
+    suspend fun deleteFile(deviceId: String, folder: TvFolder, file: TvFile)
+
+    /** The packages that open [file] in [folder] as [mime], in the TV's order; stubs and all, as the TV says. */
+    suspend fun fileHandlers(deviceId: String, folder: TvFolder, file: TvFile, mime: String): List<String> = emptyList()
+
+    /**
+     * Opens [file] on the TV in [packageName], or in what the TV picks when null. [allowReading]: first let it read the
+     * shared folders, so it doesn't ask on the TV; only for [PLAYER], which Tellyscope offered. False when it didn't open.
+     */
+    suspend fun openFile(deviceId: String, folder: TvFolder, file: TvFile, mime: String, packageName: String?, allowReading: Boolean = false): Boolean = false
+
+    /** The TV's CPU types, best first, for which build of an app to download. */
+    suspend fun abis(deviceId: String): List<String> = emptyList()
+
     /**
      * What the TV's list from tellyscope-devices suggests turning off. Never throws; offline it
      * uses the cached lists, or answers [Suggestions.Unavailable]. [apps] is the TV's app list,
@@ -163,8 +191,20 @@ interface DeviceSource {
      */
     suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions
 
-    /** "Pick your TV": use list [listId] for this TV from now on. */
-    suspend fun pickList(deviceId: String, listId: String)
+    /**
+     * "Pick your TV": use list [listId] for this TV from now on, or with null the list that
+     * matches it again. Returns the pick it replaced.
+     */
+    suspend fun pickList(deviceId: String, listId: String?): String?
+
+    /** The TV's apps and lists as last read, saved on this phone; null for a TV never read. Never calls the TV. */
+    suspend fun lastState(deviceId: String): LastState? = null
+
+    /** Saves the TV's [apps] and [lists] for [lastState]; lists null or [Suggestions.Unavailable] keep the ones saved before. */
+    suspend fun saveLastState(deviceId: String, apps: List<AppInfo>, lists: Suggestions?) {}
+
+    /** Debloat stops suggesting [packages] on this TV with [hide], or suggests them again without; kept on this phone. */
+    suspend fun hideSuggested(deviceId: String, packages: Collection<String>, hide: Boolean)
 
     /** Where the debloat lists come from, as the user set it; null for tellyscope-devices. */
     suspend fun listSource(): String?
@@ -187,6 +227,24 @@ interface DeviceSource {
      * Remote's volume keys do nothing (see [app.tellyscope.adb.Remote.musicFixed]). Throws when it's gone.
      */
     suspend fun volumeFixed(deviceId: String): Boolean = false
+
+    /**
+     * The TV lets Tellyscope add a virtual mouse or gamepad (`/dev/uhid`, Android 10 and later on
+     * most TVs): the Remote's Pointer needs it, and so does the game controller's stick. Throws when it's gone.
+     */
+    suspend fun uhid(deviceId: String): Boolean = false
+
+    /** Adds the virtual [device] to the TV, or takes both away with null. False when the TV refused. */
+    suspend fun hid(deviceId: String, device: HidDevice?): Boolean = false
+
+    /** Moves the virtual mouse; see [app.tellyscope.adb.KeyHelper.mouse]. */
+    suspend fun mouse(deviceId: String, dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean = false
+
+    /** Sets the virtual gamepad to [pad]. */
+    suspend fun gamepad(deviceId: String, pad: GamepadReport): Boolean = false
+
+    /** A gamepad key down or up, injected, on a TV without the virtual gamepad. */
+    suspend fun gamepadKey(deviceId: String, code: Int, down: Boolean): Boolean = false
 
     /** Types into the focused box on the TV. The caller checks [app.tellyscope.adb.Remote.sendable] first. */
     suspend fun type(deviceId: String, text: String): Boolean

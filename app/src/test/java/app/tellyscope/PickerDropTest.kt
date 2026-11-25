@@ -58,7 +58,7 @@ class PickerDropTest {
         var dials = 0
         val source = AdbDeviceSource(RuntimeEnvironment.getApplication(), connector = { _, _ ->
             AdbConnectResult.Online(if (++dials == 1) before else after)
-        })
+        }, fetch = { throw IOException("offline $it") })
         val hit = ScanHit("tv", 5555, ScanKind.Classic, "tv", null)
         assertTrue(source.connect(hit) is ConnectResult.Online)
 

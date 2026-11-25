@@ -18,6 +18,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.io.File
+import java.io.IOException
 import java.time.YearMonth
 
 /** What a TV last reported survives an app restart while it's off, and goes with Forget. */
@@ -35,7 +36,7 @@ class LastKnownTest {
         // What the last launch saved.
         DeviceStore(file).save(listOf(tv))
 
-        val source = AdbDeviceSource(context)
+        val source = AdbDeviceSource(context, fetch = { throw IOException("offline $it") })
         val device = source.known().single()
         assertEquals(DeviceState.Offline, device.state)
         assertEquals(facts, device.lastKnown)
@@ -47,6 +48,6 @@ class LastKnownTest {
         source.forget(device.id)
         // The file is written off the caller's thread.
         withTimeout(5_000) { while (DeviceStore(file).load().isNotEmpty()) delay(20) }
-        assertEquals(emptyList<Any>(), AdbDeviceSource(context).known())
+        assertEquals(emptyList<Any>(), AdbDeviceSource(context, fetch = { throw IOException("offline $it") }).known())
     }
 }

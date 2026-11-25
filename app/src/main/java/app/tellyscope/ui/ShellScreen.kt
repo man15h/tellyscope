@@ -2,6 +2,9 @@
 
 package app.tellyscope.ui
 
+import android.content.ClipData
+import android.content.res.Resources
+import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
@@ -26,6 +29,8 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.DisableSelection
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -35,6 +40,8 @@ import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,7 +67,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -75,6 +85,7 @@ import app.tellyscope.R
 import app.tellyscope.data.Device
 import app.tellyscope.data.resolve
 import app.tellyscope.ui.theme.TellyscopeTheme
+import kotlinx.coroutines.launch
 import kotlin.math.hypot
 
 /**
@@ -122,7 +133,10 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
     var back by remember { mutableIntStateOf(-1) }
     val list = rememberLazyListState()
     val focus = remember { FocusRequester() }
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val res = LocalContext.current.resources
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
     fun set(text: String) { input = TextFieldValue(text, TextRange(text.length)) }
     fun type(s: String) {
@@ -143,58 +157,82 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
     Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.Default.Close, stringResource(R.string.shell_close), tint = c.onSurface) }
-            Text(stringResource(R.string.shell_title, name(device), address), style = mono.copy(color = c.onSurfaceVariant), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-            item { Text(stringResource(R.string.shell_banner, name(device), address), style = mono.copy(color = c.onSurfaceVariant)) }
-            if (state.trimmed) item { Text(stringResource(R.string.shell_trimmed, ShellTerminal.MAX_LINES), style = mono.copy(color = c.onSurfaceVariant)) }
-            items(state.lines.size) { i ->
-                when (val l = state.lines[i]) {
-                    is TermLine.Typed -> Row {
-                        Text(stringResource(R.string.shell_prompt, l.cwd), style = mono.copy(color = c.primary))
-                        Text(" " + l.command, style = mono)
+            Text(stringResource(R.string.shell_title, name(device), address), Modifier.weight(1f), style = mono.copy(color = c.onSurfaceVariant), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            // The whole session, prompts too: long-press only reaches the lines on screen.
+            IconButton(onClick = {
+                val text = transcript(res, state, res.getString(R.string.shell_banner, name(device), address))
+                scope.launch {
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(name(device), text)))
+                    // Android 13 and later show their own preview of what was copied.
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        val n = text.lines().size
+                        snackbar.currentSnackbarData?.dismiss()
+                        snackbar.showSnackbar(res.getQuantityString(R.plurals.shell_copied, n, n))
                     }
-                    is TermLine.Out -> Text(l.text, style = mono)
-                    is TermLine.Err -> Text(l.text, style = mono.copy(color = c.error))
-                    is TermLine.Note -> Text(l.text.resolve(), style = mono.copy(color = c.onSurfaceVariant))
-                    is TermLine.Warn -> Text(l.text.resolve(), style = mono.copy(color = c.error))
                 }
-            }
-            // The line being typed sits under the output, as in a terminal. While a command runs it stays
-            // composed but blank and read-only, so the field keeps focus and the keyboard stays open.
-            // Its own key keeps it the same field as the output above it grows: by position, Enter's new
-            // line would take its slot and dispose the focused field, closing the keyboard.
-            item(key = "prompt") {
-                Row(verticalAlignment = Alignment.Top) {
-                    when {
-                        state.running -> {}
-                        state.confirming != null -> Text(stringResource(R.string.shell_confirm) + " ", style = mono.copy(color = c.error))
-                        !online -> Text(stringResource(R.string.shell_offline_prompt) + " ", style = mono.copy(color = c.onSurfaceVariant))
-                        else -> Text(stringResource(R.string.shell_prompt, state.cwd) + " ", style = mono.copy(color = c.primary))
-                    }
-                    BasicTextField(
-                        input,
-                        { input = it },
-                        Modifier.weight(1f).focusRequester(focus),
-                        textStyle = mono,
-                        readOnly = state.running,
-                        cursorBrush = SolidColor(if (state.running) Color.Transparent else c.primary),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            capitalization = KeyboardCapitalization.None,
-                            autoCorrectEnabled = false,
-                            keyboardType = KeyboardType.Ascii,
-                            imeAction = ImeAction.Go,
-                        ),
-                        keyboardActions = KeyboardActions(onGo = { enter() }),
-                    )
-                }
-            }
-            if (!online && !state.running) item { Text(stringResource(R.string.shell_offline_hint), style = mono.copy(color = c.onSurfaceVariant)) }
+            }) { Icon(CopyIcon, stringResource(R.string.shell_copy_all), tint = c.onSurface) }
         }
+        // Long-press selects, with Android's own Copy and Select all; the line being typed stays out of it.
+        SelectionContainer(Modifier.weight(1f).fillMaxWidth()) {
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
+                item { Text(stringResource(R.string.shell_banner, name(device), address), style = mono.copy(color = c.onSurfaceVariant)) }
+                if (state.trimmed) item { Text(stringResource(R.string.shell_trimmed, ShellTerminal.MAX_LINES), style = mono.copy(color = c.onSurfaceVariant)) }
+                items(state.lines.size) { i ->
+                    when (val l = state.lines[i]) {
+                        is TermLine.Typed -> Row {
+                            Text(stringResource(R.string.shell_prompt, l.cwd), style = mono.copy(color = c.primary))
+                            Text(" " + l.command, style = mono)
+                        }
+                        is TermLine.Out -> Text(l.text, style = mono)
+                        is TermLine.Err -> Text(l.text, style = mono.copy(color = c.error))
+                        is TermLine.Note -> Text(l.text.resolve(), style = mono.copy(color = c.onSurfaceVariant))
+                        is TermLine.Warn -> Text(l.text.resolve(), style = mono.copy(color = c.error))
+                    }
+                }
+                // The line being typed sits under the output, as in a terminal. While a command runs it stays
+                // composed but blank and read-only, so the field keeps focus and the keyboard stays open.
+                // Its own key keeps it the same field as the output above it grows: by position, Enter's new
+                // line would take its slot and dispose the focused field, closing the keyboard.
+                item(key = "prompt") {
+                    DisableSelection {
+                        Row(verticalAlignment = Alignment.Top) {
+                            when {
+                                state.running -> {}
+                                state.confirming != null -> Text(stringResource(R.string.shell_confirm) + " ", style = mono.copy(color = c.error))
+                                !online -> Text(stringResource(R.string.shell_offline_prompt) + " ", style = mono.copy(color = c.onSurfaceVariant))
+                                else -> Text(stringResource(R.string.shell_prompt, state.cwd) + " ", style = mono.copy(color = c.primary))
+                            }
+                            BasicTextField(
+                                input,
+                                { input = it },
+                                Modifier.weight(1f).focusRequester(focus),
+                                textStyle = mono,
+                                readOnly = state.running,
+                                cursorBrush = SolidColor(if (state.running) Color.Transparent else c.primary),
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    capitalization = KeyboardCapitalization.None,
+                                    autoCorrectEnabled = false,
+                                    keyboardType = KeyboardType.Ascii,
+                                    imeAction = ImeAction.Go,
+                                ),
+                                keyboardActions = KeyboardActions(onGo = { enter() }),
+                            )
+                        }
+                    }
+                }
+                if (!online && !state.running) item { Text(stringResource(R.string.shell_offline_hint), style = mono.copy(color = c.onSurfaceVariant)) }
+            }
+        }
+        SnackbarHost(snackbar)
         // Termux-style keys for what a phone keyboard hides on its symbols page.
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Key(stringResource(R.string.shell_key_paste)) { clipboard.getText()?.text?.let { type(it.trim().replace("\n", "; ")) } }
+            Key(stringResource(R.string.shell_key_paste)) {
+                scope.launch {
+                    val clip = clipboard.getClipEntry()?.clipData?.takeIf { it.itemCount > 0 }
+                    clip?.getItemAt(0)?.text?.toString()?.let { type(it.trim().replace("\n", "; ")) }
+                }
+            }
             Key(stringResource(R.string.shell_key_tab)) { terminal.complete(input.text) { set(it) } }
             Key(stringResource(R.string.shell_key_ctrl_c), stop = state.running) {
                 if (state.running || state.confirming != null) terminal.interrupt() else set("")
@@ -219,6 +257,23 @@ private fun Terminal(device: Device, online: Boolean, terminal: ShellTerminal, s
         }
     }
 }
+
+/** The session as text, the way it reads on screen: [banner], then every line, each command after its prompt. */
+internal fun transcript(res: Resources, state: TerminalState, banner: String): String = buildList {
+    add(banner)
+    if (state.trimmed) add(res.getString(R.string.shell_trimmed, ShellTerminal.MAX_LINES))
+    state.lines.forEach { l ->
+        add(
+            when (l) {
+                is TermLine.Typed -> res.getString(R.string.shell_prompt, l.cwd) + " " + l.command
+                is TermLine.Out -> l.text
+                is TermLine.Err -> l.text
+                is TermLine.Note -> l.text.resolve(res)
+                is TermLine.Warn -> l.text.resolve(res)
+            },
+        )
+    }
+}.joinToString("\n")
 
 @Composable
 private fun Key(text: String = "", icon: ImageVector? = null, label: String = text, stop: Boolean = false, onClick: () -> Unit) {

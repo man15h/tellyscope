@@ -61,6 +61,7 @@ import app.tellyscope.data.AppNames
 import app.tellyscope.data.Device
 import app.tellyscope.data.DATA_BASE
 import app.tellyscope.data.DeviceLists
+import app.tellyscope.data.RemotePad
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.FakeDeviceSource
 import app.tellyscope.data.HistoryEntry
@@ -72,7 +73,9 @@ import app.tellyscope.data.TvSettings
 import app.tellyscope.data.TvAccess
 import app.tellyscope.data.TvTweaks
 import app.tellyscope.data.ListEntry
+import app.tellyscope.data.MediaKind
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.PlayerRelease
 import app.tellyscope.data.ScanHit
 import app.tellyscope.data.SharedLists
 import app.tellyscope.data.ScanKind
@@ -106,17 +109,25 @@ import app.tellyscope.data.ResetHome
 import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.after
 import app.tellyscope.ui.ResetActions
 import app.tellyscope.ui.ResetScreen
 import app.tellyscope.ui.ResetUi
+import app.tellyscope.ui.DebloatRun
+import app.tellyscope.ui.DebloatRunScreen
 import app.tellyscope.ui.TweaksBlock
 import app.tellyscope.ui.DeviceUi
 import app.tellyscope.ui.DisableDialog
 import app.tellyscope.ui.ForgetDialog
 import app.tellyscope.ui.FilesBlock
 import app.tellyscope.ui.FilesUi
+import app.tellyscope.ui.GameController
 import app.tellyscope.ui.RestoreDialog
 import app.tellyscope.ui.PermissionScreen
+import app.tellyscope.ui.PlayerActions
+import app.tellyscope.ui.PlayerDialog
+import app.tellyscope.ui.PlayerFlow
+import app.tellyscope.ui.PlayerStore
 import app.tellyscope.ui.WelcomeScreen
 import app.tellyscope.ui.RebootDialog
 import app.tellyscope.ui.RemoteActions
@@ -553,11 +564,11 @@ class ScreenshotTest {
         compose.onNodeWithText("Kitchen").performClick()
         assertEquals(state.devices[2].id, picked)
     }
-    // After a restart there's no snapshot: the saved storage still shows, as of the last visit.
+    // After a restart there's no snapshot: the saved storage still shows, under when the TV was last seen.
     @Test fun offlineAfterRestartShowsSavedStorage() {
         val state = md3State().let { it.copy(selectedId = it.devices[2].id, device = DeviceUi()) }
         compose.setContent { TellyscopeTheme(dynamic = false) { DeviceTabsScreen(state, DeviceActions()) } }
-        compose.onNodeWithText("As of 2 h ago").assertExists()
+        compose.onNodeWithText("Last seen 2 h ago").assertExists()
         compose.onNodeWithText("4.9 GB free").assertExists()
     }
     @Test fun md3_oneTv() = md3("63_md3_one_tv", false) { md3State().let { it.copy(devices = it.devices.take(1)) } }
@@ -704,10 +715,10 @@ class ScreenshotTest {
         // Check for updates leads; Advanced starts folded.
         compose.onNodeWithText("Check for updates").assertExists()
         compose.onNodeWithText("Use your own debloat lists").assertDoesNotExist()
-        compose.onNodeWithText("Advanced").performClick()
+        compose.onNodeWithText("Debloat lists").performClick()
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("cleanyourtv").assertExists()
-        compose.onNodeWithText(" 40k+").assertExists()
+        compose.onNodeWithText(" 40K+").assertExists()
         compose.onNodeWithText("cleanyourtv").performClick()
         compose.onNodeWithText("How to use your own lists").performClick()
         assertEquals(listOf("https://github.com/Gathin23/cleanyourtv", RELEASES.removeSuffix("/releases") + "/blob/main/CONTRIBUTING.md#using-your-own-lists"), opened)
@@ -723,8 +734,8 @@ class ScreenshotTest {
     }
 
     @Test fun settings_dark() = shot("81_settings", dark = true) { settings()() }
-    @Test fun settings_advanced() = shot("82_settings_advanced", before = { compose.onNodeWithText("Advanced").performClick(); Unit }) { settings()() }
-    @Test fun settings_advanced_dark() = shot("82_settings_advanced", dark = true, before = { compose.onNodeWithText("Advanced").performClick(); Unit }) { settings()() }
+    @Test fun settings_advanced() = shot("82_settings_advanced", before = { compose.onNodeWithText("Debloat lists").performClick(); Unit }) { settings()() }
+    @Test fun settings_advanced_dark() = shot("82_settings_advanced", dark = true, before = { compose.onNodeWithText("Debloat lists").performClick(); Unit }) { settings()() }
 
     @Test fun settings_whatsNewOpens() {
         var opened = 0
@@ -812,9 +823,9 @@ class ScreenshotTest {
         shot("96_whats_new") { whatsNew(opened)() }
         compose.onNodeWithText("Installed").assertExists()
         // The newest section's first heading, whatever kind it opens with.
-        compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name.uppercase())[0].assertExists()
+        compose.onAllNodesWithText(changelog.first().changes.first().kind!!.name)[0].assertExists()
         // A link from the newest section, which is on screen whatever the changelog holds.
-        val pr = changelog.first().changes.first { it.pr != null }.pr!!
+        val pr = changelog.first().changes.first { it.prs.isNotEmpty() }.prs.first()
         compose.onAllNodes(SemanticsMatcher("opens #$pr") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "#$pr" })[0].performClick()
         assertEquals(listOf(Changelog.pullUrl(pr)), opened)
     }
@@ -919,6 +930,53 @@ class ScreenshotTest {
         compose.onNodeWithText(Copy.tryAgain("Sports").text()).assertHasClickAction()
     }
     @Test fun reset_partlyDone_dark() = reset("a6_reset_partly", true, ResetUi(plan = resetPlan, ran = true, failed = sportsFailed))
+    private val stopping = running.copy(stopping = true)
+    @Test fun reset_stopping() {
+        reset("a7_reset_stopping", false, stopping)
+        compose.onNodeWithText(Copy.resetStopping(ResetPart.TurnOn).text()).assertExists()
+    }
+    @Test fun reset_stopping_dark() = reset("a7_reset_stopping", true, stopping)
+    // Stopped after the seventh app: seven of fourteen on, then the rest, Bring back and Home not done.
+    private val resetStopped = ResetUi(plan = resetPlan, ran = true, left = resetPlan.after(ResetProgress(ResetPart.TurnOn, 6, 14)))
+    @Test fun reset_stopped() {
+        reset("a8_reset_stopped", false, resetStopped)
+        compose.onNodeWithText(Copy.turnedOn(7, 14).text()).assertExists()
+        compose.onNodeWithText(Copy.FINISH_RESET.text()).assertHasClickAction()
+    }
+    @Test fun reset_stopped_dark() = reset("a8_reset_stopped", true, resetStopped)
+
+    // Debloat's run, as the frames drew it: seven apps, the fourth (Sports) turning off.
+    private val debloatApps = listOf(
+        "YouTube Kids" to "com.google.android.youtube.tvkids", "Google Play Movies & TV" to "com.google.android.videos",
+        "Google Play Games" to "com.google.android.play.games", "Sports" to "com.google.android.tvrecommendations.sports",
+        "XGIMI Assistant" to "com.xgimi.assistant", "Live Channels" to "com.google.android.tv", "Google Feedback" to "com.google.android.feedback",
+    ).map { (label, pkg) -> ResetApp(pkg, label) }
+    private fun debloatRun(name: String, dark: Boolean, run: DebloatRun, back: Boolean = false) {
+        lateinit var dispatcher: OnBackPressedDispatcher
+        shot(name, dark, before = { if (back) compose.runOnUiThread { dispatcher.onBackPressed() } }) {
+            dispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            DebloatRunScreen(run, back = {}, retry = {})
+        }
+    }
+    private val debloatRunning = DebloatRun(debloatApps, at = 3)
+    @Test fun debloat_running() {
+        debloatRun("b1_debloat_running", false, debloatRunning)
+        compose.onNodeWithContentDescription("Back").assertDoesNotExist()
+    }
+    @Test fun debloat_running_dark() = debloatRun("b1_debloat_running", true, debloatRunning)
+    @Test fun debloat_backPressed() {
+        debloatRun("b2_debloat_back", false, debloatRunning, back = true)
+        compose.onNodeWithText(Copy.DEBLOAT_STILL_RUNNING.text()).assertExists()
+    }
+    @Test fun debloat_backPressed_dark() = debloatRun("b2_debloat_back", true, debloatRunning, back = true)
+    @Test fun debloat_stopping() = debloatRun("b3_debloat_stopping", false, debloatRunning.copy(stopping = true))
+    @Test fun debloat_stopping_dark() = debloatRun("b3_debloat_stopping", true, debloatRunning.copy(stopping = true))
+    private val debloatStopped = DebloatRun(debloatApps, at = 4, ran = true, stopping = true)
+    @Test fun debloat_stopped() {
+        debloatRun("b4_debloat_stopped", false, debloatStopped)
+        compose.onNodeWithText(Copy.disableTheRest(3).text()).assertHasClickAction()
+    }
+    @Test fun debloat_stopped_dark() = debloatRun("b4_debloat_stopped", true, debloatStopped)
 
     @Test fun device_overview() {
         shot("04_device") { DeviceTabsScreen(deviceState(), DeviceActions()) }
@@ -953,7 +1011,7 @@ class ScreenshotTest {
             DeviceTabsScreen(base.copy(selectedId = off.id, device = DeviceUi(snapshot = last)), DeviceActions())
         }
         // Away, storage shows as it was last seen; the live numbers are dashes.
-        compose.onNodeWithText("As of ", substring = true).assertExists()
+        compose.onNodeWithText("Last seen 14 min ago").assertExists()
         compose.onNodeWithText("Internal storage").assertExists()
         compose.onAllNodesWithText("\u2014").assertCountEquals(3)
         compose.onNodeWithText("Updated ", substring = true).assertExists()
@@ -1370,6 +1428,33 @@ class ScreenshotTest {
         RemoteScreen(remoteState(), RemoteActions())
     }
 
+    // The mode button beside ⋮ opens the four modes in a menu; Pointer grays on a TV that won't take a virtual mouse.
+    private fun noMouseState() = remoteState().let { it.copy(uhid = mapOf(it.selectedId!! to false)) }
+    @Test fun remote_modes() = shot("12_remote_modes", screen = true, before = { compose.onNodeWithContentDescription("Remote mode: D-pad").performClick() }) {
+        RemoteScreen(noMouseState(), RemoteActions())
+    }
+    @Test fun remote_modes_dark() = shot("12_remote_modes", dark = true, screen = true, before = { compose.onNodeWithContentDescription("Remote mode: D-pad").performClick() }) {
+        RemoteScreen(noMouseState(), RemoteActions())
+    }
+    @Test fun remote_modeTip() = shot("12_remote_mode_tip", screen = true) { RemoteScreen(remoteState().copy(modeTip = true), RemoteActions()) }
+
+    @Test fun aModeRowSetsThePad() {
+        var picked: RemotePad? = null
+        compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(noMouseState(), RemoteActions(pad = { picked = it })) } }
+        compose.onNodeWithContentDescription("Remote mode: D-pad").performClick()
+        compose.onNodeWithText("This TV doesn't allow it").assertExists()
+        compose.onNodeWithText("Pointer").performClick()
+        assertEquals(null, picked)
+        compose.onNodeWithText("Touchpad").performClick()
+        assertEquals(RemotePad.TOUCHPAD, picked)
+    }
+
+    @Test fun theModeTipComesBeforeScreenOff() {
+        compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(remoteState().copy(modeTip = true, screenOffTip = true), RemoteActions()) } }
+        compose.onNodeWithText("Switch how you control your TV").assertExists()
+        compose.onNodeWithText(Copy.SCREEN_OFF_TIP.text()).assertDoesNotExist()
+    }
+
     @Test fun theEmptyPillOpensThePicker() {
         compose.setContent { TellyscopeTheme(dynamic = false) { RemoteScreen(remoteState(apps = emptyList()), RemoteActions()) } }
         compose.onNodeWithText(Copy.REMOTE_BUTTONS.text()).performClick()
@@ -1413,10 +1498,10 @@ class ScreenshotTest {
     /** The TV's own list: straight to the apps, with "Not this TV?" in case it's wrong. */
     private fun debloatModel(dark: Boolean) {
         val lists = deviceState().device.lists as Suggestions.Ready
-        shot("18_debloat_model", dark) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_model", dark) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         compose.onNodeWithText(lists.list.name).assertExists()
         compose.onNodeWithText("This model's list", substring = true).assertExists()
-        compose.onNodeWithText("These apps will be turned off", substring = true).assertExists()
+        compose.onNodeWithText("These apps will be disabled", substring = true).assertExists()
         compose.onNodeWithText("optional: tick it if you don't use it", substring = true).assertExists()
         compose.onNodeWithText("Not this TV?").assertExists()
         compose.onNodeWithText("TCL C-series").assertDoesNotExist()
@@ -1440,7 +1525,7 @@ class ScreenshotTest {
 
     private fun debloatMaker(dark: Boolean) {
         val lists = makerLists()
-        shot("18_debloat_maker", dark) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_maker", dark) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         compose.onNodeWithText("XGIMI").assertExists()
         compose.onNodeWithText("No list for this model", substring = true).assertExists()
         compose.onNodeWithText("Nothing is ticked", substring = true).assertExists()
@@ -1460,7 +1545,7 @@ class ScreenshotTest {
         val tv = s.selected!!.let { it.copy(model = "TCL 55C735", manufacturer = "TCL", hit = it.hit.copy(maker = "TCL", hostname = null)) }
         var disabled = emptyList<String>()
         shot("18_debloat_none", dark) {
-            DebloatScreen(Suggestions.NoList(null, ready.devices), {}, { disabled = it.map { a -> a.packageName } }, {}, tv = tv, tvApps = s.device.apps)
+            DebloatScreen(Suggestions.NoList(null, ready.devices), {}, { apps, _ -> disabled = apps.map { a -> a.packageName } }, {}, tv = tv, tvApps = s.device.apps)
         }
         compose.onNodeWithText("TCL 55C735").assertExists()
         compose.onNodeWithText("No list for this TV or its maker yet").assertExists()
@@ -1484,7 +1569,7 @@ class ScreenshotTest {
 
     @Test fun debloat_notThisTv() {
         val lists = deviceState().device.lists
-        shot("18_debloat_search", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("XGIMI")) }
+        shot("18_debloat_search", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("XGIMI")) }
         // The search starts at the TV's maker, with nothing marked until a list is tapped.
         compose.onNodeWithText("XGIMI MoGo 2 projector").assertExists()
         compose.onNodeWithText("TCL C-series").assertDoesNotExist()
@@ -1494,7 +1579,7 @@ class ScreenshotTest {
     @Test fun debloat_searchByBrand() {
         // Philips TVs report their factory, TPV, as manufacturer; the brand finds the list.
         val lists = makerLists()
-        shot("18_debloat_search_brand", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("Philips", "TPV")) }
+        shot("18_debloat_search_brand", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("Philips", "TPV")) }
         compose.onNodeWithText("Philips 55OLED708").assertExists()
         compose.onNodeWithText("No list for", substring = true).assertDoesNotExist()
     }
@@ -1502,7 +1587,7 @@ class ScreenshotTest {
     @Test fun debloat_searchUnknownMaker() {
         // A maker no list names: the full list, with a line saying so, and nothing guessed.
         val lists = makerLists()
-        shot("18_debloat_search_unknown", before = notThisTv) { DebloatScreen(lists, {}, {}, {}, tvMakers = listOf("TPV")) }
+        shot("18_debloat_search_unknown", before = notThisTv) { DebloatScreen(lists, {}, { _, _ -> }, {}, tvMakers = listOf("TPV")) }
         compose.onNodeWithText("No list for \u201cTPV\u201d", substring = true).assertExists()
         compose.onNodeWithText("Chromecast with Google TV 4K").assertExists()
     }
@@ -1511,7 +1596,7 @@ class ScreenshotTest {
         // No list for this TV's maker, and the TV is connected: offer to send its apps to cleanyourtv.
         val asked = mutableListOf<Unit>()
         val tv = deviceState().selected
-        shot("85_debloat_help_add", before = notThisTv) { DebloatScreen(makerLists(), {}, {}, {}, tvMakers = listOf("TPV"), tv = tv, onHelpAdd = { asked += Unit }) }
+        shot("85_debloat_help_add", before = notThisTv) { DebloatScreen(makerLists(), {}, { _, _ -> }, {}, tvMakers = listOf("TPV"), tv = tv, onHelpAdd = { asked += Unit }) }
         compose.onNodeWithText("Not in the list? Help add this TV").assertExists()
         compose.onNodeWithText("Help add this TV").performClick()
         assertEquals(1, asked.size)
@@ -1606,7 +1691,7 @@ class ScreenshotTest {
         val lists = makerLists()
         val picked = mutableListOf<String>()
         val pick = { notThisTv(); compose.mainClock.advanceTimeBy(1_000); compose.onNodeWithText("Philips 55OLED708").performClick(); Unit }
-        shot("18_debloat_search_manual", before = pick) { DebloatScreen(lists, { picked += it }, {}, {}, tvMakers = listOf("TPV")) }
+        shot("18_debloat_search_manual", before = pick) { DebloatScreen(lists, { picked += it }, { _, _ -> }, {}, tvMakers = listOf("TPV")) }
         compose.onNodeWithText("Use this list").performClick()
         compose.mainClock.advanceTimeBy(1_000)
         assertEquals(1, picked.size)
@@ -1618,7 +1703,7 @@ class ScreenshotTest {
         val lists = (deviceState().device.lists as Suggestions.Ready).let { r ->
             r.copy(sdk = 28, groups = r.groups.map { g -> g.copy(packages = g.packages.map { it.copy(ticked = false) }) })
         }
-        shot("19_debloat_review_other_android") { DebloatScreen(lists, {}, {}, {}) }
+        shot("19_debloat_review_other_android") { DebloatScreen(lists, {}, { _, _ -> }, {}) }
         compose.onNodeWithText("not this TV's Android", substring = true).assertExists()
         compose.onNodeWithText("Nothing is ticked", substring = true).assertExists()
         compose.onNodeWithText("Disable 0 apps").assertIsNotEnabled()
@@ -1664,7 +1749,7 @@ class ScreenshotTest {
     }
 
     @Test fun readme_debloat() {
-        shot("20_readme_debloat") { DebloatScreen(readmeLists(), {}, {}, {}) }
+        shot("20_readme_debloat") { DebloatScreen(readmeLists(), {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 4 apps").assertIsEnabled()
     }
 
@@ -1674,7 +1759,7 @@ class ScreenshotTest {
             compose.onNodeWithText("Disable 4 apps").performClick()
             Unit
         }
-        shot("21_readme_confirm", screen = true, before = confirm) { DebloatScreen(readmeLists(), {}, {}, {}) }
+        shot("21_readme_confirm", screen = true, before = confirm) { DebloatScreen(readmeLists(), {}, { _, _ -> }, {}) }
         compose.onNodeWithText("Disable 4 apps?").assertExists()
     }
 
@@ -1750,9 +1835,21 @@ class ScreenshotTest {
     }
     private fun advancedTab(label: String) = { compose.onAllNodes(hasText(label) and hasClickAction()).onFirst().performClick(); Unit }
     @Test fun readme_thisTv() = shot("31_readme_this_tv") { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_cpu() = shot("32_readme_cpu", before = advancedTab("CPU")) { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_ram() = shot("33_readme_ram", before = advancedTab("RAM")) { AdvancedScreen(readmeAdvanced(), back = {}) }
-    @Test fun readme_network() = shot("34_readme_network", before = advancedTab("Network")) { AdvancedScreen(readmeAdvanced(), back = {}) }
+
+    // The game controller, sideways over the whole screen, on a TV that took the virtual gamepad.
+    @Config(qualifiers = "w891dp-h411dp-land-xxhdpi")
+    @Test fun readme_controller() = shot("37_readme_controller", screen = true) {
+        GameController("Projector", live = true, virtual = true, pointer = true, keyHaptics = false, actions = RemoteActions())
+    }
+
+    // A video tapped in Movies: its sheet with Open on TV and Save to your phone.
+    @Test fun readme_mediaSheet() {
+        val state = moviesState()
+        // The sheet slides up only on a running clock; nothing on this page animates forever, so it settles.
+        val tap = { compose.onNodeWithText("holiday-2025.mp4").performClick(); compose.mainClock.autoAdvance = true; compose.waitForIdle() }
+        shot("38_readme_media_sheet", screen = true, before = tap) { DeviceTabsScreen(state, DeviceActions(), startTab = TvTab.Files) }
+        compose.onNodeWithText("Save to your phone").assertExists()
+    }
 
     /** A shell on the TV that answers each command from [replies] and ends it with TvShell's marker line. */
     private class ReadmeChannel(val replies: Map<String, String>) : ShellChannel {
@@ -1891,6 +1988,31 @@ class ScreenshotTest {
     }
     @Test fun access_overview() = accessOverview(false)
     @Test fun access_overview_dark() = accessOverview(true)
+
+    // Open on TV with no player on the TV: each step of the dialog that offers VLC.
+    private val vlc = PlayerRelease("3.7.1", "armeabi-v7a", "https://get.videolan.org/vlc-android/3.7.1/",
+        "https://get.videolan.org/vlc-android/3.7.1/VLC-Android-3.7.1-armeabi-v7a.apk", 47_073_346, "0".repeat(64))
+    private fun playerFlow(
+        step: PlayerFlow.Step = PlayerFlow.Step.Ask,
+        store: PlayerStore = PlayerStore.Play,
+        download: Boolean = true,
+        progress: Progress? = null,
+    ) = PlayerFlow(
+        TvFolder.DOWNLOAD, TvFile("holiday-2025.mp4", 774_400_000, 0L), MediaKind.Video, "video/mp4", store, download, step,
+        release = vlc, progress = progress,
+    )
+    private fun player(name: String, p: PlayerFlow, dark: Boolean) = shot(name, dark, screen = true) { PlayerDialog(p, "Projector", PlayerActions()) }
+    @Test fun player_nothing() = player("36_player_nothing", playerFlow(), false)
+    @Test fun player_nothing_dark() = player("36_player_nothing", playerFlow(), true)
+    @Test fun player_no_store() = player("36_player_no_store", playerFlow(store = PlayerStore.None), false)
+    @Test fun player_store_waiting() = player("36_player_store_waiting", playerFlow(PlayerFlow.Step.Waiting), false)
+    @Test fun player_warn() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), false)
+    @Test fun player_warn_dark() = player("36_player_warn", playerFlow(PlayerFlow.Step.Warn), true)
+    @Test fun player_downloading() = player("36_player_downloading", playerFlow(PlayerFlow.Step.Downloading, progress = Progress(21_600_000, 47_073_346)), false)
+    @Test fun player_installing() = player("36_player_installing", playerFlow(PlayerFlow.Step.Installing), false)
+    @Test fun player_appstore() = player("36_player_appstore", playerFlow(store = PlayerStore.Appstore, download = false), false)
+    @Test fun player_appstore_waiting() =
+        player("36_player_appstore_waiting", playerFlow(PlayerFlow.Step.Waiting, store = PlayerStore.Appstore, download = false), false)
 
     private fun accessScreen(name: String, dark: Boolean, removal: Removal?) {
         val state = accessState(removal)

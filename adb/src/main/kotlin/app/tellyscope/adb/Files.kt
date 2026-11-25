@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package app.tellyscope.adb
 
+import java.io.IOException
 import okio.Sink
 import okio.Source
 
@@ -12,7 +13,7 @@ enum class TvFolder(val path: String) {
 
 data class TvFile(val name: String, val size: Long, val modifiedMillis: Long)
 
-/** Phone ↔ TV file copies over the ADB sync service. */
+/** Phone ↔ TV file copies over the ADB sync service, and deleting a file on the TV. */
 class Files(private val session: AdbSession) {
 
     /** Plain files in [folder], newest first. A missing folder is an empty one. */
@@ -49,6 +50,14 @@ class Files(private val session: AdbSession) {
     suspend fun pull(folder: TvFolder, file: TvFile, sink: Sink, onProgress: (Progress) -> Unit = {}) {
         require(safeName(file.name) == file.name) { "not a plain file name: ${file.name}" }
         runTransfer { stopped -> session.pull(sink.counting(file.size, stopped, onProgress), "${folder.path}/${file.name}") }
+    }
+
+    /** Deletes [file] from [folder] for good. Throws with the TV's own words when it's still there. */
+    suspend fun delete(folder: TvFolder, file: TvFile) {
+        require(safeName(file.name) == file.name) { "not a plain file name: ${file.name}" }
+        // rm prints nothing when it works, so anything it says counts as a failure too.
+        val r = session.shell("rm ${shellQuote("${folder.path}/${file.name}")}")
+        if (r.exitCode != 0 || r.output.isNotBlank()) throw IOException(r.output.trim().ifEmpty { "rm exited ${r.exitCode}" })
     }
 
     companion object {

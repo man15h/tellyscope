@@ -171,6 +171,8 @@ data class AppInfo(
     val homeServiceNote: Boolean = false,
     /** This TV's list says to keep it: Stop, Disable and Uninstall still run, after a warning. */
     val listKeep: Boolean = false,
+    /** What turning it off breaks, from `protected.json`'s `warn` ([SharedLists.warn]); shown while it's on. */
+    val warn: String? = null,
     /** Has an icon on a launcher, so the Remote's dock can open it. */
     val launchable: Boolean = false,
     /** Has an icon on the TV's own home screen, not only a phone-style one. True when the TV can't say. */
@@ -228,6 +230,8 @@ data class HistoryEntry(
     val undoneAt: Long?,
     /** For [Action.Change]: the settings as they were before, null for a key that wasn't set. */
     val previous: Map<String, String?>? = null,
+    /** [undo] was taken away by a later change that made it impossible. */
+    val undoDropped: Boolean = false,
 )
 
 /** The TV-wide settings shown on its page; null for one the TV doesn't report. */

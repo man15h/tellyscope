@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -31,21 +32,14 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LoadingIndicator
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -53,7 +47,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -183,12 +176,7 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
     val c = MaterialTheme.colorScheme
     var open by rememberSaveable { mutableStateOf(startOpen) }
     val others = access.others
-    Card(
-        onClick = { open = !open },
-        colors = CardDefaults.cardColors(containerColor = c.errorContainer, contentColor = c.onErrorContainer),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth().animateContentSize().testTag("accessWarning"),
-    ) {
+    AppCard(Modifier.fillMaxWidth().animateContentSize().testTag("accessWarning"), color = c.errorContainer, onClick = { open = !open }) {
         Column(Modifier.padding(start = 16.dp, end = 12.dp, top = 16.dp, bottom = 16.dp)) {
             Row {
                 Icon(AccessIcons.Shield, contentDescription = null, Modifier.padding(top = 2.dp).size(24.dp))
@@ -211,7 +199,7 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                         Text(Copy.connectedFrom(if (o.who == AccessClient.Who.OnTv) Copy.ON_TV.resolve().lowercase() else o.address, o.connections).resolve(), style = MaterialTheme.typography.bodyLarge)
                     }
                     Row(
-                        Modifier.padding(top = 8.dp).clip(RoundedCornerShape(8.dp)).clickable(onClick = onWho).padding(vertical = 4.dp),
+                        Modifier.padding(top = 8.dp).heightIn(min = 48.dp).clip(MaterialTheme.shapes.small).clickable(onClick = onWho).padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(Copy.WHO_HAS_ACCESS.resolve(), style = MaterialTheme.typography.labelLarge)
@@ -219,13 +207,11 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
                     }
                 }
             }
-            FlowRow(Modifier.padding(top = 12.dp, start = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                val border = BorderStroke(1.dp, c.onErrorContainer)
-                val colors = ButtonDefaults.outlinedButtonColors(contentColor = c.onErrorContainer)
-                OutlinedButton(onClick = { others.singleOrNull()?.let { actions.markMine(it.address) } ?: onWho() }, border = border, colors = colors) {
+            FlowRow(Modifier.fillMaxWidth().padding(top = 12.dp, start = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)) {
+                FilledTonalButton(onClick = { others.singleOrNull()?.let { actions.markMine(it.address) } ?: onWho() }) {
                     Text(Copy.ITS_MINE.resolve())
                 }
-                OutlinedButton(onClick = actions.askRemove, border = border, colors = colors, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+                FilledTonalButton(onClick = actions.askRemove, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
                     Icon(AccessIcons.LockReset, contentDescription = null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                     Text(Copy.REMOVE_ACCESS.resolve())
@@ -243,18 +229,14 @@ fun AccessWarning(access: TvAccess, actions: AccessActions, onWho: () -> Unit, s
 fun ConnectedDevicesCard(peripherals: List<Peripheral>, startOpen: Boolean = false) {
     val c = MaterialTheme.colorScheme
     var open by rememberSaveable { mutableStateOf(startOpen) }
-    Card(
-        colors = CardDefaults.cardColors(containerColor = c.surfaceContainerLow),
-        shape = MaterialTheme.shapes.large,
-        modifier = Modifier.fillMaxWidth().animateContentSize().testTag("connectedDevices"),
-    ) {
+    AppCard(Modifier.fillMaxWidth().animateContentSize().testTag("connectedDevices")) {
         Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
             Text(Copy.DEVICES_TITLE.resolve(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 4.dp))
             if (peripherals.isEmpty()) {
                 Text(Copy.NO_DEVICES.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(vertical = 8.dp))
             } else if (open) {
                 peripherals.groupBy { it.group }.forEach { (group, rows) ->
-                    Text(Copy.group(group).resolve(), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp, bottom = 2.dp))
+                    SectionHeader(Copy.group(group).resolve())
                     rows.forEach { PeripheralRow(it, grouped = true) }
                 }
             } else {
@@ -329,12 +311,12 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
                     body, Verdict.Still, Copy.STILL_TITLE.resolve(), Copy.stillOpenText((removal.still ?: Copy.UNNAMED_COMPUTER).resolve(), name(device)).resolve(),
                     link = { TextButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS.resolve()) } },
                 ) {
-                    OutlinedButton(onClick = actions.checkAgain) { Text(Copy.CHECK_AGAIN.resolve()) }
+                    TextButton(onClick = actions.checkAgain) { Text(Copy.CHECK_AGAIN.resolve()) }
                     Button(onClick = actions.restart) { Text(Copy.RESTART_TV.resolve()) }
                 }
             } else {
                 Outcome(body, Verdict.Still, Copy.STILL_TITLE.resolve(), Copy.stillText((removal.still ?: Copy.UNNAMED_COMPUTER).resolve(), name(device)).resolve()) {
-                    OutlinedButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS.resolve()) }
+                    TextButton(onClick = actions.close) { Text(Copy.WHO_HAS_ACCESS.resolve()) }
                     Button(onClick = actions.retry) { Text(Copy.TRY_AGAIN.resolve()) }
                 }
             }
@@ -354,20 +336,19 @@ fun AccessScreen(state: UiState, actions: AccessActions, snackbar: SnackbarHostS
 /** C4: the one warning before every key on the TV goes, this phone's included. */
 @Composable
 private fun ConfirmRemoval(actions: AccessActions) {
-    val c = MaterialTheme.colorScheme
-    AlertDialog(
-        onDismissRequest = actions.close,
-        icon = { Icon(AccessIcons.LockReset, contentDescription = null, tint = c.error) },
-        title = { Text(Copy.CONFIRM_TITLE.resolve(), textAlign = TextAlign.Center) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(Copy.CONFIRM_TEXT.resolve())
-                Text(Copy.CONFIRM_REMOTE.resolve())
-            }
-        },
-        confirmButton = { Button(onClick = actions.remove, colors = ButtonDefaults.buttonColors(containerColor = c.error, contentColor = c.onError)) { Text(Copy.CONFIRM_BUTTON.resolve()) } },
-        dismissButton = { TextButton(onClick = actions.close) { Text(Copy.CANCEL.resolve()) } },
-    )
+    DestructiveDialog(
+        icon = AccessIcons.LockReset,
+        title = Copy.CONFIRM_TITLE.resolve(),
+        confirm = Copy.CONFIRM_BUTTON.resolve(),
+        dismiss = Copy.CANCEL.resolve(),
+        onConfirm = actions.remove,
+        onDismiss = actions.close,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(Copy.CONFIRM_TEXT.resolve())
+            Text(Copy.CONFIRM_REMOTE.resolve())
+        }
+    }
 }
 
 /** C3: who is connected now and which computers are allowed, never tied together. */
@@ -375,13 +356,13 @@ private fun ConfirmRemoval(actions: AccessActions) {
 private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: AccessActions, modifier: Modifier) {
     val c = MaterialTheme.colorScheme
     LazyColumn(modifier, contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp)) {
-        item { Text(Copy.ACCESS_INTRO.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant, modifier = Modifier.padding(bottom = 16.dp)) }
+        item { Text(Copy.ACCESS_INTRO.resolve(), style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant) }
         section(Copy.CONNECTED_NOW)
         when (val list = access?.connected) {
             null -> item { Muted(if (access == null) stringResource(R.string.access_checking) else Copy.CANT_CHECK_CONNECTED.resolve()) }
             else -> segmented(list) { ConnectedRow(it, actions) }
         }
-        item { Spacer(Modifier.height(24.dp)) }
+        item { Spacer(Modifier.height(8.dp)) }
         section(Copy.ALLOWED_COMPUTERS)
         when (val list = access?.allowed) {
             null -> item { Muted(if (access == null) stringResource(R.string.access_checking) else Copy.CANT_CHECK_ALLOWED.resolve()) }
@@ -392,10 +373,10 @@ private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: A
             Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(Copy.ACCESS_FOOT_LINK.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
                 Text(Copy.ACCESS_FOOT_ALL.resolve(), style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
-                OutlinedButton(
+                FilledTonalButton(
                     onClick = actions.askRemove,
                     enabled = online,
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = c.error),
+                    colors = ButtonDefaults.filledTonalButtonColors(contentColor = c.error),
                     contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
                     modifier = Modifier.padding(top = 8.dp),
                 ) {
@@ -408,9 +389,7 @@ private fun AccessList(access: TvAccess?, now: Long, online: Boolean, actions: A
     }
 }
 
-private fun LazyListScope.section(title: UiText) = item {
-    Text(title.resolve(), style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(bottom = 8.dp))
-}
+private fun LazyListScope.section(title: UiText) = item { SectionHeader(title.resolve()) }
 
 /** An MD3 segmented list: 2 dp apart, 16 dp outer corners and 4 dp inner ones. */
 private fun <T> LazyListScope.segmented(rows: List<T>, row: @Composable (T) -> Unit) {
@@ -507,7 +486,7 @@ private fun AccessRow(icon: ImageVector, title: String, chip: Chip?, lines: @Com
                     Spacer(Modifier.width(8.dp))
                     val filled = chip == Chip.Tellyscope
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = if (filled) c.secondaryContainer else Color.Transparent,
                         contentColor = if (filled) c.onSecondaryContainer else c.onSurfaceVariant,
                         border = if (filled) null else BorderStroke(1.dp, c.outline),
@@ -527,26 +506,25 @@ private fun Sub(text: String) = Text(text, style = MaterialTheme.typography.body
 @Composable
 private fun Muted(text: String) = Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** The hero sits where [Outcome] puts its own, so the result swaps in without a jump. */
 @Composable
 private fun Waiting(text: String, modifier: Modifier) {
-    Column(modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        LoadingIndicator(Modifier.size(96.dp))
-        Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 24.dp))
+    Column(modifier.padding(horizontal = PageMargin, vertical = 32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        StatusHero(HeroTone.Waiting, null)
+        Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 32.dp))
     }
 }
 
 /** C5: the TV is asking about this phone. Its fingerprint wraps at the colons, to compare pair by pair. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun AllowPhone(removal: Removal, actions: AccessActions, modifier: Modifier) {
     val c = MaterialTheme.colorScheme
     Column(
-        modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
+        modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        LoadingIndicator(Modifier.size(96.dp))
-        Text(Copy.ALLOW_TITLE.resolve(), style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
+        StatusHero(HeroTone.Waiting, null)
+        Text(Copy.ALLOW_TITLE.resolve(), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
         Text(
             buildAnnotatedString {
                 append(Copy.ALLOW_TEXT_A.resolve())
@@ -560,10 +538,10 @@ private fun AllowPhone(removal: Removal, actions: AccessActions, modifier: Modif
         )
         if (removal.refused) {
             Text(Copy.REFUSED.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.error, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 16.dp))
-            Button(onClick = actions.askAgain, Modifier.padding(top = 8.dp)) { Text(Copy.ASK_AGAIN.resolve()) }
+            TryAgainButton(Copy.ASK_AGAIN.resolve(), actions.askAgain, Modifier.padding(top = 8.dp))
         }
         removal.fingerprint?.let { fp ->
-            Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
+            AppCard(Modifier.fillMaxWidth().padding(top = 24.dp)) {
                 Column(Modifier.padding(16.dp)) {
                     Text(Copy.FINGERPRINT_LABEL.resolve(), style = MaterialTheme.typography.labelLarge, color = c.onSurfaceVariant)
                     Text(
@@ -583,17 +561,17 @@ private fun AllowPhone(removal: Removal, actions: AccessActions, modifier: Modif
 @Composable
 private fun ManualGuide(actions: AccessActions, modifier: Modifier) {
     val c = MaterialTheme.colorScheme
-    Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
+    Column(modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 16.dp)) {
         Text(Copy.MANUAL_INTRO.resolve(), style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant)
         Step(1, Copy.MANUAL_STEP_1.resolve(), Copy.MANUAL_STEP_1_TEXT.resolve()) {
-            Button(onClick = actions.openDeveloperOptions, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
+            FilledTonalButton(onClick = actions.openDeveloperOptions, contentPadding = ButtonDefaults.ButtonWithIconContentPadding) {
                 Icon(OpenInNew, contentDescription = null, Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(Copy.OPEN_ON_TV.resolve())
             }
         }
         Step(2, Copy.MANUAL_STEP_2.resolve(), Copy.MANUAL_STEP_2_TEXT.resolve()) {
-            OutlinedButton(onClick = actions.revokedByHand) { Text(Copy.MANUAL_DONE.resolve()) }
+            FilledTonalButton(onClick = actions.revokedByHand) { Text(Copy.MANUAL_DONE.resolve()) }
         }
     }
 }
@@ -602,7 +580,7 @@ private fun ManualGuide(actions: AccessActions, modifier: Modifier) {
 private fun Step(n: Int, title: String, text: String, button: @Composable () -> Unit) {
     val c = MaterialTheme.colorScheme
     Row(Modifier.padding(top = 24.dp)) {
-        Box(Modifier.size(32.dp).clip(RoundedCornerShape(16.dp)).background(c.primary), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(32.dp).clip(MaterialTheme.shapes.large).background(c.primary), contentAlignment = Alignment.Center) {
             Text("$n", style = MaterialTheme.typography.titleSmall, color = c.onPrimary)
         }
         Spacer(Modifier.width(16.dp))
@@ -616,8 +594,7 @@ private fun Step(n: Int, title: String, text: String, button: @Composable () -> 
 
 private enum class Verdict { Done, Still, Unknown }
 
-/** C6, C6b and C6c: a cookie badge, what Tellyscope found, and where to go next. */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+/** C6, C6b and C6c: a status hero, what Tellyscope found, and where to go next. */
 @Composable
 private fun Outcome(
     modifier: Modifier,
@@ -629,22 +606,20 @@ private fun Outcome(
     buttons: @Composable () -> Unit,
 ) {
     val c = MaterialTheme.colorScheme
-    val (bg, fg) = when (kind) {
-        Verdict.Done -> c.primaryContainer to c.onPrimaryContainer
-        Verdict.Still -> c.surfaceContainerHighest to c.error
-        Verdict.Unknown -> c.surfaceContainerHighest to c.onSurfaceVariant
+    val tone = when (kind) {
+        Verdict.Done -> HeroTone.Done
+        Verdict.Still -> HeroTone.Failed
+        Verdict.Unknown -> HeroTone.Neutral
     }
     Column(
-        modifier.verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 32.dp),
+        modifier.verticalScroll(rememberScrollState()).padding(horizontal = PageMargin, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.size(96.dp).clip(MaterialShapes.Cookie9Sided.toShape()).background(bg), contentAlignment = Alignment.Center) {
-            Icon(if (kind == Verdict.Done) AccessIcons.ShieldOk else AccessIcons.Shield, contentDescription = null, Modifier.size(44.dp), tint = fg)
-        }
-        Text(title, style = MaterialTheme.typography.headlineSmall, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
+        StatusHero(tone, if (kind == Verdict.Done) AccessIcons.ShieldOk else AccessIcons.Shield)
+        Text(title, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 32.dp))
         Text(text, style = MaterialTheme.typography.bodyLarge, color = c.onSurfaceVariant, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 12.dp))
         if (trust) {
-            Surface(shape = MaterialTheme.shapes.large, color = c.surfaceContainerHigh, modifier = Modifier.fillMaxWidth().padding(top = 24.dp)) {
+            AppCard(Modifier.fillMaxWidth().padding(top = 24.dp)) {
                 Row(Modifier.padding(16.dp)) {
                     Icon(AccessIcons.ShieldNote, contentDescription = null, tint = c.onSurfaceVariant)
                     Spacer(Modifier.width(16.dp))
@@ -652,7 +627,7 @@ private fun Outcome(
                 }
             }
         }
-        Row(Modifier.padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) { buttons() }
+        ButtonRow(Modifier.padding(top = 24.dp)) { buttons() }
         if (link != null) Box(Modifier.padding(top = 8.dp)) { link() }
     }
 }

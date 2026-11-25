@@ -2,6 +2,7 @@
 package app.tellyscope.adb
 
 import com.flyfishxu.kadb.cert.KadbCert
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import java.io.File
@@ -113,6 +114,35 @@ class ConnectorTest {
         }
     }
 
+    @Test fun aTvThatNeverAnswersIsNotAllowedAfterTheWait() = runBlocking<Unit> {
+        // The Allow box sits on the TV unanswered: adbd holds the socket and says nothing.
+        val held = CopyOnWriteArrayList<java.net.Socket>()
+        ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
+            thread(isDaemon = true) { runCatching { while (true) held += server.accept() } }
+            val r = withTimeout(10_000) { Connector.connect("127.0.0.1", server.localPort, allowWaitMs = 1_000) }
+            assertEquals(ConnectResult.NotAllowed, r)
+        }
+        held.forEach { it.close() }
+    }
+
+    @Test fun anIdleSessionOutlivesTheAllowWait() = runBlocking<Unit> {
+        // The app in the background reads nothing. The Allow wait was Kadb's socket timeout, for the
+        // whole session, so every TV dropped once it had been idle that long.
+        ServerSocket(0, 50, InetAddress.getByName("127.0.0.1")).use { server ->
+            // The TCP probe hangs up without a word, so each connection's end is caught on its own;
+            // the outer catch ends the loop once the server closes.
+            thread(isDaemon = true) { runCatching { while (true) server.accept().use { runCatching { answerShells(it) } } } }
+            val r = withTimeout(10_000) { Connector.connect("127.0.0.1", server.localPort, allowWaitMs = 1_000) }
+            val session = assertIs<ConnectResult.Online>(r).session
+            try {
+                delay(2_500)
+                assertEquals("ok", withTimeout(5_000) { session.shell("echo ok") }.output.trim())
+            } finally {
+                session.close()
+            }
+        }
+    }
+
     @Test fun badCodeIsWrongCode() = runBlocking<Unit> {
         assertEquals(PairResult.WrongCode("pairing code must be 6 digits"), Connector.pair("127.0.0.1", 1, "12a456"))
     }
@@ -161,6 +191,34 @@ class ConnectorTest {
             runCatching { tls.startHandshake() } // throws once it rejects ours
         }
     }
+
+    /** adbd with auth off: answers the CNXN hello, then every stream opened on it prints "ok" and ends. */
+    private fun answerShells(socket: java.net.Socket) {
+        val input = java.io.DataInputStream(socket.getInputStream())
+        val output = socket.getOutputStream()
+        val (cnxn, open, okay, wrte, clse) = listOf(0x4e584e43, 0x4e45504f, 0x59414b4f, 0x45545257, 0x45534c43)
+        var nextId = 1
+        while (true) {
+            val header = ByteBuffer.wrap(ByteArray(24).also(input::readFully)).order(ByteOrder.LITTLE_ENDIAN)
+            val (command, arg0, arg1) = Triple(header.getInt(0), header.getInt(4), header.getInt(8))
+            input.skipNBytes(header.getInt(12).toLong())
+            when (command) {
+                cnxn -> output.write(adbPacket(cnxn, 0x01000001, 256 * 1024, "device::".toByteArray()))
+                open -> {
+                    val id = nextId++
+                    output.write(adbPacket(okay, id, arg0) + adbPacket(wrte, id, arg0, "ok\n".toByteArray()))
+                }
+                // The phone took our "ok": the shell is done.
+                okay -> output.write(adbPacket(clse, arg1, arg0))
+            }
+        }
+    }
+
+    /** An ADB packet: six little-endian words (command, two args, length, byte sum, ~command), then [data]. */
+    private fun adbPacket(command: Int, arg0: Int, arg1: Int, data: ByteArray = ByteArray(0)): ByteArray =
+        ByteBuffer.allocate(24 + data.size).order(ByteOrder.LITTLE_ENDIAN)
+            .putInt(command).putInt(arg0).putInt(arg1).putInt(data.size)
+            .putInt(data.sumOf { it.toInt() and 0xff }).putInt(command.inv()).put(data).array()
 
     /** Reads the CNXN hello and answers STLS, as a wireless debugging port does. */
     private fun answerStls(socket: java.net.Socket) {

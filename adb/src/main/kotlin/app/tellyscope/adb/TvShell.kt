@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package app.tellyscope.adb
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
@@ -32,6 +33,8 @@ sealed interface ShellEnd {
     data object Exited : ShellEnd
     /** The TV went away mid-command. */
     data object Lost : ShellEnd
+    /** The adb library broke on something other than a lost TV, like a bad packet; [reason] says what. */
+    data class Failed(val reason: String) : ShellEnd
 }
 
 /**
@@ -58,9 +61,20 @@ class TvShell(
     private var fresh = false
     /** One command at a time: Tab's lookup and Enter share the shell. */
     private val turn = Mutex()
+    /** The TV sent something back for this command. */
+    @Volatile private var heard = false
 
     suspend fun run(command: String, print: (ShellChunk) -> Unit): ShellEnd = turn.withLock {
+        val kept = channel != null
+        val end = attempt(command, print)
+        // A shell kept from before the link dropped (the app was in the background) is dead before the TV hears
+        // the command: it fails with nothing back, so the command goes once more, into a new shell.
+        if (kept && !heard && (end == ShellEnd.Lost || end is ShellEnd.Failed)) attempt(command, print) else end
+    }
+
+    private suspend fun attempt(command: String, print: (ShellChunk) -> Unit): ShellEnd {
         stopped = false
+        heard = false
         val ch = try {
             channel ?: open()?.also { opened ->
                 channel = opened
@@ -68,6 +82,10 @@ class TvShell(
             }
         } catch (e: IOException) {
             return ShellEnd.Lost
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return failed(e)
         } ?: return oneShot(command, print)
         // Stopped while the shell was still opening: nothing ran.
         if (stopped) {
@@ -79,6 +97,12 @@ class TvShell(
         } catch (e: IOException) {
             drop(ch)
             if (stopped) ShellEnd.Stopped else ShellEnd.Lost
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Where the stream stopped is unknown: the next command gets a new shell.
+            drop(ch)
+            if (stopped) ShellEnd.Stopped else failed(e)
         }
     }
 
@@ -105,7 +129,9 @@ class TvShell(
         val outText = Utf8()
         val errText = Utf8()
         while (true) {
-            when (val p = ch.read()) {
+            val p = ch.read()
+            heard = true
+            when (p) {
                 is ShellPacket.Err -> errText.decode(p.bytes).takeIf { it.isNotEmpty() }?.let { print(ShellChunk(it, error = true)) }
                 is ShellPacket.Exit -> {
                     if (out.isNotEmpty()) print(ShellChunk(out.toString(), error = false))
@@ -143,6 +169,10 @@ class TvShell(
             shell.shell("cd ${shellQuote(cwd)} 2>/dev/null; { $command\n} </dev/null 2>&1; printf '$MARK%s %s\\n' \"\$?\" \"\$PWD\"")
         } catch (e: IOException) {
             return ShellEnd.Lost
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            return failed(e)
         }
         val at = r.output.lastIndexOf(MARK)
         val body = if (at >= 0) r.output.substring(0, at) else r.output
@@ -151,6 +181,8 @@ class TvShell(
         cwd = dir
         return ShellEnd.Done(code)
     }
+
+    private fun failed(e: Exception) = ShellEnd.Failed(e.message?.takeIf { it.isNotBlank() } ?: e.javaClass.simpleName)
 
     private fun marker(s: String): Pair<Int, String>? {
         val code = s.substringBefore(' ').toIntOrNull() ?: return null

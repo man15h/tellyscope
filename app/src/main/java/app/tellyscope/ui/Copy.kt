@@ -12,7 +12,9 @@ import app.tellyscope.data.Action
 import app.tellyscope.data.AppNames
 import app.tellyscope.data.DeviceState
 import app.tellyscope.data.ResetPart
+import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
+import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.Snapshot
 import app.tellyscope.data.TvSettings
@@ -572,6 +574,7 @@ object Copy {
     fun sendFailed(name: String) = UiText(R.string.copy_send_failed, name)
     fun sendFailedOffWifi(name: String) = UiText(R.string.copy_send_failed_off_wifi, name)
     fun saveFailed(name: String) = UiText(R.string.copy_save_failed, name)
+    fun deleted(name: String) = UiText(R.string.copy_deleted, name)
 
     val CANCELLED_SEND = UiText(R.string.copy_cancelled_send)
     val CANCELLED_SAVE = UiText(R.string.copy_cancelled_save)
@@ -638,8 +641,24 @@ object Copy {
     val MORE = UiText(R.string.copy_more)
 
     fun buttonsHint(cap: Int) = UiText(R.string.copy_buttons_hint, cap)
-    fun notOnTv(name: String) = UiText(R.string.copy_not_on_tv, name)
+    /** A Fire TV's store is the Appstore. */
+    fun notOnTv(name: String, fire: Boolean = false) = UiText(if (fire) R.string.copy_not_on_tv_fire else R.string.copy_not_on_tv, name)
     fun cantOpen(label: String) = UiText(R.string.copy_cant_open, label)
+
+    /** Open on TV in the Files tab: how it went, and the prompt that offers [app.tellyscope.data.PLAYER] when nothing plays the file. */
+    fun openedFile(file: String) = UiText(R.string.copy_player_opened, file)
+    fun openedFileIn(file: String, app: String) = UiText(R.string.copy_player_opened_in, file, app)
+    fun cantOpenFile(file: String) = UiText(R.string.copy_player_cant_open, file)
+    fun nothingOpens(file: String) = UiText(R.string.copy_player_nothing_opens, file)
+    fun noPlayer(audio: Boolean) = UiText(if (audio) R.string.copy_player_no_audio else R.string.copy_player_no_video)
+    fun playerNothingText(file: String, player: String) = UiText(R.string.copy_player_nothing_text, file, player)
+    val PLAYER_ABOUT = UiText(R.string.copy_player_about)
+    fun installPlayer(player: String) = UiText(R.string.copy_player_install_title, player)
+    fun playerStoreOpen(player: String) = UiText(R.string.copy_player_store_open, player)
+    fun playerWaiting(player: String, file: String) = UiText(R.string.copy_player_waiting, player, file)
+    val OPEN_APPSTORE = UiText(R.string.copy_player_open_appstore)
+    fun downloadingPlayer(player: String) = UiText(R.string.copy_player_downloading, player)
+    fun playerProgress(done: Long, total: Long, from: String) = UiText(R.string.copy_player_progress, bytes(done), bytes(total), from)
     fun storeOpened(name: String) = UiText(R.string.copy_store_opened, name)
     fun storeCantOpen(name: String) = UiText(R.string.copy_store_cant_open, name)
     val OPEN_AN_APP = UiText(R.string.copy_open_an_app)
@@ -826,6 +845,38 @@ object Copy {
         if (done == of) UiText.plural(R.plurals.copy_turned_off_all, of) else UiText.plural(R.plurals.copy_turned_off_some, of, done, of)
     fun stillOn(app: String) = UiText(R.string.copy_still_on, app)
 
+    /** Debloat and Reset while they run: Back's snackbar, Stop's line until the running step finishes, then what Stop left. */
+    val DEBLOAT_STILL_RUNNING = UiText(R.string.copy_debloat_still_running)
+    val RESET_STILL_RUNNING = UiText(R.string.copy_reset_still_running)
+    fun stoppingAfter(app: String) = UiText(R.string.copy_stopping_after, app)
+    fun resetStopping(part: ResetPart?) =
+        UiText(if (part == ResetPart.TurnOn || part == ResetPart.BringBack) R.string.copy_stopping_after_app else R.string.copy_stopping_after_step)
+    val DEBLOAT_STOPPED = UiText(R.string.copy_debloat_stopped)
+    fun debloatStoppedText(app: String?) =
+        UiText.Join(listOf(app?.let { UiText(R.string.copy_debloat_stopped_text, it) } ?: UiText(R.string.copy_reset_stopped_partway), DEBLOAT_RESULT_TEXT), " ")
+    fun notChanged(n: Int) = UiText.plural(R.plurals.copy_not_changed, n)
+    fun disableTheRest(n: Int) = UiText.plural(R.plurals.copy_disable_the_rest, n)
+    val RESET_STOPPED = UiText(R.string.copy_reset_stopped)
+    fun resetStoppedText(apps: Int) = UiText.Join(
+        listOf(if (apps > 0) UiText.plural(R.plurals.copy_reset_stopped_text, apps) else UiText(R.string.copy_reset_stopped_partway), UiText(R.string.copy_reset_kept_data)),
+        " ",
+    )
+    val NOT_DONE = UiText(R.string.copy_not_done)
+    /** What Stop left of a reset, in the order it runs. */
+    fun resetLeft(left: ResetPlan): UiText = UiText.Capitalized(
+        UiText.Join(
+            listOfNotNull(
+                UiText.plural(R.plurals.copy_left_turn_on, left.turnOn.size).takeIf { left.turnOn.isNotEmpty() },
+                UiText.plural(R.plurals.copy_left_bring_back, left.bringBack.size).takeIf { left.bringBack.isNotEmpty() },
+                UiText(R.string.copy_left_home).takeIf { left.home != null },
+                UiText(R.string.copy_left_dns).takeIf { left.dns != null },
+                UiText(R.string.copy_left_animations).takeIf { left.animations != null },
+            ),
+            ", ",
+        ),
+    )
+    val FINISH_RESET = UiText(R.string.copy_finish_reset)
+
     /** Under History in the menu, and on top of the History screen: the changes Restore everything puts back. */
     fun toPutBack(n: Int) = UiText.plural(R.plurals.copy_to_put_back, n)
     fun putBackTitle(n: Int) = UiText.plural(R.plurals.copy_put_back_title, n)
@@ -844,6 +895,18 @@ object Copy {
         }
     } + listOfNotNull(UiText.plural(R.plurals.copy_restore_gone, r.gone).takeIf { r.gone > 0 })
         .map { UiText(R.string.copy_restore_line, it) }
+
+    /** Restore everything's result when some of it didn't go back: the title, then what's still as Tellyscope left it. */
+    fun restoredTitle(r: RestoreResult) = UiText.plural(R.plurals.copy_restored_title, r.done + r.failed.size, r.done, r.done + r.failed.size)
+    fun restoredLeft(r: RestoreResult) = UiText.plural(R.plurals.copy_restored_left, r.failed.size)
+    fun restoredFailures(r: RestoreResult): List<UiText> =
+        firstFew(r.failed.map { UiText(R.string.copy_restore_line, UiText(R.string.result_reason_app, it.what, UiText.Capitalized(it.why))) })
+    val RESTORED_HINT = UiText(R.string.copy_restored_hint)
+
+    /** The first [FEW] of a list of failures, then how many more: a long run names some, not all. */
+    fun firstFew(lines: List<UiText>): List<UiText> =
+        lines.take(FEW) + listOfNotNull(UiText.plural(R.plurals.copy_and_more, lines.size - FEW).takeIf { lines.size > FEW })
+    private const val FEW = 3
     fun othersConnected(n: Int) = UiText.plural(R.plurals.copy_others_connected, n)
     fun connections(n: Int) = UiText.plural(R.plurals.copy_connections, n)
     fun connectedFrom(address: String, n: Int) = UiText.plural(R.plurals.copy_connected_from, n, address, n)

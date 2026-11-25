@@ -6,56 +6,62 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.selection.triStateToggleable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -70,8 +76,10 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -91,6 +99,7 @@ import app.tellyscope.data.listKind
 import app.tellyscope.data.listMakers
 import app.tellyscope.data.sourceName
 import app.tellyscope.data.squash
+import kotlinx.coroutines.launch
 
 @Composable
 private fun Muted(text: String) {
@@ -103,13 +112,13 @@ private fun Muted(text: String) {
  * searches every list instead. The confirm names each app before anything runs; once it's
  * confirmed, MainActivity shows [DebloatRunScreen] in its place.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun DebloatScreen(
     lists: Suggestions?,
     onPick: (String) -> Unit,
-    /** The ticked apps, name and package, in the order the confirm lists them. */
-    onDisable: (List<ResetApp>) -> Unit,
+    /** The ticked apps, name and package, in the order the confirm lists them, and the unticked ones not to suggest again. */
+    onDisable: (List<ResetApp>, List<String>) -> Unit,
     back: () -> Unit,
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
     /** The user's own list source, null for the default; set in Settings. */
@@ -124,15 +133,26 @@ fun DebloatScreen(
     busy: Boolean = false,
     /** Help add this TV to cleanyourtv, offered when a search finds no list. */
     onHelpAdd: () -> Unit = {},
+    /** Loads this TV's list again after it didn't load. */
+    onRetry: () -> Unit = {},
+    /** Suggest again on an app in "Not suggested": back on the list. */
+    onSuggestAgain: (String) -> Unit = {},
+    /** Refresh in the top bar: the lists fetched again; null when it didn't run. */
+    onRefresh: suspend () -> ListsRefresh? = { null },
+    /** That refresh is running: the icon shows the loading shape, the list stays. */
+    refreshing: Boolean = false,
 ) {
     val ready = lists as? Suggestions.Ready
     val devices = when (lists) {
         is Suggestions.NoList -> lists.devices
         is Suggestions.Ready -> lists.devices
-        else -> emptyList()
+        is Suggestions.Unavailable -> lists.devices
+        null -> emptyList()
     }
     // A list picked in the search; until then, the one Tellyscope found.
     var chosen by rememberSaveable { mutableStateOf<String?>(null) }
+    // A pick that didn't load puts the last list back, so the pick is forgotten once anything arrives.
+    LaunchedEffect(lists) { if (lists != null) chosen = null }
     var searching by rememberSaveable { mutableStateOf(false) }
     var marked by rememberSaveable { mutableStateOf<String?>(null) }
     val makers = remember(devices) { listMakers(devices) }
@@ -141,11 +161,18 @@ fun DebloatScreen(
     val prefill = remember(devices) { tvMakers.map { it.trim() }.firstOrNull { it.isNotEmpty() && finds(it).isNotEmpty() } }
     var typed by rememberSaveable { mutableStateOf<String?>(null) }
     val q = typed ?: prefill.orEmpty()
-    // Ticks start from the list and reset whenever it reloads.
-    var ticked by remember(lists) {
-        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { it.ticked }.map { it.pkg }.toSet())
+    // Ticks start from the list. When the same list loads again, as after Refresh, an app on it before
+    // keeps the tick it had, so nothing unticked by hand comes back ticked; a new app takes the list's.
+    val before = remember { mutableStateOf<Ticks?>(null) }
+    // It holds the old list's tick state, not a copy: a tap recomposes only the row, so a copy would go stale.
+    val tickState = remember(lists) {
+        val was = before.value?.takeIf { it.list != null && it.list == ready?.list?.id }
+        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { if (was != null && it.pkg in was.pkgs) it.pkg in was.ticked.value else it.ticked }.map { it.pkg }.toSet())
     }
+    var ticked by tickState
+    SideEffect { before.value = Ticks(ready?.list?.id, ready?.groups.orEmpty().flatMap { it.packages }.map { it.pkg }.toSet(), tickState) }
     var confirming by remember { mutableStateOf(false) }
+    var unfolded by rememberSaveable { mutableStateOf(false) }
     val showing = ready?.takeIf { chosen == null || it.list.id == chosen }
     // With no list, every app that's on and not protected, by name.
     val groups = when {
@@ -154,7 +181,7 @@ fun DebloatScreen(
             SuggestedGroup(
                 stringResource(R.string.lists_apps_on_tv),
                 tvApps.filter { it.enabled && it.protectedReason == null && !it.builtInLauncher }.sortedBy { it.label.lowercase() }
-                    .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false) },
+                    .map { Suggested(it.packageName, it.label, note = null, optional = false, ticked = false, warn = it.warn) },
             ),
         )
         else -> null
@@ -162,11 +189,33 @@ fun DebloatScreen(
     if (confirming && groups != null) {
         // The dialog's list is exactly what gets disabled.
         val apps = groups.flatMap { it.packages }.filter { it.pkg in ticked }
-        DisableDialog(apps, onDisable = { confirming = false; onDisable(apps.map { ResetApp(it.pkg, it.label) }) }, onDismiss = { confirming = false }, enabled = !busy)
+        // Only a list suggests: apps picked by hand have nothing to stop suggesting.
+        val unticked = if (showing == null) emptyList() else groups.flatMap { it.packages }.filter { it.pkg !in ticked }
+        DisableDialog(
+            apps,
+            onDisable = { hide -> confirming = false; onDisable(apps.map { ResetApp(it.pkg, it.label) }, if (hide) unticked.map { it.pkg } else emptyList()) },
+            onDismiss = { confirming = false },
+            enabled = !busy,
+            unticked = unticked,
+        )
     }
     val use = { marked?.let { if (it != ready?.list?.id) { chosen = it; onPick(it) } }; searching = false }
     val keyboard = LocalSoftwareKeyboardController.current
     val goBack = { if (searching) searching = false else back() }
+    val scope = rememberCoroutineScope()
+    val res = LocalContext.current.resources
+    fun refresh() {
+        scope.launch {
+            when (onRefresh()) {
+                ListsRefresh.Failed -> {
+                    val again = snackbar.showSnackbar(res.getString(R.string.lists_refresh_failed), actionLabel = res.getString(R.string.lists_try_again), duration = SnackbarDuration.Long)
+                    if (again == SnackbarResult.ActionPerformed) refresh()
+                }
+                ListsRefresh.Same -> snackbar.showSnackbar(res.getString(R.string.lists_up_to_date), duration = SnackbarDuration.Short)
+                ListsRefresh.Changed, null -> {}
+            }
+        }
+    }
     BackHandler(onBack = goBack)
 
     Scaffold(
@@ -177,21 +226,29 @@ fun DebloatScreen(
                 navigationIcon = {
                     IconButton(onClick = goBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.lists_back)) }
                 },
+                actions = {
+                    // The list and its ticks stay while it runs; a new list swaps in when it lands.
+                    if (!searching) {
+                        val label = stringResource(R.string.lists_refresh)
+                        if (refreshing) {
+                            LoadingIndicator(Modifier.padding(12.dp).size(24.dp).semantics { contentDescription = label })
+                        } else {
+                            IconButton(onClick = ::refresh) { Icon(Icons.Default.Refresh, contentDescription = label) }
+                        }
+                    }
+                },
             )
         },
         bottomBar = {
-            // Above the keyboard while the search is typed into.
-            Surface(tonalElevation = 3.dp, modifier = Modifier.imePadding()) {
-                Box(Modifier.fillMaxWidth().navigationBarsPadding().padding(16.dp)) {
-                    if (searching) {
-                        Button(onClick = use, enabled = marked != null, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.lists_use_this)) }
-                    } else {
-                        Button(
-                            onClick = { confirming = true },
-                            enabled = groups != null && ticked.isNotEmpty() && !busy,
-                            modifier = Modifier.fillMaxWidth(),
-                        ) { Text(pluralStringResource(R.plurals.lists_disable_apps, ticked.size, ticked.size)) }
-                    }
+            // Above the keyboard while the search is typed into. Nothing to disable until a list loads.
+            if (searching || groups != null) ActionBar(Modifier.imePadding()) {
+                if (searching) {
+                    Button(onClick = use, enabled = marked != null) { Text(stringResource(R.string.lists_use_this)) }
+                } else {
+                    Button(
+                        onClick = { confirming = true },
+                        enabled = groups != null && ticked.isNotEmpty() && !busy,
+                    ) { Text(pluralStringResource(R.plurals.lists_disable_apps, ticked.size, ticked.size)) }
                 }
             }
         },
@@ -203,18 +260,13 @@ fun DebloatScreen(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 item {
-                    OutlinedTextField(
+                    SearchField(
                         q, { typed = it },
-                        placeholder = { Text(stringResource(R.string.lists_brand_or_model)) },
-                        leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                        trailingIcon = {
-                            if (q.isNotEmpty()) IconButton(onClick = { typed = "" }) { Icon(Icons.Filled.Clear, contentDescription = stringResource(R.string.lists_clear_search)) }
-                        },
-                        singleLine = true,
+                        placeholder = stringResource(R.string.lists_brand_or_model),
+                        clear = stringResource(R.string.lists_clear_search),
+                        modifier = Modifier.padding(bottom = 8.dp),
                         // The keyboard's action key closes it, and moves on once a TV is picked.
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = { keyboard?.hide(); if (marked != null) use() }),
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                        onSearch = { keyboard?.hide(); if (marked != null) use() },
                     )
                 }
                 val term = q.trim()
@@ -232,7 +284,7 @@ fun DebloatScreen(
                 devices.groupBy { makers.getValue(it.id).lowercase().filter(Char::isLetterOrDigit) }.toSortedMap().forEach { (key, group) ->
                     stickyHeader(key = "m:$key") {
                         Surface(color = MaterialTheme.colorScheme.background, modifier = Modifier.fillMaxWidth()) {
-                            Text(makers.getValue(group.first().id), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(top = 12.dp, bottom = 4.dp))
+                            SectionHeader(makers.getValue(group.first().id))
                         }
                     }
                     items(group.sortedBy { it.name.lowercase() }, key = { it.id }) { d -> ListRow(d, makers.getValue(d.id), d.id == marked) { marked = d.id } }
@@ -246,10 +298,11 @@ fun DebloatScreen(
             ) {
                 if (groups == null) {
                     item {
-                        Muted(
-                            if (lists == Suggestions.Unavailable) stringResource(R.string.lists_unavailable)
-                            else stringResource(R.string.lists_loading),
-                        )
+                        if (lists is Suggestions.Unavailable) {
+                            ListFailed(onRetry, onNotThis = if (devices.isEmpty()) null else ({ marked = null; searching = true }))
+                        } else {
+                            ListLoading()
+                        }
                     }
                     return@LazyColumn
                 }
@@ -296,11 +349,11 @@ fun DebloatScreen(
                     item(key = "g:" + g.title) {
                         if (tree) GroupRow(g.title, pkgs.count { it in ticked }, pkgs.size) {
                             ticked = if (pkgs.all { it in ticked }) ticked - pkgs.toSet() else ticked + pkgs
-                        } else Text(g.title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 12.dp))
+                        } else SectionHeader(g.title)
                     }
                     itemsIndexed(g.packages, key = { _, p -> p.pkg }) { i, p ->
                         Row(
-                            Modifier.fillMaxWidth()
+                            Modifier.fillMaxWidth().heightIn(min = 48.dp)
                                 .then(if (tree) Modifier.treeLine(MaterialTheme.colorScheme.outlineVariant, last = i == g.packages.lastIndex).padding(start = Indent) else Modifier)
                                 .clip(MaterialTheme.shapes.medium)
                                 .clickable { ticked = if (p.pkg in ticked) ticked - p.pkg else ticked + p.pkg },
@@ -315,14 +368,96 @@ fun DebloatScreen(
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
+                                p.warn?.let { WarnLine(it) }
                             }
                         }
                     }
+                }
+                // Apps the user asked not to see again, folded at the foot, each with its way back.
+                val hidden = showing?.hidden.orEmpty()
+                if (hidden.isNotEmpty()) {
+                    item(key = "hidden") { HiddenRow(hidden.size, unfolded) { unfolded = !unfolded } }
+                    if (unfolded) items(hidden, key = { "h:" + it.pkg }) { p -> HiddenApp(p) { onSuggestAgain(p.pkg) } }
                 }
             }
         }
     }
 }
+
+/** What turning an app off breaks, in red under its name: a list's [Suggested.warn] or [AppInfo.warn]. */
+@Composable
+internal fun WarnLine(text: String) {
+    val c = MaterialTheme.colorScheme
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(Icons.Filled.Warning, contentDescription = null, Modifier.size(14.dp), tint = c.error)
+        Spacer(Modifier.width(4.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = c.error)
+    }
+}
+
+/** "Not suggested (N)", at the foot of the list: unfolds to the apps it hides. */
+@Composable
+private fun HiddenRow(count: Int, unfolded: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.padding(top = 8.dp).fillMaxWidth().heightIn(min = 48.dp).clip(MaterialTheme.shapes.medium).clickable(onClick = onToggle),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(if (unfolded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown, contentDescription = null, Modifier.padding(horizontal = 12.dp))
+        Text(stringResource(R.string.lists_not_suggested, count), style = MaterialTheme.typography.titleSmall)
+    }
+}
+
+@Composable
+private fun HiddenApp(p: Suggested, onSuggestAgain: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(start = Indent + 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(p.label, style = MaterialTheme.typography.bodyLarge)
+            Muted(p.pkg)
+            p.warn?.let { WarnLine(it) }
+        }
+        FilledTonalButton(onClick = onSuggestAgain) { Text(stringResource(R.string.lists_suggest_again)) }
+    }
+}
+
+/** The list on its way, in the middle of the page. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun LazyItemScope.ListLoading() {
+    Column(Modifier.fillParentMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        LoadingIndicator(Modifier.size(48.dp))
+        Spacer(Modifier.height(12.dp))
+        Muted(stringResource(R.string.lists_loading))
+    }
+}
+
+/** A list that didn't load: try again, or pick another TV's when the index is there to search. */
+@Composable
+private fun LazyItemScope.ListFailed(onRetry: () -> Unit, onNotThis: (() -> Unit)?) {
+    Column(
+        Modifier.fillParentMaxSize().padding(horizontal = PageMargin),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        StatusHero(HeroTone.Failed, CloudOff)
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.lists_failed), style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.lists_failed_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+        TryAgainButton(stringResource(R.string.lists_try_again), onRetry)
+        if (onNotThis != null) TextButton(onClick = onNotThis) { Text(stringResource(R.string.lists_not_this_tv)) }
+    }
+}
+
+private val CloudOff = symbol(
+    "CloudOff",
+    "M792-56 686-160H260q-92 0-156-64T40-380q0-77 47.5-137T210-594q3-8 6-15.5t6-16.5L56-792l56-56 736 736-56 56ZM260-240h346L284-562q-2 11-3 21t-1 21h-20q-58 0-99 41t-41 99q0 58 41 99t99 41Zm185-161Zm419 191-58-56q17-14 25.5-32.5T840-340q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-27 0-52 6.5T380-693l-58-58q35-24 74.5-36.5T480-800q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 39-15 72.5T864-210ZM593-479Z",
+)
 
 /** How far a group's apps sit in from its heading: a checkbox and its gap, so theirs line up under its title. */
 private val Indent = 32.dp
@@ -342,7 +477,7 @@ private fun GroupRow(title: String, on: Int, of: Int, onToggle: () -> Unit) {
         else -> ToggleableState.Indeterminate
     }
     Row(
-        Modifier.padding(top = 8.dp).fillMaxWidth().heightIn(min = 48.dp)
+        Modifier.padding(top = 16.dp).fillMaxWidth().heightIn(min = 48.dp)
             .treeLine(MaterialTheme.colorScheme.outlineVariant, head = true)
             .clip(MaterialTheme.shapes.medium)
             .triStateToggleable(state, role = Role.Checkbox, onClick = onToggle),
@@ -373,15 +508,12 @@ private fun Modifier.treeLine(color: Color, last: Boolean = false, head: Boolean
 /** No list for this TV: send its model and stock apps to cleanyourtv, where the lists come from. */
 @Composable
 private fun HelpAddCard(onHelpAdd: () -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-    ) {
+    AppCard(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(Modifier.padding(16.dp)) {
             Icon(AddToQueue, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.lists_help_add_title), style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.lists_help_add_title), style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(R.string.lists_help_add_text),
                     style = MaterialTheme.typography.bodyMedium,
@@ -399,12 +531,12 @@ private enum class Match { Exact, Loose, None }
 @Composable
 private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Match, onNotThis: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    val (bg, fg) = when (match) {
-        Match.Exact -> c.secondaryContainer to c.onSecondaryContainer
-        Match.Loose -> c.tertiaryContainer to c.onTertiaryContainer
-        Match.None -> c.surfaceContainerHigh to c.onSurface
+    val bg = when (match) {
+        Match.Exact -> c.secondaryContainer
+        Match.Loose -> c.tertiaryContainer
+        Match.None -> c.surfaceContainerHigh
     }
-    Surface(color = bg, contentColor = fg, shape = MaterialTheme.shapes.large, modifier = Modifier.fillMaxWidth()) {
+    AppCard(Modifier.fillMaxWidth(), color = bg) {
         Row(Modifier.padding(start = 16.dp, top = 12.dp, bottom = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(DeviceIcons.of(kind), contentDescription = kind.word())
             Spacer(Modifier.width(16.dp))
@@ -417,8 +549,21 @@ private fun MatchCard(kind: DeviceKind, name: String, detail: String, match: Mat
     }
 }
 
+/**
+ * The confirm before a run. Apps with a warning come first, under one red line. With [unticked]
+ * apps from a list, a checkbox (off to start) stops suggesting them on this TV; [onDisable] gets its tick.
+ */
 @Composable
-internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismiss: () -> Unit, enabled: Boolean = true) {
+internal fun DisableDialog(
+    apps: List<Suggested>,
+    onDisable: (hide: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    enabled: Boolean = true,
+    unticked: List<Suggested> = emptyList(),
+) {
+    val c = MaterialTheme.colorScheme
+    val warned = apps.filter { it.warn != null }
+    var hide by rememberSaveable { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(pluralStringResource(R.plurals.lists_disable_apps_confirm, apps.size, apps.size)) },
@@ -427,16 +572,31 @@ internal fun DisableDialog(apps: List<Suggested>, onDisable: () -> Unit, onDismi
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(stringResource(R.string.lists_disable_text))
                 LazyColumn(Modifier.heightIn(max = 280.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    items(apps, key = { it.pkg }) { a ->
+                    if (warned.isNotEmpty()) item(key = "warned") {
+                        Text(pluralStringResource(R.plurals.lists_disable_warned, warned.size, warned.size), color = c.error)
+                    }
+                    items(warned + (apps - warned.toSet()), key = { it.pkg }) { a ->
                         Column {
                             Text(a.label, style = MaterialTheme.typography.bodyLarge)
-                            Text(a.pkg, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(a.pkg, style = MaterialTheme.typography.bodySmall, color = c.onSurfaceVariant)
+                            a.warn?.let { WarnLine(it) }
                         }
                     }
                 }
+                if (unticked.isNotEmpty()) Row(
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(MaterialTheme.shapes.medium).toggleable(hide, role = Role.Checkbox) { hide = it },
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Checkbox(hide, onCheckedChange = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        unticked.singleOrNull()?.let { stringResource(R.string.lists_dont_suggest_one, it.label) }
+                            ?: pluralStringResource(R.plurals.lists_dont_suggest, unticked.size, unticked.size),
+                    )
+                }
             }
         },
-        confirmButton = { Button(onClick = onDisable, enabled = enabled) { Text(stringResource(R.string.lists_disable_yes)) } },
+        confirmButton = { Button(onClick = { onDisable(hide) }, enabled = enabled) { Text(stringResource(R.string.lists_disable_yes)) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.lists_cancel)) } },
     )
 }
@@ -539,3 +699,6 @@ private fun ListRow(e: ListEntry, maker: String, selected: Boolean, onClick: (()
         modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large).then(pick),
     )
 }
+
+/** Debloat's ticks as they were on [list] (its id), over the apps [pkgs], kept for when it loads again. */
+private class Ticks(val list: String?, val pkgs: Set<String>, val ticked: State<Set<String>>)

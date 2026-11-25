@@ -59,7 +59,8 @@ fun pageApk(html: String, tag: String, releases: String, name: String? = null): 
         .filter { isApk(it.substringAfterLast('/'), name) }.singleOrNull()?.let { "https://github.com$it" }
 }
 
-class AndroidLauncherDownload(context: Context) : AndroidLauncherPick(context), LauncherDownload {
+/** A launcher from its developer's GitHub, or the player from VideoLAN's downloads ([latestVlc]). */
+class AndroidLauncherDownload(context: Context) : AndroidLauncherPick(context), LauncherDownload, PlayerDownload {
     /**
      * From GitHub's API, or, when that is rate-limited, from the release page it links to, which isn't.
      * Throws [RateLimited] only when the page didn't answer either.
@@ -142,5 +143,15 @@ class AndroidLauncherDownload(context: Context) : AndroidLauncherPick(context), 
             c.disconnect()
         }
         read(file, launcher)
+    }
+
+    override suspend fun latestPlayer(abis: List<String>): PlayerRelease = withContext(Dispatchers.IO) { latestVlc(abis) }
+
+    override suspend fun fetchPlayer(release: PlayerRelease, onProgress: (Progress) -> Unit): PickedApp = withContext(Dispatchers.IO) {
+        dir.deleteRecursively()
+        dir.mkdirs()
+        val file = File(dir, apkName(PLAYER))
+        fetchVlc(release, file, onProgress)
+        read(file, PLAYER)
     }
 }

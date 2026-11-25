@@ -38,11 +38,19 @@ The access warning, Who has access and Remove all other access use those
 of "shield", "gpp_good", "gpp_maybe", "lock_reset", "smartphone", "lan",
 "laptop", "desktop_windows" and "help_outline"; the Connected devices card
 those of "bluetooth", "headphones", "keyboard", "mouse", "sports_esports",
-"usb", "speaker", "settings_input_hdmi" and "videocam". The logged-out page and the
+"usb", "speaker", "settings_input_hdmi" and "videocam", and the Remote's
+Pointer and Game controller the same "mouse" and "sports_esports". The logged-out page and the
 logged-out badge on a TV's chip use that of "logout"; the dialog that asks
 about a launcher's accessibility service that of "accessibility_new".
 The install-a-launcher flow uses those of "download", "error_outline",
 "info" (outlined), "hide_image" (outlined) and "code".
+
+--------------------------------------------------------------------------------
+scrcpy — https://github.com/Genymobile/scrcpy
+License: Apache License 2.0, Copyright (C) 2018 Genymobile, Copyright (C) 2018-2026 Romain Vimont
+The Remote helper's virtual mouse and gamepad (app/src/helper, Uhid) follow
+scrcpy's UhidManager: the uhid_event layout and its CREATE2, INPUT2 and
+DESTROY requests.
 
 --------------------------------------------------------------------------------
 Store badges in docs/badges/ (README only, not in the app)

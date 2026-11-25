@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -40,12 +41,13 @@ import app.tellyscope.data.resolve
  * Whole-TV settings and housekeeping. The two switches land in History with Undo; clearing
  * caches says up front what it keeps; a screenshot asks where to save it first.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun TweaksBlock(ui: DeviceUi, actions: DeviceActions) {
     val tweaks = ui.tweaks
     var askDns by rememberSaveable { mutableStateOf(false) }
     val dnsOn = tweaks?.dnsHost != null
-    if (ui.busy in TWEAK_BUSY) LinearProgressIndicator(Modifier.fillMaxWidth())
+    if (ui.busy in TWEAK_BUSY) LinearWavyProgressIndicator(Modifier.fillMaxWidth())
     val dnsOk = tweaks?.dnsSupported != false
     SwitchRow(
         Copy.DNS_TITLE.resolve(),

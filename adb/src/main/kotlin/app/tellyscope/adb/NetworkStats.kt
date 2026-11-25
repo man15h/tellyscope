@@ -10,9 +10,12 @@ class NetworkStats(private val shell: AdbShell) {
         return address to Parsers.wifi(status)?.takeIf { address?.iface?.startsWith("wlan") != false }
     }
 
-    /** Live connections to somewhere off the TV; listeners and finished ones are left out. */
-    suspend fun connections(): List<Parsers.TcpSocket> =
-        Parsers.tcpSockets(shell.shell(Commands.SOCKETS).output).filter { it.open }
+    /** Both TCP tables in one read: [connections] and [Access.clients] can parse the same text. */
+    suspend fun tables(): String = shell.shell(Commands.SOCKETS).output
+
+    /** Live connections to somewhere off the TV; listeners and finished ones are left out. [tables] is read when not given. */
+    suspend fun connections(tables: String? = null): List<Parsers.TcpSocket> =
+        Parsers.tcpSockets(tables ?: tables()).filter { it.open }
 
     /** Bytes per uid; empty when the TV reports neither source. */
     suspend fun traffic(): Map<Int, Parsers.Traffic> {

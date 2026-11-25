@@ -43,6 +43,27 @@ class KeyHelper(val session: AdbSession, private val dex: ByteArray) : AutoClose
     /** Turns the TV's picture off or on; the TV stays awake and connected. Answers like [press]. */
     suspend fun screen(on: Boolean): Boolean? = send(if (on) "p2" else "p0")
 
+    /** Whether the TV lets the shell add a virtual mouse or gamepad (`/dev/uhid`). Answers like [press]. */
+    suspend fun uhid(): Boolean? = send("u")
+
+    /** Adds [device] to the TV, replacing one of its kind, or takes both away when null. */
+    suspend fun hid(device: HidDevice?): Boolean? = send(
+        when (device) {
+            HidDevice.MOUSE -> "hm"
+            HidDevice.GAMEPAD -> "hg"
+            null -> "h-"
+        },
+    )
+
+    /** Moves the virtual mouse by [dx], [dy] with [buttons] held and [wheel] notches. False without the mouse. */
+    suspend fun mouse(dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean? = send("m$dx $dy $buttons $wheel")
+
+    /** Sets the virtual gamepad to [pad]. False without the gamepad. */
+    suspend fun gamepad(pad: GamepadReport): Boolean? = send("g${pad.buttons} ${pad.hat} ${pad.x} ${pad.y}")
+
+    /** Presses ([down]) or lets go of gamepad key [code], injected as from a gamepad; for a TV with no virtual one. */
+    suspend fun gamepadKey(code: Int, down: Boolean): Boolean? = send("b${if (down) 1 else 0} $code")
+
     private suspend fun send(line: String): Boolean? = lock.withLock {
         if (failed) return null
         val p = pipe ?: start() ?: return null

@@ -13,6 +13,7 @@ import app.tellyscope.adb.ActionResult
 import app.tellyscope.adb.ApkInfo
 import app.tellyscope.adb.BatchedShell
 import app.tellyscope.adb.Files
+import app.tellyscope.adb.OpenFile
 import app.tellyscope.adb.HomeOptions
 import app.tellyscope.adb.HomeResult
 import app.tellyscope.adb.InstallResult
@@ -27,6 +28,8 @@ import app.tellyscope.adb.ConnectionPrompt
 import app.tellyscope.adb.ConnectionRequest
 import app.tellyscope.adb.Connector
 import app.tellyscope.adb.DeviceLink
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.KeyHelper
 import app.tellyscope.adb.LabelHelper
 import app.tellyscope.adb.LanScanner
@@ -61,6 +64,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformWhile
 import kotlinx.coroutines.launch
@@ -84,10 +88,12 @@ import app.tellyscope.adb.ScanHit as AdbHit
 /**
  * [DeviceSource] on real TVs through `:adb`. Device id is the TV's IP. Wi-Fi name, signal, MAC and
  * link speed are empty for now. App names and icons come from the label helper through [AppNames].
+ * [fetch] downloads the lists and `data/`; tests pass one that is offline, so live `data/` never lands in [SharedLists].
  */
 class AdbDeviceSource(
     context: Context,
     private val connector: suspend (String, Int) -> AdbConnectResult = { h, p -> Connector.connect(h, p) },
+    fetch: suspend (String) -> ByteArray = ::download,
 ) : DeviceSource {
     private val appContext = context.applicationContext
     /** Our text in the app's language now, for what's saved: History labels, names stored with data. */
@@ -129,13 +135,16 @@ class AdbDeviceSource(
     private val fireHomes = ConcurrentHashMap<String, Pair<AdbSession, String?>>()
     /** Per TV, the session [volumeKeys] read on and the keys per tap it worked out. */
     private val volumeSteps = ConcurrentHashMap<String, Pair<AdbSession, Int>>()
+    /** Per TV, the session [uhid] asked on and whether the TV allows a virtual mouse or gamepad. */
+    private val uhidAllowed = ConcurrentHashMap<String, Pair<AdbSession, Boolean>>()
     /** The remote's key helper on each TV, while the remote is open. */
     private val keyHelpers = ConcurrentHashMap<String, KeyHelper>()
     private val helperDex by lazy { appContext.assets.open("label-helper.jar").use { it.readBytes() } }
     private val appNames = AppNames(File(appContext.filesDir, "app-names"))
-    private val lists = DeviceLists(File(appContext.filesDir, "lists"))
+    private val lastStates = LastStateBook(File(appContext.filesDir, "last-state")) { it.text() }
+    private val lists = DeviceLists(File(appContext.filesDir, "lists"), fetch)
     /** `data/`'s launcher, app name and streaming lists; never the user's source. */
-    private val data = DeviceLists(File(appContext.filesDir, "data"), DATA_BASE, DATA_KEYS)
+    private val data = DeviceLists(File(appContext.filesDir, "data"), DATA_BASE, DATA_KEYS, fetch)
     /** [historyKey] → the keep entries of that TV's list, once it has been looked up. */
     private val keep = ConcurrentHashMap<String, Set<String>>()
 
@@ -277,11 +286,13 @@ class AdbDeviceSource(
         keyHelpers.remove(deviceId)?.close()
         fireHomes -= deviceId
         volumeSteps -= deviceId
+        uhidAllowed -= deviceId
         links.remove(deviceId)?.disconnect()
         hits.remove(deviceId)
         services.remove(deviceId)
         restoring -= deviceId
         if (saved.remove(deviceId) != null) persist()
+        keys[deviceId]?.let { tv -> withContext(Dispatchers.IO) { lastStates.forget(tv) } }
     }
 
     /**
@@ -479,6 +490,11 @@ class AdbDeviceSource(
         if (!paused) scope.launch(Dispatchers.IO) { SharedLists.refresh() }
     }
 
+    override fun checking(deviceId: String): Flow<Boolean> {
+        val link = links[deviceId] ?: return flowOf(false)
+        return combine(link.gate.checking, link.state) { checking, state -> checking && state == AdbState.ONLINE }
+    }
+
     /**
      * Runs a change with that TV's stats paused, so a slow stats read can't compete with it or cut it off.
      * [reread]: it changes apps or storage, so the stats it touches are read again once it ends.
@@ -551,6 +567,7 @@ class AdbDeviceSource(
                 homeServiceOff = serviceOff && p.name == homeOptions?.current,
                 homeServiceNote = note && p.name == homeOptions?.current,
                 listKeep = p.name in keep,
+                warn = SharedLists.warn[p.name],
                 launchable = p.name in launchable,
                 tvHome = p.name in tvHome,
             )
@@ -565,14 +582,18 @@ class AdbDeviceSource(
         val cached = addresses[deviceId]?.takeIf { statsFor != (deviceId to StatsProfile.ADVANCED) }
         val (address, wifi) = cached ?: NetworkStats(shell).address().also { addresses[deviceId] = it }
         val packages = links[deviceId]?.stats?.value?.packages.orEmpty()
+        val tables = NetworkStats(shell).tables().also { socketTables[deviceId] = System.currentTimeMillis() to it }
         return NetworkInfo(
             iface = address?.iface.orEmpty(),
             ip = address?.ip ?: deviceId,
             mac = address?.mac, ssid = wifi?.ssid, rssi = wifi?.rssi, linkMbps = wifi?.linkMbps,
-            sockets = NetworkStats(shell).connections().map { Socket(uidLabel(it.uid, packages), it.remote, tcpState(it.state)) },
+            sockets = NetworkStats(shell).connections(tables).map { Socket(uidLabel(it.uid, packages), it.remote, tcpState(it.state)) },
             traffic = traffic(deviceId, packages),
         )
     }
+
+    /** The TCP tables [network] just read, taken once by the [access] read in the same tick. */
+    private val socketTables = ConcurrentHashMap<String, Pair<Long, String>>()
 
     /** `dumpsys netstats` is long, so data used is read at most once a minute per TV. */
     private val trafficCache = ConcurrentHashMap<String, Pair<Long, List<AppTraffic>>>()
@@ -779,7 +800,7 @@ class AdbDeviceSource(
 
     override suspend fun openStore(deviceId: String, packageName: String): Boolean {
         // Only a launcher the list names: the Store link is the one thing this opens.
-        if (SharedLists.launchers.none { it.pkg == packageName }) return false
+        if (packageName != PLAYER.pkg && SharedLists.launchers.none { it.pkg == packageName }) return false
         return Actions(session(deviceId)).openStore(packageName)
     }
 
@@ -815,7 +836,7 @@ class AdbDeviceSource(
         fun app(pkg: String) = labelOf(pkg).asUiText()
         for (pkg in plan.turnOn) run.step(app(pkg)) { act(deviceId, Action.Enable, pkg, undoing = book.openDisable(key, pkg)) }
         // Home and its services, one step: turning a launcher on may have put them back already.
-        val home = target.home?.takeIf { it.substringBefore('/') in listed }
+        val home = target.homes.firstOrNull { it.substringBefore('/') in listed }
         val homeNow = home?.let { actions.currentHome() }
         val moveTo = home?.takeIf { homeNow?.substringBefore('/') != it.substringBefore('/') }
         val services = target.services.filter { (service, wasOn) -> service.substringBefore('/') in listed && actions.serviceOn(service) != wasOn }
@@ -876,7 +897,7 @@ class AdbDeviceSource(
         )
     }
 
-    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
+    override suspend fun reset(deviceId: String, plan: ResetPlan, into: Long?, stop: () -> Boolean, onProgress: (ResetProgress) -> Unit): Pair<Long?, List<ResetFailure>> = busy(deviceId) {
         fireHomes -= deviceId
         val key = key(deviceId)
         val shell = session(deviceId)
@@ -890,21 +911,25 @@ class AdbDeviceSource(
             entry = entry?.let { book.amend(it.id, extra, label) }
                 ?: book.record(key, System.currentTimeMillis(), Action.Reset, RESET, label, undo = Action.Reset, previous = extra)
         }
-        suspend fun each(part: ResetPart, field: String, apps: List<ResetApp>, change: suspend (String) -> Unit) = apps.forEachIndexed { i, app ->
-            onProgress(ResetProgress(part, i, apps.size))
-            try {
-                change(app.packageName)
-                note(mapOf(field to (ResetRecord.list(entry?.previous, field) + app.packageName).distinct().joinToString(",")))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // A step that fails doesn't stop the rest: each one stands alone.
-                failed += ResetFailure(part, app, e.why(R.string.data_tv_refused))
+        // Stop is checked before each step, never inside one: the step running when it's tapped finishes.
+        suspend fun each(part: ResetPart, field: String, apps: List<ResetApp>, change: suspend (String) -> Unit) {
+            for ((i, app) in apps.withIndex()) {
+                if (stop()) return
+                onProgress(ResetProgress(part, i, apps.size))
+                try {
+                    change(app.packageName)
+                    note(mapOf(field to (ResetRecord.list(entry?.previous, field) + app.packageName).distinct().joinToString(",")))
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // A step that fails doesn't stop the rest: each one stands alone.
+                    failed += ResetFailure(part, app, e.why(R.string.data_tv_refused))
+                }
             }
         }
         each(ResetPart.TurnOn, ResetRecord.ON, plan.turnOn, tv::turnOn)
         each(ResetPart.BringBack, ResetRecord.BACK, plan.bringBack, tv::bringBack)
-        plan.home?.let { h ->
+        plan.home?.takeUnless { stop() }?.let { h ->
             onProgress(ResetProgress(ResetPart.Home, 0, 1))
             try {
                 // Home moved but the service stayed on, or the hand-off to it didn't finish: Undo still needs the move.
@@ -918,7 +943,7 @@ class AdbDeviceSource(
             }
         }
         val tweaks = Tweaks(shell)
-        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?) = planned?.let {
+        suspend fun setting(part: ResetPart, tweak: Tweak, planned: Map<String, String?>?) = planned?.takeUnless { stop() }?.let {
             onProgress(ResetProgress(part, 0, 1))
             try {
                 resetSetting(tweaks, tweak)?.let(::note)
@@ -1027,34 +1052,60 @@ class AdbDeviceSource(
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions = try {
         val r = resolve(deviceId)
         when {
-            r.index == null -> Suggestions.Unavailable
+            r.index == null -> Suggestions.Unavailable()
             r.match == ListMatch.None -> Suggestions.NoList(r.index.commit, r.index.devices)
-            r.list == null -> Suggestions.Unavailable
-            else -> Suggestions.Ready(
-                r.index.commit, r.list, r.sdk, suggest(r.list, apps(), r.sdk), r.index.devices,
-                byMaker = r.match is ListMatch.Maker,
-            )
+            r.list == null -> Suggestions.Unavailable(r.index.devices)
+            else -> {
+                val tvApps = apps()
+                val hidden = lists.hidden(key(deviceId))
+                Suggestions.Ready(
+                    r.index.commit, r.list, r.sdk, suggest(r.list, tvApps, r.sdk, hidden), r.index.devices,
+                    byMaker = r.match is ListMatch.Maker,
+                    hidden = notSuggested(r.list, tvApps, hidden),
+                )
+            }
         }
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
-        Suggestions.Unavailable // the TV dropped mid-read
+        Suggestions.Unavailable() // the TV dropped mid-read
     }
 
-    override suspend fun pickList(deviceId: String, listId: String) {
+    override suspend fun pickList(deviceId: String, listId: String?): String? {
         val key = key(deviceId)
+        val was = lists.picked(key)
         lists.pick(key, listId)
         keep.remove(key)
+        return was
     }
+
+    override suspend fun hideSuggested(deviceId: String, packages: Collection<String>, hide: Boolean) =
+        lists.hide(key(deviceId), packages, hide)
 
     override suspend fun listSource(): String? = lists.custom()
 
+    override suspend fun reloadLists(): Boolean = lists.reload()
+
+    // By the saved key alone: a TV that hasn't answered since launch has no link to ask.
+    override suspend fun lastState(deviceId: String): LastState? =
+        keys[deviceId]?.let { tv -> withContext(Dispatchers.IO) { lastStates.load(tv) } }
+
+    override suspend fun saveLastState(deviceId: String, apps: List<AppInfo>, lists: Suggestions?) {
+        val tv = keys[deviceId] ?: return
+        // Checked under the book's lock: Forget removes the TV from saved before it deletes the
+        // file, so a save racing it either lands first and is deleted, or finds the TV gone.
+        withContext(Dispatchers.IO) { synchronized(lastStates) { if (saved.containsKey(deviceId)) lastStates.save(tv, apps, lists) } }
+    }
+
     override suspend fun setListSource(url: String?) {
-        when (lists.setSource(url)) {
-            SourceResult.Ok -> {
-                keep.clear() // the old source's keep entries
-                scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
-            }
+        // Runs with the switch itself, so a Cancel that lands while it's saved can't skip it.
+        val result = lists.setSource(url) {
+            keep.clear() // the old source's keep entries
+            lastStates.dropLists()
+            scope.launch(Dispatchers.IO) { SharedLists.load(data, lists, fresh = true) }
+        }
+        when (result) {
+            SourceResult.Ok -> Unit
             SourceResult.NotHttps -> throw UiTextException(UiText(R.string.data_lists_not_https))
             SourceResult.Unreachable -> throw UiTextException(UiText(R.string.data_lists_unreachable))
             SourceResult.NotAList -> throw UiTextException(NOT_A_LIST)
@@ -1129,6 +1180,22 @@ class AdbDeviceSource(
 
     override suspend fun type(deviceId: String, text: String) = busy(deviceId) { remote(deviceId).type(text) }
 
+    /** Asked once per session, so reopening the Remote doesn't ask again; a reconnect does. */
+    override suspend fun uhid(deviceId: String): Boolean = busy(deviceId) {
+        val session = session(deviceId)
+        uhidAllowed[deviceId]?.takeIf { it.first === session }?.let { return@busy it.second }
+        remote(deviceId).uhid().also { uhidAllowed[deviceId] = session to it }
+    }
+
+    override suspend fun hid(deviceId: String, device: HidDevice?) = busy(deviceId) { remote(deviceId).hid(device) }
+
+    override suspend fun mouse(deviceId: String, dx: Int, dy: Int, buttons: Int, wheel: Int) =
+        busy(deviceId) { remote(deviceId).mouse(dx, dy, buttons, wheel) }
+
+    override suspend fun gamepad(deviceId: String, pad: GamepadReport) = busy(deviceId) { remote(deviceId).gamepad(pad) }
+
+    override suspend fun gamepadKey(deviceId: String, code: Int, down: Boolean) = busy(deviceId) { remote(deviceId).gamepadKey(code, down) }
+
 
     override suspend fun screen(deviceId: String, on: Boolean) = busy(deviceId) { remote(deviceId).screen(on) }
 
@@ -1193,30 +1260,39 @@ class AdbDeviceSource(
 
     override suspend fun screenshot(deviceId: String, sink: Sink) = Tweaks(liveSession(deviceId)).screenshot(sink)
 
+    /** The fingerprint each TV's last prompt check found, null for none: [access] reuses it instead of checking again. */
+    private val prompts = ConcurrentHashMap<String, Pair<Long, String?>>()
+
     override suspend fun connectionRequest(deviceId: String) = ConnectionPrompt(session(deviceId)).pending()
+        .also { prompts[deviceId] = System.currentTimeMillis() to it?.fingerprint }
 
     /**
      * Allow pressed from the app makes that key known, so it isn't flagged new. Only on a TV with a
      * known list: before the first read every key counts as known anyway.
      */
     override suspend fun answerRequest(deviceId: String, request: ConnectionRequest, allow: Boolean, always: Boolean): Boolean {
+        prompts -= deviceId
         val answered = ConnectionPrompt(session(deviceId)).answer(request, allow, always)
         val tv = key(deviceId)
         if (answered && allow && request.fingerprint.isNotEmpty() && knownKeys.has(tv)) knownKeys.add(tv, request.fingerprint)
         return answered
     }
 
-    override suspend fun closeAlert(deviceId: String) = ConnectionPrompt(session(deviceId)).closeAlert()
+    override suspend fun closeAlert(deviceId: String) = ConnectionPrompt(session(deviceId)).closeAlert().also { prompts -= deviceId }
 
     override suspend fun facts(deviceId: String) = TvFacts.read(session(deviceId))
 
     override suspend fun access(deviceId: String): TvAccess {
         val a = Access(session(deviceId))
         val port = links[deviceId]?.port ?: Access.CLASSIC_PORT
-        val pending = runCatching { connectionRequest(deviceId)?.fingerprint }.getOrNull()
+        val now = System.currentTimeMillis()
+        // The page checks the prompt every 5 s; a check that recent stands in for another one.
+        val seen = prompts[deviceId]?.takeIf { now - it.first < 10_000 }
+        val pending = if (seen != null) seen.second else runCatching { connectionRequest(deviceId)?.fingerprint }.getOrNull()
+        val tables = socketTables.remove(deviceId)?.takeIf { now - it.first < 5_000 }?.second
         val tv = key(deviceId)
         val access = TvAccess.of(
-            a.clients(port), a.keys(), phoneAddresses(), deviceId, mine[tv], phoneFingerprint(),
+            a.clients(port, tables), a.keys(), phoneAddresses(), deviceId, mine[tv], phoneFingerprint(),
             pending = pending, known = knownKeys[tv].takeIf { knownKeys.has(tv) },
         )
         access.allowed?.let { keys ->
@@ -1308,6 +1384,18 @@ class AdbDeviceSource(
 
     override suspend fun files(deviceId: String, folder: TvFolder) = Files(session(deviceId)).list(folder)
 
+    override suspend fun fileHandlers(deviceId: String, folder: TvFolder, file: TvFile, mime: String) =
+        OpenFile(session(deviceId)).handlers(folder, file.name, mime)
+
+    override suspend fun openFile(deviceId: String, folder: TvFolder, file: TvFile, mime: String, packageName: String?, allowReading: Boolean): Boolean {
+        val open = OpenFile(session(deviceId))
+        // Only the player Tellyscope offered gets the folders: nothing else it didn't install.
+        if (allowReading && packageName == PLAYER.pkg) open.allowReading(packageName)
+        return open.open(folder, file.name, mime, packageName)
+    }
+
+    override suspend fun abis(deviceId: String) = OpenFile(session(deviceId)).abis()
+
     override suspend fun push(deviceId: String, folder: TvFolder, name: String, size: Long?, source: Source, onProgress: (Progress) -> Unit): String {
         val session = liveSession(deviceId)
         return busy(deviceId, reread = true) { Files(session).push(source, size, name, folder, onProgress) }
@@ -1317,6 +1405,9 @@ class AdbDeviceSource(
         val session = liveSession(deviceId)
         busy(deviceId) { Files(session).pull(folder, file, sink, onProgress) }
     }
+
+    override suspend fun deleteFile(deviceId: String, folder: TvFolder, file: TvFile) =
+        busy(deviceId, reread = true) { Files(session(deviceId)).delete(folder, file) }
 
     private fun session(deviceId: String) =
         links[deviceId]?.session ?: throw UiTextException(UiText(R.string.data_offline, deviceId))

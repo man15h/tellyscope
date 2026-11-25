@@ -41,4 +41,11 @@ class PlayStoreTest {
         assertTrue(Actions(FakeShell(mapOf("dumpsys activity" to ok(new)))).storeOnScreen())
         assertFalse(Actions(FakeShell(mapOf("dumpsys activity" to ok(elsewhere)))).storeOnScreen())
     }
+
+    @Test fun aSignInOrConsentScreenIsStillTheStore() = runTest {
+        val signIn = "    topResumedActivity=ActivityRecord{7a8b u0 com.google.android.gms/.auth.uiflows.addaccount.AccountIntroActivity t41}\n"
+        val oldSignIn = "  mResumedActivity: ActivityRecord{9c0d u0 com.google.android.gsf.login/.LoginActivity t13}\n"
+        assertTrue(Actions(FakeShell(mapOf("dumpsys activity" to ok(signIn)))).storeOnScreen())
+        assertTrue(Actions(FakeShell(mapOf("dumpsys activity" to ok(oldSignIn)))).storeOnScreen())
+    }
 }

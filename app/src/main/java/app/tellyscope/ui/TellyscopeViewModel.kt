@@ -3,8 +3,10 @@
 package app.tellyscope.ui
 
 import android.net.Uri
+import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.tellyscope.BuildConfig
 import app.tellyscope.R
 import app.tellyscope.adb.AppFacts
 import app.tellyscope.adb.ConnectionRequest
@@ -14,6 +16,8 @@ import app.tellyscope.adb.InstallResult
 import app.tellyscope.adb.InstalledVersion
 import app.tellyscope.adb.Peripheral
 import app.tellyscope.adb.Progress
+import app.tellyscope.adb.GamepadReport
+import app.tellyscope.adb.HidDevice
 import app.tellyscope.adb.Remote
 import app.tellyscope.adb.RemoteKey
 import app.tellyscope.adb.Report
@@ -25,7 +29,9 @@ import app.tellyscope.adb.Tweak
 import app.tellyscope.adb.UpdateScreen
 import app.tellyscope.adb.installKind
 import app.tellyscope.data.Action
+import app.tellyscope.data.ActionFailed
 import app.tellyscope.data.AppInfo
+import app.tellyscope.data.AppNames
 import app.tellyscope.data.Changelog
 import app.tellyscope.data.ConnectResult
 import app.tellyscope.data.Device
@@ -35,14 +41,19 @@ import app.tellyscope.data.Dock
 import app.tellyscope.data.Docked
 import app.tellyscope.data.HistoryEntry
 import app.tellyscope.data.KeyHaptics
+import app.tellyscope.data.RemotePad
 import app.tellyscope.data.KnownLauncher
 import app.tellyscope.data.LauncherDownload
 import app.tellyscope.data.LauncherPick
 import app.tellyscope.data.LauncherRelease
+import app.tellyscope.data.MediaKind
 import app.tellyscope.data.NetworkInfo
 import app.tellyscope.data.NotAnApp
 import app.tellyscope.data.PhoneStorage
 import app.tellyscope.data.PickedApp
+import app.tellyscope.data.PLAYER
+import app.tellyscope.data.PlayerDownload
+import app.tellyscope.data.PlayerRelease
 import app.tellyscope.data.RateLimited
 import app.tellyscope.data.RemoteButtons
 import app.tellyscope.data.ResetApp
@@ -51,6 +62,7 @@ import app.tellyscope.data.ResetPart
 import app.tellyscope.data.ResetPlan
 import app.tellyscope.data.ResetProgress
 import app.tellyscope.data.Restorable
+import app.tellyscope.data.RestoreResult
 import app.tellyscope.data.RestoreSummary
 import app.tellyscope.data.ScanEvent
 import app.tellyscope.data.ScanHit
@@ -68,22 +80,30 @@ import app.tellyscope.data.FoldBook
 import app.tellyscope.data.SeenBook
 import app.tellyscope.data.Updates
 import app.tellyscope.data.UiText
+import app.tellyscope.data.UiTextException
 import app.tellyscope.data.WrongApk
+import app.tellyscope.data.after
+import app.tellyscope.data.handlers
+import app.tellyscope.data.isFireOs
+import app.tellyscope.data.media
 import app.tellyscope.data.summary
 import app.tellyscope.data.why
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -130,6 +150,8 @@ data class DeviceUi(
     val apps: List<AppInfo> = emptyList(),
     /** The first read of [apps] after opening the TV is still out; ends on success, empty or error. */
     val appsLoading: Boolean = false,
+    /** Back from the background, the TV hasn't answered a fresh read yet: the page shows its last values. */
+    val checking: Boolean = false,
     val network: NetworkInfo? = null,
     val history: List<HistoryEntry> = emptyList(),
     /** [DeviceSource.restorable], read with [history]. */
@@ -142,8 +164,12 @@ data class DeviceUi(
     val files: FilesUi = FilesUi(),
     /** A file copy in progress; its dialog stays up until it finishes or Cancel is tapped. */
     val transfer: TransferUi? = null,
+    /** Open on TV offering [PLAYER], while it's open; null otherwise. */
+    val player: PlayerFlow? = null,
     /** The TV's debloat list; null while it loads. */
     val lists: Suggestions? = null,
+    /** Debloat's Refresh is fetching the lists again; [lists] stays on screen meanwhile. */
+    val listsRefreshing: Boolean = false,
     /** Private DNS and animation speed; null until read, or when the TV wouldn't say. */
     val tweaks: TvTweaks? = null,
     /** Another device asking the TV for debugging access; null when nothing is asking. */
@@ -164,6 +190,8 @@ data class DeviceUi(
     val reset: ResetUi? = null,
     /** Debloat's run, from "Yes, disable them" until its screen closes; null otherwise. */
     val debloat: DebloatRun? = null,
+    /** Restore everything's result while some of it didn't go back, until its dialog is closed; null otherwise. */
+    val restored: RestoreResult? = null,
 ) {
     /** What Restore everything would do: [restorable] less what the last read of [apps] and [tweaks] shows as it was. */
     val restore: RestoreSummary
@@ -172,20 +200,26 @@ data class DeviceUi(
 
 /**
  * Debloat turning off the ticked [apps], in order. [at] counts the ones the TV has answered for,
- * and [failed] holds why each refused one is still on. [ran] once the last has answered; Try again
- * runs just the failed ones.
+ * and [failed] holds why each refused one is still on. [ran] once the last has answered, or once
+ * Stop ([stopping]) has let the running one finish; Try again runs the failed ones and [left].
  */
 data class DebloatRun(
     val apps: List<ResetApp>,
     val at: Int = 0,
     val failed: Map<String, UiText> = emptyMap(),
     val ran: Boolean = false,
-)
+    val stopping: Boolean = false,
+) {
+    /** The apps Stop kept the run from reaching. */
+    val left get() = apps.drop(at)
+    val stopped get() = ran && left.isNotEmpty()
+}
 
 /**
  * Reset TV's screen. [plan] is what the TV said, null while it's read ([error] if that failed).
- * While a run goes, [running] is what it's doing and [progress] how far. After one, [ran] is set
- * and [failed] holds the steps that didn't work; Try again runs just those, into History's [entry].
+ * While a run goes, [running] is what it's doing and [progress] how far; [stopping] once Stop is
+ * tapped. After one, [ran] is set, [failed] holds the steps that didn't work and [left] what Stop
+ * kept it from; Try again runs just those, into History's [entry].
  */
 data class ResetUi(
     val plan: ResetPlan? = null,
@@ -195,6 +229,8 @@ data class ResetUi(
     val ran: Boolean = false,
     val failed: List<ResetFailure> = emptyList(),
     val entry: Long? = null,
+    val stopping: Boolean = false,
+    val left: ResetPlan? = null,
 )
 
 /**
@@ -305,9 +341,47 @@ data class FilesUi(
     /** Null while loading. */
     val list: List<TvFile>? = null,
     val error: UiText? = null,
+    /** A Delete on TV that didn't work, until its dialog closes. */
+    val deleteFailed: DeleteFailed? = null,
 )
 
+/** [detail]: the TV's own words, untranslated. [why]: Tellyscope's reason when the TV never answered, such as it going offline. */
+data class DeleteFailed(val name: String, val detail: String?, val why: UiText? = null)
+
 data class TransferUi(val name: String, val toTv: Boolean, val folder: TvFolder, val progress: Progress? = null)
+
+/**
+ * Open on TV for a video or a song nothing on the TV opens: [PLAYER] is offered ([Step.Ask]). From the Play Store ([store]), Tellyscope opens its page and waits ([Step.Waiting]);
+ * from the Appstore, the user opens it first. The GitHub build can also download it ([download]): straight away
+ * where there's no Play Store, after Download directly's warning ([Step.Warn]) where there is. Once it's in, the file
+ * opens in it and the dialog closes. [opened]: the Play Store opened at its page, so the dialog says so.
+ */
+data class PlayerFlow(
+    val folder: TvFolder,
+    val file: TvFile,
+    val kind: MediaKind,
+    val mime: String,
+    val store: PlayerStore,
+    val download: Boolean,
+    val step: Step = Step.Ask,
+    val release: PlayerRelease? = null,
+    val progress: Progress? = null,
+    val opened: Boolean = true,
+) {
+    enum class Step { Ask, Warn, Waiting, Downloading, Installing }
+}
+
+/** How Debloat's Refresh went: a new list on screen, the same one, or none fetched. */
+enum class ListsRefresh { Changed, Same, Failed }
+
+/** Where the TV gets [PLAYER] from: its Play Store, Fire OS's Appstore, or neither. */
+enum class PlayerStore { Play, Appstore, None }
+
+/** Settings' own-lists address: [Checking] while the source is read, then [Refused] with why. */
+sealed interface SourceCheck {
+    data object Checking : SourceCheck
+    data class Refused(val why: UiText) : SourceCheck
+}
 
 data class UiState(
     val scan: ScanUi = ScanUi(),
@@ -323,6 +397,8 @@ data class UiState(
     val restarting: Map<String, Restart> = emptyMap(),
     /** The user's own debloat-list source; null for tellyscope-devices. */
     val listSource: String? = null,
+    /** A new list source being checked, or why it was refused; null otherwise. */
+    val sourceCheck: SourceCheck? = null,
     /** The every-30-minutes look at GitHub for a newer release; null when this build has none (screenshots, tests). */
     val checkUpdates: Boolean? = null,
     /** An alpha build, which checks every 5 minutes rather than every 30 minutes. */
@@ -339,10 +415,14 @@ data class UiState(
     val screenOff: Set<String> = emptySet(),
     /** The Remote's Screen off button explains itself, the first time only. */
     val screenOffTip: Boolean = false,
+    /** The Remote's mode button explains itself, the first time only. */
+    val modeTip: Boolean = false,
     /** The TVs whose volume is fixed over HDMI: the Remote grays out mute and volume, with the reason. */
     val volumeFixed: Set<String> = emptySet(),
-    /** The Remote shows the touchpad instead of the D-pad. Per phone, not per TV. */
-    val touchpad: Boolean = false,
+    /** What the Remote shows in the D-pad's place. Per phone, not per TV. */
+    val pad: RemotePad = RemotePad.DPAD,
+    /** Per TV, whether it allows a virtual mouse and gamepad, once asked: Pointer and the controller's stick need it. */
+    val uhid: Map<String, Boolean> = emptyMap(),
     /** Debloat with nothing left on the list explains why it opens Apps, until Don't show again. */
     val debloatGate: Boolean = true,
     /** The Apps tabs whose System section the user folded away. */
@@ -441,8 +521,8 @@ class TellyscopeViewModel(
     /** This build and phone, for reports. */
     private val appFacts: AppFacts = AppFacts("unknown", "unknown phone"),
     /**
-     * A launcher's APK for Fire OS: a [LauncherDownload] from its developer's GitHub in the GitHub build. The Play
-     * build's only checks a file the user picked.
+     * A launcher's APK for Fire OS: a [LauncherDownload] from its developer's GitHub in the GitHub build, which is also
+     * the [PlayerDownload] for VLC. The Play build's only checks a file the user picked.
      */
     private val launcherDownload: LauncherPick? = null,
     /** `data/`'s address while the launcher list fails its check, or null once it passes. */
@@ -463,18 +543,27 @@ class TellyscopeViewModel(
     /** One-shot snackbar lines: the TV refused, went away mid-action, or a restore or copy finished. */
     private val _notice = MutableStateFlow<UiText?>(null)
     val notice: StateFlow<UiText?> = _notice.asStateFlow()
+    /** A notice [run] logged itself, with the app it was about, so the log doesn't get it twice. */
+    private var noticeLogged: UiText? = null
 
     /** This session's messages, newest last, for a report's log. Kept in memory only. */
     private val sessionLog = ArrayDeque<UiText>()
 
     /** Last stats per TV, so an offline page shows where it stood instead of blanks. Lives as long as the app. */
     private val lastSnapshot = mutableMapOf<String, Snapshot>()
-    /** Each TV's app list and debloat list as last shown, so switching back shows them while fresh reads replace them. */
+    /**
+     * Each TV's app list and debloat list as last shown, so its page opens on them while fresh reads replace them.
+     * Saved on the phone too ([saveLast]), so a launch starts from them, offline or not.
+     */
     private val lastApps = mutableMapOf<String, List<AppInfo>>()
     private val lastLists = mutableMapOf<String, Suggestions>()
+    /** One save at a time, each taking the page as it is then, so an older one never lands last. */
+    private val lastSaving = Mutex()
 
     /** Keys go out one at a time, in the order pressed. */
     private val keys = Mutex()
+    /** Where the controller's ✕ goes back to. */
+    private var padBeforeController = RemotePad.DPAD
     /**
      * A volume tap is waiting for [keys]. Further taps while it waits are dropped rather than queued,
      * so a burst of taps can't keep a slow TV changing volume after the thumb stops.
@@ -502,15 +591,20 @@ class TellyscopeViewModel(
     private var liveJob: Job? = null
     private var mediumJob: Job? = null
     private var listsJob: Job? = null
+    private var sourceJob: Job? = null
     private var requestJob: Job? = null
     private var accessJob: Job? = null
+    private var networkJob: Job? = null
     /** Runs the removal across the reconnect it causes, so [select] doesn't stop it. */
     private var removalJob: Job? = null
     /** Watches the TV for a launcher's install from the Play Store. */
     private var launcherJob: Job? = null
+    /** Open on TV: [PLAYER]'s install, then the file. */
+    private var playerJob: Job? = null
     private var updateJob: Job? = null
     /** The clock and the device refresh, every second. */
     private var tickJob: Job? = null
+    private var checkJob: Job? = null
     /** In the background since [pause]; [resume] starts everything again. */
     private var paused = false
     /** The scan was running, or asked for, while in the background, so [resume] starts it. */
@@ -523,6 +617,13 @@ class TellyscopeViewModel(
             // Remembered TVs open straight to their page (offline until they answer).
             val known = source.known()
             val lists = runCatching { source.listSource() }.getOrNull()
+            // Read before the first page opens, so it shows the TV as last seen instead of loading.
+            known.forEach { d ->
+                runCatching { source.lastState(d.id) }.getOrNull()?.let { last ->
+                    if (last.apps.isNotEmpty()) lastApps.putIfAbsent(d.id, last.apps)
+                    last.lists?.let { lastLists.putIfAbsent(d.id, it) }
+                }
+            }
             _state.update { it.copy(devices = known, listSource = lists) }
             if (_state.value.selectedId == null) known.firstOrNull()?.let { select(it.id) }
         }
@@ -531,7 +632,7 @@ class TellyscopeViewModel(
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(checkUpdates = u.enabled, alphaBuild = u.alpha) } }
         }
         keyHaptics?.let { k ->
-            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, touchpad = k.touchpad) } }
+            viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(keyHaptics = k.on, screenOffTip = !k.screenOffTipSeen, modeTip = !k.modeTipSeen, pad = k.pad) } }
         }
         gates?.let { g ->
             viewModelScope.launch(Dispatchers.IO) { _state.update { it.copy(debloatGate = DEBLOAT_GATE !in g.folded()) } }
@@ -546,7 +647,7 @@ class TellyscopeViewModel(
             }
         }
         rescan()
-        viewModelScope.launch { notice.collect { it?.let(::log) } }
+        viewModelScope.launch { notice.collect { it?.takeUnless { n -> n === noticeLogged }?.let(::log) } }
         viewModelScope.launch { source.refreshListsOnNetwork() }
         viewModelScope.launch {
             // Off Wi-Fi or under a VPN a scan has nothing to sweep; start over the moment there's a LAN to sweep.
@@ -583,6 +684,7 @@ class TellyscopeViewModel(
         if (paused) return
         paused = true
         tickJob?.cancel()
+        checkJob?.cancel()
         scanOnResume = scanJob?.isActive == true
         scanJob?.cancel()
         stopWatching()
@@ -596,7 +698,23 @@ class TellyscopeViewModel(
         source.pause(false)
         startTick()
         if (scanOnResume) rescan()
-        viewModelScope.launch {
+        checkJob = viewModelScope.launch {
+            // Its connection sat idle: the TV on screen keeps its last values, checking, until it answers
+            // a fresh read. Read before that, it would fail and show offline and Try again for a moment.
+            val id = _state.value.selectedId
+            if (id != null) {
+                val checking = source.checking(id)
+                if (checking.first()) {
+                    updateDevice(id) { it.copy(checking = true) }
+                    try {
+                        checking.first { !it }
+                    } finally {
+                        updateDevice(id) { it.copy(checking = false) }
+                    }
+                }
+                // Another TV picked meanwhile is read already.
+                if (_state.value.selectedId != id) return@launch
+            }
             if (!refreshDevices()) _state.value.selected?.let(::watch)
         }
     }
@@ -699,6 +817,11 @@ class TellyscopeViewModel(
 
     fun pair(hit: ScanHit) {
         val row = _state.value.scan.rows[hit.ip] as? RowState.Code ?: return
+        // Pairing through src/conscryptShim exports the TLS key with SSLSockets, which is Android 12+.
+        if (BuildConfig.CONSCRYPT_SHIM && Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            setRow(hit.ip, row.copy(busy = false, error = UiText(R.string.vm_pair_needs_android_12), detail = null))
+            return
+        }
         setRow(hit.ip, row.copy(busy = true, error = null, detail = null))
         viewModelScope.launch {
             when (val r = source.pair(hit, row.input)) {
@@ -735,11 +858,26 @@ class TellyscopeViewModel(
             )
         }
         // A TV that comes online mid-copy joins the list; switching pages would hide the copy's dialog and its Cancel.
-        if (transferJobs[_state.value.selectedId]?.isActive != true) select(device.id)
+        if (transferJobs[_state.value.selectedId]?.isActive != true) autoSelect(device.id)
     }
 
-    /** The TV on screen refreshes at the open screen's rates; the others at the slowest. */
-    fun showStats(profile: StatsProfile) = source.showStats(_state.value.selectedId, profile)
+    /** Advanced is open: only it shows [DeviceUi.network], so only then is that read. */
+    private var advancedOpen = false
+
+    /**
+     * The TV on screen refreshes at the open screen's rates; the others at the slowest.
+     * Opening Advanced reads its network fresh; [watchAccess] keeps it up to date until it closes.
+     */
+    fun showStats(profile: StatsProfile) {
+        source.showStats(_state.value.selectedId, profile)
+        val open = profile == StatsProfile.ADVANCED
+        if (open == advancedOpen) return
+        advancedOpen = open
+        networkJob?.cancel()
+        val id = _state.value.selectedId ?: return
+        // Not while the TV isn't being read: offline, or the app in the background.
+        if (open && accessJob?.isActive == true) networkJob = viewModelScope.launch { readNetwork(id) }
+    }
 
     private val terminals = mutableMapOf<String, ShellTerminal>()
 
@@ -754,9 +892,33 @@ class TellyscopeViewModel(
         super.onCleared()
     }
 
+    /** The user picks [id]. The TV already on screen stays as it is: picking it again would drop what runs on it. */
     fun select(id: String?) {
+        if (id != null && id == _state.value.selectedId) return
+        show(id)
+    }
+
+    /** A launcher install, Debloat or Reset under way on the TV on screen, which [show] would drop. */
+    private val running: Boolean
+        get() = launcherJob?.isActive == true || playerJob?.isActive == true || _state.value.device.busy.let { it == DISABLING || it == RESETTING }
+
+    /**
+     * TV [id] came online. It's shown afresh, unless it's the TV on screen and that would drop a run on it:
+     * then the page stays and its reads start again under the run. Another TV is the one the user just
+     * connected, so it's shown as [select] would, run or not.
+     */
+    private fun autoSelect(id: String) {
+        val now = _state.value.selected?.takeIf { it.id == id }
+        if (now == null || !running) return show(id)
+        stopWatching()
+        watch(now)
+    }
+
+    /** Opens [id]'s page afresh, its reads started again; on the TV already on screen too, after a reconnect. */
+    private fun show(id: String?) {
         stopWatching()
         launcherJob?.cancel()
+        playerJob?.cancel()
         // A copy still running on this TV keeps its dialog, after a reconnect or a look at another TV.
         val transfer = id?.let(transfers::get)
         _state.value.let { s ->
@@ -765,8 +927,6 @@ class TellyscopeViewModel(
             if (s.device.apps.isNotEmpty()) lastApps[old] = s.device.apps
             s.device.lists?.let { lastLists[old] = it }
         }
-        // Only an online TV gets its old lists back: the offline card stays as it was.
-        val online = _state.value.devices.firstOrNull { it.id == id }?.state == DeviceState.Online
         // A removal survives the reconnect it causes; the TV coming back reselects it. So does the
         // install dialog: the link drops behind the file picker, and its return reselected the TV
         // a few seconds after the dialog opened, closing it (#290).
@@ -774,8 +934,9 @@ class TellyscopeViewModel(
             val same = it.selectedId == id
             val removal = it.device.removal.takeIf { _ -> same }
             val sideload = it.device.sideload.takeIf { _ -> same }
-            val apps = if (online) id?.let(lastApps::get).orEmpty() else emptyList()
-            val lists = if (online) id?.let(lastLists::get) else null
+            // Offline too: the page shows what the TV had when last seen, greyed, rather than nothing.
+            val apps = id?.let(lastApps::get).orEmpty()
+            val lists = id?.let(lastLists::get)
             it.copy(selectedId = id, device = DeviceUi(snapshot = id?.let(lastSnapshot::get), apps = apps, lists = lists, transfer = transfer, removal = removal, sideload = sideload), query = "")
         }
         val device = _state.value.selected ?: return
@@ -799,6 +960,7 @@ class TellyscopeViewModel(
         listsJob?.cancel()
         requestJob?.cancel()
         accessJob?.cancel()
+        networkJob?.cancel()
     }
 
     /** Reads the TV on screen while it's online: stats, apps, tweaks, files, lists, prompts, access. Not in the background. */
@@ -831,16 +993,12 @@ class TellyscopeViewModel(
                     throw e
                 }
                 updateDevice(id) { it.copy(apps = read, appsLoading = false) }
+                saveLast(id)
                 apps.complete(read)
                 pruneDock(id, read)
                 val tweaks = source.tweaks(id)
                 updateDevice(id) { it.copy(tweaks = tweaks) }
                 loadFiles()
-                while (true) {
-                    val net = source.network(id)
-                    _state.update { it.copy(device = it.device.copy(network = net)) }
-                    delay(10_000)
-                }
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
@@ -859,7 +1017,7 @@ class TellyscopeViewModel(
         _state.update { s -> s.copy(devices = known, restarting = restarts(s.restarting, known)) }
         val now = _state.value.selected ?: return false
         if (now.state != DeviceState.Online || before == DeviceState.Online) return false
-        select(now.id)
+        autoSelect(now.id)
         return true
     }
 
@@ -868,7 +1026,7 @@ class TellyscopeViewModel(
         viewModelScope.launch {
             source.reconnect(id)
             // A TV that came back is selected already; again would read it all twice.
-            if (!refreshDevices() || _state.value.selectedId != id) select(id)
+            if (!refreshDevices() || _state.value.selectedId != id) show(id)
         }
     }
 
@@ -1178,11 +1336,8 @@ class TellyscopeViewModel(
      * Opens the Play Store on the TV at [pkg]'s page, then checks every few seconds whether it's
      * installed, or the Store has closed without it, which goes back to the picker. Where the Store
      * didn't open, it keeps checking while the user searches by hand. After [STORE_WAIT_MS] without it,
-     * it stops at [LauncherFlow.Step.Left].
-     *
-     * Known: a Google sign-in or consent screen inside the Store runs as another app
-     * (com.google.android.gms), so it can read as leaving the Store and end the wait early.
-     * Open Store again recovers.
+     * it stops at [LauncherFlow.Step.Left]. A Google sign-in or consent screen the Store opens counts
+     * as the Store.
      */
     fun installLauncher(pkg: String) {
         val id = _state.value.selectedId ?: return
@@ -1367,7 +1522,13 @@ class TellyscopeViewModel(
                 undoing?.let(undoInFlight::remove) // a failed Undo can be tried again
                 // A reset's Undo can get partway, so History shows where it ended.
                 if (undoing != null) runCatching { historyOf(id) }.getOrNull()?.let { (h, r) -> updateDevice(id) { it.copy(history = h, restorable = r) } }
-                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                val why = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                // A refusal doesn't name the app, so a report wouldn't say which one it was.
+                log(UiText.Join(listOf(UiText.Raw("${action.name} $pkg:"), why), " "))
+                // What the TV printed, or where Home ended up after a rollback, is for the report only.
+                (e as? ActionFailed)?.details?.takeIf { it.isNotBlank() }?.let { log(UiText.Raw(it)) }
+                noticeLogged = why
+                _notice.value = why
                 rereadAfterFailure(id)
                 return@launch
             }
@@ -1497,6 +1658,204 @@ class TellyscopeViewModel(
         run(pkg, Action.Open)
     }
 
+    /** The player's download, when this build has one: never in the Play build. */
+    private val playerDownload get() = launcherDownload as? PlayerDownload
+
+    private fun setPlayer(id: String, f: (PlayerFlow) -> PlayerFlow) = updateDevice(id) { d -> d.copy(player = d.player?.let(f)) }
+
+    private fun appLabel(pkg: String) =
+        if (pkg == PLAYER.pkg) PLAYER.name else _state.value.device.apps.firstOrNull { it.packageName == pkg }?.label ?: AppNames.fallback(pkg)
+
+    /**
+     * Open on TV in a file's row. A picture opens in whatever the TV has. A video or a song opens in [PLAYER] when it's
+     * there, else in the TV's own player; with none, [PlayerFlow] offers [PLAYER].
+     */
+    fun openFile(file: TvFile) {
+        val id = _state.value.selectedId ?: return
+        val folder = _state.value.device.files.folder
+        val (kind, mime) = media(file.name) ?: return
+        if (playerJob?.isActive == true) return
+        playerJob = viewModelScope.launch {
+            val found = try {
+                handlers(kind, source.fileHandlers(id, folder, file, mime))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                _notice.value = Copy.REMOTE_LOST
+                return@launch
+            }
+            when {
+                PLAYER.pkg in found.players -> openIn(id, folder, file, mime, PLAYER.pkg)
+                // The TV's default, or its chooser when it has several.
+                found.players.isNotEmpty() -> openIn(id, folder, file, mime, null)
+                // A gallery or a browser that only opens it still beats a prompt to install a player.
+                found.others.isNotEmpty() -> openIn(id, folder, file, mime, found.others.first())
+                kind == MediaKind.Image -> _notice.value = Copy.nothingOpens(file.name)
+                else -> offerPlayer(id, PlayerFlow(folder, file, kind, mime, PlayerStore.None, download = false))
+            }
+        }
+    }
+
+    /** Opens [file] in [pkg], or the TV's pick when null, and the snackbar says how it went. */
+    private suspend fun openIn(id: String, folder: TvFolder, file: TvFile, mime: String, pkg: String?) {
+        val ok = try {
+            source.openFile(id, folder, file, mime, pkg, allowReading = pkg == PLAYER.pkg)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            false
+        }
+        _notice.value = when {
+            !ok -> Copy.cantOpenFile(file.name)
+            pkg == null -> Copy.openedFile(file.name)
+            else -> Copy.openedFileIn(file.name, appLabel(pkg))
+        }
+    }
+
+    /** The prompt for [flow], where the TV's store or this build can get [PLAYER]; else the app that only opens it, if any. */
+    private suspend fun offerPlayer(id: String, flow: PlayerFlow) {
+        val device = _state.value.selected ?: return
+        val apps = _state.value.device.apps
+        val store = when {
+            hasPlayStore(apps) -> PlayerStore.Play
+            isFireOs(device, apps) && apps.any { it.packageName == AMAZON_APPSTORE && it.enabled } -> PlayerStore.Appstore
+            else -> PlayerStore.None
+        }
+        val download = playerDownload != null
+        // Nowhere to get it from.
+        if (store == PlayerStore.None && !download) {
+            _notice.value = Copy.nothingOpens(flow.file.name)
+            return
+        }
+        updateDevice(id) { it.copy(player = flow.copy(store = store, download = download)) }
+    }
+
+    /**
+     * Get it from Play Store, or Open Appstore: opens the TV's store, then checks every few seconds whether [PLAYER] is
+     * in, and opens the file in it. The Play Store closing without it goes back to the prompt; after [STORE_WAIT_MS] it stops.
+     */
+    fun playerFromStore() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        if (p.store == PlayerStore.None) return
+        val play = p.store == PlayerStore.Play
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Waiting, opened = true) }
+        playerJob = viewModelScope.launch {
+            val opened = try {
+                if (play) source.openStore(id, PLAYER.pkg) else source.launch(id, AMAZON_APPSTORE)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                false
+            }
+            if (!opened) setPlayer(id) { it.copy(opened = false) }
+            var seen = opened && play
+            repeat((STORE_WAIT_MS / STORE_POLL_MS).toInt()) {
+                delay(STORE_POLL_MS)
+                val now = try {
+                    source.storeState(id, PLAYER.pkg)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    return@repeat // a dropped read: the next one tells
+                }
+                when (now) {
+                    StoreState.Installed -> return@launch playerInstalled(id, p)
+                    StoreState.InStore -> seen = true
+                    // Only the Play Store is seen on screen; the Appstore is waited out.
+                    StoreState.Elsewhere -> if (seen && play) {
+                        setPlayer(id) { it.copy(step = PlayerFlow.Step.Ask) }
+                        _notice.value = Copy.wasntInstalled(PLAYER.name)
+                        return@launch
+                    }
+                }
+            }
+            playerFailed(id, Copy.wasntInstalled(PLAYER.name))
+        }
+    }
+
+    /** Download directly: the warning, with where the download comes from once it's read. */
+    fun playerDirect() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        val download = playerDownload ?: return
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Warn) }
+        if (p.release == null) playerJob = viewModelScope.launch {
+            val release = latestPlayer(id, download) ?: return@launch
+            setPlayer(id) { it.copy(release = release) }
+        }
+    }
+
+    /**
+     * Download anyway, or Download and install where there's no Play Store: downloads [PLAYER], which must be
+     * VideoLAN's, installs it over adb like any sideload, then opens the file in it. Nothing reaches the TV unless
+     * the check passes.
+     */
+    fun playerDownload() {
+        val id = _state.value.selectedId ?: return
+        val p = _state.value.device.player ?: return
+        val download = playerDownload ?: return
+        if (p.step != PlayerFlow.Step.Ask && p.step != PlayerFlow.Step.Warn) return
+        playerJob?.cancel()
+        setPlayer(id) { it.copy(step = PlayerFlow.Step.Downloading, progress = null) }
+        playerJob = viewModelScope.launch {
+            val release = p.release ?: latestPlayer(id, download) ?: return@launch
+            setPlayer(id) { it.copy(release = release) }
+            val app = try {
+                download.fetchPlayer(release) { pr -> setPlayer(id) { it.copy(progress = pr) } }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: WrongApk) {
+                return@launch playerFailed(id, Copy.wrongApk(PLAYER.name))
+            } catch (_: Exception) {
+                return@launch playerFailed(id, Copy.noDownload(PLAYER.name))
+            }
+            setPlayer(id) { it.copy(step = PlayerFlow.Step.Installing, progress = null) }
+            val result = try {
+                source.install(id, app.files, app.info, allowDowngrade = false) {}
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch playerFailed(id, Copy.SIDELOAD_LOST)
+            }
+            when (result) {
+                InstallResult.Done -> playerInstalled(id, p)
+                is InstallResult.Refused -> playerFailed(id, Copy.installRefused(result.reason, PLAYER.name))
+            }
+        }
+    }
+
+    /** VideoLAN's latest build for the TV's CPU; null, with the prompt closed and the snackbar saying so, when it can't be read. */
+    private suspend fun latestPlayer(id: String, download: PlayerDownload): PlayerRelease? = try {
+        download.latestPlayer(source.abis(id))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        playerFailed(id, Copy.noDownload(PLAYER.name))
+        null
+    }
+
+    /** [PLAYER] is on the TV: the dialog closes and [p]'s file opens in it. */
+    private suspend fun playerInstalled(id: String, p: PlayerFlow) {
+        updateDevice(id) { it.copy(player = null) }
+        openIn(id, p.folder, p.file, p.mime, PLAYER.pkg)
+    }
+
+    private fun playerFailed(id: String, why: UiText) {
+        updateDevice(id) { it.copy(player = null) }
+        _notice.value = why
+    }
+
+    /** Cancel, or a tap outside the prompt. Not while installing: the dialog has no button then. */
+    fun closePlayer() {
+        val id = _state.value.selectedId ?: return
+        if (_state.value.device.player?.step == PlayerFlow.Step.Installing) return
+        playerJob?.cancel()
+        updateDevice(id) { it.copy(player = null) }
+    }
+
     fun folder(folder: TvFolder) {
         _state.update { it.copy(device = it.device.copy(files = FilesUi(folder))) }
         viewModelScope.launch { loadFiles() }
@@ -1586,6 +1945,32 @@ class TellyscopeViewModel(
         }
     }
 
+    /** Delete on TV, after its confirm. The row goes when it worked; otherwise the failed dialog shows what the TV said. */
+    fun deleteFile(file: TvFile) {
+        val id = _state.value.selectedId ?: return
+        val folder = _state.value.device.files.folder
+        viewModelScope.launch {
+            try {
+                source.deleteFile(id, folder, file)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val failed = if (e is UiTextException) DeleteFailed(file.name, null, e.text) else DeleteFailed(file.name, e.message)
+                updateFiles(folder) { it.copy(deleteFailed = failed) }
+                return@launch
+            }
+            updateFiles(folder) { ui -> ui.copy(list = ui.list?.filterNot { it.name == file.name }) }
+            _notice.value = Copy.deleted(file.name)
+        }
+    }
+
+    /** OK, or Report a problem, on the failed delete. */
+    fun closeDeleteFailed() = updateFiles(_state.value.device.files.folder) { it.copy(deleteFailed = null) }
+
+    /** Only while [folder] is still the one on show: another folder's list has nothing to change. */
+    private fun updateFiles(folder: TvFolder, f: (FilesUi) -> FilesUi) =
+        _state.update { s -> if (s.device.files.folder == folder) s.copy(device = s.device.copy(files = f(s.device.files))) else s }
+
     /** Only the dialog's Cancel button calls this. */
     fun cancelTransfer() {
         transferJobs[_state.value.selectedId]?.cancel()
@@ -1619,18 +2004,20 @@ class TellyscopeViewModel(
         val id = _state.value.selectedId ?: return
         _state.update { it.copy(device = it.device.copy(busy = RESTORING)) }
         viewModelScope.launch {
-            _notice.value = try {
-                val r = source.restoreAll(id)
-                val first = r.failed.firstOrNull()
-                when {
-                    first != null -> UiText.plural(R.plurals.vm_put_back_partly, r.failed.size, r.done, r.done + r.failed.size, r.failed.size, first.what, first.why)
-                    r.done == 0 -> UiText(R.string.vm_nothing_to_put_back)
-                    else -> UiText.plural(R.plurals.vm_put_back, r.done)
-                }
+            // What didn't go back gets a dialog that names each one; the rest is a snackbar.
+            val r = try {
+                source.restoreAll(id)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                null
+            }
+            when {
+                r == null -> Unit
+                r.failed.isNotEmpty() -> updateDevice(id) { it.copy(restored = r) }
+                r.done == 0 -> _notice.value = UiText(R.string.vm_nothing_to_put_back)
+                else -> _notice.value = UiText.plural(R.plurals.vm_put_back, r.done)
             }
             val apps = runCatching { source.apps(id) }.getOrNull()
             val tweaks = runCatching { source.tweaks(id) }.getOrNull()
@@ -1639,13 +2026,25 @@ class TellyscopeViewModel(
         }
     }
 
-    private suspend fun loadLists(id: String, apps: suspend () -> List<AppInfo>) {
-        val lists = source.suggestions(id, apps)
+    private suspend fun loadLists(id: String, apps: suspend () -> List<AppInfo>) = showLists(id, source.suggestions(id, apps))
+
+    private fun showLists(id: String, lists: Suggestions) {
         // Once the list is known its keep entries show as protected, without reading the TV again.
         val keep = (lists as? Suggestions.Ready)?.list?.keep.orEmpty()
         _state.update { s ->
             if (s.selectedId != id) s
             else s.copy(device = s.device.copy(lists = lists, apps = s.device.apps.map { it.copy(listKeep = it.packageName in keep) }))
+        }
+        saveLast(id)
+    }
+
+    /** Saves [id]'s apps and lists as its page shows them, for the next launch; nothing before its apps are read. */
+    private fun saveLast(id: String) {
+        viewModelScope.launch {
+            lastSaving.withLock {
+                val d = _state.value.takeIf { it.selectedId == id }?.device?.takeIf { it.apps.isNotEmpty() } ?: return@withLock
+                runCatching { source.saveLastState(id, d.apps, d.lists) }
+            }
         }
     }
 
@@ -1733,11 +2132,13 @@ class TellyscopeViewModel(
     /**
      * Who has access every 10 s while the TV's page is open. What's plugged in only when it opens
      * and every 2 minutes after: that read is five `dumpsys` calls, too heavy for every tick.
-     * A failed read keeps the last answer; a removal in progress does its own reads.
+     * A failed read keeps the last answer; a removal in progress does its own reads. While Advanced
+     * is open its network goes first in the same tick, so access reuses the TCP tables it read.
      */
     private suspend fun watchAccess(id: String) {
         var tick = 0
         while (true) {
+            if (advancedOpen) readNetwork(id)
             if (_state.value.device.removal == null) readAccess(id)
             if (tick++ % 12 == 0) {
                 val found = try { source.peripherals(id) } catch (e: CancellationException) { throw e } catch (_: Exception) { null }
@@ -1745,6 +2146,12 @@ class TellyscopeViewModel(
             }
             delay(10_000)
         }
+    }
+
+    /** A failed read keeps the last answer. */
+    private suspend fun readNetwork(id: String) {
+        val net = try { source.network(id) } catch (e: CancellationException) { throw e } catch (_: Exception) { return }
+        updateDevice(id) { it.copy(network = net) }
     }
 
     private suspend fun readAccess(id: String): TvAccess? {
@@ -1877,15 +2284,75 @@ class TellyscopeViewModel(
         }
     }
 
-    /** "Pick your TV": remember the choice for this TV and show its list. */
+    /**
+     * "Pick your TV": remember the choice for this TV and show its list. A list that doesn't load
+     * isn't kept: the TV goes back to the one it had, and the snackbar names both, or only the
+     * new one when it had none.
+     */
     fun pickList(listId: String) {
         val id = _state.value.selectedId ?: return
+        val before = _state.value.device.lists
         _state.update { it.copy(device = it.device.copy(lists = null)) }
         listsJob?.cancel()
         listsJob = viewModelScope.launch {
-            source.pickList(id, listId)
+            val was = source.pickList(id, listId)
+            val got = source.suggestions(id) { shownApps(id) }
+            if (got !is Suggestions.Unavailable) return@launch showLists(id, got)
+            source.pickList(id, was)
+            val all = when (before) {
+                is Suggestions.Ready -> before.devices
+                is Suggestions.NoList -> before.devices
+                is Suggestions.Unavailable -> before.devices
+                null -> emptyList()
+            } + got.devices
+            val name = all.firstOrNull { it.id == listId }?.name ?: listId
+            _notice.value =
+                if (before is Suggestions.Ready) UiText(R.string.vm_list_not_loaded, name, before.list.name)
+                else UiText(R.string.vm_pick_not_loaded, name)
             loadLists(id) { shownApps(id) }
         }
+    }
+
+    /** OK on Restore everything's result. */
+    fun restoredShown() {
+        _state.update { it.copy(device = it.device.copy(restored = null)) }
+    }
+
+    /** "Try again" on a list that didn't load. */
+    fun retryLists() {
+        val id = _state.value.selectedId ?: return
+        _state.update { it.copy(device = it.device.copy(lists = null)) }
+        listsJob?.cancel()
+        listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
+    }
+
+    /**
+     * Debloat's Refresh: the lists fetched again and this TV's matched afresh. The list on screen
+     * stays until the new one lands; a failed fetch leaves it as it was. Runs in the caller's scope,
+     * so the screen that asked shows how it went.
+     */
+    suspend fun refreshLists(): ListsRefresh? {
+        val id = _state.value.selectedId ?: return null
+        if (_state.value.device.listsRefreshing) return null
+        val before = _state.value.device.lists
+        updateDevice(id) { it.copy(listsRefreshing = true) }
+        try {
+            if (!source.reloadLists()) return ListsRefresh.Failed
+            listsJob?.cancel()
+            val fresh = source.suggestions(id) { shownApps(id) }
+            if (_state.value.selectedId != id) return null
+            showLists(id, fresh)
+            return if (sameList(before, fresh)) ListsRefresh.Same else ListsRefresh.Changed
+        } finally {
+            updateDevice(id) { it.copy(listsRefreshing = false) }
+        }
+    }
+
+    /** Whether a refresh changed nothing the Debloat screen shows: the same groups, or no list either time. */
+    private fun sameList(a: Suggestions?, b: Suggestions): Boolean = when {
+        a is Suggestions.Ready && b is Suggestions.Ready -> a.list.id == b.list.id && a.groups == b.groups
+        a is Suggestions.NoList && b is Suggestions.NoList -> true
+        else -> false
     }
 
     /**
@@ -1893,24 +2360,41 @@ class TellyscopeViewModel(
      * reloads this TV's list. A refused source changes nothing and says why.
      */
     fun setListSource(url: String?) {
-        val id = _state.value.selectedId
-        listsJob?.cancel()
-        listsJob = viewModelScope.launch {
+        sourceJob?.cancel()
+        _state.update { it.copy(sourceCheck = SourceCheck.Checking) }
+        sourceJob = viewModelScope.launch {
             try {
                 source.setListSource(url)
             } catch (e: CancellationException) {
+                // A Cancel that landed while the source was being saved is too late: it's saved, so the screen catches up.
+                withContext(NonCancellable) { if (source.listSource() != _state.value.listSource) sourceTaken(close = false) }
                 throw e
             } catch (e: Exception) {
-                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                // The dialog stays open with the address, and says why under it.
+                _state.update { it.copy(sourceCheck = SourceCheck.Refused(UiText.Capitalized(e.why(R.string.vm_didnt_work)))) }
                 return@launch
             }
-            val now = source.listSource()
-            // Every TV's list came from the old source.
-            lastLists.clear()
-            _state.update { it.copy(listSource = now, device = it.device.copy(lists = null)) }
-            _notice.value = Copy.listSource(now)
-            if (id != null) loadLists(id) { shownApps(id) }
+            // Taken: a Cancel now is too late to undo it, so the screen catches up regardless.
+            withContext(NonCancellable) { sourceTaken(close = true) }
         }
+    }
+
+    /** Shows the source the lists now come from and reloads this TV's list; [close] ends the check too. */
+    private suspend fun sourceTaken(close: Boolean) {
+        val now = source.listSource()
+        // Every TV's list came from the old source.
+        lastLists.clear()
+        val id = _state.value.selectedId
+        _state.update { it.copy(sourceCheck = if (close) null else it.sourceCheck, listSource = now, device = it.device.copy(lists = null)) }
+        _notice.value = Copy.listSource(now)
+        listsJob?.cancel()
+        if (id != null) listsJob = viewModelScope.launch { loadLists(id) { shownApps(id) } }
+    }
+
+    /** Cancel in the own-lists dialog: stops a check that's still running. */
+    fun cancelListSource() {
+        sourceJob?.cancel()
+        _state.update { it.copy(sourceCheck = null) }
     }
 
     /**
@@ -1963,20 +2447,38 @@ class TellyscopeViewModel(
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.on = on }
     }
 
-    /** The touchpad (true) or the D-pad on the Remote, kept for this phone. */
-    fun setTouchpad(on: Boolean) {
-        _state.update { it.copy(touchpad = on) }
-        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.touchpad = on }
+    /** What the Remote shows in the D-pad's place, kept for this phone. */
+    fun setPad(pad: RemotePad) {
+        val was = _state.value.pad
+        if (pad == RemotePad.CONTROLLER && was != RemotePad.CONTROLLER) padBeforeController = was
+        _state.update { it.copy(pad = pad) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.pad = pad }
     }
 
-    /** Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far. */
-    fun disableSuggested(apps: List<ResetApp>) {
+    /** The controller's ✕: back to the pad the Remote had before it, or the D-pad when the app opened on the controller. */
+    fun closeController() = setPad(padBeforeController)
+
+    /**
+     * Disables the ticked suggestions one by one, each recorded in History with its own undo; Debloat shows how far.
+     * [hide] are the unticked ones the user asked not to see again, saved first so the list read after the run leaves them out.
+     */
+    fun disableSuggested(apps: List<ResetApp>, hide: List<String> = emptyList()) {
         val id = _state.value.selectedId ?: return
+        // One run at a time on a TV, as with Reset: a second tap or a Debloat over a Reset does nothing.
+        if (_state.value.device.busy != null) return
         _state.update { it.copy(device = it.device.copy(busy = DISABLING, debloat = DebloatRun(apps))) }
         viewModelScope.launch {
+            // The TV is read for its key: one that dropped still runs, and says so per app below.
+            if (hide.isNotEmpty()) try {
+                source.hideSuggested(id, hide, hide = true)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {}
             // One change for the whole list: the TV's stats are read again once, after the last app.
             source.batch(id) {
                 for (app in apps) {
+                    // Stop lets the app being turned off finish, then starts no other.
+                    if (stopping(id) { it.debloat?.stopping == true }) break
                     val why = try {
                         source.act(id, Action.Disable, app.packageName)
                         null
@@ -1998,12 +2500,39 @@ class TellyscopeViewModel(
         }
     }
 
-    /** Try again on Debloat's result: just the apps the TV refused. */
+    /** Suggest again on an app in Debloat's "Not suggested": back on the list, unticked. */
+    fun suggestAgain(pkg: String) {
+        val id = _state.value.selectedId ?: return
+        listsJob?.cancel()
+        listsJob = viewModelScope.launch {
+            try {
+                source.hideSuggested(id, listOf(pkg), hide = false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _notice.value = UiText.Capitalized(e.why(R.string.vm_didnt_work))
+                return@launch
+            }
+            loadLists(id) { shownApps(id) }
+        }
+    }
+
+    /** Try again on Debloat's result: just the apps the TV refused, and the ones Stop left. */
     fun retryDebloat() {
         val run = _state.value.device.debloat ?: return
         if (_state.value.device.busy != null) return
-        disableSuggested(run.apps.filter { it.packageName in run.failed })
+        disableSuggested(run.apps.filter { it.packageName in run.failed } + run.left)
     }
+
+    /** Stop on Debloat's run: the app being turned off finishes, and the result shows what's left. */
+    fun stopDebloat() {
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { if (it.busy == DISABLING) it.copy(debloat = it.debloat?.copy(stopping = true)) else it }
+    }
+
+    /** Whether [id], still the TV on screen, has had Stop tapped on the run that [stopped] reads. */
+    private fun stopping(id: String, stopped: (DeviceUi) -> Boolean) =
+        _state.value.let { it.selectedId == id && stopped(it.device) }
 
     /** Debloat closed: a finished run is forgotten, one still going shows again when it reopens. */
     fun closeDebloat() {
@@ -2085,6 +2614,56 @@ class TellyscopeViewModel(
         }
     }
 
+    /** Asks once whether the selected TV allows a virtual mouse and gamepad, for the Remote's Pointer and stick. */
+    fun checkUhid() {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch {
+            val allowed = try {
+                source.uhid(id)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch
+            }
+            _state.update { it.copy(uhid = it.uhid + (id to allowed)) }
+        }
+    }
+
+    /**
+     * Adds the virtual mouse or gamepad to the selected TV, or takes it away with null, as Pointer or
+     * the controller opens and closes. Not cancelled with the screen, so the pointer always goes away.
+     */
+    fun hid(device: HidDevice?) {
+        val id = _state.value.selectedId ?: return
+        viewModelScope.launch { remoteCall { source.hid(id, device) } }
+    }
+
+    /** Moves the TV's pointer; false when the TV didn't take it. */
+    suspend fun mouse(dx: Int, dy: Int, buttons: Int, wheel: Int): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.mouse(id, dx, dy, buttons, wheel) }
+    }
+
+    suspend fun gamepad(pad: GamepadReport): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.gamepad(id, pad) }
+    }
+
+    suspend fun gamepadKey(code: Int, down: Boolean): Boolean {
+        val id = _state.value.selectedId ?: return false
+        return remoteCall { source.gamepadKey(id, code, down) }
+    }
+
+    /** A pointer or controller call: a lost TV shows as one notice, as a key does, and answers false. */
+    private suspend fun remoteCall(call: suspend () -> Boolean): Boolean = try {
+        call()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        _notice.value = Copy.REMOTE_LOST
+        false
+    }
+
     /** Under [keys]. True once the picture is back on. Throws when the TV is gone. */
     private suspend fun wake(id: String): Boolean {
         val ok = source.screen(id, on = true)
@@ -2121,22 +2700,27 @@ class TellyscopeViewModel(
         val ui = _state.value.device.reset ?: return
         val plan = ui.plan ?: return
         if (_state.value.device.busy != null) return
+        // Finish the reset after a Stop runs what was left too, in the plan's order.
+        val left = ui.left ?: ResetPlan()
         val todo = if (!retry) plan else ResetPlan(
-            turnOn = ui.failed.filter { it.part == ResetPart.TurnOn }.mapNotNull { it.app },
-            bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app },
+            turnOn = ui.failed.filter { it.part == ResetPart.TurnOn }.mapNotNull { it.app } + left.turnOn,
+            bringBack = ui.failed.filter { it.part == ResetPart.BringBack }.mapNotNull { it.app } + left.bringBack,
             // A Home failure with an app is its service, still on: Try again does just that.
-            home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } },
-            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } },
-            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } },
+            home = plan.home?.takeIf { ui.failed.any { it.part == ResetPart.Home } || left.home != null },
+            dns = plan.dns?.takeIf { ui.failed.any { it.part == ResetPart.Dns } || left.dns != null },
+            animations = plan.animations?.takeIf { ui.failed.any { it.part == ResetPart.Animations } || left.animations != null },
         )
-        updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList())) }
+        updateDevice(id) { it.copy(busy = RESETTING, reset = ui.copy(running = todo, progress = null, failed = emptyList(), stopping = false, left = null)) }
         viewModelScope.launch {
+            val stop = { stopping(id) { it.reset?.stopping == true } }
+            var gone = false
             val (entry, failed) = try {
-                source.reset(id, todo, ui.entry) { p -> updateDevice(id) { d -> d.copy(reset = d.reset?.copy(progress = p)) } }
+                source.reset(id, todo, ui.entry, stop) { p -> updateDevice(id) { d -> d.copy(reset = d.reset?.copy(progress = p)) } }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 // The TV went away before any step could say: every step it was to run failed.
+                gone = true
                 val why = e.why(R.string.vm_tv_didnt_answer_reason)
                 ui.entry to todo.turnOn.map { ResetFailure(ResetPart.TurnOn, it, why) } +
                     todo.bringBack.map { ResetFailure(ResetPart.BringBack, it, why) } +
@@ -2154,9 +2738,11 @@ class TellyscopeViewModel(
             val tweaks = if (todo.dns != null || todo.animations != null) runCatching { source.tweaks(id) }.getOrNull() else null
             val (history, restorable) = historyOf(id)
             updateDevice(id) { d ->
+                // Stopped: what comes after the last step it started. Stop tapped on the last step leaves nothing.
+                val rest = d.reset?.takeIf { it.stopping && !gone }?.let { r -> r.progress?.let(todo::after) ?: todo }?.takeIf { it.changes > 0 }
                 d.copy(
                     apps = apps ?: d.apps, tweaks = tweaks ?: d.tweaks, history = history, restorable = restorable, busy = null,
-                    reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry),
+                    reset = d.reset?.copy(running = null, progress = null, ran = true, failed = failed, entry = entry ?: ui.entry, stopping = false, left = rest),
                 )
             }
             if (apps != null) loadLists(id) { apps }
@@ -2166,6 +2752,12 @@ class TellyscopeViewModel(
     fun closeReset() {
         val id = _state.value.selectedId ?: return
         updateDevice(id) { if (it.busy == RESETTING) it else it.copy(reset = null) }
+    }
+
+    /** Stop on Reset's run: the step under way finishes, and the result shows what's left. */
+    fun stopReset() {
+        val id = _state.value.selectedId ?: return
+        updateDevice(id) { if (it.busy == RESETTING) it.copy(reset = it.reset?.copy(stopping = true)) else it }
     }
 
     /** History opened: its newest change is seen, so ⋮ loses its dot until the next one. */
@@ -2181,6 +2773,11 @@ class TellyscopeViewModel(
     fun screenOffTipSeen() {
         _state.update { it.copy(screenOffTip = false) }
         viewModelScope.launch(Dispatchers.IO) { keyHaptics?.screenOffTipSeen = true }
+    }
+
+    fun modeTipSeen() {
+        _state.update { it.copy(modeTip = false) }
+        viewModelScope.launch(Dispatchers.IO) { keyHaptics?.modeTipSeen = true }
     }
 
     /**
@@ -2305,7 +2902,7 @@ class TellyscopeViewModel(
         // An empty list hasn't been read yet, so the TV gets to try.
         val apps = _state.value.device.apps
         if (apps.isNotEmpty() && apps.none { it.packageName == app.packageName }) {
-            _notice.value = Copy.notOnTv(app.label)
+            _notice.value = Copy.notOnTv(app.label, fire = _state.value.selected?.let { isFireOs(it, apps) } == true)
             return
         }
         open(app.packageName, Copy.cantOpen(app.label))

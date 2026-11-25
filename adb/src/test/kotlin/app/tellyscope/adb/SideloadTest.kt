@@ -101,6 +101,37 @@ class SideloadTest {
         assertEquals(InstallRefusal.NO_SPACE, (r as InstallResult.Refused).reason)
     }
 
+    private val streamRefused = IOException("ADB stream closed before OKAY for localId: -3b33f1f")
+    private val tmp = "'${Sideload.TMP_APK}'"
+
+    @Test fun refusedStreamFallsBackToCopyThenPmInstall() = runTest {
+        val sh = FakeShell(mapOf("pm install" to ok("Success\n")))
+        sh.transfer.installFails = streamRefused
+        val seen = mutableListOf<Progress>()
+        val r = Sideload(sh).install(listOf(apk("app.apk")), player, allowDowngrade = false) { seen += it }
+        assertEquals(InstallResult.Done, r)
+        assertEquals(20_000, sh.transfer.files.getValue(Sideload.TMP_APK).size)
+        assertEquals(listOf("pm install -r $tmp", "rm -f $tmp"), sh.ran.filter { it.startsWith("pm ") || it.startsWith("rm ") })
+        assertEquals(1f, seen.last().fraction)
+    }
+
+    @Test fun fallbackKeepsDashDAndDeletesTheCopyWhenPmRefuses() = runTest {
+        val sh = FakeShell(mapOf("dumpsys package" to ok(dumpsys), "pm install" to ok("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE: signatures do not match]\n")))
+        sh.transfer.installFails = streamRefused
+        val r = Sideload(sh).install(listOf(apk("old.apk")), player.copy(versionCode = 40), allowDowngrade = true) as InstallResult.Refused
+        assertEquals(InstallRefusal.SIGNATURE, r.reason)
+        assertEquals(listOf("pm install -r -d $tmp", "rm -f $tmp"), sh.ran.filter { it.startsWith("pm ") || it.startsWith("rm ") })
+    }
+
+    @Test fun splitApkWithRefusedStreamIsNotRetried() = runTest {
+        val sh = FakeShell()
+        sh.transfer.installFails = streamRefused
+        val r = Sideload(sh).install(listOf(apk("base.apk"), apk("split.apk")), player, allowDowngrade = false)
+        assertEquals(InstallRefusal.UNKNOWN, (r as InstallResult.Refused).reason)
+        assertTrue(sh.transfer.files.isEmpty())
+        assertTrue(sh.ran.none { it.startsWith("pm ") })
+    }
+
     @Test fun refusalCodes() {
         val cases = mapOf(
             "Failure [INSTALL_FAILED_VERSION_DOWNGRADE]" to InstallRefusal.DOWNGRADE,

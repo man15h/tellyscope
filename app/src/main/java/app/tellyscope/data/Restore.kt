@@ -26,8 +26,12 @@ data class SwitchUndo(val from: String?, val service: String?, val fromService: 
 data class Restorable(
     /** Newest change first. */
     val apps: Map<String, AppBefore> = emptyMap(),
-    /** The home activity before Tellyscope's first change to Home; null when it changed none, or replaced none. */
-    val home: String? = null,
+    /**
+     * Each home activity a change to Home replaced, oldest first: Restore puts back the first one still
+     * installed. The very first may be gone since, or have replaced none; then the next one, so Home
+     * still moves off a launcher Restore turns off.
+     */
+    val homes: List<String> = emptyList(),
     /** Accessibility services a switch turned on or off, and whether each was on before. */
     val services: Map<String, Boolean> = emptyMap(),
     /** Each service as History last left it. */
@@ -68,8 +72,7 @@ data class Restorable(
             val before = mutableMapOf<String, Was>()
             val last = mutableMapOf<String, Was>()
             val newest = mutableMapOf<String, Long>()
-            var home: String? = null
-            var homeSeen = false
+            val homes = mutableListOf<String>()
             val services = linkedMapOf<String, Boolean>()
             val serviceLast = mutableMapOf<String, Boolean>()
             val settings = linkedMapOf<Tweak, MutableMap<String, String?>>()
@@ -85,8 +88,7 @@ data class Restorable(
                 serviceLast[service] = if (e.undoneAt == null) !wasOn else wasOn
             }
             fun home(from: String?) {
-                if (!homeSeen) home = from
-                homeSeen = true
+                if (from != null && from !in homes) homes += from
             }
             for (e in history.sortedBy { it.id }) {
                 val p = e.previous.orEmpty()
@@ -132,7 +134,7 @@ data class Restorable(
             }
             return Restorable(
                 apps = before.keys.sortedByDescending { newest[it] }.associateWith { AppBefore(before.getValue(it), last[it] ?: before.getValue(it)) },
-                home = home,
+                homes = homes,
                 services = services,
                 servicesLast = serviceLast,
                 switches = switches,
@@ -158,7 +160,7 @@ fun Restorable.summary(apps: List<AppInfo>, tweaks: TvTweaks?): RestoreSummary {
         u.service?.let { servicesNow[it] = false }
         u.fromService?.let { servicesNow[it] = true }
     }
-    val target = home?.substringBefore('/')?.takeIf { apps.isEmpty() || it in read }
+    val target = homes.map { it.substringBefore('/') }.firstOrNull { apps.isEmpty() || it in read }
     val installed = { service: String -> apps.isEmpty() || service.substringBefore('/') in read }
     return RestoreSummary(
         turnOn = plan.turnOn.size,

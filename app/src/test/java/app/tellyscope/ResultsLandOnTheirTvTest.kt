@@ -58,7 +58,7 @@ private class TwoTvs : DeviceSource by FakeDeviceSource(FakeDeviceSource.Scenari
     var listKeep: Set<String>? = null
 
     override suspend fun suggestions(deviceId: String, apps: suspend () -> List<AppInfo>): Suggestions {
-        val keep = listKeep ?: return Suggestions.Unavailable
+        val keep = listKeep ?: return Suggestions.Unavailable()
         apps()
         return Suggestions.Ready(null, DeviceList(deviceId, deviceId, null, null, keep, emptyList()), null, emptyList(), emptyList())
     }

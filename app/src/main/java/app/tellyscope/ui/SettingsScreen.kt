@@ -5,6 +5,7 @@ package app.tellyscope.ui
 
 import android.content.Context
 import android.content.Intent
+import android.icu.text.CompactDecimalFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,12 +29,12 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -43,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -55,6 +58,7 @@ import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.semantics.Role
@@ -102,13 +106,17 @@ fun SettingsScreen(
     onReport: () -> Unit = {},
     onWhatsNew: () -> Unit = {},
     snackbar: SnackbarHostState = remember { SnackbarHostState() },
+    /** The own-lists address being checked, or why it was refused; null otherwise. */
+    sourceCheck: SourceCheck? = null,
+    /** Cancel in the own-lists dialog, to stop a check still running. */
+    onCancelSource: () -> Unit = {},
 ) {
     var editing by rememberSaveable { mutableStateOf(false) }
     var advanced by rememberSaveable { mutableStateOf(false) }
     val browser = LocalUriHandler.current
     val context = LocalContext.current
     val open = { url: String -> runCatching { browser.openUri(url) }; Unit }
-    if (editing) SourceDialog(listSource, onSave = { editing = false; onListSource(it) }, onDismiss = { editing = false })
+    if (editing) SourceDialog(listSource, sourceCheck, onSave = onListSource, onDone = { editing = false }, onDismiss = { editing = false; onCancelSource() })
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
         topBar = {
@@ -126,85 +134,37 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
-                    if (checkUpdates != null) Row(
-                        Modifier.fillMaxWidth()
-                            .toggleable(checkUpdates, role = Role.Switch, onValueChange = onCheckUpdates)
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_check_updates), style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                stringResource(if (alphaBuild) R.string.settings_check_updates_alpha else R.string.settings_check_updates_release),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Switch(checked = checkUpdates, onCheckedChange = null)
-                    }
+                AppCard {
+                    if (checkUpdates != null) SettingsRow(
+                        stringResource(R.string.settings_check_updates),
+                        stringResource(if (alphaBuild) R.string.settings_check_updates_alpha else R.string.settings_check_updates_release),
+                        Modifier.toggleable(checkUpdates, role = Role.Switch, onValueChange = onCheckUpdates),
+                    ) { Switch(checked = checkUpdates, onCheckedChange = null) }
                     if (checkUpdates != null) HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .toggleable(keyHaptics, role = Role.Switch, onValueChange = onKeyHaptics)
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_key_haptics), style = MaterialTheme.typography.titleSmall)
-                            Text(stringResource(R.string.settings_key_haptics_text), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Switch(checked = keyHaptics, onCheckedChange = null)
-                    }
+                    SettingsRow(
+                        stringResource(R.string.settings_key_haptics),
+                        stringResource(R.string.settings_key_haptics_text),
+                        Modifier.toggleable(keyHaptics, role = Role.Switch, onValueChange = onKeyHaptics),
+                    ) { Switch(checked = keyHaptics, onCheckedChange = null) }
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                    Row(Modifier.fillMaxWidth().clickable(onClick = onWhatsNew).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(NewReleases, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_whats_new), style = MaterialTheme.typography.titleSmall)
-                            Text(stringResource(R.string.settings_whats_new_text), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                    }
+                    SettingsRow(stringResource(R.string.settings_whats_new), stringResource(R.string.settings_whats_new_text), Modifier.clickable(onClick = onWhatsNew), NewReleases)
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                    Row(Modifier.fillMaxWidth().clickable(onClick = onReport).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(stringResource(R.string.settings_report), style = MaterialTheme.typography.titleSmall)
-                            Text(stringResource(R.string.settings_report_text), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                    }
+                    SettingsRow(stringResource(R.string.settings_report), stringResource(R.string.settings_report_text), Modifier.clickable(onClick = onReport), BugReport)
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                    Row(Modifier.fillMaxWidth().clickable { shareTellyscope(context) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Share, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.width(16.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(Copy.SHARE.resolve(), style = MaterialTheme.typography.titleSmall)
-                            Text(stringResource(R.string.settings_share_hint), style = MaterialTheme.typography.bodyMedium)
-                        }
-                        Spacer(Modifier.width(16.dp))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                    }
+                    SettingsRow(Copy.SHARE.resolve(), stringResource(R.string.settings_share_hint), Modifier.clickable { shareTellyscope(context) }, Icons.Default.Share)
                 }
             }
             item {
                 Row(
-                    Modifier.fillMaxWidth()
-                        .toggleable(advanced, role = Role.Button, onValueChange = { advanced = it })
-                        .padding(horizontal = 4.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().heightIn(min = 48.dp).toggleable(advanced, role = Role.Button, onValueChange = { advanced = it }),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(stringResource(R.string.settings_advanced), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    SectionHeader(stringResource(R.string.settings_advanced), Modifier.weight(1f))
                     Icon(if (advanced) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown, contentDescription = null)
                 }
             }
             if (advanced) item {
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+                AppCard {
                     ListsFrom(listSource, onOpen = { open(CLEANYOURTV) })
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
                     Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -213,17 +173,18 @@ fun SettingsScreen(
                             stringResource(R.string.settings_change_text),
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        Row(Modifier.clickable { open(OWN_LISTS_GUIDE) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.heightIn(min = 48.dp).clickable { open(OWN_LISTS_GUIDE) }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Text(stringResource(R.string.settings_own_lists_guide), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(4.dp))
                             Icon(OpenInNew, contentDescription = null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     HorizontalDivider(color = MaterialTheme.colorScheme.surface)
-                    Row(Modifier.fillMaxWidth().clickable { editing = true }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.settings_own_lists), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null)
-                    }
+                    ListItem(
+                        Modifier.clickable { editing = true },
+                        trailingContent = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    ) { Text(stringResource(R.string.settings_own_lists)) }
                 }
             }
         }
@@ -237,24 +198,47 @@ fun SettingsScreen(
 @Composable
 private fun ListsFrom(source: String?, onOpen: () -> Unit) {
     val c = MaterialTheme.colorScheme
-    Row(
-        Modifier.fillMaxWidth().then(if (source == null) Modifier.clickable(onClick = onOpen) else Modifier).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    ListItem(
+        if (source == null) Modifier.clickable(onClick = onOpen) else Modifier,
+        trailingContent = if (source == null) ({ Icon(OpenInNew, contentDescription = stringResource(R.string.settings_open_cleanyourtv)) }) else null,
+        overlineContent = { Text(stringResource(R.string.settings_lists_from)) },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.settings_lists_from), style = MaterialTheme.typography.labelMedium, color = c.onSurfaceVariant)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (source == null) "cleanyourtv" else sourceName(source), style = MaterialTheme.typography.titleMedium)
-                if (source == null) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(Icons.Default.Star, contentDescription = null, Modifier.size(16.dp), tint = Color(0xFFE0A100))
-                    Text(" 40k+", style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
-                }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (source == null) "cleanyourtv" else sourceName(source))
+            if (source == null) {
+                // The count in the phone's own short form: 40K, 4万, 40 тыс.
+                val locale = LocalConfiguration.current.locales[0]
+                val stars = remember(locale) { CompactDecimalFormat.getInstance(locale, CompactDecimalFormat.CompactStyle.SHORT).format(CLEANYOURTV_STARS) }
+                Spacer(Modifier.width(8.dp))
+                Icon(Icons.Default.Star, contentDescription = null, Modifier.size(16.dp), tint = c.onSurfaceVariant)
+                Text(" $stars+", style = MaterialTheme.typography.bodyMedium, color = c.onSurfaceVariant)
             }
         }
-        if (source == null) Icon(OpenInNew, contentDescription = stringResource(R.string.settings_open_cleanyourtv), tint = c.onSurfaceVariant)
     }
 }
+
+/**
+ * One row of a Settings card: the M3 list item, with [icon] leading and [trailing] at the end (a
+ * chevron unless given). [modifier] carries the whole row's click or toggle.
+ */
+@Composable
+private fun SettingsRow(
+    title: String,
+    text: String,
+    modifier: Modifier,
+    icon: ImageVector? = null,
+    trailing: @Composable () -> Unit = { Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null) },
+) = ListItem(
+    modifier,
+    leadingContent = icon?.let { { Icon(it, contentDescription = null) } },
+    trailingContent = trailing,
+    supportingContent = { Text(text) },
+    colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+) { Text(title) }
+
+/** About how many stars cleanyourtv has on GitHub, shown as "40K+". */
+private const val CLEANYOURTV_STARS = 40_000
 
 internal val OpenInNew = ImageVector.Builder("OpenInNew", 24.dp, 24.dp, 24f, 24f)
     .addPath(
@@ -263,10 +247,24 @@ internal val OpenInNew = ImageVector.Builder("OpenInNew", 24.dp, 24.dp, 24f, 24f
     )
     .build()
 
-/** Edits the list source: an HTTPS folder holding `index.json`, or back to the default. */
+/**
+ * Edits the list source: an HTTPS folder holding `index.json`, or back to the default. It stays
+ * open while the address is checked and closes once it's taken; a refusal shows under the address,
+ * kept as typed, until it's edited. Cancel stops the check.
+ */
 @Composable
-private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: () -> Unit) {
+private fun SourceDialog(source: String?, check: SourceCheck?, onSave: (String?) -> Unit, onDone: () -> Unit, onDismiss: () -> Unit) {
     var url by rememberSaveable { mutableStateOf(source.orEmpty()) }
+    // The address last sent for checking, and whether an answer is still to come.
+    var sent by rememberSaveable { mutableStateOf<String?>(null) }
+    var waiting by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(check) {
+        if (waiting && check == null) onDone()
+        if (check is SourceCheck.Refused) waiting = false
+    }
+    val checking = check == SourceCheck.Checking
+    val refused = (check as? SourceCheck.Refused)?.why?.takeIf { sent == url }
+    val save = { to: String? -> sent = to.orEmpty(); waiting = true; onSave(to) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings_source_title)) },
@@ -276,15 +274,26 @@ private fun SourceDialog(source: String?, onSave: (String?) -> Unit, onDismiss: 
                     stringResource(R.string.settings_source_text),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                OutlinedTextField(url, { url = it }, placeholder = { Text("https://…") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(
+                    url, { url = it },
+                    placeholder = { Text("https://…") },
+                    singleLine = true,
+                    isError = refused != null,
+                    supportingText = if (refused != null) ({ Text(refused.resolve()) }) else null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         // Three actions stack full width; two sit side by side.
         confirmButton = {
-            val use = @Composable { m: Modifier -> Button(onClick = { onSave(url) }, enabled = url.isNotBlank(), modifier = m) { Text(stringResource(R.string.settings_use_lists)) } }
+            val use = @Composable { m: Modifier ->
+                Button(onClick = { save(url) }, enabled = url.isNotBlank() && !checking, modifier = m) {
+                    Text(stringResource(if (checking) R.string.settings_checking else R.string.settings_use_lists))
+                }
+            }
             if (source == null) use(Modifier) else Column(Modifier.fillMaxWidth()) {
                 use(Modifier.fillMaxWidth())
-                TextButton(onClick = { onSave(null) }, Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_reset)) }
+                TextButton(onClick = { save(null) }, Modifier.fillMaxWidth(), enabled = !checking) { Text(stringResource(R.string.settings_reset)) }
                 TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text(stringResource(R.string.settings_cancel)) }
             }
         },
