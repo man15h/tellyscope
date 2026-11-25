@@ -57,6 +57,7 @@ import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -163,11 +164,13 @@ fun DebloatScreen(
     // Ticks start from the list. When the same list loads again, as after Refresh, an app on it before
     // keeps the tick it had, so nothing unticked by hand comes back ticked; a new app takes the list's.
     val before = remember { mutableStateOf<Ticks?>(null) }
-    var ticked by remember(lists) {
+    // It holds the old list's tick state, not a copy: a tap recomposes only the row, so a copy would go stale.
+    val tickState = remember(lists) {
         val was = before.value?.takeIf { it.list != null && it.list == ready?.list?.id }
-        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { if (was != null && it.pkg in was.pkgs) it.pkg in was.ticked else it.ticked }.map { it.pkg }.toSet())
+        mutableStateOf(ready?.groups.orEmpty().flatMap { it.packages }.filter { if (was != null && it.pkg in was.pkgs) it.pkg in was.ticked.value else it.ticked }.map { it.pkg }.toSet())
     }
-    SideEffect { before.value = Ticks(ready?.list?.id, ready?.groups.orEmpty().flatMap { it.packages }.map { it.pkg }.toSet(), ticked) }
+    var ticked by tickState
+    SideEffect { before.value = Ticks(ready?.list?.id, ready?.groups.orEmpty().flatMap { it.packages }.map { it.pkg }.toSet(), tickState) }
     var confirming by remember { mutableStateOf(false) }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     val showing = ready?.takeIf { chosen == null || it.list.id == chosen }
@@ -698,4 +701,4 @@ private fun ListRow(e: ListEntry, maker: String, selected: Boolean, onClick: (()
 }
 
 /** Debloat's ticks as they were on [list] (its id), over the apps [pkgs], kept for when it loads again. */
-private class Ticks(val list: String?, val pkgs: Set<String>, val ticked: Set<String>)
+private class Ticks(val list: String?, val pkgs: Set<String>, val ticked: State<Set<String>>)
