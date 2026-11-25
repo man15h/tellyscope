@@ -558,7 +558,7 @@ class TellyscopeViewModel(
     private val lastApps = mutableMapOf<String, List<AppInfo>>()
     private val lastLists = mutableMapOf<String, Suggestions>()
     /** One save at a time, each taking the page as it is then, so an older one never lands last. */
-    private val saving = Mutex()
+    private val lastSaving = Mutex()
 
     /** Keys go out one at a time, in the order pressed. */
     private val keys = Mutex()
@@ -2041,7 +2041,7 @@ class TellyscopeViewModel(
     /** Saves [id]'s apps and lists as its page shows them, for the next launch; nothing before its apps are read. */
     private fun saveLast(id: String) {
         viewModelScope.launch {
-            saving.withLock {
+            lastSaving.withLock {
                 val d = _state.value.takeIf { it.selectedId == id }?.device?.takeIf { it.apps.isNotEmpty() } ?: return@withLock
                 runCatching { source.saveLastState(id, d.apps, d.lists) }
             }

@@ -1094,7 +1094,7 @@ class AdbDeviceSource(
         val tv = keys[deviceId] ?: return
         // Checked under the book's lock: Forget removes the TV from saved before it deletes the
         // file, so a save racing it either lands first and is deleted, or finds the TV gone.
-        withContext(Dispatchers.IO) { synchronized(lastStates) { if (deviceId in saved) lastStates.save(tv, apps, lists) } }
+        withContext(Dispatchers.IO) { synchronized(lastStates) { if (saved.containsKey(deviceId)) lastStates.save(tv, apps, lists) } }
     }
 
     override suspend fun setListSource(url: String?) {
