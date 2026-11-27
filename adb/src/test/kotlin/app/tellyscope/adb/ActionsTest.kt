@@ -251,7 +251,7 @@ class ActionsTest {
         var oldOn = true
         return FakeShell(mapOf(
             "cmd package query-activities" to ok(
-                if (outranks) "2 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
+                if (outranks) "3 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
                     "  Activity #1:\n    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.spocky.projengmenu/.ui.home.MainActivity\n"
                 else "com.google.android.tvlauncher/.MainActivity\ncom.spocky.projengmenu/.ui.home.MainActivity\n",
             ),
@@ -592,6 +592,42 @@ class ActionsTest {
         assertTrue(r.details.endsWith("\nError: refused"), r.details)
         // The old launcher still comes back, so Home has somewhere to go
         assertTrue(sh.ran.contains("pm enable --user 0 com.google.android.tvlauncher 2>&1"))
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
+    }
+
+    /** Neither app back on leaves Home nowhere to go, so the result names both, with both outputs. */
+    @Test fun setupAppAndOldLauncherBothStayingOffSaysBoth() = runTest {
+        val sh = googleTv(accepts = false)
+        sh.answer.let { prev ->
+            sh.answer = {
+                when {
+                    it.startsWith("pm enable --user 0 $SETUP") -> ok("Error: setup refused\n")
+                    it.startsWith("pm enable --user 0 com.google.android.tvlauncher") -> ok("Error: launcher refused\n")
+                    else -> prev(it)
+                }
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals("Home didn't open it, and neither the setup app nor the old home screen turned back on. Turn both back on from Apps → Built-in", r.output)
+        assertTrue(r.details.endsWith("\nError: setup refused\nError: launcher refused"), r.details)
+    }
+
+    /** The old launcher back on but Home not back on it is the stuck case [Actions.HOME_NOT_BACK] covers. */
+    @Test fun setupAppOffAndHomeNotBackSaysHomeNotBack() = runTest {
+        val sh = googleTv(accepts = false)
+        sh.answer.let { prev ->
+            sh.answer = {
+                when {
+                    it.startsWith("pm enable --user 0 $SETUP") -> ok("Error: setup refused\n")
+                    it.startsWith("cmd package set-home-activity --user 0 'com.google") -> ok("Error: refused\n")
+                    it.startsWith("cmd package resolve-activity") && sh.ran.count { c -> c.startsWith("pm enable --user 0 com.google.android.tvlauncher") } > 0 -> ok("priority=0\ncom.spocky.projengmenu/.ui.home.MainActivity\n")
+                    else -> prev(it)
+                }
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals(Actions.HOME_NOT_BACK, r.output)
+        assertTrue("Error: setup refused" in r.details, r.details)
     }
 
     /** Only a setup app can be turned off for a switch: anything else stays protected. */

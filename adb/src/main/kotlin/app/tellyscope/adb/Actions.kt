@@ -162,9 +162,13 @@ class Actions(private val shell: AdbShell) {
         if (setup != null) {
             val back = exec("pm enable --user 0 $setup", undo = null) { "enabled" in it }
             if (back is ActionResult.Failed) {
-                exec("pm enable --user 0 $old", undo = null) { "enabled" in it }
-                setHome(from)
-                return HomeResult.Failed("Home didn't open it, and the setup app didn't turn back on. Turn it back on from Apps → Built-in", set.details(back.output))
+                // Both off leaves Home nowhere to go: that's the one to say first
+                val on = exec("pm enable --user 0 $old", undo = null) { "enabled" in it }
+                if (on is ActionResult.Failed) {
+                    setHome(from)
+                    return HomeResult.Failed("Home didn't open it, and neither the setup app nor the old home screen turned back on. Turn both back on from Apps → Built-in", set.details(back.output, on.output))
+                }
+                return rollBack(from, HomeResult.Failed("Home didn't open it, and the setup app didn't turn back on. Turn it back on from Apps → Built-in", set.details(back.output)))
             }
             return oldBackOn(old, from, set.failed("Home still didn't open it, so the setup app and the old home screen were turned back on"))
         }
