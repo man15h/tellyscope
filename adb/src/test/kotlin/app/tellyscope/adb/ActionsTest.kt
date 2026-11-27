@@ -251,7 +251,7 @@ class ActionsTest {
         var oldOn = true
         return FakeShell(mapOf(
             "cmd package query-activities" to ok(
-                if (outranks) "3 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
+                if (outranks) "2 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
                     "  Activity #1:\n    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.spocky.projengmenu/.ui.home.MainActivity\n"
                 else "com.google.android.tvlauncher/.MainActivity\ncom.spocky.projengmenu/.ui.home.MainActivity\n",
             ),
@@ -292,7 +292,7 @@ class ActionsTest {
         var setupOn = true
         return FakeShell(mapOf(
             "cmd package query-activities" to ok(
-                "2 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
+                "3 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
                     "  Activity #1:\n    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.spocky.projengmenu/.ui.home.MainActivity\n" +
                     "  Activity #2:\n    priority=1 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    $SETUP/.MainActivity\n",
             ),
