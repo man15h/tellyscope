@@ -123,7 +123,7 @@ class ActionsTest {
         val sh = stockOff("com.spocky.projengmenu", "me.efesser.flauncher")
         Actions(sh).makeHome("com.spocky.projengmenu")
         sh.answer.let { prev -> sh.answer = { if (it.startsWith("cmd package set-home-activity --user 0 'me.")) ok("Success\n") else prev(it) } }
-        assertEquals(HomeResult.Failed("the TV kept the home screen it has"), Actions(sh).makeHome("me.efesser.flauncher"))
+        assertEquals("the TV kept the home screen it has", (Actions(sh).makeHome("me.efesser.flauncher") as HomeResult.Failed).output)
         assertEquals("com.spocky.projengmenu/.ui.home.MainActivity", Actions(sh).currentHome())
         assertTrue(sh.ran.none { it.startsWith("pm ") && !it.startsWith("pm list") })
     }
@@ -282,6 +282,39 @@ class ActionsTest {
         }
     }
 
+    /**
+     * Google TV: its launcher outranks, and with it off Home falls to the setup app, whatever was
+     * set, until the setup app is off too. [accepts]: Home then opens the launcher set.
+     */
+    private fun googleTv(accepts: Boolean = true): FakeShell {
+        var home = "com.google.android.tvlauncher/.MainActivity"
+        var oldOn = true
+        var setupOn = true
+        return FakeShell(mapOf(
+            "cmd package query-activities" to ok(
+                "3 activities found:\n  Activity #0:\n    priority=2 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.google.android.tvlauncher/.MainActivity\n" +
+                    "  Activity #1:\n    priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    com.spocky.projengmenu/.ui.home.MainActivity\n" +
+                    "  Activity #2:\n    priority=1 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\n    $SETUP/.MainActivity\n",
+            ),
+        )).apply {
+            answer = { cmd ->
+                when {
+                    cmd.startsWith("pm disable-user --user 0 com.google.android.tvlauncher") -> ok("Package x new state: disabled-user\n").also { oldOn = false }
+                    cmd.startsWith("pm enable --user 0 com.google.android.tvlauncher") -> ok("Package x new state: enabled\n").also { oldOn = true }
+                    cmd.startsWith("pm disable-user --user 0 $SETUP") -> ok("Package x new state: disabled-user\n").also { setupOn = false }
+                    cmd.startsWith("pm enable --user 0 $SETUP") -> ok("Package x new state: enabled\n").also { setupOn = true }
+                    cmd.startsWith("cmd package resolve-activity") -> ok("priority=0 preferredOrder=0\n${when {
+                        oldOn -> "com.google.android.tvlauncher/.MainActivity"
+                        setupOn -> "$SETUP/.MainActivity"
+                        else -> home
+                    }}\n")
+                    cmd.startsWith("cmd package set-home-activity") -> ok("Success\n").also { if (accepts) home = cmd.substringAfter("'").substringBefore("'") }
+                    else -> null
+                }
+            }
+        }
+    }
+
     @Test fun offersOtherLaunchersOnly() = runTest {
         assertEquals(HomeOptions("com.google.android.tvlauncher", setOf("com.spocky.projengmenu")), Actions(twoLaunchers()).homeOptions())
     }
@@ -371,7 +404,7 @@ class ActionsTest {
 
     @Test fun homeCheckFailsNothingDisabled() = runTest {
         val sh = twoLaunchers(accepts = false)
-        assertEquals(HomeResult.Failed("the TV kept its own home screen, so nothing was turned off"), Actions(sh).makeHome("com.spocky.projengmenu"))
+        assertEquals("the TV kept its own home screen, so nothing was turned off", (Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed).output)
         // Asking which launchers the user added is a read; nothing is turned off or on.
         assertTrue(sh.ran.none { it.startsWith("pm disable") || it.startsWith("pm enable") })
         // The old home is set back, in case the TV took the new one half-way.
@@ -380,8 +413,9 @@ class ActionsTest {
 
     @Test fun outrankingHomeCheckFailsOldLauncherBackOnAndHome() = runTest {
         val sh = twoLaunchers(accepts = false, outranks = true)
-        val r = Actions(sh).makeHome("com.spocky.projengmenu")
-        assertEquals(HomeResult.Failed("Home still didn't open it, so the old home screen was turned back on"), r)
+        val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
+        assertEquals("Home still didn't open it, so the old home screen was turned back on", r.output)
+        assertEquals(null, r.setup)
         val off = sh.ran.indexOf("pm disable-user --user 0 com.google.android.tvlauncher 2>&1")
         val on = sh.ran.indexOf("pm enable --user 0 com.google.android.tvlauncher 2>&1")
         assertTrue(off >= 0 && on > off)
@@ -426,7 +460,7 @@ class ActionsTest {
         sh.answer.let { prev -> sh.answer = { if (it.startsWith("pm enable")) ok("Error: refused\n") else prev(it) } }
         val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
         assertTrue(r.output.endsWith("Turn it back on from Apps → Built-in"), r.output)
-        assertEquals("Error: refused", r.details)
+        assertTrue(r.details.endsWith("\nError: refused"), r.details)
     }
 
     @Test fun failedDisablePutsHomeBack() = runTest {
@@ -471,6 +505,147 @@ class ActionsTest {
             ),
         ))
         assertEquals(HomeOptions("com.amazon.tv.launcher", emptySet()), Actions(sh).homeOptions())
+    }
+
+    /** Android 10+ can apply Home after set-home-activity returns: a few reads in, it opens the new launcher. */
+    @Test fun homeThatTakesLateStillSwitches() = runTest {
+        val sh = twoLaunchers()
+        var reads = 0
+        sh.answer.let { prev ->
+            sh.answer = {
+                val r = prev(it)
+                if (it.startsWith("cmd package resolve-activity") && sh.ran.any { c -> "set-home" in c } && ++reads <= 3) ok("priority=0\ncom.google.android.tvlauncher/.MainActivity\n") else r
+            }
+        }
+        assertEquals(
+            HomeResult.Switched("com.google.android.tvlauncher/.MainActivity", "com.spocky.projengmenu/.ui.home.MainActivity"),
+            Actions(sh).makeHome("com.spocky.projengmenu"),
+        )
+        assertTrue(sh.ran.contains("pm disable-user --user 0 com.google.android.tvlauncher 2>&1"))
+    }
+
+    @Test fun anEmptyReadIsNotAMiss() = runTest {
+        val sh = twoLaunchers()
+        var empty = true
+        sh.answer.let { prev ->
+            sh.answer = {
+                if (it.startsWith("cmd package resolve-activity") && sh.ran.any { c -> "set-home" in c } && empty) ok("").also { empty = false } else prev(it)
+            }
+        }
+        assertTrue(Actions(sh).makeHome("com.spocky.projengmenu") is HomeResult.Switched)
+    }
+
+    /** An error from set-home-activity isn't waited out, and it goes into the details for a problem report. */
+    @Test fun whatSetHomeSaidIsInTheDetails() = runTest {
+        val sh = twoLaunchers(accepts = false)
+        sh.answer.let { prev -> sh.answer = { if (it.startsWith("cmd package set-home-activity --user 0 'com.spocky")) ok("Error: role holder refused\n") else prev(it) } }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
+        assertEquals("set-home-activity said: Error: role holder refused", r.details)
+        val set = sh.ran.indexOfFirst { "set-home" in it }
+        assertEquals(1, sh.ran.drop(set + 1).takeWhile { "set-home" !in it }.count { it.startsWith("cmd package resolve-activity") })
+    }
+
+    /** Google TV: Home falls to the setup app once its launcher is off, so the failure names that app. */
+    @Test fun setupAppThatTakesHomeIsNamed() = runTest {
+        val sh = googleTv()
+        val r = Actions(sh).makeHome("com.spocky.projengmenu") as HomeResult.Failed
+        assertEquals("Home still didn't open it, so the old home screen was turned back on", r.output)
+        assertEquals(SETUP, r.setup)
+        assertTrue(sh.ran.none { it.startsWith("pm disable-user --user 0 $SETUP") })
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
+    }
+
+    @Test fun setupAppOffForTheSwitchLetsItTake() = runTest {
+        val sh = googleTv()
+        assertEquals(
+            HomeResult.Switched("com.google.android.tvlauncher/.MainActivity", "com.spocky.projengmenu/.ui.home.MainActivity", setup = SETUP),
+            Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP),
+        )
+        val old = sh.ran.indexOf("pm disable-user --user 0 com.google.android.tvlauncher 2>&1")
+        val setup = sh.ran.indexOf("pm disable-user --user 0 $SETUP 2>&1")
+        assertTrue(old >= 0 && setup > old)
+        assertEquals("com.spocky.projengmenu", Actions(sh).homeOptions()?.current)
+    }
+
+    @Test fun setupAppOffThatStillFailsTurnsBothBackOn() = runTest {
+        val sh = googleTv(accepts = false)
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals("Home still didn't open it, so the setup app and the old home screen were turned back on", r.output)
+        assertTrue(sh.ran.contains("pm enable --user 0 $SETUP 2>&1"))
+        assertTrue(sh.ran.contains("pm enable --user 0 com.google.android.tvlauncher 2>&1"))
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
+    }
+
+    @Test fun setupAppThatWontTurnOffChangesNothing() = runTest {
+        val sh = googleTv()
+        sh.answer.let { prev -> sh.answer = { if (it.startsWith("pm disable-user --user 0 $SETUP")) ok("Error: refused\n") else prev(it) } }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals("the setup app didn't turn off, so nothing changed", r.output)
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
+    }
+
+    @Test fun setupAppThatWontTurnBackOnSaysWhereToDoIt() = runTest {
+        val sh = googleTv(accepts = false)
+        sh.answer.let { prev -> sh.answer = { if (it.startsWith("pm enable --user 0 $SETUP")) ok("Error: refused\n") else prev(it) } }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals("Home didn't open it, and the setup app didn't turn back on. Turn it back on from Apps → Built-in", r.output)
+        assertTrue(r.details.endsWith("\nError: refused"), r.details)
+        // The old launcher still comes back, so Home has somewhere to go
+        assertTrue(sh.ran.contains("pm enable --user 0 com.google.android.tvlauncher 2>&1"))
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
+    }
+
+    /** Neither app back on leaves Home nowhere to go, so the result names both, with both outputs. */
+    @Test fun setupAppAndOldLauncherBothStayingOffSaysBoth() = runTest {
+        val sh = googleTv(accepts = false)
+        sh.answer.let { prev ->
+            sh.answer = {
+                when {
+                    it.startsWith("pm enable --user 0 $SETUP") -> ok("Error: setup refused\n")
+                    it.startsWith("pm enable --user 0 com.google.android.tvlauncher") -> ok("Error: launcher refused\n")
+                    else -> prev(it)
+                }
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals("Home didn't open it, and neither the setup app nor the old home screen turned back on. Turn both back on from Apps → Built-in", r.output)
+        assertTrue(r.details.endsWith("\nError: setup refused\nError: launcher refused"), r.details)
+    }
+
+    /** The old launcher back on but Home not back on it is the stuck case [Actions.HOME_NOT_BACK] covers. */
+    @Test fun setupAppOffAndHomeNotBackSaysHomeNotBack() = runTest {
+        val sh = googleTv(accepts = false)
+        sh.answer.let { prev ->
+            sh.answer = {
+                when {
+                    it.startsWith("pm enable --user 0 $SETUP") -> ok("Error: setup refused\n")
+                    it.startsWith("cmd package set-home-activity --user 0 'com.google") -> ok("Error: refused\n")
+                    it.startsWith("cmd package resolve-activity") && sh.ran.count { c -> c.startsWith("pm enable --user 0 com.google.android.tvlauncher") } > 0 -> ok("priority=0\ncom.spocky.projengmenu/.ui.home.MainActivity\n")
+                    else -> prev(it)
+                }
+            }
+        }
+        val r = Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP) as HomeResult.Failed
+        assertEquals(Actions.HOME_NOT_BACK, r.output)
+        assertTrue("Error: setup refused" in r.details, r.details)
+    }
+
+    /** Only a setup app can be turned off for a switch: anything else stays protected. */
+    @Test fun setupOffIsOnlyForASetupApp() = runTest {
+        val sh = googleTv()
+        assertFailsWith<IllegalArgumentException> { Actions(sh).makeHome("com.spocky.projengmenu", setupOff = "com.google.android.youtube.tv") }
+        assertFailsWith<IllegalArgumentException> { Actions(sh).homeBack("com.google.android.tvlauncher", setup = "$SETUP;reboot") }
+        assertTrue(sh.ran.none { it.startsWith("pm ") || "set-home" in it })
+    }
+
+    @Test fun homeBackTurnsTheSetupAppOnFirst() = runTest {
+        val sh = googleTv()
+        Actions(sh).makeHome("com.spocky.projengmenu", setupOff = SETUP)
+        assertTrue(Actions(sh).homeBack("com.google.android.tvlauncher", "com.google.android.tvlauncher/.MainActivity", setup = SETUP) is HomeResult.Switched)
+        val setup = sh.ran.indexOfLast { it == "pm enable --user 0 $SETUP 2>&1" }
+        val old = sh.ran.indexOfLast { it == "pm enable --user 0 com.google.android.tvlauncher 2>&1" }
+        assertTrue(setup >= 0 && old > setup)
+        assertEquals("com.google.android.tvlauncher", Actions(sh).homeOptions()?.current)
     }
 
     @Test fun homeBackTurnsTheOldLauncherOnAndLeavesTheNewOneOn() = runTest {
@@ -614,5 +789,9 @@ class ActionsTest {
         val sh = FakeShell(mapOf("am force-stop" to ShellResult("Error: denied\n", 1)))
         assertEquals(HandOffFailed("the old home screen didn't close", "Error: denied"), Actions(sh).handOff("com.spocky.projengmenu", "me.efesser.flauncher/.MainActivity"))
         assertTrue(openFlauncher in sh.ran)
+    }
+
+    private companion object {
+        const val SETUP = "com.google.android.tungsten.setupwraith"
     }
 }
