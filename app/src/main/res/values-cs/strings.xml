@@ -1,0 +1,1620 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- copy -->
+
+    <!-- App actions: button, confirm, explanation, result -->
+    <string name="copy_button_stop">Zastavit</string>
+    <string name="copy_button_disable">Zakázat</string>
+    <string name="copy_button_enable">Povolit</string>
+    <string name="copy_button_open">Otevřít</string>
+    <string name="copy_button_uninstall">Odinstalovat</string>
+
+    <string name="copy_confirm_stop">Ano, zastavit</string>
+    <string name="copy_confirm_disable">Ano, zakázat</string>
+    <string name="copy_confirm_enable">Ano, povolit</string>
+    <string name="copy_confirm_open">Ano, otevřít</string>
+    <string name="copy_confirm_uninstall">Ano, odinstalovat</string>
+    <string name="copy_confirm_home">Ano, změnit domovskou obrazovku</string>
+    <string name="copy_confirm_home_back">Ano, vrátit zpět</string>
+
+    <string name="copy_explain_stop">Zastaví aplikaci %1$s (%2$s), dokud ji znovu neotevřete.</string>
+    <string name="copy_explain_disable">Zakáže aplikaci %1$s (%2$s) a zastaví její běh. Nic se nemaže, zde ji můžete znovu povolit.</string>
+    <string name="copy_explain_enable">Znovu povolí aplikaci %1$s (%2$s).</string>
+    <string name="copy_explain_open">Otevře aplikaci %1$s (%2$s) v televizi.</string>
+    <string name="copy_explain_uninstall">Odebere aplikaci %1$s (%2$s) i vše, co je v ní uloženo. Nelze vrátit zpět; chcete-li ji získat zpět, nainstalujte ji znovu.</string>
+
+    <string name="copy_done_stop">Zastaveno: %1$s</string>
+    <string name="copy_done_disable">Zakázáno: %1$s</string>
+    <string name="copy_done_enable">Povoleno: %1$s</string>
+    <string name="copy_done_open">Otevřeno: %1$s</string>
+    <string name="copy_done_uninstall">Odinstalováno: %1$s</string>
+    <string name="copy_done_clear_caches">Vymazáno: %1$s</string>
+    <string name="copy_done_home">Domovská obrazovka: %1$s</string>
+    <string name="copy_done_home_back">Domovská obrazovka zpět na %1$s</string>
+
+    <string name="copy_keep_warning">Seznam pro tuto televizi doporučuje toto ponechat.</string>
+
+    <string name="copy_list_source_default">Seznamy z tellyscope-devices, vytvořené z cleanyourtv</string>
+    <string name="copy_list_source_custom">Seznamy z %1$s</string>
+
+    <!-- Home screen card -->
+    <string name="copy_home_screen">Domovská obrazovka</string>
+    <string name="copy_opens_on_home">Po stisknutí tlačítka Domů se otevře %1$s.</string>
+    <string name="copy_no_default">Žádná výchozí: vyberte níže.</string>
+    <string name="copy_added">Přidáno</string>
+    <string name="copy_built_in">Součást televize</string>
+    <string name="copy_built_in_off">Součást televize · zakázáno</string>
+    <string name="copy_current">Aktuální</string>
+    <string name="copy_make_home">Nastavit jako Domů</string>
+    <string name="copy_change_home">Změnit domovskou obrazovku</string>
+    <string name="copy_change_home_text">Nainstalujte jinou z Výběru redakce, nebo přepněte na tu, která už v televizi je.</string>
+    <string name="copy_home_settings">Nastavení domovské obrazovky</string>
+    <string name="copy_make_home_title">Nastavit %1$s jako domovskou obrazovku?</string>
+
+    <string name="copy_explain_replace_opens">Tlačítko Domů otevře %1$s. Aby se televize sama nepřepnula zpět, Tellyscope zakáže %2$s, vestavěný launcher televize.</string>
+    <string name="copy_explain_replace_only">To je jediný launcher, který kdy zakáže. Launchery, které jste přidali, zůstanou povolené, takže mezi nimi můžete kdykoli přepínat.</string>
+    <string name="copy_explain_replace_undo">Zpět v Historii znovu povolí %1$s.</string>
+    <string name="copy_google_features">Některé funkce Google TV, například řádek Aplikace a karta Živě, jsou součástí %1$s a spolu s ním zmizí.</string>
+    <string name="copy_next_service">Dále se rozhodnete, zda zapnout jeho službu přístupnosti.</string>
+
+    <string name="copy_explain_leave_turns_on">Tellyscope znovu povolí %1$s a nastaví, aby se po stisknutí tlačítka Domů otevřel.</string>
+    <string name="copy_explain_leave_makes">Tellyscope nastaví, aby se po stisknutí tlačítka Domů otevřel %1$s.</string>
+    <string name="copy_explain_leave_service">Také vypne službu přístupnosti aplikace %1$s, která by jinak tlačítko Domů hned převzala zpět.</string>
+    <string name="copy_explain_leave_stays">%1$s zůstane nainstalovaný a zapnutý, takže ho můžete kdykoli znovu nastavit jako Domů.</string>
+    <string name="copy_explain_leave_undo">Zpět v Historii znovu nastaví %1$s jako Domů.</string>
+    <string name="copy_explain_leave_undo_service">Zpět v Historii znovu nastaví %1$s jako Domů a zapne jeho službu.</string>
+
+    <string name="copy_explain_home">Nastaví, aby se po stisknutí tlačítka Domů otevřel %1$s (%2$s), a poté zakáže %3$s (%4$s), aby se televize nemohla sama přepnout zpět. Zpět v Historii znovu povolí %3$s a nastaví ho jako Domů.</string>
+    <string name="copy_explain_fire_home">Nastaví, aby tlačítko Domů otevíralo %1$s (%2$s) pomocí jeho služby přístupnosti. Fire OS nedovolí %3$s zakázat ani nahradit, takže zůstane povolený a nic dalšího se nezmění. Zpět v Historii službu vypne.</string>
+    <string name="copy_explain_first_home">Nastaví, aby se po stisknutí tlačítka Domů otevřel %1$s (%2$s). Televize teď nemá žádnou výchozí domovskou obrazovku a nic dalšího se nezakazuje.</string>
+
+    <string name="copy_service_title">Zapnout službu přístupnosti aplikace %1$s?</string>
+    <string name="copy_explain_service">Zajistí, aby tlačítko Domů dál otevíralo %1$s. Bez ní může tlačítko Domů na této televizi stále otevírat %2$s.\n\nSlužba přístupnosti vidí, co je na obrazovce. Zapněte ji, jen pokud aplikaci %1$s důvěřujete.\n\nZpět v Historii nebo nastavení jiného launcheru jako Domů ji vypne.</string>
+
+    <string name="copy_turn_it_on">Zapnout</string>
+    <string name="copy_switch_without">Přepnout bez ní</string>
+    <string name="copy_not_now">Teď ne</string>
+    <string name="copy_turn_on">Zapnout</string>
+    <string name="copy_got_it">Rozumím</string>
+    <string name="copy_service_off">Služba přístupnosti vypnutá</string>
+    <string name="copy_service_off_title">Domů může otevřít %1$s</string>
+    <string name="copy_tv_own_launcher">vlastní launcher televize</string>
+
+    <!-- Installing a home screen -->
+    <string name="copy_better_home">Získejte lepší domovskou obrazovku</string>
+    <string name="copy_better_home_text">Nahraďte %1$s launcherem bez reklam. Zdarma v obchodě Play, kdykoli můžete přepnout zpět.</string>
+    <string name="copy_better_home_text_fire">Nahraďte %1$s launcherem bez reklam; kdykoli můžete přepnout zpět.</string>
+    <string name="copy_the_tvs_home_screen">domovskou obrazovku televize</string>
+    <string name="copy_choose_one">Vybrat</string>
+    <string name="copy_install_one">Nainstalovat</string>
+    <string name="copy_choose_home">Vyberte domovskou obrazovku</string>
+    <string name="copy_choose_home_text">Každá nahradí domovskou obrazovku televize. Tellyscope ji otevře v obchodě Play v televizi; nainstalujete ji dálkovým ovladačem.</string>
+    <string name="copy_can_download">Některé lze také stáhnout přímo.</string>
+    <string name="copy_no_launcher_list">Seznam domovských obrazovek se nepodařilo načíst. Zkontrolujte připojení telefonu k internetu a zkuste to znovu.</string>
+    <string name="copy_recommended">Výběr redakce</string>
+    <string name="copy_on_this_tv">V této televizi</string>
+    <string name="copy_installed">Nainstalováno</string>
+    <string name="copy_install">Nainstalovat</string>
+    <string name="copy_open">Otevřít</string>
+    <string name="copy_home_screen_of">Domovská obrazovka %1$s</string>
+    <string name="copy_picture_failed">Obrázek se nepodařilo načíst</string>
+    <string name="copy_uses_service">Používá službu přístupnosti</string>
+    <string name="copy_no_service">Open source · bez služby přístupnosti</string>
+    <string name="copy_other_launcher">Dáváte přednost jinému launcheru? Nainstalujte ho z obchodu Play v televizi a vraťte se sem. Objeví se v sekci %1$s.</string>
+    <string name="copy_not_affiliated">Tellyscope není nijak spojen s žádným z těchto launcherů ani s jejich vývojáři.</string>
+    <string name="copy_get_from_store">Získat z obchodu Play</string>
+    <string name="copy_store_recommended">Doporučen obchod Play: aktualizuje se sám</string>
+    <string name="copy_download_directly">Stáhnout přímo</string>
+    <string name="copy_install_home">Nainstalovat domovskou obrazovku</string>
+    <string name="copy_install_it">Nainstalujte ji v televizi</string>
+    <string name="copy_install_it_text">V televizi je otevřený obchod Play na stránce aplikace %1$s. Dálkovým ovladačem vyberte Instalovat. Jakmile se nainstaluje, Tellyscope pokračuje sám.</string>
+    <string name="copy_store_on">Obchod Play na %1$s</string>
+    <string name="copy_waiting_install">Čekání na instalaci…</string>
+    <string name="copy_downloads_take">Stahování může chvíli trvat. Tellyscope stahování nevidí, pouze to, že skončilo.</string>
+    <string name="copy_open_store_again">Znovu otevřít obchod Play</string>
+    <string name="copy_make_it_home">Nastavit jako domovskou obrazovku?</string>
+    <string name="copy_is_installed">%1$s je nainstalován.</string>
+    <string name="copy_launcher_later">%1$s je nainstalován. Chcete-li ho použít později, vyberte u něj %2$s v Úpravách, v sekci %3$s.</string>
+    <string name="copy_launcher_installed">%1$s je nainstalován. Stiskněte na ovladači tlačítko Domů a vyberte ho.</string>
+    <string name="copy_launcher_is_home">%1$s už je vaše domovská obrazovka.</string>
+    <string name="copy_no_store">Obchod Play se neotevřel</string>
+    <string name="copy_no_store_text">%1$s neotevřela obchod Play pro Tellyscope. Otevřete obchod Play v televizi sami a vyhledejte %2$s. Tellyscope dál sleduje a pokračuje, jakmile se nainstaluje.</string>
+    <string name="copy_choose_another">Vybrat jiný</string>
+    <string name="copy_not_installed">%1$s není nainstalován</string>
+    <string name="copy_wasnt_installed">%1$s se nenainstaloval</string>
+    <string name="copy_not_installed_text">Obchod Play se v televizi zavřel dřív, než se aplikace nainstalovala. Pokud obchod hlásil, že není pro tuto televizi dostupná, vyberte jiný launcher.</string>
+
+    <string name="copy_install_launcher">Nainstalovat %1$s</string>
+    <string name="copy_fire_install_text">Domovská obrazovka bez reklam. Tellyscope ji nainstaluje do televize za vás; v televizi nemusíte nic dělat.</string>
+    <string name="copy_fire_pick_text">Domovská obrazovka bez reklam. Stáhněte ji v prohlížeči a pak zde vyberte soubor. Tellyscope ji nainstaluje do televize.</string>
+    <string name="copy_downloads_from">Tellyscope stáhne %1$s z oficiální stránky vydání vývojáře:</string>
+    <string name="copy_release">Vydání %1$s · %2$s</string>
+    <string name="copy_where_from">Odkud pochází</string>
+    <string name="copy_signed_check">Tellyscope před instalací do televize ověří, že je podepsán vývojářem aplikace %1$s. Tellyscope není s %1$s nijak spojen.</string>
+    <string name="copy_download_and_install">Stáhnout a nainstalovat</string>
+    <string name="copy_download_directly_title">Stáhnout %1$s přímo?</string>
+    <string name="copy_direct_check">Tellyscope ověří, že aplikace nese podpis vývojáře. Aplikaci neskenuje na škodlivý kód a sama se nebude aktualizovat.</string>
+    <string name="copy_store_safer">Získání z obchodu Play je bezpečnější a aplikace zůstane aktuální.</string>
+    <string name="copy_download_anyway">Přesto stáhnout</string>
+    <string name="copy_store_instead">Raději ji získat z obchodu Play v televizi.</string>
+    <string name="copy_installing">Instalace: %1$s</string>
+    <string name="copy_step_download">Stáhnout z GitHubu</string>
+    <string name="copy_step_downloaded">Staženo</string>
+    <string name="copy_downloading">Stahování · %1$d %% · %2$s z %3$s</string>
+    <string name="copy_step_picked">Soubor vybrán</string>
+    <string name="copy_step_check">Ověřit, že je to %1$s</string>
+    <string name="copy_step_checking">Ověřuje se, že je to %1$s…</string>
+    <string name="copy_step_checked">Je to %1$s</string>
+    <string name="copy_step_checked_text">Podepsáno vývojářem</string>
+    <string name="copy_step_failed">Není to %1$s</string>
+    <string name="copy_step_failed_text">Název balíčku nebo podpis nesouhlasil</string>
+    <string name="copy_install_on">Nainstalovat do %1$s</string>
+    <string name="copy_stop_title">Zastavit stahování?</string>
+    <string name="copy_stop_text">V televizi zatím nic není. Můžete kdykoli začít znovu.</string>
+    <string name="copy_stop">Zastavit</string>
+    <string name="copy_keep_downloading">Pokračovat ve stahování</string>
+    <string name="copy_installing_on">Instalace do %1$s…</string>
+    <string name="copy_wrong_apk">Stažený soubor není %1$s</string>
+    <string name="copy_wrong_apk_text">Soubor z GitHubu nesouhlasil s názvem balíčku ani s podpisem vývojáře aplikace %1$s, proto Tellyscope do televize nenainstaloval nic.</string>
+    <string name="copy_wrong_apk_file">Tento soubor není %1$s</string>
+    <string name="copy_wrong_apk_file_text">Nesouhlasil s názvem balíčku ani s podpisem vývojáře aplikace %1$s, proto Tellyscope do televize nenainstaloval nic.</string>
+    <string name="copy_cant_read_file">Tellyscope tento soubor nedokázal přečíst. Vyberte ho znovu, nebo ho stáhněte znovu.</string>
+    <string name="copy_cant_install">Aplikaci %1$s se nepodařilo nainstalovat</string>
+    <string name="copy_no_download">Aplikaci %1$s se nepodařilo stáhnout</string>
+    <string name="copy_no_download_offline">Telefon se nemůže připojit ke GitHubu. Zkontrolujte jeho připojení k internetu a zkuste to znovu.</string>
+    <string name="copy_no_download_limited_until">GitHub vaší síti omezuje stahování do %1$s. Zkuste to později, nebo si soubor stáhněte sami.</string>
+    <string name="copy_no_download_limited">GitHub vaší síti na chvíli omezuje stahování. Zkuste to později, nebo si soubor stáhněte sami.</string>
+    <string name="copy_or_yourself">Nebo si ho stáhněte sami</string>
+    <string name="copy_yourself_page">Stáhněte si soubor aplikace (.apk) ze stránky vydání v prohlížeči.</string>
+    <string name="copy_yourself_pick_file">Vraťte se a vyberte %1$s. Tellyscope před instalací ověří, že je to %2$s.</string>
+    <string name="copy_yourself_pick">Vraťte se a vyberte ho. Tellyscope před instalací ověří, že je to %1$s.</string>
+    <string name="copy_latest_release">Nejnovější vydání</string>
+    <string name="copy_pick_downloaded">Vybrat stažený soubor</string>
+    <string name="copy_pick_another">Vybrat jiný soubor</string>
+    <string name="copy_try_download_again">Zkusit stáhnout znovu</string>
+    <string name="copy_unverified_title">Seznam launcherů se nepodařilo ověřit</string>
+    <string name="copy_unverified_text">Tellyscope nedokázal potvrdit, že jde o seznam, který zveřejnil. Pokud se seznam v posledních minutách změnil, zkuste to později. Instalujte nyní, jen pokud důvěřujete seznamu i jeho podepisovateli.</string>
+    <string name="copy_unverified_list">Seznam</string>
+    <string name="copy_unverified_signer">Podepisovatel (SHA-256)</string>
+    <string name="copy_unverified_trust">Důvěřuji tomuto seznamu a jeho podepisovateli</string>
+    <string name="copy_service_off_text">Služba přístupnosti aplikace %1$s je vypnutá, takže televize může tlačítko Domů převzít zpět.</string>
+
+    <string name="copy_open_again">Otevřít znovu</string>
+    <string name="copy_undo">Zpět</string>
+
+    <!-- Time and sizes -->
+    <string name="copy_just_now">právě teď</string>
+    <plurals name="copy_seconds_ago">
+        <item quantity="one">před %1$d s</item>
+        <item quantity="few">před %1$d s</item>
+        <item quantity="many">před %1$d s</item>
+        <item quantity="other">před %1$d s</item>
+    </plurals>
+    <plurals name="copy_minutes_ago">
+        <item quantity="one">před %1$d min</item>
+        <item quantity="few">před %1$d min</item>
+        <item quantity="many">před %1$d min</item>
+        <item quantity="other">před %1$d min</item>
+    </plurals>
+    <plurals name="copy_hours_ago">
+        <item quantity="one">před %1$d h</item>
+        <item quantity="few">před %1$d h</item>
+        <item quantity="many">před %1$d h</item>
+        <item quantity="other">před %1$d h</item>
+    </plurals>
+    <plurals name="copy_days_ago">
+        <item quantity="one">před %1$d d</item>
+        <item quantity="few">před %1$d d</item>
+        <item quantity="many">před %1$d d</item>
+        <item quantity="other">před %1$d d</item>
+    </plurals>
+
+    <plurals name="copy_days">
+        <item quantity="one">%1$d den</item>
+        <item quantity="few">%1$d dny</item>
+        <item quantity="many">%1$d dní</item>
+        <item quantity="other">%1$d dní</item>
+    </plurals>
+    <plurals name="copy_hours">
+        <item quantity="one">%1$d hodina</item>
+        <item quantity="few">%1$d hodiny</item>
+        <item quantity="many">%1$d hodin</item>
+        <item quantity="other">%1$d hodin</item>
+    </plurals>
+    <plurals name="copy_minutes">
+        <item quantity="one">%1$d minuta</item>
+        <item quantity="few">%1$d minuty</item>
+        <item quantity="many">%1$d minut</item>
+        <item quantity="other">%1$d minut</item>
+    </plurals>
+    <string name="copy_days_hours">%1$s, %2$s</string>
+
+    <string name="copy_speed">%1$s/s</string>
+    <string name="copy_size_gb">%1$.1f GB</string>
+    <string name="copy_size_mb">%1$.1f MB</string>
+    <string name="copy_size_gb_whole">%1$d GB</string>
+    <string name="copy_size_mb_whole">%1$d MB</string>
+    <string name="copy_size_kb">%1$d KB</string>
+    <plurals name="copy_size_bytes">
+        <item quantity="one">%1$d bajt</item>
+        <item quantity="few">%1$d bajty</item>
+        <item quantity="many">%1$d bajtů</item>
+        <item quantity="other">%1$d bajtů</item>
+    </plurals>
+
+    <string name="copy_uninstall_title">Odinstalovat %1$s?</string>
+    <string name="copy_uninstall_home_intro">%1$s je vaše domovská obrazovka. Než ho Tellyscope odebere:</string>
+    <string name="copy_uninstall_home_back">1. Znovu nastaví %1$s jako domovskou obrazovku a v případě potřeby ho povolí.</string>
+    <string name="copy_uninstall_home_service">2. Vypne službu přístupnosti aplikace %1$s.</string>
+    <string name="copy_uninstall_home_remove">%1$d. Odinstaluje ho, včetně všeho, co je v něm uloženo. Nelze vrátit zpět.</string>
+    <string name="copy_uninstall_home_fails">Pokud některý krok selže, Tellyscope se tam zastaví, řekne který, a neodinstaluje nic.</string>
+
+    <string name="copy_system">Systém</string>
+    <string name="copy_system_why">Televize to potřebuje · nelze měnit</string>
+
+    <!-- Debloat with nothing left -->
+    <string name="copy_gate_title">Vše ze seznamu je zakázáno</string>
+    <string name="copy_gate_done">Všechny aplikace, které seznam cleanyourtv pro tuto televizi navrhuje, jsou už zakázané.</string>
+    <string name="copy_gate_launcher">Pro další úklid přepněte na minimální domovskou obrazovku. Nahradí tu vestavěnou, s jejími reklamami a návrhy.</string>
+    <string name="copy_gate_apps">V Aplikacích můžete dál po jedné vybírat, co ponechat a co zakázat.</string>
+    <string name="copy_go_to_apps">Přejít do Aplikací</string>
+    <string name="copy_dont_show_again">Již nezobrazovat</string>
+
+    <string name="copy_reading_apps">Načítání aplikací z televize…</string>
+    <string name="copy_reading_apps_line">Potrvá to několik sekund.</string>
+    <string name="copy_tv_offline">Televize je offline</string>
+    <string name="copy_off_wifi_line">Připojte se ke stejné Wi-Fi jako televize. Tellyscope se připojí znovu, jakmile budete v síti.</string>
+    <string name="copy_running_offline">Spuštěné aplikace se zobrazí, jakmile bude televize připojena.</string>
+    <string name="copy_apps_offline">Aplikace se zobrazí, jakmile bude televize připojena.</string>
+
+    <!-- Connection state, next to the status dot -->
+    <string name="copy_state_online">Připojeno</string>
+    <string name="copy_state_offline">Offline</string>
+    <string name="copy_state_not_allowed">Nepovoleno</string>
+    <string name="copy_state_waiting">Připojování</string>
+    <string name="copy_state_needs_pairing">Vyžaduje párovací kód</string>
+    <string name="copy_state_found">Nepřipojeno</string>
+
+    <!-- Storage: used of total -->
+    <string name="copy_gb_of_small">%1$.1f z %2$.1f GB</string>
+    <string name="copy_gb_of">%1$.1f z %2$.0f GB</string>
+    <string name="copy_free_gb_small">%1$.1f GB volných</string>
+    <string name="copy_free_gb">%1$d GB volných</string>
+
+    <string name="copy_no_stats_not_allowed">Statistiky se zobrazí, jakmile televize tento telefon povolí.</string>
+    <string name="copy_no_stats">Zatím žádné statistiky. Zobrazí se, jakmile se televize znovu zapne.</string>
+
+    <string name="copy_wrong_code">Kód nefungoval. Zkontrolujte 6 číslic v televizi a zkuste to znovu.</string>
+    <string name="copy_unreachable">Televize neodpověděla. Zkontrolujte, že je zapnutá a ve stejné Wi-Fi jako tento telefon, a zkuste to znovu.</string>
+    <string name="copy_pair_instead">Televize tento telefon zatím nepustila dovnitř. Spárujte ho jednou pomocí kódu z televize.</string>
+    <string name="copy_logged_out">Byli jste odhlášeni</string>
+    <string name="copy_logged_out_why">Televize odebrala tomuto telefonu přístup. Tellyscope se odpojil a přestal žádat, takže se v televizi nic nezobrazí, dokud se znovu nepřipojíte.</string>
+    <string name="copy_logged_out_cause_revoke">V televizi byla zvolena možnost Zrušit autorizace ladění přes USB.</string>
+    <string name="copy_logged_out_cause_remove">Možnost Odebrat veškerý ostatní přístup byla použita z jiného telefonu nebo z jiné sestavy Tellyscope na tomto telefonu.</string>
+    <string name="copy_logged_out_of">Odhlášeno z %1$s</string>
+    <string name="copy_logged_out_just_now">Právě odhlášeno</string>
+    <string name="copy_logged_out_today">Odhlášeno dnes, %1$s</string>
+    <string name="copy_logged_out_yesterday">Odhlášeno včera</string>
+    <plurals name="copy_logged_out_days_ago">
+        <item quantity="one">Odhlášeno před %1$d dnem</item>
+        <item quantity="few">Odhlášeno před %1$d dny</item>
+        <item quantity="many">Odhlášeno před %1$d dny</item>
+        <item quantity="other">Odhlášeno před %1$d dny</item>
+    </plurals>
+
+    <!-- Health line at the top of a TV's page -->
+    <string name="copy_health_storage_full">Úložiště je téměř plné</string>
+    <string name="copy_health_memory_full">Paměť je téměř plná</string>
+    <string name="copy_health_memory_full_one">Paměť je téměř plná: nejvíc ji využívá %1$s</string>
+    <string name="copy_health_memory_full_two">Paměť je téměř plná: nejvíc ji využívají %1$s a %2$s</string>
+    <string name="copy_health_fine">Vše běží v pořádku</string>
+
+    <!-- TV folders -->
+    <string name="copy_folder_download">Download</string>
+    <string name="copy_folder_movies">Movies</string>
+
+    <!-- Sideload -->
+    <string name="copy_install_new">Nainstalovat</string>
+    <string name="copy_install_update">Aktualizovat</string>
+    <string name="copy_install_reinstall">Přeinstalovat</string>
+    <string name="copy_install_downgrade">Nainstalovat starší verzi</string>
+    <string name="copy_install_kind_new">V této televizi zatím není. Tímto se nainstaluje.</string>
+    <string name="copy_install_kind_update_versions">Aktualizuje kopii v televizi z verze %1$s na %2$s. Nastavení zůstane zachováno.</string>
+    <string name="copy_install_kind_update">Aktualizuje kopii v televizi. Nastavení zůstane zachováno.</string>
+    <string name="copy_install_kind_reinstall_version">Televize už tuto verzi má (%1$s). Tímto se nainstaluje znovu přes sebe.</string>
+    <string name="copy_install_kind_reinstall">Televize už tuto verzi má. Tímto se nainstaluje znovu přes sebe.</string>
+    <string name="copy_install_kind_downgrade_versions">Tato verze je starší než ta v televizi (%1$s zde, %2$s v televizi). Android to běžně odmítne a uložená data aplikace se starší verzí nemusí fungovat.</string>
+    <string name="copy_install_kind_downgrade">Tato verze je starší než ta v televizi. Android to běžně odmítne a uložená data aplikace se starší verzí nemusí fungovat.</string>
+    <string name="copy_allow_downgrade">Přesto nainstalovat starší verzi</string>
+    <string name="copy_install_keep_open">Nechte Tellyscope otevřený, dokud se instalace nedokončí.</string>
+    <string name="copy_installed_update">Aktualizováno: %1$s.</string>
+    <string name="copy_installed_reinstall">Přeinstalováno: %1$s.</string>
+    <string name="copy_installed_new">Nainstalováno: %1$s.</string>
+
+    <!-- Why the TV refused an install; %1$s is the app -->
+    <string name="copy_install_refused_signature">Aplikace %1$s v televizi pochází od jiného vývojáře, a proto ji Android nenahradí. Pokud jste si jistí, nejprve ji odinstalujte: v Aplikacích zde, pokud jste ji instalovali odtud, nebo přímo v televizi.</string>
+    <string name="copy_install_refused_downgrade">Televize má novější verzi aplikace %1$s a na starší se nevrátí.</string>
+    <string name="copy_install_refused_no_space">V televizi došlo místo. Zakažte nebo odinstalujte něco v ní a zkuste to znovu.</string>
+    <string name="copy_install_refused_tv_said_no">Televize instalaci zablokovala. V nastavení zabezpečení televize vyhledejte instalaci aplikací z neznámých zdrojů nebo ověřování aplikací a zkuste to znovu.</string>
+    <string name="copy_install_refused_tv_too_old">Aplikace %1$s vyžaduje novější verzi Androidu, než jakou má tato televize.</string>
+    <string name="copy_install_refused_wrong_cpu">Tato verze aplikace %1$s je určena pro jiný typ procesoru. Hledejte verzi pro tuto televizi, často označenou armeabi-v7a nebo arm64-v8a.</string>
+    <string name="copy_install_refused_app_too_old">Aplikace %1$s byla vytvořena pro velmi starou verzi Androidu a tato televize ji nenainstaluje.</string>
+    <string name="copy_install_refused_missing_feature">Aplikace %1$s potřebuje něco, co tato televize nemá, například dotykovou obrazovku nebo fotoaparát.</string>
+    <string name="copy_install_refused_missing_parts">Aplikace %1$s se skládá z několika částí a jedna chybí. Vyberte všechny její soubory .apk najednou, nebo její balíček .apks.</string>
+    <string name="copy_install_refused_test_only">Toto je vývojářská testovací verze aplikace %1$s, kterou televize nenainstaluje.</string>
+    <string name="copy_install_refused_conflict">Jiná aplikace v televizi už používá něco, co aplikace %1$s potřebuje, proto ji televize odmítla.</string>
+    <string name="copy_install_refused_broken">Tento soubor není funkční aplikace. Může být poškozený nebo stažený jen zčásti; zkuste ho získat znovu.</string>
+    <string name="copy_install_refused_unknown">Televize aplikaci %1$s nenainstalovala.</string>
+    <string name="copy_not_an_app">Tento soubor není aplikace pro Android. Vyberte soubor .apk, několik dělených souborů .apk nebo balíček .apks či .xapk.</string>
+    <string name="copy_sideload_lost">Televize se uprostřed ztratila. Zkontrolujte, že je zapnutá a připojená, a zkuste to znovu.</string>
+
+    <!-- Files; %2$s is a TV folder (copy_folder_*) -->
+    <string name="copy_sent">%1$s odesláno do %2$s</string>
+    <string name="copy_sent_renamed">Odesláno do %1$s jako %2$s, protože %3$s tam už byl</string>
+    <string name="copy_saved">%1$s uloženo do telefonu</string>
+    <string name="copy_send_failed">Soubor %1$s se nepodařilo odeslat. Zkontrolujte, že je televize stále připojená a má volné místo.</string>
+    <string name="copy_send_failed_off_wifi">Soubor %1$s se nepodařilo odeslat. Telefon není připojen k Wi-Fi.</string>
+    <string name="copy_save_failed">Soubor %1$s se nepodařilo uložit. Zkontrolujte, že je televize stále připojená a telefon má volné místo.</string>
+    <string name="copy_deleted">%1$s smazáno z televize</string>
+    <string name="copy_cancelled_send">Zrušeno. V televizi nezůstalo nic.</string>
+    <string name="copy_cancelled_save">Zrušeno. Nic se neuložilo.</string>
+    <string name="copy_cant_read">Tento soubor v telefonu nešlo přečíst.</string>
+    <string name="copy_cant_undo">Tato verze Tellyscope toto nastavení nedokáže vrátit zpět.</string>
+    <string name="copy_files_lost">Tuto složku nešlo přečíst. Zkontrolujte, že je televize stále připojená.</string>
+
+    <!-- Remote -->
+    <string name="copy_key_refused">Televize tuto klávesu nepřijala.</string>
+    <string name="copy_type_refused">Televize text nepřijala. Nejprve v televizi vyberte textové pole a pak odešlete znovu.</string>
+    <string name="copy_remote_lost">Televize se ztratila. Zkontrolujte, že je zapnutá a připojená.</string>
+    <string name="copy_no_update_screen">Tato televize nemá obrazovku aktualizací, kterou by Tellyscope mohl otevřít. Podívejte se do jejího Nastavení, v části Systém nebo O zařízení.</string>
+    <string name="copy_updates_opened">V televizi se otevřela obrazovka aktualizací. Podívejte se na televizi a zkontrolujte aktualizace.</string>
+    <string name="copy_store_opened">V televizi se otevřel %1$s.</string>
+    <string name="copy_store_cant_open">%1$s se v televizi nepodařilo otevřít.</string>
+    <string name="copy_fire_settings_opened">V televizi se otevřelo Nastavení. Přejděte na Moje Fire TV (Zařízení a software u televizí), pak O zařízení a potom Zkontrolovat aktualizace.</string>
+    <string name="copy_no_fire_update_screen">Tellyscope v této televizi nemůže otevřít Nastavení. V televizi přejděte do Nastavení, pak na Moje Fire TV (Zařízení a software u televizí), pak O zařízení a potom Zkontrolovat aktualizace.</string>
+    <string name="copy_reboot_refused">Televize restart odmítla. Použijte raději její vlastní ovladač nebo tlačítko napájení.</string>
+    <string name="copy_reboot_ignored">Televize se nerestartovala. Použijte raději její vlastní ovladač nebo tlačítko napájení.</string>
+    <string name="copy_remote_offline_wake">znovu funguje po opětovném připojení</string>
+    <string name="copy_type_hint">Vyberte v televizi textové pole, například vyhledávací, a pište sem.</string>
+    <string name="copy_backspace">Smazat poslední písmeno napsané v televizi</string>
+    <string name="copy_screen_off">Vypnout obraz</string>
+    <string name="copy_screen_on">Zapnout obraz</string>
+    <string name="copy_screen_off_wake">obraz zapnete stiskem libovolné klávesy</string>
+    <string name="copy_screen_off_tip">Vypne obraz televize. Aplikace zůstane připojená; obraz zapne libovolná klávesa.</string>
+    <string name="copy_screen_off_refused">Tato televize nemůže z Tellyscope vypnout obraz.</string>
+    <string name="copy_screen_on_refused">Obraz televize se nezapnul. Zkuste to znovu, nebo televizi restartujte.</string>
+    <string name="copy_cant_type_empty">Nejprve něco napište.</string>
+    <plurals name="copy_cant_type_too_long">
+        <item quantity="one">Je to příliš dlouhé na jedno odeslání. Odesílejte nejvýše %1$d znak najednou.</item>
+        <item quantity="few">Je to příliš dlouhé na jedno odeslání. Odesílejte nejvýše %1$d znaky najednou.</item>
+        <item quantity="many">Je to příliš dlouhé na jedno odeslání. Odesílejte nejvýše %1$d znaků najednou.</item>
+        <item quantity="other">Je to příliš dlouhé na jedno odeslání. Odesílejte nejvýše %1$d znaků najednou.</item>
+    </plurals>
+    <string name="copy_cant_type_one_line">Televize přijme vždy jen jeden řádek.</string>
+    <string name="copy_cant_type_odd">Televize umí napsat jen obyčejná písmena, čísla a symboly, ne „%1$s“.</string>
+    <string name="copy_cant_type_percent_s" formatted="false">Televize čte „%s“ jako mezeru, takže to nenapíše.</string>
+
+    <string name="copy_remote_restart">Restartovat televizi</string>
+    <string name="copy_reboot_title">Restartovat televizi?</string>
+    <string name="copy_reboot_text">Televize se vypne a znovu zapne. Tellyscope se po jejím návratu připojí sám, obvykle do minuty.</string>
+    <string name="copy_restarting_title">Restartování…</string>
+    <string name="copy_restarting_text">Televize se restartuje. Tellyscope se připojí sám.</string>
+    <string name="copy_restart_late_title">Televize se zatím nevrátila</string>
+    <string name="copy_restart_late_status">Zatím se nevrátila</string>
+    <string name="copy_restart_late_text">Uplynula minuta. Některým televizím start trvá déle; Zkusit znovu počká další minutu.</string>
+    <string name="copy_restart_lost_text">Zapněte televizi jejím vlastním ovladačem a pak klepněte na Zkusit znovu.</string>
+    <string name="copy_waiting_for">Čekání na %1$s · %2$d:%3$02d</string>
+    <string name="copy_restart_lost">K %1$s se stále nelze připojit</string>
+    <string name="copy_back_online">Opět online. %1$s se znovu připojila.</string>
+
+    <!-- Remote buttons -->
+    <string name="copy_remote_buttons">Tlačítka ovladače</string>
+    <string name="copy_open_an_app">Otevřít aplikaci</string>
+    <string name="copy_open_an_app_hint">Streamovací aplikace na %1$s. Klepnutím ji otevřete.</string>
+    <string name="copy_more">Další možnosti</string>
+    <string name="copy_buttons_hint">Vyberte nejvýše %1$d. Přetažením nastavíte pořadí. Chcete-li vybrat další, nejprve jedno zrušte.</string>
+    <string name="copy_not_on_tv">%1$s není v této televizi. Nainstalujte ji z obchodu Play v televizi.</string>
+    <string name="copy_not_on_tv_fire">%1$s není v této televizi. Nainstalujte ji z obchodu Appstore v televizi.</string>
+    <string name="copy_player_no_video">V televizi není video přehrávač</string>
+    <string name="copy_player_no_audio">V televizi není audio přehrávač</string>
+    <string name="copy_player_nothing_text">Nic v televizi nedokáže otevřít %1$s. %2$s ho přehraje dálkovým ovladačem a Tellyscope v něm soubor otevře, jakmile se nainstaluje.</string>
+    <string name="copy_player_about">VideoLAN · zdarma a open source</string>
+    <string name="copy_player_install_title">Nainstalovat %1$s do televize</string>
+    <string name="copy_player_store_open">Stránka %1$s je otevřená v obchodě Play v televizi. Nainstalujte ji dálkovým ovladačem.</string>
+    <string name="copy_player_waiting">Čekání na %1$s… poté se otevře %2$s</string>
+    <string name="copy_player_open_appstore">Otevřít Appstore</string>
+    <string name="copy_player_downloading">Stahování: %1$s</string>
+    <string name="copy_player_progress">%1$s z %2$s · z %3$s</string>
+    <string name="copy_player_opened">%1$s otevřeno v televizi</string>
+    <string name="copy_player_opened_in">%1$s otevřeno v televizi v aplikaci %2$s</string>
+    <string name="copy_player_cant_open">%1$s se v televizi nepodařilo otevřít</string>
+    <string name="copy_player_nothing_opens">Nic v televizi nedokáže otevřít %1$s</string>
+    <string name="copy_cant_open">Televize nedokázala otevřít %1$s. Pokud je zakázaná, povolte ji v Aplikacích.</string>
+    <string name="copy_left_dock_one">%1$s byla odinstalována, proto její tlačítko z Ovladače zmizelo.</string>
+    <plurals name="copy_left_dock">
+        <item quantity="one">%1$d aplikace byla odinstalována, proto její tlačítko z Ovladače zmizelo.</item>
+        <item quantity="few">%1$d aplikace byly odinstalovány, proto jejich tlačítka z Ovladače zmizela.</item>
+        <item quantity="many">%1$d aplikací bylo odinstalováno, proto jejich tlačítka z Ovladače zmizela.</item>
+        <item quantity="other">%1$d aplikací bylo odinstalováno, proto jejich tlačítka z Ovladače zmizela.</item>
+    </plurals>
+    <string name="copy_restarting_soon">Tellyscope se po návratu televize připojí sám, obvykle do několika minut.</string>
+    <string name="copy_restarting_long">Trvá to dlouho. Některé televize při restartu vypnou ladění přes síť. Pokud se nevrátí, zapněte ho znovu v nabídce Pro vývojáře v televizi.</string>
+
+    <!-- TV tweaks -->
+    <string name="copy_tweaks">Úpravy televize</string>
+    <string name="copy_dns_title">Blokovat reklamy pomocí soukromého DNS</string>
+    <string name="copy_dns_state_on">Zapnuto: %1$s</string>
+    <string name="copy_dns_state_off">Vypnuto. Zapnutím zablokujete reklamy a sledovače ve všech aplikacích v televizi.</string>
+    <string name="copy_dns_too_old">Vyžaduje Android 9 nebo novější. Tato televize je starší.</string>
+    <string name="copy_dns_dialog">Blokovat reklamy v celé televizi?</string>
+    <string name="copy_dns_text">Televize bude všechny adresy vyhledávat přes tohoto poskytovatele DNS blokujícího reklamy. AdGuard je zdarma a nevyžaduje účet. Tellyscope poté ověří, že televize stále umí adresy vyhledávat, a pokud ne, vrátí vše zpět. Zpět najdete v Historii.</string>
+    <string name="copy_dns_field">Poskytovatel DNS</string>
+    <string name="copy_dns_bad">Zadejte název hostitele, například dns.adguard-dns.com. IP adresa zde nefunguje.</string>
+    <string name="copy_dns_confirm">Zapnout</string>
+    <string name="copy_animations_title">Rychlejší animace</string>
+    <string name="copy_animations_state_on">Zapnuto: nabídky se pohybují dvakrát rychleji</string>
+    <string name="copy_animations_state_off">Vypnuto. Zapnutím budou nabídky svižnější.</string>
+    <string name="copy_caches_title">Vymazat mezipaměti všech aplikací</string>
+    <string name="copy_caches_text">Uvolní místo vymazáním dočasných souborů všech aplikací. Data aplikací a přihlášení zůstanou.</string>
+    <string name="copy_caches_too_old">Vyžaduje Android 8 nebo novější. Tato televize je starší.</string>
+    <string name="copy_caches_button">Vymazat mezipaměti</string>
+    <string name="copy_caches_cleared">Mezipaměti aplikací vymazány</string>
+    <string name="copy_caches_cleared_freed">Mezipaměti aplikací vymazány, uvolněno %1$s</string>
+    <string name="copy_screenshot_title">Snímek obrazovky</string>
+    <string name="copy_screenshot_text">Uloží do telefonu, co televize zobrazuje. Chráněné video, například v řadě streamovacích aplikací, se zobrazí černé.</string>
+    <string name="copy_screenshot_button">Pořídit snímek</string>
+    <string name="copy_screenshot_saved">Snímek obrazovky uložen do telefonu</string>
+    <string name="copy_screenshot_failed">Snímek se nepodařilo pořídit. Zkontrolujte, že je televize stále připojená.</string>
+    <string name="copy_request_title">Jiné zařízení chce ovládat tuto televizi</string>
+    <string name="copy_request_text">Televize se ptá, zda povolit ladění ze zařízení s tímto otiskem klíče. Povolte jen v případě, že jste to sami spustili a otisk odpovídá tomu, který zařízení zobrazuje.</string>
+    <string name="copy_request_always">Vždy povolit toto zařízení</string>
+    <string name="copy_request_allow">Povolit</string>
+    <string name="copy_request_deny">Odepřít</string>
+    <string name="copy_request_allowed">Povoleno. Toto zařízení nyní může televizi ovládat.</string>
+    <string name="copy_request_denied">Odepřeno. Toto zařízení se nemůže připojit.</string>
+    <string name="copy_request_gone">Výzva v televizi se zavřela nebo změnila, proto nebylo nic stisknuto.</string>
+    <string name="copy_request_behind_alert">Výzva televize je za upozorněním Amazonu „Unable to Detect Your Remote“. Zavřete ho stiskem OK na ovladači televize.</string>
+    <string name="copy_request_then">Poté se výzva zobrazí zde a můžete zkontrolovat její otisk.</string>
+    <string name="copy_request_waiting">Čekání na výzvu televize</string>
+    <string name="copy_press_ok">Stiskněte OK v televizi</string>
+
+    <!-- Who has access -->
+    <string name="copy_warning_title">K této televizi je připojený jiný počítač</string>
+    <string name="copy_warning_text">Dokáže vše, co Tellyscope: instalovat nebo odebírat aplikace, číst soubory a ovládat obrazovku.</string>
+    <string name="copy_its_mine">Je můj</string>
+    <string name="copy_remove_access">Odebrat veškerý ostatní přístup…</string>
+    <string name="copy_connected_now">Právě připojeno</string>
+    <string name="copy_who_has_access">Kdo má přístup</string>
+    <string name="copy_history">Historie</string>
+    <string name="copy_advanced_monitor">Rozšířený monitor</string>
+    <string name="copy_share">Sdílet Tellyscope</string>
+
+    <!-- Reset TV -->
+    <string name="copy_reset_tv">Obnovit televizi do původního stavu</string>
+    <string name="copy_reset_keeps">Data aplikací a přihlášení zůstanou</string>
+    <plurals name="copy_apps">
+        <item quantity="one">%1$d aplikace</item>
+        <item quantity="few">%1$d aplikace</item>
+        <item quantity="many">%1$d aplikací</item>
+        <item quantity="other">%1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_reset_found">
+        <item quantity="one">%1$d změna od opuštění továrny</item>
+        <item quantity="few">%1$d změny od opuštění továrny</item>
+        <item quantity="many">%1$d změn od opuštění továrny</item>
+        <item quantity="other">%1$d změn od opuštění továrny</item>
+    </plurals>
+    <string name="copy_reset_found_text">Data aplikací a přihlášení zůstanou. Zatím se nic nezměnilo.</string>
+    <plurals name="copy_turn_on_apps">
+        <item quantity="one">Povolit %1$d aplikaci</item>
+        <item quantity="few">Povolit %1$d aplikace</item>
+        <item quantity="many">Povolit %1$d aplikací</item>
+        <item quantity="other">Povolit %1$d aplikací</item>
+    </plurals>
+    <string name="copy_turn_on_text">Předinstalované aplikace zakázané ručně, z libovolného telefonu nebo nástroje</string>
+    <plurals name="copy_bring_back_apps">
+        <item quantity="one">Vrátit %1$d aplikaci</item>
+        <item quantity="few">Vrátit %1$d aplikace</item>
+        <item quantity="many">Vrátit %1$d aplikací</item>
+        <item quantity="other">Vrátit %1$d aplikací</item>
+    </plurals>
+    <string name="copy_bring_back_text">Předinstalované aplikace, které byly odinstalovány. Stále jsou v televizi.</string>
+    <string name="copy_reset_home">Nastavit %1$s jako domovskou obrazovku</string>
+    <string name="copy_reset_home_text">Místo %1$s. %1$s zůstane nainstalovaný.</string>
+    <string name="copy_reset_home_text_service">Místo %1$s, s vypnutou službou přístupnosti. %1$s zůstane nainstalovaný.</string>
+    <string name="copy_reset_dns">Soukromé DNS zpět na Automaticky</string>
+    <string name="copy_reset_animations">Animace zpět na normální rychlost</string>
+    <string name="copy_reset_was">Bylo: %1$s</string>
+    <string name="copy_dns_off">vypnuto</string>
+    <string name="copy_animation_scale">%1$s×</string>
+    <plurals name="copy_reset_leaves_off">
+        <item quantity="one">%1$d aplikace, kterou %2$s dodala zakázanou, zůstane zakázaná.</item>
+        <item quantity="few">%1$d aplikace, které %2$s dodala zakázané, zůstanou zakázané.</item>
+        <item quantity="many">%1$d aplikací, které %2$s dodala zakázané, zůstane zakázaných.</item>
+        <item quantity="other">%1$d aplikací, které %2$s dodala zakázané, zůstane zakázaných.</item>
+    </plurals>
+    <string name="copy_reset_leaves">Aplikace a launchery, které jste nainstalovali, zůstanou nainstalované.</string>
+    <string name="copy_the_maker">výrobce</string>
+    <string name="copy_nothing_to_reset_title">Není co obnovovat</string>
+    <string name="copy_nothing_to_reset_on">Všechny předinstalované aplikace jsou povolené.</string>
+    <string name="copy_nothing_to_reset_on_home">Všechny předinstalované aplikace jsou povolené a domovskou obrazovkou je %1$s.</string>
+    <string name="copy_nothing_to_reset_maker">Aplikace, které %1$s dodala zakázané, zůstanou zakázané.</string>
+    <string name="copy_resetting_turn_on">Povolování aplikací: %1$d z %2$d.</string>
+    <string name="copy_resetting_bring_back">Vracení aplikací: %1$d z %2$d.</string>
+    <string name="copy_resetting_home">Nastavování domovské obrazovky: %1$s.</string>
+    <string name="copy_resetting_dns">Vracení soukromého DNS na Automaticky.</string>
+    <string name="copy_resetting_animations">Vracení animací na normální rychlost.</string>
+    <string name="copy_keep_tv_on">Nechte televizi zapnutou a připojenou.</string>
+    <string name="copy_resetting">Obnovování…</string>
+    <string name="copy_reset_apps_stale">Obnovení hotovo, ale seznam aplikací se neaktualizoval. Otevřete televizi znovu, abyste ho viděli.</string>
+    <string name="copy_reset_button">Obnovit televizi</string>
+    <string name="copy_reset_done">Televize obnovena do původního stavu</string>
+    <string name="copy_reset_partly">Obnovení částečně hotovo</string>
+    <plurals name="copy_reset_done_apps_home">
+        <item quantity="one">%1$d předinstalovaná aplikace je zpět a domovskou obrazovkou je %2$s.</item>
+        <item quantity="few">%1$d předinstalované aplikace jsou zpět a domovskou obrazovkou je %2$s.</item>
+        <item quantity="many">%1$d předinstalovaných aplikací je zpět a domovskou obrazovkou je %2$s.</item>
+        <item quantity="other">%1$d předinstalovaných aplikací je zpět a domovskou obrazovkou je %2$s.</item>
+    </plurals>
+    <plurals name="copy_reset_done_apps">
+        <item quantity="one">%1$d předinstalovaná aplikace je zpět.</item>
+        <item quantity="few">%1$d předinstalované aplikace jsou zpět.</item>
+        <item quantity="many">%1$d předinstalovaných aplikací je zpět.</item>
+        <item quantity="other">%1$d předinstalovaných aplikací je zpět.</item>
+    </plurals>
+    <string name="copy_reset_done_home">Domovskou obrazovkou je %1$s.</string>
+    <string name="copy_reset_done_settings">Soukromé DNS a animace jsou zpět na výchozích hodnotách.</string>
+    <string name="copy_reset_done_dns">Soukromé DNS je zpět na Automaticky.</string>
+    <string name="copy_reset_done_animations">Animace jsou zpět na normální rychlosti.</string>
+    <string name="copy_reset_kept_data">Data aplikací a přihlášení zůstala.</string>
+    <plurals name="copy_reset_partly_text">
+        <item quantity="one">Jeden krok se nepovedl. Vše ostatní je zpět v původním stavu. Nic se neztratilo.</item>
+        <item quantity="few">%1$d kroky se nepovedly. Vše ostatní je zpět v původním stavu. Nic se neztratilo.</item>
+        <item quantity="many">%1$d kroků se nepovedlo. Vše ostatní je zpět v původním stavu. Nic se neztratilo.</item>
+        <item quantity="other">%1$d kroků se nepovedlo. Vše ostatní je zpět v původním stavu. Nic se neztratilo.</item>
+    </plurals>
+    <plurals name="copy_turned_on_all">
+        <item quantity="one">Povolena %1$d aplikace</item>
+        <item quantity="few">Povoleny %1$d aplikace</item>
+        <item quantity="many">Povoleno %1$d aplikací</item>
+        <item quantity="other">Povoleno %1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_turned_on_some">
+        <item quantity="one">Povoleno %1$d z %2$d aplikace</item>
+        <item quantity="few">Povoleno %1$d z %2$d aplikací</item>
+        <item quantity="many">Povoleno %1$d z %2$d aplikací</item>
+        <item quantity="other">Povoleno %1$d z %2$d aplikací</item>
+    </plurals>
+    <plurals name="copy_brought_back_all">
+        <item quantity="one">Vrácena %1$d aplikace</item>
+        <item quantity="few">Vráceny %1$d aplikace</item>
+        <item quantity="many">Vráceno %1$d aplikací</item>
+        <item quantity="other">Vráceno %1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_brought_back_some">
+        <item quantity="one">Vráceno %1$d z %2$d aplikace</item>
+        <item quantity="few">Vráceno %1$d z %2$d aplikací</item>
+        <item quantity="many">Vráceno %1$d z %2$d aplikací</item>
+        <item quantity="other">Vráceno %1$d z %2$d aplikací</item>
+    </plurals>
+    <string name="copy_is_home">Domovskou obrazovkou je %1$s</string>
+    <string name="copy_still_home">Domovskou obrazovkou je stále %1$s</string>
+    <string name="copy_dns_automatic">Soukromé DNS je Automaticky</string>
+    <string name="copy_dns_still">Soukromé DNS je stále %1$s</string>
+    <string name="copy_animations_normal">Animace běží normální rychlostí</string>
+    <string name="copy_animations_still">Animace jsou stále na %1$s</string>
+    <string name="copy_try_app_again">Zkusit %1$s znovu</string>
+    <string name="copy_try_again">Zkusit znovu</string>
+
+    <!-- Debloat -->
+    <string name="copy_disabling_apps">Zakazování aplikací: %1$d z %2$d. Nechte televizi zapnutou a připojenou.</string>
+    <string name="copy_disabling">Zakazování…</string>
+    <string name="copy_disabling_note">Nic se nemaže. Kteroukoli můžete znovu povolit z Historie.</string>
+    <string name="copy_debloat_done">Úklid dokončen</string>
+    <string name="copy_debloat_partly">Úklid částečně dokončen</string>
+    <string name="copy_debloat_result_text">Nic nebylo smazáno; kteroukoli změnu můžete vrátit z Historie.</string>
+    <plurals name="copy_turned_off_all">
+        <item quantity="one">Zakázána %1$d aplikace</item>
+        <item quantity="few">Zakázány %1$d aplikace</item>
+        <item quantity="many">Zakázáno %1$d aplikací</item>
+        <item quantity="other">Zakázáno %1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_turned_off_some">
+        <item quantity="one">Zakázáno %1$d z %2$d aplikace</item>
+        <item quantity="few">Zakázáno %1$d z %2$d aplikací</item>
+        <item quantity="many">Zakázáno %1$d z %2$d aplikací</item>
+        <item quantity="other">Zakázáno %1$d z %2$d aplikací</item>
+    </plurals>
+    <string name="copy_still_on">%1$s stále běží</string>
+
+    <string name="copy_debloat_still_running">Úklid stále běží. Odejít můžete, až skončí.</string>
+    <string name="copy_reset_still_running">Obnovení stále běží. Odejít můžete, až skončí.</string>
+    <string name="copy_stopping_after">Zastavení po %1$s…</string>
+    <string name="copy_stopping_after_app">Zastavení po této aplikaci…</string>
+    <string name="copy_stopping_after_step">Zastavení po tomto kroku…</string>
+    <string name="copy_debloat_stopped">Úklid zastaven</string>
+    <string name="copy_debloat_stopped_text">Zastavili jste ho po %1$s.</string>
+    <plurals name="copy_not_changed">
+        <item quantity="one">%1$d aplikace beze změny</item>
+        <item quantity="few">%1$d aplikace beze změny</item>
+        <item quantity="many">%1$d aplikací beze změny</item>
+        <item quantity="other">%1$d aplikací beze změny</item>
+    </plurals>
+    <plurals name="copy_disable_the_rest">
+        <item quantity="one">Zakázat druhou aplikaci</item>
+        <item quantity="few">Zakázat další %1$d</item>
+        <item quantity="many">Zakázat dalších %1$d</item>
+        <item quantity="other">Zakázat dalších %1$d</item>
+    </plurals>
+    <string name="copy_reset_stopped">Obnovení zastaveno</string>
+    <plurals name="copy_reset_stopped_text">
+        <item quantity="one">Zastavili jste ho po %1$d aplikaci.</item>
+        <item quantity="few">Zastavili jste ho po %1$d aplikacích.</item>
+        <item quantity="many">Zastavili jste ho po %1$d aplikacích.</item>
+        <item quantity="other">Zastavili jste ho po %1$d aplikacích.</item>
+    </plurals>
+    <string name="copy_reset_stopped_partway">Zastavili jste ho uprostřed.</string>
+    <string name="copy_not_done">Nedokončeno</string>
+    <plurals name="copy_left_turn_on">
+        <item quantity="one">%1$d aplikace k povolení</item>
+        <item quantity="few">%1$d aplikace k povolení</item>
+        <item quantity="many">%1$d aplikací k povolení</item>
+        <item quantity="other">%1$d aplikací k povolení</item>
+    </plurals>
+    <plurals name="copy_left_bring_back">
+        <item quantity="one">%1$d k vrácení</item>
+        <item quantity="few">%1$d k vrácení</item>
+        <item quantity="many">%1$d k vrácení</item>
+        <item quantity="other">%1$d k vrácení</item>
+    </plurals>
+    <string name="copy_left_home">domovská obrazovka</string>
+    <string name="copy_left_dns">soukromé DNS</string>
+    <string name="copy_left_animations">rychlost animací</string>
+    <string name="copy_finish_reset">Dokončit obnovení</string>
+
+    <plurals name="copy_to_put_back">
+        <item quantity="one">%1$d změna k obnovení</item>
+        <item quantity="few">%1$d změny k obnovení</item>
+        <item quantity="many">%1$d změn k obnovení</item>
+        <item quantity="other">%1$d změn k obnovení</item>
+    </plurals>
+    <plurals name="copy_restored_title">
+        <item quantity="one">Obnovena %1$d z %2$d změny</item>
+        <item quantity="few">Obnoveny %1$d z %2$d změn</item>
+        <item quantity="many">Obnoveno %1$d z %2$d změn</item>
+        <item quantity="other">Obnoveno %1$d z %2$d změn</item>
+    </plurals>
+    <plurals name="copy_restored_left">
+        <item quantity="one">Tato je stále tak, jak ji Tellyscope nechal:</item>
+        <item quantity="few">Tyto %1$d jsou stále tak, jak je Tellyscope nechal:</item>
+        <item quantity="many">Těchto %1$d je stále tak, jak je Tellyscope nechal:</item>
+        <item quantity="other">Těchto %1$d je stále tak, jak je Tellyscope nechal:</item>
+    </plurals>
+    <string name="copy_restored_hint">Vraťte každou zpět z jejího řádku v Historii, nebo obnovte znovu později.</string>
+    <plurals name="copy_and_more">
+        <item quantity="one">a %1$d další</item>
+        <item quantity="few">a %1$d další</item>
+        <item quantity="many">a %1$d dalších</item>
+        <item quantity="other">a %1$d dalších</item>
+    </plurals>
+    <plurals name="copy_put_back_title">
+        <item quantity="one">%1$d změna provedená Tellyscope je stále v platnosti</item>
+        <item quantity="few">%1$d změny provedené Tellyscope jsou stále v platnosti</item>
+        <item quantity="many">%1$d změn provedených Tellyscope je stále v platnosti</item>
+        <item quantity="other">%1$d změn provedených Tellyscope je stále v platnosti</item>
+    </plurals>
+    <string name="copy_put_back_text">Obnovit vše vrátí tuto televizi do stavu před první změnou Tellyscope:</string>
+    <plurals name="copy_restore_on">
+        <item quantity="one">Znovu povolí %1$d aplikaci</item>
+        <item quantity="few">Znovu povolí %1$d aplikace</item>
+        <item quantity="many">Znovu povolí %1$d aplikací</item>
+        <item quantity="other">Znovu povolí %1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_restore_off">
+        <item quantity="one">Znovu zakáže %1$d aplikaci</item>
+        <item quantity="few">Znovu zakáže %1$d aplikace</item>
+        <item quantity="many">Znovu zakáže %1$d aplikací</item>
+        <item quantity="other">Znovu zakáže %1$d aplikací</item>
+    </plurals>
+    <plurals name="copy_restore_remove">
+        <item quantity="one">Odebere %1$d aplikaci, kterou vrátilo Obnovení televize</item>
+        <item quantity="few">Odebere %1$d aplikace, které vrátilo Obnovení televize</item>
+        <item quantity="many">Odebere %1$d aplikací, které vrátilo Obnovení televize</item>
+        <item quantity="other">Odebere %1$d aplikací, které vrátilo Obnovení televize</item>
+    </plurals>
+    <string name="copy_restore_home">Vrátí Domů zpět</string>
+    <string name="copy_restore_dns">Vrátí soukromé DNS zpět</string>
+    <string name="copy_restore_animations">Vrátí rychlost animací zpět</string>
+    <plurals name="copy_restore_gone">
+        <item quantity="one">%1$d aplikace byla odinstalována a nelze ji vrátit</item>
+        <item quantity="few">%1$d aplikace byly odinstalovány a nelze je vrátit</item>
+        <item quantity="many">%1$d aplikací bylo odinstalováno a nelze je vrátit</item>
+        <item quantity="other">%1$d aplikací bylo odinstalováno a nelze je vrátit</item>
+    </plurals>
+    <string name="copy_restore_line">• %1$s</string>
+    <plurals name="copy_others_connected">
+        <item quantity="one">%1$d další právě připojený</item>
+        <item quantity="few">%1$d další právě připojení</item>
+        <item quantity="many">%1$d dalších právě připojených</item>
+        <item quantity="other">%1$d dalších právě připojených</item>
+    </plurals>
+    <plurals name="copy_connections">
+        <item quantity="one">%1$d připojení</item>
+        <item quantity="few">%1$d připojení</item>
+        <item quantity="many">%1$d připojení</item>
+        <item quantity="other">%1$d připojení</item>
+    </plurals>
+    <plurals name="copy_connected_from">
+        <item quantity="one">Z %1$s · %2$d připojení</item>
+        <item quantity="few">Z %1$s · %2$d připojení</item>
+        <item quantity="many">Z %1$s · %2$d připojení</item>
+        <item quantity="other">Z %1$s · %2$d připojení</item>
+    </plurals>
+    <string name="copy_on_tv">Aplikace v této televizi</string>
+    <string name="copy_access_intro">Každý počítač, který smí používat ADB, může instalovat nebo odebírat aplikace, číst soubory a ovládat obrazovku.</string>
+    <string name="copy_this_phone">Tento telefon</string>
+    <string name="copy_not_this_phone">Ne tento telefon</string>
+    <string name="copy_yours">Váš</string>
+    <string name="copy_waiting_chip">Čeká</string>
+    <string name="copy_waiting_line">Čeká, až ho v televizi povolíte</string>
+    <string name="copy_waiting_text">Výzva k povolení je právě v televizi. Dokud tam nevyberete Povolit, nemůže nic dělat. Není váš? Vyberte Odepřít.</string>
+    <string name="copy_answer">Odpovědět</string>
+    <string name="copy_new_chip">Nový</string>
+    <string name="copy_new_key_text">Povolen v televizi, když Tellyscope nesledoval. Není váš? Odeberte veškerý ostatní přístup.</string>
+    <string name="copy_allowed_computers">Povolené počítače</string>
+    <string name="copy_unnamed_computer">Nepojmenovaný počítač</string>
+    <string name="copy_cant_check_connected">Tato televize neříká, kdo je připojen.</string>
+    <string name="copy_cant_check_allowed">Tato televize neuvádí své povolené počítače.</string>
+    <string name="copy_nobody_allowed">Žádný počítač není povolen. Další, který se připojí, musí být povolen v televizi.</string>
+    <string name="copy_access_foot_link">Televize neříká, který povolený počítač stojí za jakým připojením. Pokud adresu nepoznáváte, odeberte veškerý ostatní přístup.</string>
+    <string name="copy_access_foot_all">Android neumí odebrat jediný počítač samostatně: tímto se odeberou všechny a pak znovu povolíte Tellyscope.</string>
+    <string name="copy_never_seen">Nikdy neviděn</string>
+    <string name="copy_last_seen_just_now">Naposledy viděn právě teď</string>
+    <string name="copy_last_seen_today">Naposledy viděn dnes, %1$s</string>
+    <string name="copy_last_seen_yesterday">Naposledy viděn včera</string>
+    <plurals name="copy_last_seen_days_ago">
+        <item quantity="one">Naposledy viděn před %1$d dnem</item>
+        <item quantity="few">Naposledy viděn před %1$d dny</item>
+        <item quantity="many">Naposledy viděn před %1$d dny</item>
+        <item quantity="other">Naposledy viděn před %1$d dny</item>
+    </plurals>
+    <string name="copy_last_seen_long_ago">Naposledy viděn před více než měsícem</string>
+
+    <!-- Remove all other access -->
+    <string name="copy_remove_title">Odebrat veškerý ostatní přístup</string>
+    <string name="copy_confirm_title">Odebrat veškerý ostatní přístup?</string>
+    <string name="copy_confirm_text">Každý počítač, který tato televize povolila, ztratí přístup, včetně vašich vlastních: budou se muset znovu povolit.</string>
+    <string name="copy_confirm_remote">Tellyscope se okamžitě připojí znovu. Mějte po ruce ovladač televize: televize vás požádá o povolení tohoto telefonu.</string>
+    <string name="copy_confirm_button">Odebrat přístup</string>
+    <string name="copy_cancel">Zrušit</string>
+    <string name="copy_revoking">Odebírání přístupu…</string>
+    <string name="copy_allow_title">Povolte tento telefon v televizi</string>
+    <string name="copy_allow_text_a">"Ostatní přístup je odebrán. Televize se nyní ptá „Povolit ladění přes USB?“. Zaškrtněte "</string>
+    <string name="copy_allow_always">Vždy povolit z tohoto počítače</string>
+    <string name="copy_allow_text_b">" a poté zvolte "</string>
+    <string name="copy_allow_button">Povolit</string>
+    <string name="copy_fingerprint_label">Televize by měla zobrazit tento otisk</string>
+    <string name="copy_fingerprint_hint">Pokud zobrazí jiný, zvolte v televizi Zrušit.</string>
+    <string name="copy_stop_waiting">Přestat čekat</string>
+    <string name="copy_refused">Televize tento telefon nepovolila. Mohl vypršet čas, nebo bylo zvoleno Zrušit.</string>
+    <string name="copy_ask_again">Požádat televizi znovu</string>
+    <string name="copy_checking">Kontrola televize…</string>
+    <string name="copy_done_title">Přístup má jen tento telefon</string>
+    <string name="copy_done_text">Tellyscope televizi znovu zkontroloval: tento telefon je jediný povolený počítač a nic jiného není připojeno.</string>
+    <string name="copy_trust_warning">Povolujte jen počítače a aplikace, kterým důvěřujete. Cokoli povolíte, může instalovat aplikace, číst soubory a ovládat televizi.</string>
+    <string name="copy_back_to">Zpět na %1$s</string>
+    <string name="copy_still_title">Jiný počítač je stále připojen</string>
+    <string name="copy_still_text">Tellyscope stále vidí %1$s na %2$s. Mohl se okamžitě připojit znovu. Vypněte ho nebo odpojte od sítě a zkuste to znovu.</string>
+    <string name="copy_still_open_text">Tellyscope stále vidí %1$s na %2$s. Jeho přístup je pryč, ale televize drží spojení otevřené, dokud neskončí. Ukončíte ho restartem televize.</string>
+    <string name="copy_check_again">Zkontrolovat znovu</string>
+    <string name="copy_restart_tv">Restartovat televizi</string>
+    <string name="copy_restarting_to_check">Restartování televize…</string>
+    <string name="copy_connection_from">připojení z %1$s</string>
+    <string name="copy_unconfirmed_title">Zrušeno v televizi</string>
+    <string name="copy_unconfirmed_text">Tellyscope nemůže zkontrolovat seznam v této televizi. Potvrďte to v nabídce Pro vývojáře.</string>
+    <string name="copy_done">Hotovo</string>
+    <string name="copy_manual_intro">Tato televize požadavek Tellyscope nepřijala, takže jsou to dva kroky v televizi. Poté bude moci ADB používat jen tento telefon; vaše vlastní počítače se budou muset znovu povolit.</string>
+    <string name="copy_manual_step_1">Otevřete v televizi nabídku Pro vývojáře</string>
+    <string name="copy_manual_step_1_text">Tellyscope je otevře za vás. Pokud se v televizi nic nestane, přejděte na Nastavení → Předvolby zařízení → Pro vývojáře.</string>
+    <string name="copy_open_on_tv">Otevřít v televizi</string>
+    <string name="copy_manual_step_2">Zvolte „Zrušit autorizace ladění přes USB“</string>
+    <string name="copy_manual_step_2_text">Poté se vraťte sem a Tellyscope požádá televizi o nové povolení tohoto telefonu.</string>
+    <string name="copy_manual_done">Zrušil jsem to</string>
+    <string name="copy_dev_options_failed">Nabídku Pro vývojáře se v televizi nepodařilo otevřít. Přejděte na Nastavení → Předvolby zařízení → Pro vývojáře.</string>
+
+    <!-- Connected devices -->
+    <string name="copy_devices_title">Připojená zařízení</string>
+    <string name="copy_show_all">Zobrazit vše (%1$d)</string>
+    <string name="copy_show_less">Zobrazit méně</string>
+    <string name="copy_no_devices">Nic není připojeno ani spárováno.</string>
+    <string name="copy_group_input">Vstup</string>
+    <string name="copy_group_storage">USB úložiště</string>
+    <string name="copy_group_audio">Zvukový výstup</string>
+    <string name="copy_peripheral_free">%1$s volných</string>
+    <string name="copy_peripheral_bluetooth">Bluetooth · %1$s</string>
+
+    <!-- vm -->
+
+    <!-- Scan screen: a TV's code row and Add by IP -->
+    <string name="vm_still_wants_code">Televize stále vyžaduje kód. Zkontrolujte číslo na obrazovce a zkuste to znovu.</string>
+    <string name="vm_pair_needs_android_12">Párování kódem vyžaduje na tomto telefonu Android 12 nebo novější. Už spárovaná televize se připojí i tak.</string>
+    <string name="vm_not_an_ip">Nevypadá to jako IP adresa. Měla by vypadat jako čtyři čísla oddělená tečkami, jako ta v síťovém nastavení vaší televize.</string>
+    <string name="vm_bad_port">Port za dvojtečkou by měl být číslo od 1 do 65535, například 5555.</string>
+
+    <!-- Snackbar when an action failed and the TV gave no reason -->
+    <string name="vm_didnt_work">Nepovedlo se.</string>
+    <string name="vm_nothing_to_put_back">Není co obnovovat.</string>
+    <string name="vm_list_not_loaded">Seznam %1$s se nepodařilo načíst. Stále platí %2$s.</string>
+    <string name="vm_pick_not_loaded">Seznam %1$s se nepodařilo načíst.</string>
+    <plurals name="vm_put_back">
+        <item quantity="one">Obnovena %1$d změna.</item>
+        <item quantity="few">Obnoveny %1$d změny.</item>
+        <item quantity="many">Obnoveno %1$d změn.</item>
+        <item quantity="other">Obnoveno %1$d změn.</item>
+    </plurals>
+
+    <string name="vm_tv_refused">televize odmítla</string>
+    <string name="vm_tv_didnt_answer">Televize neodpověděla.</string>
+    <string name="vm_tv_didnt_answer_reason">televize neodpověděla</string>
+
+    <string name="vm_report_tv_said">Televize uvedla: %1$s</string>
+    <string name="vm_report_tried_install">Pokus o instalaci %1$s %2$s</string>
+    <string name="vm_report_tried_delete">Pokus o smazání %1$s z televize</string>
+
+    <string name="vm_logged_out_view">Zobrazit</string>
+
+    <!-- data -->
+
+    <string name="data_protected_home_screen">toto je vaše domovská obrazovka</string>
+    <string name="data_protected_system">televize to potřebuje ke své funkci</string>
+    <string name="data_protected_settings">potřebujete to ke změně nastavení televize</string>
+    <string name="data_protected_play_services">většina aplikací bez toho přestane fungovat</string>
+    <string name="data_protected_keyboard">přišli byste o klávesnici na obrazovce</string>
+    <string name="data_protected_tv_inputs_remote">ovladač nebo vstupy HDMI by mohly přestat fungovat</string>
+    <string name="data_protected_setup_wizard">televize by se bez toho mohla při restartu zaseknout</string>
+    <string name="data_protected_updates">televize přes to získává aktualizace</string>
+    <string name="data_protected_unknown_home">tato televize neuvedla, která aplikace je její domovská obrazovka, proto Tellyscope nic nezmění</string>
+    <string name="data_protected_came_with_tv">byla součástí televize, takže ji lze jen zakázat</string>
+    <string name="data_protected_disabled_by_tv">televize ji zakázala sama, takže ji odtud nelze povolit</string>
+
+    <string name="data_failed_stop">televize nechtěla zastavit %1$s</string>
+    <string name="data_failed_disable">televize nechtěla zakázat %1$s</string>
+    <string name="data_failed_enable">televize nechtěla povolit %1$s</string>
+    <string name="data_failed_open">televize nechtěla otevřít %1$s</string>
+    <string name="data_failed_uninstall">televize nechtěla odinstalovat %1$s</string>
+    <string name="data_tv_refused">televize odmítla</string>
+    <string name="data_offline">%1$s je offline</string>
+
+    <string name="data_no_service">%1$s nemá službu přístupnosti</string>
+    <string name="data_service_not_on">%1$s je nyní Domů, ale jeho služba přístupnosti se nezapnula, takže tlačítko Domů v televizi může stále otevírat její vlastní launcher</string>
+    <string name="data_service_still_on">Služba přístupnosti aplikace %1$s je stále zapnutá. Vypněte ji v televizi v Nastavení → Přístupnost</string>
+    <string name="data_fire_needs_service">na Fire TV může Domů otevřít %1$s jen přes jeho službu přístupnosti, proto se nic nezměnilo</string>
+    <string name="data_fire_service_not_on">televize nezapnula službu přístupnosti aplikace %1$s, proto se nic nezměnilo</string>
+    <string name="data_fire_service_not_off">televize nevypnula službu přístupnosti aplikace %1$s, proto se nic nezměnilo</string>
+    <string name="data_service_not_off">přepnuto zpět, ale služba přístupnosti aplikace %1$s je stále zapnutá. Vypněte ji v televizi v Nastavení → Přístupnost</string>
+    <string name="data_home_not_back">%1$s znovu povolen, ale televize ponechala jinou domovskou obrazovku. Stiskněte na ovladači Domů a vyberte %1$s</string>
+    <string name="data_not_shown">%1$s je nyní Domů, ale %2$s</string>
+    <string name="data_no_home_to_switch_back">není na co se vrátit</string>
+    <string name="data_uninstall_after_service">%1$s. Nic nebylo odinstalováno</string>
+    <string name="data_uninstall_home_not_back">Domů se nepřepnulo zpět: %1$s. Nic nebylo odinstalováno</string>
+
+    <string name="data_restore_home">Domů</string>
+    <string name="data_restore_dns">Soukromé DNS</string>
+    <string name="data_restore_animations">Rychlost animací</string>
+
+    <string name="data_no_reset_to_undo">není žádné obnovení, které by šlo vrátit</string>
+    <string name="data_reset_already_undone">toto obnovení už bylo vráceno</string>
+    <string name="data_reset_tv_kept_home">televize ponechala %1$s jako domovskou obrazovku</string>
+    <string name="data_app_reason">%1$s: %2$s</string>
+    <string name="data_reset_undo_service_left">všechny změny obnoveny, ale %1$s</string>
+    <plurals name="data_reset_undo_partial">
+        <item quantity="one">obnovena %1$d z %2$d změny. %3$s. Další Zpět zkusí zbytek</item>
+        <item quantity="few">obnoveny %1$d z %2$d změn. %3$s. Další Zpět zkusí zbytek</item>
+        <item quantity="many">obnoveno %1$d z %2$d změn. %3$s. Další Zpět zkusí zbytek</item>
+        <item quantity="other">obnoveno %1$d z %2$d změn. %3$s. Další Zpět zkusí zbytek</item>
+    </plurals>
+
+    <string name="data_tweak_refused">televize změnu nepřijala</string>
+    <string name="data_dns_too_old">Soukromé DNS vyžaduje Android 9 nebo novější a tato televize je starší</string>
+    <string name="data_dns_unreachable">televize přes %1$s nic nevyhledala, proto bylo soukromé DNS vráceno zpět. Síť může blokovat šifrované DNS (port 853)</string>
+    <string name="data_dns_stuck">televize přes %1$s nic nevyhledala a vrácení původního soukromého DNS selhalo. Televize může být offline, dokud to nevrátíte v Historii</string>
+
+    <string name="data_lists_not_https">adresa musí začínat https://</string>
+    <string name="data_lists_unreachable">tuto adresu se nepodařilo zastihnout. Zkontrolujte ji a připojení telefonu k internetu</string>
+    <string name="data_lists_not_a_list">tento zdroj není seznam Tellyscope</string>
+
+    <string name="data_app_names_system">Systém Android</string>
+
+    <string name="data_history_service_off">Vypnuta služba přístupnosti aplikace %1$s</string>
+    <string name="data_history_service_on">Zapnuta služba přístupnosti aplikace %1$s</string>
+    <string name="data_history_reset_undone">Obnoveno, co změnilo Obnovení televize</string>
+    <plurals name="data_history_reset">
+        <item quantity="one">Obnovení televize · %1$d změna</item>
+        <item quantity="few">Obnovení televize · %1$d změny</item>
+        <item quantity="many">Obnovení televize · %1$d změn</item>
+        <item quantity="other">Obnovení televize · %1$d změn</item>
+    </plurals>
+    <string name="data_history_app_caches">mezipaměti aplikací</string>
+    <string name="data_history_dns_host">Soukromé DNS nastaveno na %1$s</string>
+    <string name="data_history_dns_off">Soukromé DNS vypnuto</string>
+    <string name="data_history_dns_automatic">Soukromé DNS nastaveno na Automaticky</string>
+    <string name="data_history_animations_normal">Animace na normální rychlosti</string>
+    <string name="data_history_animations_off">Animace vypnuty</string>
+    <string name="data_history_animations_scale">Animace na %1$s×</string>
+
+    <!-- screens_a -->
+
+    <!-- DeviceTabs.kt -->
+    <string name="tabs_overview">Přehled</string>
+    <string name="tabs_apps">Aplikace</string>
+    <string name="tabs_files">Soubory</string>
+    <string name="tabs_tweaks">Úpravy</string>
+    <string name="tabs_remote">Ovladač</string>
+    <string name="tabs_install_app">Nainstalovat aplikaci</string>
+    <string name="tabs_upload_files">Nahrát soubory</string>
+    <string name="tabs_last_visit">poslední návštěvě</string>
+    <string name="tabs_files_offline">Připojte se k televizi, abyste viděli její soubory.</string>
+    <string name="tabs_folder_empty">Ve složce %1$s zatím nic není</string>
+    <string name="tabs_folder_empty_line">Odeslané soubory se objeví zde.</string>
+    <string name="tabs_tweaks_offline">Připojte se k televizi, abyste mohli měnit její nastavení.</string>
+    <string name="tabs_more_options">Další možnosti</string>
+    <string name="tabs_rename">Přejmenovat tuto televizi</string>
+    <string name="tabs_settings">Nastavení</string>
+    <string name="tabs_about">O aplikaci a licence</string>
+    <string name="tabs_forget">Zapomenout tuto televizi</string>
+    <string name="tabs_search_apps">Hledat aplikace</string>
+    <string name="tabs_close_search">Zavřít hledání</string>
+    <string name="tabs_clear_search">Vymazat hledání</string>
+    <string name="tabs_suggested_none">Nic ze seznamu %1$s není v této televizi</string>
+    <plurals name="tabs_suggested_all_off">
+        <item quantity="one">Doporučená aplikace je zakázána</item>
+        <item quantity="few">Všechny %1$d doporučené aplikace jsou zakázány</item>
+        <item quantity="many">Všech %1$d doporučených aplikací je zakázáno</item>
+        <item quantity="other">Všech %1$d doporučených aplikací je zakázáno</item>
+    </plurals>
+    <plurals name="tabs_suggested_some_off">
+        <item quantity="one">%1$d z %2$d doporučené aplikace je zakázána</item>
+        <item quantity="few">%1$d z %2$d doporučených aplikací je zakázáno</item>
+        <item quantity="many">%1$d z %2$d doporučených aplikací je zakázáno</item>
+        <item quantity="other">%1$d z %2$d doporučených aplikací je zakázáno</item>
+    </plurals>
+    <string name="tabs_suggested_no_list">Pro tuto televizi zatím není žádný seznam</string>
+    <plurals name="tabs_not_suggested">
+        <item quantity="one">%1$d nedoporučená</item>
+        <item quantity="few">%1$d nedoporučené</item>
+        <item quantity="many">%1$d nedoporučených</item>
+        <item quantity="other">%1$d nedoporučených</item>
+    </plurals>
+    <string name="tabs_suggested_unavailable">Seznamy zařízení se nepodařilo načíst</string>
+    <string name="tabs_suggested_offline">Připojte se k televizi, abyste viděli její doporučení</string>
+    <string name="tabs_suggested_loading">Vyhledávání seznamu pro tuto televizi…</string>
+    <string name="tabs_see_changes">Zobrazit změny</string>
+    <string name="tabs_action_required">Vyžaduje zásah:</string>
+    <plurals name="tabs_came_back_on">
+        <item quantity="one">%1$d aplikace je znovu povolena</item>
+        <item quantity="few">%1$d aplikace jsou znovu povoleny</item>
+        <item quantity="many">%1$d aplikací je znovu povoleno</item>
+        <item quantity="other">%1$d aplikací je znovu povoleno</item>
+    </plurals>
+    <string name="tabs_note_unavailable">Zkontrolujte připojení telefonu k internetu.</string>
+    <string name="tabs_try_again">Zkusit znovu</string>
+    <string name="tabs_note_no_list">Klepnutím na Úklid vyberete aplikace k ručnímu zakázání.</string>
+    <string name="tabs_note_by_maker">Pro přesně tento model není seznam, proto pocházejí z ostatních televizí výrobce %1$s.</string>
+    <string name="tabs_note_gate">Úklid nyní otevře Aplikace pro jednorázové změny.</string>
+    <string name="tabs_lists_credit">Seznamy převzaty z cleanyourtv (MIT).</string>
+    <string name="tabs_android_version">Android %1$s</string>
+    <string name="tabs_updated">Aktualizováno %1$s</string>
+    <string name="tabs_check_updates">Zkontrolovat aktualizace</string>
+    <string name="tabs_store_sub">Získejte aplikace a jejich aktualizace</string>
+    <string name="tabs_store_off">V této televizi vypnuto</string>
+
+    <!-- ListsCard.kt: the Debloat screen and About -->
+    <string name="lists_apps_on_tv">Aplikace v této televizi</string>
+    <string name="lists_which_tv">Která je to televize?</string>
+    <string name="lists_debloat">Úklid</string>
+    <string name="lists_back">Zpět</string>
+    <string name="lists_refresh">Obnovit seznam</string>
+    <string name="lists_refresh_failed">Seznam se nepodařilo obnovit. Zkontrolujte připojení telefonu k internetu.</string>
+    <string name="lists_up_to_date">Seznam je aktuální</string>
+    <string name="lists_use_this">Použít tento seznam</string>
+    <plurals name="lists_disable_apps">
+        <item quantity="one">Zakázat %1$d aplikaci</item>
+        <item quantity="few">Zakázat %1$d aplikace</item>
+        <item quantity="many">Zakázat %1$d aplikací</item>
+        <item quantity="other">Zakázat %1$d aplikací</item>
+    </plurals>
+    <string name="lists_brand_or_model">Značka nebo model</string>
+    <string name="lists_clear_search">Vymazat hledání</string>
+    <string name="lists_no_match">Žádný seznam pro „%1$s“. Vyberte nejbližší model.</string>
+    <string name="lists_failed">Seznam se nepodařilo načíst</string>
+    <string name="lists_failed_hint">Zkontrolujte připojení telefonu k internetu a zkuste to znovu.</string>
+    <string name="lists_try_again">Zkusit znovu</string>
+    <string name="lists_loading">Načítání seznamu…</string>
+    <string name="lists_this_tv">Tato televize</string>
+    <string name="lists_match_none">Pro tuto televizi ani jejího výrobce zatím není žádný seznam</string>
+    <string name="lists_match_by_maker">Pro tento model není seznam, proto pocházejí z ostatních modelů výrobce %1$s</string>
+    <string name="lists_match_exact">Seznam pro tento model · testováno na %1$s</string>
+    <string name="lists_match_other_android">Seznam pro tento model, testováno na %1$s, ne na Androidu této televize</string>
+    <string name="lists_match_no_android">Seznam pro tento model, bez údaje o testovaném Androidu</string>
+    <string name="lists_intro_by_hand">Zaškrtněte aplikace, které chcete zakázat. Aplikace, které televize ke svému běhu potřebuje, se nezobrazují.</string>
+    <string name="lists_intro_ticked">Tyto aplikace budou zakázány. Zrušte zaškrtnutí těch, které používáte.</string>
+    <string name="lists_intro_unticked">Nic není zaškrtnuto: zaškrtněte jen aplikace, o nichž víte, že je nepoužíváte.</string>
+    <string name="lists_intro_undo">Nic se nemaže a Historie umí každou znovu povolit.</string>
+    <string name="lists_custom_source">Tento seznam pochází z %1$s, ne z tellyscope-devices.</string>
+    <string name="lists_all_needed">Každá ponechaná aplikace je taková, kterou televize potřebuje.</string>
+    <string name="lists_all_off">Nic ze seznamu tu už není zapnuté.</string>
+    <string name="lists_optional">nepovinné: zaškrtněte, pokud ji nepoužíváte</string>
+    <string name="lists_group_count">%1$d z %2$d</string>
+    <string name="lists_help_add_title">Není v seznamu? Pomozte přidat tuto televizi</string>
+    <string name="lists_help_add_text">Pošlete její model a původní aplikace do cleanyourtv, odkud seznamy Tellyscope pocházejí. Text nejprve uvidíte.</string>
+    <string name="lists_help_add_button">Pomoci přidat tuto televizi</string>
+    <string name="lists_not_this_tv">Není to tato televize?</string>
+    <plurals name="lists_disable_apps_confirm">
+        <item quantity="one">Zakázat %1$d aplikaci?</item>
+        <item quantity="few">Zakázat %1$d aplikace?</item>
+        <item quantity="many">Zakázat %1$d aplikací?</item>
+        <item quantity="other">Zakázat %1$d aplikací?</item>
+    </plurals>
+    <string name="lists_disable_text">Každá bude zakázána a přestane běžet. Nic se nemaže; každá se zobrazí v Historii, kde ji můžete znovu povolit.</string>
+    <string name="lists_disable_yes">Ano, zakázat</string>
+    <string name="lists_cancel">Zrušit</string>
+    <string name="lists_dont_suggest_one">Nedoporučovat %1$s znovu</string>
+    <plurals name="lists_dont_suggest">
+        <item quantity="one">Nedoporučovat znovu %1$d nezaškrtnutou aplikaci</item>
+        <item quantity="few">Nedoporučovat znovu %1$d nezaškrtnuté aplikace</item>
+        <item quantity="many">Nedoporučovat znovu %1$d nezaškrtnutých aplikací</item>
+        <item quantity="other">Nedoporučovat znovu %1$d nezaškrtnutých aplikací</item>
+    </plurals>
+    <plurals name="lists_disable_warned">
+        <item quantity="one">%1$d z nich může v televizi něco rozbít.</item>
+        <item quantity="few">%1$d z nich mohou v televizi něco rozbít.</item>
+        <item quantity="many">%1$d z nich může v televizi něco rozbít.</item>
+        <item quantity="other">%1$d z nich může v televizi něco rozbít.</item>
+    </plurals>
+    <string name="lists_not_suggested">Nedoporučeno (%1$d)</string>
+    <string name="lists_suggest_again">Znovu doporučit</string>
+    <string name="lists_about_title">O aplikaci Tellyscope</string>
+    <string name="lists_about_version">Verze %1$s</string>
+    <string name="lists_about_website">Web</string>
+    <string name="lists_about_demo">Podívejte se na ukázku na YouTube</string>
+    <string name="lists_about_licence">Svobodný software pod licencí GNU GPL v3.</string>
+    <string name="lists_about_lists_commit">Seznamy zařízení jsou převzaty z cleanyourtv od Gathina (licence MIT), commit %1$s.</string>
+    <string name="lists_about_lists_pending">Seznamy zařízení jsou převzaty z cleanyourtv od Gathina (licence MIT), jakmile se stáhnou.</string>
+    <string name="lists_about_libraries">Používá Kadb (Apache 2.0) a spake2-java (GPL v3). Plná znění licencí jsou v souboru NOTICE.</string>
+    <string name="lists_about_close">Zavřít</string>
+
+    <!-- AdvancedScreen.kt: Advanced monitor -->
+    <string name="advanced_back">Zpět na stránku televize</string>
+    <string name="advanced_loading">Načítání statistik…</string>
+    <string name="advanced_network">Síť</string>
+    <string name="advanced_cpu">CPU</string>
+    <string name="advanced_ram">Paměť</string>
+    <string name="advanced_on_for">Zapnuto</string>
+    <string name="advanced_screen">Obrazovka</string>
+    <string name="advanced_screen_on">Zapnutá</string>
+    <string name="advanced_screen_off">Vypnutá</string>
+    <string name="advanced_percent">%1$d %%</string>
+    <string name="advanced_percent_whole">%1$.0f %%</string>
+    <string name="advanced_memory">Paměť</string>
+    <string name="advanced_storage">Úložiště</string>
+    <string name="advanced_connection">Připojení</string>
+    <string name="advanced_wifi">Wi-Fi</string>
+    <string name="advanced_ethernet">Ethernet</string>
+    <string name="advanced_signal">Signál</string>
+    <string name="advanced_signal_strong">Silný (%1$d dBm)</string>
+    <string name="advanced_signal_good">Dobrý (%1$d dBm)</string>
+    <string name="advanced_signal_weak">Slabý (%1$d dBm)</string>
+    <string name="advanced_signal_very_weak">Velmi slabý (%1$d dBm)</string>
+    <string name="advanced_mac">MAC</string>
+    <string name="advanced_mbps">%1$d Mb/s</string>
+    <string name="advanced_copy_address">Kopírovat adresu</string>
+    <string name="advanced_android">Android</string>
+    <string name="advanced_updated">Aktualizováno</string>
+    <string name="advanced_this_tv">Tato televize</string>
+    <string name="advanced_offline_as_of">Offline · stav k %1$s</string>
+    <string name="advanced_busiest">Nejvytíženější</string>
+    <string name="advanced_copy_mac">Kopírovat adresu MAC</string>
+    <string name="advanced_signal_strong_word">Silný</string>
+    <string name="advanced_signal_good_word">Dobrý</string>
+    <string name="advanced_signal_weak_word">Slabý</string>
+    <string name="advanced_signal_very_weak_word">Velmi slabý</string>
+    <string name="advanced_not_running">Neběží</string>
+    <string name="advanced_split_apps">Aplikace</string>
+    <string name="advanced_split_system">Systém</string>
+    <string name="advanced_split_waiting">Čeká na úložiště</string>
+    <string name="advanced_core">Jádro %1$d</string>
+    <string name="advanced_ghz">%1$.1f GHz</string>
+    <string name="advanced_in_use">Používá se</string>
+    <string name="advanced_cached">V mezipaměti</string>
+    <string name="advanced_free">Volné</string>
+    <string name="advanced_swap">Odkládací paměť %1$s z %2$s</string>
+    <string name="advanced_wifi_on">Wi-Fi · %1$s</string>
+    <string name="advanced_since_boot">Od spuštění ↓ %1$s ↑ %2$s</string>
+    <string name="advanced_minute_ago">před 60 s</string>
+    <string name="advanced_now">teď</string>
+    <string name="advanced_cpu_share">%1$.0f %% CPU</string>
+    <string name="advanced_since_boot_short">%1$s od spuštění</string>
+    <string name="advanced_processes_n">Procesy · %1$d</string>
+    <string name="advanced_connections_n">Otevřená spojení · %1$d</string>
+    <string name="advanced_established">Navázáno</string>
+    <string name="advanced_connecting">Připojování</string>
+    <string name="advanced_closing">Zavírání</string>
+    <plurals name="advanced_cores">
+        <item quantity="one">%1$d jádro</item>
+        <item quantity="few">%1$d jádra</item>
+        <item quantity="many">%1$d jader</item>
+        <item quantity="other">%1$d jader</item>
+    </plurals>
+    <plurals name="advanced_processes">
+        <item quantity="one">%1$d proces</item>
+        <item quantity="few">%1$d procesy</item>
+        <item quantity="many">%1$d procesů</item>
+        <item quantity="other">%1$d procesů</item>
+    </plurals>
+    <plurals name="advanced_connections">
+        <item quantity="one">%1$d spojení</item>
+        <item quantity="few">%1$d spojení</item>
+        <item quantity="many">%1$d spojení</item>
+        <item quantity="other">%1$d spojení</item>
+    </plurals>
+    <plurals name="advanced_open_connections">
+        <item quantity="one">%1$d otevřené spojení</item>
+        <item quantity="few">%1$d otevřená spojení</item>
+        <item quantity="many">%1$d otevřených spojení</item>
+        <item quantity="other">%1$d otevřených spojení</item>
+    </plurals>
+    <plurals name="advanced_apps_running">
+        <item quantity="one">%1$d běžící aplikace</item>
+        <item quantity="few">%1$d běžící aplikace</item>
+        <item quantity="many">%1$d běžících aplikací</item>
+        <item quantity="other">%1$d běžících aplikací</item>
+    </plurals>
+    <string name="shell_open">Shell</string>
+    <string name="shell_close">Zavřít Shell</string>
+    <string name="shell_title">%1$s · %2$s</string>
+    <string name="shell_banner">Připojeno k %1$s (%2$s).\nChcete-li zavřít, napište exit nebo klepněte na ✕.</string>
+    <string name="shell_trimmed">Dřívější řádky vynechány: zobrazeno posledních %1$d.</string>
+    <string name="shell_offline_hint">Příkazy se spustí znovu, až se televize vrátí.</string>
+    <string name="shell_key_paste">Vložit</string>
+    <string name="shell_key_up">Předchozí příkaz</string>
+    <string name="shell_key_down">Další příkaz</string>
+    <string name="shell_confirm">Toto změní televizi. Spustit? [y/N]</string>
+    <string name="shell_confirm_answered">Toto změní televizi. Spustit? [y/N] %1$s</string>
+    <string name="shell_no_history">Spuštění v Shellu se nezapisují do Historie, takže tu není vrácení jedním klepnutím.</string>
+    <string name="shell_not_run">Nespuštěno.</string>
+    <string name="shell_not_shell">Zde se spouštějí jen příkazy adb shell.</string>
+    <string name="shell_full_screen">%1$s vyžaduje terminál na celou obrazovku. Zde není podporován.</string>
+    <string name="shell_dropped_prefix">(vynecháno „adb shell“)</string>
+    <string name="shell_lost">Televize se ztratila dřív, než příkaz skončil. Mohl proběhnout jen částečně.</string>
+    <string name="shell_failed">Chyba shellu: %1$s. Příkaz mohl proběhnout jen částečně. Další spustí nový shell.</string>
+    <string name="shell_copy_all">Kopírovat vše</string>
+    <plurals name="shell_copied">
+        <item quantity="one">Zkopírován %1$d řádek</item>
+        <item quantity="few">Zkopírovány %1$d řádky</item>
+        <item quantity="many">Zkopírováno %1$d řádků</item>
+        <item quantity="other">Zkopírováno %1$d řádků</item>
+    </plurals>
+
+    <!-- ReportScreen.kt: Report a problem, Help add this TV -->
+    <string name="report_title_new_tv">Pomozte přidat tuto televizi</string>
+    <string name="report_title_problem">Nahlásit problém</string>
+    <string name="report_subtitle_new_tv">Otevře formulář „My TV“ projektu cleanyourtv na GitHubu</string>
+    <string name="report_subtitle_problem">Otevře issue na GitHubu Tellyscope</string>
+    <string name="report_close">Zavřít</string>
+    <string name="report_note_own_account">Odesíláte ho z vlastního účtu GitHub.</string>
+    <string name="report_note_rest">Co se nevejde do odkazu, můžete po odeslání doplnit v komentáři.</string>
+    <string name="report_note_nothing_sent">Tellyscope sám nic neodesílá.</string>
+    <string name="report_open_github">Otevřít GitHub</string>
+    <string name="report_reading_tv">Načítání televize…</string>
+    <string name="report_no_tv">Není připojena žádná televize</string>
+    <string name="report_tv_model">Model televize</string>
+    <string name="report_tv">Televize</string>
+    <string name="report_android_build">Verze Androidu a sestavení firmwaru</string>
+    <string name="report_how_far">Jak daleko jste se dostali?</string>
+    <string name="report_how_connect">Jak jste se připojili?</string>
+    <string name="report_how_connect_help">Vyplněno podle tohoto připojení; pokud to nesedí, změňte to.</string>
+    <string name="report_what_happened">Co se stalo?</string>
+    <string name="report_details">Podrobnosti (nepovinné)</string>
+    <string name="report_details_new_tv">Ještě něco?</string>
+    <string name="report_details_problem">Co jste dělali?</string>
+    <string name="report_what_gets_sent">Co se odešle</string>
+    <string name="report_connect_tv">Připojte televizi, aby se vypsaly její aplikace.</string>
+    <string name="report_pick_stage">Vyberte, jak daleko jste se dostali, a zobrazí se hlášení.</string>
+    <string name="report_pick_outcome">Vyberte, co se stalo, a zobrazí se hlášení.</string>
+    <string name="report_add_rest">Doplnit zbytek</string>
+    <string name="report_add_rest_subtitle">Jako komentář k vašemu nejnovějšímu issue v %1$s</string>
+    <string name="report_add_rest_note">Otevře vaše nejnovější issue v %1$s. Pokud to není to správné, vyberte své ze seznamu tam.</string>
+    <string name="report_copy_and_open">Zkopírovat a otevřít vaše issue</string>
+    <string name="report_add_rest_text">Toto je komentář. GitHub neumí vyplnit komentář z odkazu, proto ho Tellyscope zkopíruje a otevře vaše issue: klepněte tam na pole komentáře a vložte ho.</string>
+    <string name="report_posted_title">Odesláno? Doplňte zbytek jako komentář</string>
+    <plurals name="report_posted_apps_cut">
+        <item quantity="one">%1$d aplikace se do odkazu nevešla. Její doplnění pomůže cleanyourtv sestavit úplný seznam.</item>
+        <item quantity="few">%1$d aplikace se do odkazu nevešly. Jejich doplnění pomůže cleanyourtv sestavit úplný seznam.</item>
+        <item quantity="many">%1$d aplikací se do odkazu nevešlo. Jejich doplnění pomůže cleanyourtv sestavit úplný seznam.</item>
+        <item quantity="other">%1$d aplikací se do odkazu nevešlo. Jejich doplnění pomůže cleanyourtv sestavit úplný seznam.</item>
+    </plurals>
+    <string name="report_posted_part_cut">Část hlášení se do odkazu nevešla. Její doplnění nám pomůže najít problém.</string>
+    <string name="report_not_now">Teď ne</string>
+    <string name="report_choose_one">Vyberte jednu možnost</string>
+    <string name="report_removed_first">Nejprve odstraněno: sériová čísla, IP adresy, klíče ADB a otisky.</string>
+    <string name="report_cancel">Zrušit</string>
+    <string name="report_discard_title">Zahodit toto hlášení?</string>
+    <string name="report_discard_text">Co jste vybrali a napsali, bude ztraceno.</string>
+    <string name="report_discard">Zahodit</string>
+    <string name="report_keep_editing">Pokračovat v úpravách</string>
+    <string name="report_no_browser">Neotevřel se žádný prohlížeč, takže se nic neodeslalo. Zkopírujte odkaz a odešlete ho z jiného zařízení.</string>
+    <string name="report_copy_link">Kopírovat odkaz</string>
+
+    <!-- DeviceScreen.kt -->
+    <string name="device_as_of">Stav k %1$s</string>
+    <string name="device_last_seen">Naposledy viděno %1$s</string>
+    <string name="device_last_seen_updating">Naposledy viděno %1$s · aktualizace…</string>
+    <string name="device_internal_storage">Interní úložiště</string>
+    <string name="device_gb_used">%1$s využito</string>
+    <string name="device_cpu">CPU</string>
+    <string name="device_ram">Paměť</string>
+    <string name="device_network">Síť</string>
+    <string name="device_percent">%1$d %%</string>
+    <string name="device_disable_title">Zakázat %1$s?</string>
+    <string name="device_cancel">Zrušit</string>
+    <string name="device_restore_title">Obnovit vše?</string>
+    <string name="device_restore_text">Tato televize se vrátí do stavu před první změnou Tellyscope:</string>
+    <string name="device_restore_button">Obnovit</string>
+    <string name="device_rename_title">Přejmenovat tuto televizi</string>
+    <string name="device_rename_text">Název vidí jen tento telefon. V televizi se nic nezmění.</string>
+    <string name="device_save">Uložit</string>
+    <string name="device_forget_title">Zapomenout %1$s?</string>
+    <string name="device_forget_text">Tellyscope se k ní přestane znovu připojovat a odebere ji z tohoto telefonu. V televizi se nic nezmění. Můžete ji znovu přidat vyhledáním.</string>
+    <string name="device_forget">Zapomenout</string>
+    <string name="device_not_allowed_title">Televize tento telefon nepovolila</string>
+    <string name="device_not_allowed_text">Její přístup k ladění byl vypnut, obnoven nebo odepřen. Tellyscope přestal žádat, aby televize nebyla zahlcena výzvami.</string>
+    <string name="device_connect_again">Připojit znovu</string>
+    <string name="device_not_allowed_hint">Poté v televizi stiskněte Povolit a zaškrtněte „Vždy povolit z tohoto počítače“.</string>
+    <string name="device_offline">Offline</string>
+    <string name="device_offline_text">Naposledy viděno %1$s. Po zapnutí televize se připojí sám.</string>
+    <string name="device_a_while_ago">před chvílí</string>
+    <string name="device_reconnect">Připojit znovu</string>
+    <string name="device_nothing_here">Zatím tu nic není.</string>
+    <string name="device_nothing_matches">Nic neodpovídá „%1$s“.</string>
+    <string name="device_app_disabled">Zakázáno</string>
+    <string name="device_app_running">Běží</string>
+    <string name="device_app_background">Běží na pozadí</string>
+    <string name="device_app_on_screen">Na obrazovce</string>
+    <string name="device_app_not_running">Neběží</string>
+    <string name="device_app_protected">Chráněno: %1$s</string>
+
+    <!-- GuideCard.kt: turning on debugging. **…** marks the TV's own menu names; keep the stars. -->
+    <string name="guide_brand_other">Jiná</string>
+    <string name="guide_unlock_google_tv">V televizi: **Nastavení → Systém → O zařízení**. Stiskněte 7× OK na položce **Sestavení operačního systému Android TV**, dokud se nezobrazí, že jste vývojář.</string>
+    <string name="guide_unlock_build">V televizi: **Nastavení → Předvolby zařízení → O zařízení**. Stiskněte 7× OK na položce **Číslo sestavení**.</string>
+    <string name="guide_unlock_fire_tv">V televizi: **Nastavení → Moje Fire TV → O zařízení**. Stiskněte 7× OK na prvním řádku, názvu vaší Fire TV.</string>
+    <string name="guide_unlock_other">V televizi otevřete **Nastavení**. Je tam **Systém**? Je to Google TV: přejděte na **Systém → O zařízení** a stiskněte 7× OK na položce **Sestavení operačního systému Android TV**. Je tam **Předvolby zařízení**? Je to Android TV: přejděte na **Předvolby zařízení → O zařízení** a stiskněte 7× OK na položce **Číslo sestavení**.</string>
+    <string name="guide_debug_title_wireless">Zapněte Bezdrátové ladění</string>
+    <string name="guide_debug_done_wireless">Bezdrátové ladění zapnuto</string>
+    <string name="guide_debug_title_adb">Zapněte ladění ADB</string>
+    <string name="guide_debug_done_adb">Ladění ADB zapnuto</string>
+    <string name="guide_debug_google_tv">Zpět do **Systém → Pro vývojáře**. Zapněte **Bezdrátové ladění**. Starší televize ho nazývají **Ladění přes USB**.</string>
+    <string name="guide_debug_android_tv">Zpět do **Předvolby zařízení → Pro vývojáře**. Zapněte **Bezdrátové ladění**. Starší televize mají místo toho **Ladění přes USB** a **Síťové ladění**: zapněte obojí.</string>
+    <string name="guide_debug_fire_tv">Zpět do **Moje Fire TV → Možnosti pro vývojáře**. Zapněte **Ladění ADB**.</string>
+    <string name="guide_debug_xiaomi">Zpět do **Předvolby zařízení → Pro vývojáře**. Zapněte **Bezdrátové ladění**. Starší televize ho nazývají **Ladění přes USB**.</string>
+    <string name="guide_debug_xgimi">Zpět do **Předvolby zařízení → Pro vývojáře**. Zapněte **Bezdrátové ladění**. Starší projektory mají **Ladění přes USB** a poté **Síťové ladění**, pokud je uvedeno: zapněte obojí.</string>
+    <string name="guide_debug_other">O úroveň zpět, otevřete **Pro vývojáře**. Zapněte **Bezdrátové ladění**. Starší televize mají **Ladění přes USB** a některé i **Síťové ladění**: zapněte, co tam je.</string>
+    <string name="guide_pair_google_tv">**Systém → Pro vývojáře → Bezdrátové ladění → Spárovat zařízení pomocí párovacího kódu**</string>
+    <string name="guide_pair_android_tv">**Předvolby zařízení → Pro vývojáře → Bezdrátové ladění → Spárovat zařízení pomocí párovacího kódu**</string>
+    <string name="guide_pair_other">**Pro vývojáře → Bezdrátové ladění → Spárovat zařízení pomocí párovacího kódu**</string>
+    <string name="guide_pick_tv">Vyberte svou televizi</string>
+    <string name="guide_unlock_title">Odemkněte možnosti pro vývojáře</string>
+    <string name="guide_unlock_done">Možnosti pro vývojáře odemčeny</string>
+    <string name="guide_find_title">Najděte svou televizi</string>
+    <string name="guide_done_next">Hotovo, další</string>
+    <string name="guide_show_step">Zobrazit tento krok</string>
+    <string name="guide_hide_step">Skrýt tento krok</string>
+    <plurals name="guide_skip_ahead">
+        <item quantity="one">Nalezena %1$d televize, přeskočit</item>
+        <item quantity="few">Nalezeny %1$d televize, přeskočit</item>
+        <item quantity="many">Nalezeno %1$d televizí, přeskočit</item>
+        <item quantity="other">Nalezeno %1$d televizí, přeskočit</item>
+    </plurals>
+    <string name="guide_done">Hotovo</string>
+    <string name="guide_tip_same_wifi">Mějte telefon a televizi ve stejné Wi-Fi. Hostovské sítě často zařízení od sebe oddělují.</string>
+    <string name="guide_tip_debugging_off">Ladění se samo vypnulo? Některé televize ho po restartu vynulují. Zapněte ho znovu a tato obrazovka televizi opět najde.</string>
+    <string name="guide_tip_vega">Po 7 stiscích chybí nabídka Pro vývojáře? Novější Fire TV běží na Vega OS, což není Android, a Tellyscope se k nim nedostane.</string>
+    <string name="guide_tip_by_ip">Pořád nic? Přidejte televizi podle její IP adresy z nastavení sítě televize.</string>
+    <string name="guide_help_title">Nemůžete najít svou televizi?</string>
+    <string name="guide_add_by_ip">Přidat podle IP adresy</string>
+    <string name="guide_close">Zavřít</string>
+
+    <!-- AppsTabs.kt -->
+    <string name="apps_tab_running">Spuštěné</string>
+    <string name="apps_tab_installed">Nainstalované</string>
+    <string name="apps_tab_built_in">Vestavěné</string>
+    <string name="apps_system_count">%1$s (%2$d)</string>
+    <string name="apps_show_system">Zobrazit systémové aplikace</string>
+    <string name="apps_hide_system">Skrýt systémové aplikace</string>
+
+    <!-- Details.kt -->
+    <string name="details_title">Podrobnosti</string>
+    <string name="details_show">Zobrazit podrobnosti</string>
+    <string name="details_hide">Skrýt podrobnosti</string>
+
+    <!-- DeviceIcons.kt: screen-reader names for the device icons -->
+    <string name="kind_tv">Televize</string>
+    <string name="kind_projector">Projektor</string>
+    <string name="kind_stick">Streamovací zařízení</string>
+
+    <!-- TvHeader.kt -->
+    <string name="header_add_device_icon">Přidat</string>
+    <string name="header_add_device_label">Zařízení</string>
+
+    <!-- screens_b -->
+
+    <!-- RemoteScreen: key names are what TalkBack reads -->
+    <string name="remote_mute">Ztlumit nebo zapnout zvuk</string>
+    <string name="remote_volume_up">Zvýšit hlasitost</string>
+    <string name="remote_volume_down">Snížit hlasitost</string>
+    <string name="remote_volume_fixed">Hlasitost je přes HDMI pevná. Použijte ovladač televize.</string>
+    <string name="remote_dpad">Směrový ovladač</string>
+    <string name="remote_touchpad">Touchpad</string>
+    <string name="remote_touchpad_swipe">Přejetím se pohybujte</string>
+    <string name="remote_touchpad_tap">Klepnutím OK</string>
+    <string name="remote_pointer">Ukazatel</string>
+    <string name="remote_pointer_drag">Tažením pohybujte ukazatelem</string>
+    <string name="remote_pointer_tap">Klepnutí = klik · Dva prsty = posun</string>
+    <string name="remote_pointer_refused">Tato televize to nedovoluje</string>
+    <string name="remote_controller">Herní ovladač</string>
+    <string name="remote_mode_dpad_line">Šipky a OK, jako na ovladači televize</string>
+    <string name="remote_mode_touchpad_line">Přejetím se pohybujte, klepnutím OK</string>
+    <string name="remote_mode_pointer_line">Pohybujte ukazatelem myši v televizi</string>
+    <string name="remote_mode_controller_line">Hrajte hry s telefonem na šířku</string>
+    <string name="remote_mode_tip">Změnit způsob ovládání televize</string>
+    <string name="remote_mode_button">Režim ovladače: %1$s</string>
+    <string name="remote_controller_close">Zpět na Ovladač</string>
+    <string name="remote_controller_stick">Páčka</string>
+    <string name="remote_controller_buttons_only">Tato televize přijímá jen tlačítka. Hry, které hledají připojený ovladač, nemusí reagovat.</string>
+    <string name="remote_select">Select</string>
+    <string name="remote_start">Start</string>
+    <string name="remote_back">Zpět</string>
+    <string name="remote_home">Domů</string>
+    <string name="remote_menu">Nabídka</string>
+    <string name="remote_up">Nahoru</string>
+    <string name="remote_down">Dolů</string>
+    <string name="remote_left">Doleva</string>
+    <string name="remote_right">Doprava</string>
+    <string name="remote_ok">OK</string>
+    <string name="remote_type_label">Psát v televizi</string>
+    <string name="remote_send">Odeslat do televize</string>
+    <string name="remote_restart">Restartovat televizi</string>
+    <string name="remote_cancel">Zrušit</string>
+    <string name="remote_restarting">Restartování</string>
+    <string name="remote_hide">Skrýt</string>
+    <string name="remote_retry">Zkusit znovu</string>
+    <string name="remote_stop_waiting">Přestat čekat</string>
+    <string name="remote_show_restart">Zobrazit restart</string>
+    <string name="remote_move_up">Přesunout nahoru</string>
+    <string name="remote_move_down">Přesunout dolů</string>
+
+    <!-- AccessUi -->
+    <string name="access_show_less">Zobrazit méně</string>
+    <string name="access_show_more">Zobrazit více</string>
+    <string name="access_back_to_tv">Zpět na stránku televize</string>
+    <string name="access_checking">Kontrola…</string>
+
+    <!-- SettingsScreen -->
+    <string name="settings_share_text">Právě jsem objevil Tellyscope, open-source aplikaci, která z telefonu uklidí váš Android TV: vypněte zbytečnosti, instalujte aplikace a posílejte soubory, bez rootu a bez počítače. Zdarma, bez sledování. %1$s</string>
+    <string name="settings_title">Nastavení</string>
+    <string name="settings_back_to_tv">Zpět na stránku televize</string>
+    <string name="settings_check_updates">Kontrolovat aktualizace</string>
+    <string name="settings_check_updates_alpha">V alfa sestaveních se každých 5 minut zeptá GitHubu, zda nevyšel novější Tellyscope. Nic se nestahuje.</string>
+    <string name="settings_check_updates_release">Každých 30 minut se zeptá GitHubu, zda nevyšel novější Tellyscope. Nic se nestahuje.</string>
+    <string name="settings_key_haptics">Vibrovat při stisku klávesy</string>
+    <string name="settings_key_haptics_text">Krátké cuknutí při každé klávese na Ovladači.</string>
+    <string name="settings_report">Nahlásit problém</string>
+    <string name="settings_report_text">Otevře issue na GitHubu Tellyscope. Text nejprve uvidíte.</string>
+    <string name="settings_share_hint">Pošlete někomu odkaz na stránku Tellyscope na GitHubu.</string>
+    <string name="settings_whats_new">Co je nového</string>
+    <string name="settings_whats_new_text">Co se změnilo v této verzi a v předchozích.</string>
+    <string name="whats_new_back">Zpět do Nastavení</string>
+    <string name="whats_new_installed">Nainstalováno</string>
+    <string name="whats_new_new">Nové</string>
+    <string name="whats_new_improved">Vylepšeno</string>
+    <string name="whats_new_fixed">Opraveno</string>
+    <string name="whats_new_update_out">Vyšel Tellyscope %1$s</string>
+    <string name="whats_new_you_have">Máte %1$s.</string>
+    <string name="whats_new_update">Aktualizovat</string>
+    <string name="whats_new_not_installed">Nenainstalováno</string>
+    <string name="whats_new_newer_failed">Novější verze se nepodařilo načíst.</string>
+    <string name="settings_advanced">Seznamy pro úklid</string>
+    <string name="settings_change">Změnit</string>
+    <string name="settings_change_text">Vložte složku raw přes HTTPS, která obsahuje index.json, např. raw.githubusercontent.com/&lt;vy&gt;/tellyscope-devices/main/</string>
+    <string name="settings_own_lists_guide">Jak používat vlastní seznamy</string>
+    <string name="settings_own_lists">Použít vlastní seznamy pro úklid</string>
+    <string name="settings_lists_from">Seznamy z</string>
+    <string name="settings_open_cleanyourtv">Otevřít cleanyourtv na GitHubu</string>
+    <string name="settings_source_title">Odkud seznamy pocházejí</string>
+    <string name="settings_source_text">Chcete-li použít vlastní seznamy, vytvořte fork tellyscope-devices, upravte ho a vložte adresu složky, která obsahuje index.json, například https://raw.githubusercontent.com/vy/tellyscope-devices/main/. Chráněné aplikace zůstanou chráněné bez ohledu na to, co seznam říká.</string>
+    <string name="settings_checking">Kontrola…</string>
+    <string name="settings_use_lists">Použít tyto seznamy</string>
+    <string name="settings_reset">Obnovit výchozí</string>
+    <string name="settings_cancel">Zrušit</string>
+
+    <!-- ConnectScreen -->
+    <string name="connect_back">Zpět</string>
+    <string name="connect_back_to_tvs">Zpět na televize</string>
+    <string name="connect_try_again">Zkusit znovu</string>
+    <string name="connect_cancel">Zrušit</string>
+    <string name="connect_pairing">Párování…</string>
+    <string name="connect_pair">Spárovat</string>
+    <plurals name="connect_more_digits">
+        <item quantity="one">ještě %1$d číslice</item>
+        <item quantity="few">ještě %1$d číslice</item>
+        <item quantity="many">ještě %1$d číslic</item>
+        <item quantity="other">ještě %1$d číslic</item>
+    </plurals>
+    <string name="connect_android_device">Zařízení Android</string>
+    <string name="connect_code_title">Zadejte párovací kód</string>
+    <string name="connect_code_text">V televizi otevřete obrazovku párování a zadejte 6 číslic, které zobrazí.</string>
+    <string name="connect_from_tv">Z televize</string>
+    <string name="connect_no_answer">Televize neodpovídá</string>
+    <string name="connect_not_accepted">Televize připojení nepřijala.</string>
+    <string name="connect_check_awake">Je televize zapnutá a vzhůru?</string>
+    <string name="connect_check_denied">Zavřelo se okno v televizi, nebo bylo stisknuto Odepřít? Zkuste to znovu a zeptá se ještě jednou.</string>
+    <string name="connect_check_restart">Některé televize po restartu ladění vypnou. Zapněte ho znovu.</string>
+    <string name="connect_cant_reach">K televizi se nelze připojit</string>
+    <string name="connect_off_wifi">Tento telefon není připojen k Wi-Fi. Připojte se ke stejné Wi-Fi jako televize a zkuste to znovu.</string>
+    <string name="connect_off_wifi_waiting">Tento telefon není připojen k Wi-Fi. Připojte se ke stejné Wi-Fi jako televize. Tellyscope pokračuje, jakmile budete v síti.</string>
+    <string name="connect_waiting_wifi">Čekání na Wi-Fi…</string>
+    <string name="connect_tv_silent">Tento telefon je připojen k Wi-Fi, ale televize neodpověděla.</string>
+    <string name="connect_check_on">Je televize zapnutá? Některé televize při uspání odpadnou z Wi-Fi.</string>
+    <string name="connect_check_same_wifi">Stejná Wi-Fi jako televize? Hostovská síť je od sebe odděluje.</string>
+    <string name="connect_check_new_address">Dostala televize novou adresu? Vraťte se na Televize a klepněte na Vyhledat znovu.</string>
+    <string name="connect_bullet">•  %1$s</string>
+    <string name="connect_allow_title">Povolte v televizi</string>
+    <string name="connect_allow_text_key">V televizi se zobrazí okno. Zkontrolujte, že jeho klíč odpovídá klíči tohoto telefonu, zaškrtněte **Vždy povolit** a vyberte **Povolit**.</string>
+    <string name="connect_allow_text">V televizi se zobrazí okno. Zaškrtněte **Vždy povolit** a vyberte **Povolit**.</string>
+    <string name="connect_phone_key">Klíč tohoto telefonu</string>
+    <string name="connect_waiting">Čekání na televizi… %1$d s</string>
+    <string name="connect_connecting">Připojování</string>
+    <string name="connect_reaching">Připojování k televizi…</string>
+    <string name="connect_tv_allow_title">Povolit ladění přes USB?</string>
+    <string name="connect_tv_fingerprint">Digitální otisk RSA počítače je:</string>
+    <string name="connect_tv_always">Vždy povolit z tohoto počítače</string>
+    <string name="connect_tv_cancel">Zrušit</string>
+    <string name="connect_tv_allow">Povolit</string>
+    <string name="connect_code_description">Párovací kód</string>
+
+    <!-- Transfers -->
+    <string name="transfers_install_app">Nainstalovat aplikaci</string>
+    <string name="transfers_disabling">Zakazování…</string>
+    <string name="transfers_debloat">Úklid</string>
+    <string name="transfers_send_file">Odeslat soubor</string>
+    <string name="transfers_to_folder">Do %1$s</string>
+    <string name="transfers_tap_to_save">Klepnutím na soubor ho otevřete v televizi, uložíte nebo smažete.</string>
+    <string name="transfers_save">Uložit do telefonu</string>
+    <string name="transfers_delete">Smazat v televizi</string>
+    <string name="transfers_delete_title">Smazat %1$s z televize?</string>
+    <string name="transfers_delete_text">Odstraní se natrvalo ze složky %1$s v televizi.</string>
+    <string name="transfers_delete_button">Smazat</string>
+    <string name="transfers_delete_failed">Soubor %1$s se nepodařilo smazat</string>
+    <string name="transfers_delete_still_there">Soubor je stále v televizi.</string>
+    <string name="transfers_reading">Čtení aplikace</string>
+    <string name="transfers_install_failed">Aplikaci %1$s se nepodařilo nainstalovat</string>
+    <string name="transfers_cant_install">Toto nelze nainstalovat</string>
+    <string name="transfers_version">Verze %1$s</string>
+    <plurals name="transfers_parts">
+        <item quantity="one">%1$d část</item>
+        <item quantity="few">%1$d části</item>
+        <item quantity="many">%1$d částí</item>
+        <item quantity="other">%1$d částí</item>
+    </plurals>
+    <string name="transfers_sending_percent">Odesílání do televize · %1$d %%</string>
+    <string name="transfers_installing">Instalace v televizi…</string>
+    <string name="transfers_tv_said">Televize uvedla: %1$s</string>
+    <string name="transfers_open_on_tv">Otevřít v televizi</string>
+    <string name="transfers_ok">OK</string>
+    <string name="transfers_cancel">Zrušit</string>
+    <string name="transfers_done">Hotovo</string>
+    <string name="transfers_report">Nahlásit problém</string>
+    <string name="transfers_sending_to">Odesílání do %1$s</string>
+    <string name="transfers_saving">Ukládání do telefonu</string>
+    <string name="transfers_progress">%1$s z %2$s</string>
+    <string name="transfers_starting">Spouštění…</string>
+
+    <!-- ScanScreen -->
+    <string name="scan_back">Zpět</string>
+    <string name="scan_title">Přidejte svou televizi</string>
+    <string name="scan_no_lan">Nejste připojeni k Wi-Fi, takže se zobrazí jen televize, které se samy ohlásí. Připojte se k Wi-Fi své televize.</string>
+    <string name="scan_vpn">Je zapnutá VPN, takže Tellyscope nemůže prohledat vaši Wi-Fi. Televize, které se samy ohlásí, se stále zobrazí. Přidejte televizi podle IP adresy, nebo ve své aplikaci VPN povolte přístup k místní síti.</string>
+    <string name="scan_same_wifi">Mějte telefon a televizi ve stejné Wi-Fi.</string>
+    <string name="scan_add_by_ip">Přidat podle IP adresy</string>
+    <string name="scan_cant_find">Nemůžete najít svou televizi?</string>
+    <string name="scan_rescan">Vyhledat znovu</string>
+    <string name="scan_none_yet_in">Zatím žádná televize. Další hledání za %1$d s</string>
+    <string name="scan_android_device">Zařízení Android</string>
+    <string name="scan_connect">Připojit</string>
+    <string name="scan_try_again">Zkusit znovu</string>
+    <string name="scan_continue">Pokračovat</string>
+    <string name="scan_looking_first">Hledání vaší televize…</string>
+    <string name="scan_looking_more">Hledání dalších televizí…</string>
+    <string name="scan_none_yet">Zatím žádná televize. Tellyscope za chvíli hledá znovu.</string>
+    <string name="scan_again">Hledat znovu</string>
+    <string name="scan_off_wifi_title">Tento telefon není připojen k Wi-Fi</string>
+    <string name="scan_off_wifi_text">Připojte se ke stejné Wi-Fi jako vaše televize. Tellyscope ji začne hledat znovu, jakmile budete v síti.</string>
+    <string name="scan_open_wifi">Otevřít nastavení Wi-Fi</string>
+    <string name="scan_ip_hint">Najdete ji v televizi v Nastavení → Síť → vaše Wi-Fi.</string>
+    <string name="scan_subnet">Vaše Wi-Fi: %1$s</string>
+    <string name="scan_cancel">Zrušit</string>
+
+    <!-- screens_c -->
+
+    <!-- Shared by the screens in this group: buttons and screen-reader labels. -->
+    <string name="screen_done">Hotovo</string>
+    <string name="screen_cancel">Zrušit</string>
+    <string name="screen_try_again">Zkusit znovu</string>
+    <string name="screen_continue">Pokračovat</string>
+    <string name="screen_back">Zpět</string>
+    <string name="screen_back_to_tv">Zpět na stránku televize</string>
+    <string name="screen_waiting">Čeká</string>
+
+    <string name="result_reason">%1$s.</string>
+    <string name="result_reason_app">%1$s: %2$s.</string>
+
+    <!-- Another device asks to connect -->
+    <string name="request_close">Zavřít</string>
+
+    <!-- Reset TV -->
+    <string name="reset_read_failed">Televizi se nepodařilo přečíst</string>
+    <string name="reset_reading">Načítání televize…</string>
+    <string name="reset_hide_list">Skrýt seznam</string>
+    <string name="reset_show_list">Zobrazit seznam</string>
+
+    <!-- Install a home screen -->
+    <string name="launcher_close">Zavřít</string>
+    <string name="launcher_install_word">Instalovat</string>
+    <string name="launcher_ok">OK</string>
+
+    <!-- History -->
+    <string name="history_empty_title">Zatím se nic nezměnilo</string>
+    <string name="history_empty_text">Cokoli zastavíte, zakážete nebo povolíte, se zobrazí zde, s možností vrácení zpět.</string>
+    <string name="history_restoring">Obnovování…</string>
+    <string name="history_ok">OK</string>
+    <string name="history_no_undo_caches">Není co vracet: aplikace si mezipaměti znovu naplní</string>
+    <string name="history_no_undo_uninstall">Nelze vrátit: nainstalujte ji znovu z obchodu Play</string>
+    <string name="history_no_undo_uninstall_fire">Nelze vrátit: nainstalujte ji znovu z obchodu Appstore</string>
+    <string name="history_no_undo_later">Nelze vrátit: Domů se po tomto změnilo</string>
+    <string name="history_no_undo">Tuto změnu nelze vrátit</string>
+    <string name="history_restore_all">Obnovit vše (%1$d)</string>
+    <string name="history_undone">Vráceno</string>
+
+    <!-- Debloat run -->
+    <string name="debloat_title">Úklid</string>
+    <string name="debloat_failed">Nezakázáno</string>
+
+    <!-- Logged out -->
+    <string name="logged_out_back_to_tvs">Zpět na televize</string>
+    <string name="logged_out_connect_again">Připojit znovu</string>
+    <string name="logged_out_causes_title">Proč se to může stát</string>
+    <string name="logged_out_cause">•  %1$s</string>
+
+    <!-- Nearby devices permission (also shown on the welcome screen) -->
+    <string name="permission_title">Najděte televize ve své Wi-Fi</string>
+    <string name="permission_local_network_text">Android se zeptá, než aplikace začne komunikovat s dalšími zařízeními ve vaší Wi-Fi. Tellyscope se připojuje jen k televizím, které vyberete.</string>
+    <string name="permission_denied">Bez toho Tellyscope žádnou televizi nevidí. V Nastavení otevřete Oprávnění → Zařízení v okolí a vyberte Povolit.</string>
+    <string name="permission_open_settings">Otevřít Nastavení</string>
+    <string name="permission_ask_again">Zeptat se znovu</string>
+
+    <!-- Update dialog -->
+    <string name="update_title">🎉 Vyšel Tellyscope %1$s</string>
+    <string name="update_no_notes">Žádné poznámky k vydání.</string>
+    <string name="update_more_notes">…a další na GitHubu</string>
+    <string name="update_download">Stáhnout APK</string>
+    <string name="update_release">Zobrazit vydání</string>
+    <string name="update_cancel">Zrušit</string>
+
+    <!-- Welcome -->
+    <string name="welcome_skip">Přeskočit</string>
+    <string name="welcome_title">Vítejte v Tellyscope</string>
+    <string name="welcome_text">Podívejte se, co běží na vašem Android TV, a zakažte aplikace, které nepotřebujete. Vše z telefonu, přes Wi-Fi.</string>
+    <string name="welcome_step_1">Zapněte v televizi ladění. Další obrazovka ukáže, jak na to u vaší značky.</string>
+    <string name="welcome_step_2">Tellyscope najde televizi ve vaší Wi-Fi.</string>
+    <string name="welcome_step_3">Zadejte kód, který televize zobrazí, nebo vyberte Povolit, až se zeptá.</string>
+</resources>
